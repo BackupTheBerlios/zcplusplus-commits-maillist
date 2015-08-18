@@ -1,0 +1,320 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r330 - in trunk: . tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r330%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C201001260821.o0Q8Ln41006830%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000096.html">
+   <LINK REL="Next"  HREF="000098.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r330 - in trunk: . tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r330%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C201001260821.o0Q8Ln41006830%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r330 - in trunk: . tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 26 09:21:49 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000096.html">[Zcplusplus-commits] r329 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000098.html">[Zcplusplus-commits] r331 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#97">[ date ]</a>
+              <a href="thread.html#97">[ thread ]</a>
+              <a href="subject.html#97">[ subject ]</a>
+              <a href="author.html#97">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-01-26 09:21:44 +0100 (Tue, 26 Jan 2010)
+New Revision: 330
+
+Added:
+   trunk/tools/selective_cut.py
+Modified:
+   trunk/CSupport.cpp
+   trunk/unsigned_var_int.hpp
+Log:
+default-initialize enums; new utility script selective_cut.py
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-01-21 04:08:20 UTC (rev 329)
++++ trunk/CSupport.cpp	2010-01-26 08:21:44 UTC (rev 330)
+@@ -10864,6 +10864,50 @@
+ 	src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
+ }
+ 
++static bool default_enumerator_init_legal(const bool allow_empty, unsigned char&amp; current_enumerator_type, const unsigned_var_int&amp; prior_value, const weak_token&amp; src)
++{
++	if (allow_empty)
++		{
++		if (prior_value==target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;())
++			{	// signed integer overflow
++				//! \bug need test case
++			message_header(src);
++			INC_INFORM(ERR_STR);
++			INFORM(&quot;default-initialization of enumerator requires signed int overflow: undefined behavior (C99 6.7.2.2p3)&quot;);
++			zcc_errors.inc_error();
++			return false;
++			}
++		}
++	else{	//! \todo research how to rewrite this without the goto
++cpp_enum_was_retyped:
++		const promote_aux test(current_enumerator_type);
++		if (test.is_signed)
++			{
++			if (prior_value==target_machine-&gt;signed_max(test.machine_type))
++				{
++				++current_enumerator_type;	// smallest type that can handle this
++				goto cpp_enum_was_retyped;
++				}
++			}
++		else{
++			if (prior_value==target_machine-&gt;unsigned_max(test.machine_type))
++				{
++				if (C_TYPE::INTEGERLIKE == ++current_enumerator_type)	// smallest type that can handle this
++					{	// unsigned long long overflow, fact it's defined doesn't save us
++					//! \bug need test case
++					message_header(src);
++					INC_INFORM(ERR_STR);
++					INFORM(&quot;default-initialization of enumerator requires uintmax_t overflow (C++0X 7.2p5)&quot;);
++					zcc_errors.inc_error();
++					return false;
++					}
++				goto cpp_enum_was_retyped;
++				}
++			}
++		}
++	return true;
++}
++
+ static bool record_enum_values(parse_tree&amp; src, type_system&amp; types, const type_system::type_index enum_type_index, const char* const active_namespace,bool allow_empty,func_traits&lt;const char* (*)(const char*, size_t)&gt;::function_ref_type echo_reserved_keyword)
+ {
+ 	assert(enum_type_index);
+@@ -10974,9 +11018,9 @@
+ 		src.DeleteIdx&lt;0&gt;(src.size&lt;0&gt;()-1); // clean up anyway
+ 		}
+ 	//! \todo actually record enumerator matchings
+-#if 0
+ 	unsigned_var_int latest_value(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int prior_value(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
++	unsigned char current_enumerator_type = C_TYPE::INT;
+ 	i = 0;
+ 	while(src.size&lt;0&gt;()&gt;i)
+ 		{	// require identifier that is neither keyword nor a primitive type
+@@ -10988,6 +11032,7 @@
+ 		assert(C_TESTFLAG_IDENTIFIER==src.data&lt;0&gt;()[i].index_tokens[0].flags);
+ 		assert(!(PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags));
+ 		assert(!echo_reserved_keyword(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].token.second));
++		{
+ 		char* namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
+ 		const char* fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[0].token.first;
+ 		{
+@@ -10996,6 +11041,7 @@
+ 			{	// --do-what-i-mean could recover if the prior definition were identical
+ 				// C: note on C99/C1X 6.7.2.2p3 indicates autofail no matter where it was defined
+ 				// C++: One Definition Rule wipes out
++				//! \bug need test case
+ 			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 			INC_INFORM(ERR_STR);
+ 			INFORM(&quot;enumerator is already defined (C99 6.7.2.2p3/C++98 3.2)&quot;);
+@@ -11004,6 +11050,8 @@
+ 			return false;
+ 			};
+ 		}
++		free(namespace_name);
++		}
+ #if 0
+ 		// next proposed function call is a bit handwavish right now...
+ 		// C++0X 3.3.1p4: enumerator gets to hide class names and enum names, nothing else [in particular dies against typedefs and functions]
+@@ -11020,6 +11068,7 @@
+ 			{	// C++: One Definition Rule
+ 			};
+ #endif
++
+ 		// The type and representation of an enumeration varies by language
+ 		// C: values are type int; actual representation can be decided after seeing all enumeration values.
+ 		// C++: if the underlying type is fixed, then the enumerator is of that type.  Othewise,
+@@ -11030,12 +11079,37 @@
+ 		// C++: type per language specification,
+ 		// * hard-error if going above ULONG_MAX
+ 		// * invoke -Wc-c++-compat if not within INT_MIN..INT_MAX
++		// in any case, do not react if the default-init isn't used
++		value_copy(prior_value,latest_value);
++		bool value_is_nonnegative_or_twos_complement = true;
++		if (virtual_machine::twos_complement!=target_machine-&gt;C_signed_int_representation())
++			{
++			const promote_aux test(current_enumerator_type);
++			if (test.is_signed &amp;&amp; latest_value.test(test.bitcount-1))
++				{
++				target_machine-&gt;signed_additive_inverse(latest_value,test.machine_type);
++				if (0&lt;latest_value)
++					{
++					latest_value -= 1;
++					if (0&lt;latest_value) target_machine-&gt;signed_additive_inverse(latest_value,test.machine_type);
++					value_is_nonnegative_or_twos_complement = false;
++					}
++				}
++			}
++		if (value_is_nonnegative_or_twos_complement) latest_value += 1;
++
+ 		if (1&gt;=src.size&lt;0&gt;()-i)
+ 			{	// default-update
+-			// if (active_namespace)
+-			//		types.set_enumerator_def_CPP(src.data&lt;0&gt;()[i].index_tokens[0].token.first, active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename,unsigned char representation,latest_value,enum_type_index)
+-			// else
+-			//		types.set_enumerator_def(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename,unsigned char representation,latest_value,enum_type_index);
++			// handle type errors
++			if (!default_enumerator_init_legal(allow_empty,current_enumerator_type,prior_value,src.data&lt;0&gt;()[i].index_tokens[0]))
++				return false;
++			uchar_blob latest_value_copy;
++			latest_value_copy.init(0);
++			value_copy(latest_value_copy,latest_value);
++			if (active_namespace)
++				types.set_enumerator_def_CPP(src.data&lt;0&gt;()[i].index_tokens[0].token.first, active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename,current_enumerator_type,latest_value_copy,enum_type_index);
++			else
++				types.set_enumerator_def(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename,current_enumerator_type,latest_value_copy,enum_type_index);
+ 			break;
+ 			}
+ 		// complete conversion
+@@ -11044,7 +11118,15 @@
+ 		// * invoke -Wc-c++-compat if not within INT_MIN..INT_MAX
+ 		if (robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1]))
+ 			{	// would default-update
+-			// ...
++			if (!default_enumerator_init_legal(allow_empty,current_enumerator_type,prior_value,src.data&lt;0&gt;()[i].index_tokens[0]))
++				return false;
++			uchar_blob latest_value_copy;
++			latest_value_copy.init(0);
++			value_copy(latest_value_copy,latest_value);
++			if (active_namespace)
++				types.set_enumerator_def_CPP(src.data&lt;0&gt;()[i].index_tokens[0].token.first, active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename,current_enumerator_type,latest_value_copy,enum_type_index);
++			else
++				types.set_enumerator_def(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename,current_enumerator_type,latest_value_copy,enum_type_index);
+ 			i += 2;
+ 			continue;
+ 			};
+@@ -11060,13 +11142,14 @@
+ 				break;
+ 				}
+ 			};
++#if 0
+ 		// probably have this already....
+ 		if (!eval_expression(src,origin,i,latest_value))
+ 			return false;
++#endif
+ 		// ...
+ 		}
+ 	// now ok to crunch underlying type/machine representation
+-#endif
+ 	return true;
+ }
+ 
+
+Added: trunk/tools/selective_cut.py
+===================================================================
+--- trunk/tools/selective_cut.py	2010-01-21 04:08:20 UTC (rev 329)
++++ trunk/tools/selective_cut.py	2010-01-26 08:21:44 UTC (rev 330)
+@@ -0,0 +1,39 @@
++#!/usr/bin/python
++# designed for Python 2.6, may work with other versions
++# (C)2010 Kenneth Boyd, license: MIT.txt
++
++from sys import argv,exit;
++
++#   This is inspired by Perl's Plain Old Documentation format, but 
++# works generically with languages that use shell one-line comments
++# (e.g.: Python, Perl, PHP, Ruby, C/C++
++#   Idea is that lines #/* cut-cut_id */ act like =cut in Perl.
++#   C,C++ are fine because the C-comment becomes whitespace, leaving behind 
++# a null preprocessing directive which is removed by the preprocessor.
++#   Languages with native shell comments just treat these lines as comments
++
++def SelectiveCut(cut_id,srcfile,destfile):
++	test_lines = []
++	old_line_ok = 1
++	line_ok = 1
++	TargetFile = open(destfile,'w')	# *.sh
++	with open(srcfile,'r') as f:
++		for line in f:
++			line_proxy = line.strip()
++			if line_proxy=='#/*cut-'+cut_id+'*/':
++				line_ok = 1-line_ok
++			if line_ok and old_line_ok:
++				TargetFile.write(line)
++			old_line_ok = line_ok
++	TargetFile.close()
++
++
++if __name__ == '__main__':
++	# online help
++	if 4!=len(argv):
++		print &quot;Usage: cut_id srcfile destfile&quot;
++		print &quot;\texcises text lines contained between #cut-cut_id comments&quot;
++		exit(0)
++
++	SelectiveCut(argv[1],argv[2],argv[3])
++
+
+Modified: trunk/unsigned_var_int.hpp
+===================================================================
+--- trunk/unsigned_var_int.hpp	2010-01-21 04:08:20 UTC (rev 329)
++++ trunk/unsigned_var_int.hpp	2010-01-26 08:21:44 UTC (rev 330)
+@@ -21,8 +21,10 @@
+ 
+ 	unsigned_var_int&amp; operator=(const unsigned_var_int&amp; src);
+ 	unsigned_var_int&amp; operator=(uintmax_t src);
+-	unsigned_var_int&amp; operator=(const uchar_blob&amp; src) {value_copy(_data,src); return *this;};
++	unsigned_var_int&amp; operator=(const uchar_blob&amp; src) {uchar_blob::value_copy(_data,src); return *this;};
+ 	void MoveInto(unsigned_var_int&amp; dest);
++	static void value_copy(uchar_blob&amp; dest, const unsigned_var_int&amp; src) {uchar_blob::value_copy(dest,src._data);};
++	static void value_copy(unsigned_var_int&amp; dest, const unsigned_var_int&amp; src) {uchar_blob::value_copy(dest._data,src._data);};
+ 
+ 	unsigned_var_int&amp; operator~() {bitwise_compl(_data.c_array(),_data.size()); return *this;};
+ 	void auto_bitwise_complement() {bitwise_compl(_data.c_array(),_data.size());};
+@@ -110,6 +112,9 @@
+ 	unsigned char&amp; back() {return _data.back();};
+ };
+ 
++inline void value_copy(uchar_blob&amp; dest, const unsigned_var_int&amp; src) {unsigned_var_int::value_copy(dest,src);}
++inline void value_copy(unsigned_var_int&amp; dest, const unsigned_var_int&amp; src) {unsigned_var_int::value_copy(dest,src);}
++
+ // render as C string
+ char* z_ucharint_toa(unsigned_var_int target,char* const buf,unsigned int radix);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000096.html">[Zcplusplus-commits] r329 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000098.html">[Zcplusplus-commits] r331 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#97">[ date ]</a>
+              <a href="thread.html#97">[ thread ]</a>
+              <a href="subject.html#97">[ subject ]</a>
+              <a href="author.html#97">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

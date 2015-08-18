@@ -1,0 +1,402 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r372 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r372%20-%20trunk&In-Reply-To=%3C201004102257.o3AMvsmc017260%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000138.html">
+   <LINK REL="Next"  HREF="000140.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r372 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r372%20-%20trunk&In-Reply-To=%3C201004102257.o3AMvsmc017260%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r372 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 11 00:57:54 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000138.html">[Zcplusplus-commits] r371 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000140.html">[Zcplusplus-commits] r373 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#139">[ date ]</a>
+              <a href="thread.html#139">[ thread ]</a>
+              <a href="subject.html#139">[ subject ]</a>
+              <a href="author.html#139">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-11 00:57:48 +0200 (Sun, 11 Apr 2010)
+New Revision: 372
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+preliminary support for sizeof operator
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-10 15:57:08 UTC (rev 371)
++++ trunk/CSupport.cpp	2010-04-10 22:57:48 UTC (rev 372)
+@@ -622,7 +622,14 @@
+ 	assert(C_TYPE::INT&lt;=base_type_index &amp;&amp; C_TYPE::ULLONG&gt;=base_type_index);
+ 	return (virtual_machine::std_int_enum)((base_type_index-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ }
++#/*cut-cpp*/
+ 
++static inline size_t unsigned_type_from_machine_type(virtual_machine::std_int_enum x)
++{
++	return C_TYPE::SCHAR+2*(x-virtual_machine::std_int_char)+1;
++}
++#/*cut-cpp*/
++
+ #if 0
+ static bool is_innate_type(size_t base_type_index)
+ {
+@@ -3575,6 +3582,7 @@
+ #define C99_UNARY_SUBTYPE_ADDRESSOF 4
+ #define C99_UNARY_SUBTYPE_NOT 5
+ #define C99_UNARY_SUBTYPE_COMPL 6
++#define C99_UNARY_SUBTYPE_SIZEOF 7
+ 
+ template&lt;char c&gt; static bool is_C99_unary_operator_expression(const parse_tree&amp; src)
+ {
+@@ -3614,7 +3622,24 @@
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
++#/*cut-cpp*/
+ 
++#ifndef NDEBUG
++static bool is_C99_CPP_sizeof_expression(const parse_tree&amp; src)
++{
++	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;sizeof&quot;))
++#ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++#endif
++			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;()
++			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
++//			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
++}
++#endif
++#/*cut-cpp*/
++
+ #define C99_MULT_SUBTYPE_DIV 1
+ #define C99_MULT_SUBTYPE_MOD 2
+ #define C99_MULT_SUBTYPE_MULT 3
+@@ -6149,7 +6174,204 @@
+ 
+ 	return terse_locate_CPP_unary_plusminus(src,i,types);
+ }
++#/*cut-cpp*/
+ 
++// handle C++0X sizeof... elsewhere (context-free syntax checks should be fixed first, possibly consider sizeof... a psuedo-identifier)
++static bool terse_locate_C99_CPP_sizeof(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
++{
++	assert(!src.empty&lt;0&gt;());
++	assert(i&lt;src.size&lt;0&gt;());
++	assert(!(PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags));
++	assert(src.data&lt;0&gt;()[i].is_atomic());
++
++	if (token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;sizeof&quot;))
++		{
++		assert(1&lt;src.size&lt;0&gt;()-i);
++		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
++		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		if (   (PARSE_UNARY_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
++			|| (is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1]) &amp;&amp; (PARSE_TYPE &amp; src.data&lt;0&gt;()[i+1].flags)))
++			{
++			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_SIZEOF);
++			src.c_array&lt;0&gt;()[i].type_code.set_type(unsigned_type_from_machine_type(target_machine-&gt;size_t_type()));
++			assert(is_C99_CPP_sizeof_expression(src.c_array&lt;0&gt;()[i]));
++			return true;			
++			}
++		}
++	return false;
++}
++
++static bool eval_sizeof_core_type(parse_tree&amp; src,const size_t base_type_index,const type_system&amp; types)
++{	//! \todo eventually handle the floating and complex types here as well
++	//! \todo types parameter is close to redundant
++	// floating is just a matter of modeling
++	// complex may also involve ABI issues (cf. Intel)
++	parse_tree tmp;
++	switch(base_type_index)
++	{
++	default: return false;
++	case C_TYPE::CHAR:
++	case C_TYPE::SCHAR:
++	case C_TYPE::UCHAR:
++		{	// defined to be 1: C99 6.5.3.4p3, C++98 5.3.3p1, same paragraphs in C1X and C++0X 
++		src.destroy();
++		src.index_tokens[0].token.first = &quot;1&quot;;
++		src.index_tokens[0].token.second = 1;
++		src.index_tokens[0].flags = (C_TESTFLAG_PP_NUMERAL | C_TESTFLAG_INTEGER | C_TESTFLAG_DECIMAL);
++		}	
++	case C_TYPE::SHRT:
++	case C_TYPE::USHRT:
++		{
++		if (!VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_short()),src,types)) return false;
++		src.destroy();
++		src = tmp;			
++		}
++	case C_TYPE::INT:
++	case C_TYPE::UINT:
++		{
++		if (!VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_int()),src,types)) return false;
++		src.destroy();
++		src = tmp;			
++		}
++	case C_TYPE::LONG:
++	case C_TYPE::ULONG:
++		{
++		if (!VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_long()),src,types)) return false;
++		src.destroy();
++		src = tmp;			
++		}
++	case C_TYPE::LLONG:
++	case C_TYPE::ULLONG:
++		{
++		if (!VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_long_long()),src,types)) return false;
++		src.destroy();
++		src = tmp;			
++		}
++	}
++#if 0
++	FLOAT,
++	DOUBLE,
++	LDOUBLE,
++	FLOAT__COMPLEX,
++	DOUBLE__COMPLEX,
++	LDOUBLE__COMPLEX,
++#endif
++	src.type_code.set_type(unsigned_type_from_machine_type(target_machine-&gt;size_t_type()));
++	return true;
++}
++
++static bool eval_C99_CPP_sizeof(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_CPP_sizeof_expression(src));
++	if (0==src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay())
++		{
++		if (eval_sizeof_core_type(src,src.data&lt;2&gt;()-&gt;type_code.base_type_index,types)) return true;
++		}
++	return false;
++}
++
++static bool eval_C99_sizeof(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_CPP_sizeof_expression(src));
++	if (eval_C99_CPP_sizeof(src,types)) return true;
++	if (0==src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay())
++		{
++		const enum_def* const tmp = types.get_enum_def(src.data&lt;2&gt;()-&gt;type_code.base_type_index);
++		if (tmp)
++			{
++			if (is_noticed_enumerator(src,types))
++				return eval_sizeof_core_type(src,C_TYPE::INT,types); // type is int per C99 6.7.2.2p3
++			if (!tmp-&gt;represent_as)
++				{
++				simple_error(src,&quot; applies sizeof to incomplete enumeration (C99 6.5.3.4p1)&quot;);
++				return false;
++				}
++			// process tmp-&gt;represent_as as a core type
++			// C99 6.7.2.2p4 merely requires the underlying type to be able to represent all values
++			assert(C_TYPE::CHAR&lt;=tmp-&gt;represent_as &amp;&amp; C_TYPE::INT&gt;=tmp-&gt;represent_as);
++			return eval_sizeof_core_type(src,tmp-&gt;represent_as,types);
++			}
++		}
++	return false;
++}
++
++static bool eval_CPP_sizeof(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_CPP_sizeof_expression(src));
++	if (eval_C99_CPP_sizeof(src,types)) return true;
++	if (0==src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay())
++		{
++		if (C_TYPE::WCHAR_T==src.data&lt;2&gt;()-&gt;type_code.base_type_index)
++			return eval_sizeof_core_type(src,unsigned_type_from_machine_type(target_machine-&gt;UNICODE_wchar_t()),types);
++		const enum_def* const tmp = types.get_enum_def(src.data&lt;2&gt;()-&gt;type_code.base_type_index);
++		if (tmp)
++			{
++			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
++				{
++				const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.data&lt;2&gt;()-&gt;index_tokens[0].token.first);
++				assert(tmp2);
++				assert(C_TYPE::INT&lt;=tmp2-&gt;second.first.second &amp;&amp; C_TYPE::ULLONG&gt;=tmp2-&gt;second.first.second);
++				return eval_sizeof_core_type(src,tmp2-&gt;second.first.second,types);
++				}
++			if (!tmp-&gt;represent_as)
++				{
++				simple_error(src,&quot; applies sizeof to incomplete enumeration (C++98 5.3.3p1)&quot;);
++				return false;
++				}
++			// C++0X 7.2p6 merely requires the underlying type to be able to represent all values
++			assert(C_TYPE::CHAR&lt;=tmp-&gt;represent_as &amp;&amp; C_TYPE::ULLONG&gt;=tmp-&gt;represent_as);
++			return eval_sizeof_core_type(src,tmp-&gt;represent_as,types);
++			}
++		}
++	return false;
++}
++
++static void C99_sizeof_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_CPP_sizeof_expression(src));
++	//! \todo intercept incomplete types, function types here
++	if (eval_C99_sizeof(src,types)) return;
++}
++
++static void CPP_sizeof_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_CPP_sizeof_expression(src));
++	//! \todo intercept incomplete types, function types here
++	if (eval_CPP_sizeof(src,types)) return;
++}
++
++static bool locate_C99_sizeof(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
++{
++	assert(!src.empty&lt;0&gt;());
++	assert(i&lt;src.size&lt;0&gt;());
++
++	if (	!(PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags)
++		&amp;&amp;	src.data&lt;0&gt;()[i].is_atomic()
++		&amp;&amp;	terse_locate_C99_CPP_sizeof(src,i,types))
++		{
++		C99_sizeof_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++		return true;
++		}
++	return false;
++}
++
++static bool locate_CPP_sizeof(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
++{
++	assert(!src.empty&lt;0&gt;());
++	assert(i&lt;src.size&lt;0&gt;());
++
++	if (	!(PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags)
++		&amp;&amp;	src.data&lt;0&gt;()[i].is_atomic()
++		&amp;&amp;	terse_locate_C99_CPP_sizeof(src,i,types))
++		{
++		CPP_sizeof_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++		return true;
++		}
++	return false;
++}
++#/*cut-cpp*/
++
+ /* Scan for unary operators and cast expressions
+ unary-expression:
+ 	postfix-expression
+@@ -6179,6 +6401,9 @@
+ 	if (locate_C99_logical_NOT(src,i,types)) return;
+ 	if (locate_C99_bitwise_complement(src,i,types)) return;
+ 	if (locate_C99_unary_plusminus(src,i,types)) return;
++#/*cut-cpp*/
++	if (locate_C99_sizeof(src,i,types)) return;
++#/*cut-cpp*/
+ 
+ #if 0
+ 	if (terse_locate_unary_operator(src,i))
+@@ -6192,9 +6417,6 @@
+ 	else if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;--&quot;))
+ 		{
+ 		}
+-	else if (token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;sizeof&quot;))
+-		{
+-		}
+ 	else if (   token_is_char&lt;'('&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token)
+ 			 &amp;&amp; token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[1].token))
+ 		{
+@@ -6258,6 +6480,9 @@
+ 	if (locate_CPP_logical_NOT(src,i,types)) return;
+ 	if (locate_CPP_bitwise_complement(src,i,types)) return;
+ 	if (locate_CPP_unary_plusminus(src,i,types)) return;
++#/*cut-cpp*/
++	if (locate_CPP_sizeof(src,i,types)) return;
++#/*cut-cpp*/
+ 
+ #if 0
+ 	if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;++&quot;))
+@@ -6266,9 +6491,6 @@
+ 	else if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;--&quot;))
+ 		{
+ 		}
+-	else if (token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;sizeof&quot;))
+-		{
+-		}
+ 	else if (   token_is_char&lt;'('&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token)
+ 			 &amp;&amp; token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[1].token))
+ 		{
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-04-10 15:57:08 UTC (rev 371)
++++ trunk/CSupport_pp.cpp	2010-04-10 22:57:48 UTC (rev 372)
+@@ -3468,6 +3468,7 @@
+ #define C99_UNARY_SUBTYPE_ADDRESSOF 4
+ #define C99_UNARY_SUBTYPE_NOT 5
+ #define C99_UNARY_SUBTYPE_COMPL 6
++#define C99_UNARY_SUBTYPE_SIZEOF 7
+ 
+ template&lt;char c&gt; static bool is_C99_unary_operator_expression(const parse_tree&amp; src)
+ {
+@@ -5672,9 +5673,6 @@
+ 	else if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;--&quot;))
+ 		{
+ 		}
+-	else if (token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;sizeof&quot;))
+-		{
+-		}
+ 	else if (   token_is_char&lt;'('&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token)
+ 			 &amp;&amp; token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[1].token))
+ 		{
+@@ -5746,9 +5744,6 @@
+ 	else if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;--&quot;))
+ 		{
+ 		}
+-	else if (token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;sizeof&quot;))
+-		{
+-		}
+ 	else if (   token_is_char&lt;'('&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token)
+ 			 &amp;&amp; token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[1].token))
+ 		{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000138.html">[Zcplusplus-commits] r371 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000140.html">[Zcplusplus-commits] r373 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#139">[ date ]</a>
+              <a href="thread.html#139">[ thread ]</a>
+              <a href="subject.html#139">[ subject ]</a>
+              <a href="author.html#139">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

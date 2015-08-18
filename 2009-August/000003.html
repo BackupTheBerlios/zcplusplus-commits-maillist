@@ -1,0 +1,461 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r236%20-%20in%20trunk%3A%20.%20tests/cpp%0A%09tests/cpp/line.C99%20tests/cpp.in%20tests/cpp.in/line.C99&In-Reply-To=%3C200908220855.n7M8tmwY031324%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000002.html">
+   <LINK REL="Next"  HREF="000004.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r236%20-%20in%20trunk%3A%20.%20tests/cpp%0A%09tests/cpp/line.C99%20tests/cpp.in%20tests/cpp.in/line.C99&In-Reply-To=%3C200908220855.n7M8tmwY031324%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug 22 10:55:48 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000002.html">[Zcplusplus-commits] r235 - in trunk/tests: cpp cpp/default	cpp/default/twoscomp.trap cpp.in cpp.in/default	cpp.in/default/twoscomp.trap
+</A></li>
+        <LI>Next message: <A HREF="000004.html">[Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-22 10:55:31 +0200 (Sat, 22 Aug 2009)
+New Revision: 236
+
+Added:
+   trunk/tests/cpp.in/line.C99/
+   trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in
+   trunk/tests/cpp.in/line.C99/Error_badnum1.in
+   trunk/tests/cpp.in/line.C99/Error_badnum2.in
+   trunk/tests/cpp.in/line.C99/Error_badnum3.in
+   trunk/tests/cpp.in/line.C99/Error_badnum4.in
+   trunk/tests/cpp/line.C99/
+   trunk/tests/cpp/line.C99/Error_VA_ARGS.h
+   trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp
+   trunk/tests/cpp/line.C99/Error_badnum1.h
+   trunk/tests/cpp/line.C99/Error_badnum1.hpp
+   trunk/tests/cpp/line.C99/Error_badnum2.h
+   trunk/tests/cpp/line.C99/Error_badnum2.hpp
+   trunk/tests/cpp/line.C99/Error_badnum3.h
+   trunk/tests/cpp/line.C99/Error_badnum3.hpp
+   trunk/tests/cpp/line.C99/Error_badnum4.h
+   trunk/tests/cpp/line.C99/Error_badnum4.hpp
+Removed:
+   trunk/tests/cpp/Error_line1.hpp
+   trunk/tests/cpp/Error_line2.hpp
+   trunk/tests/cpp/Error_line3.hpp
+   trunk/tests/cpp/Error_line4.hpp
+Modified:
+   trunk/CPreproc.cpp
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp.in/run_tests_C99.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+   trunk/tests/cpp/run_tests_C99.bat
+   trunk/tests/cpp/run_tests_C99.sh
+Log:
+check that we reject #line __VA_ARGS__ properly (before macro substitution).  Also, slight code size reduction exploiting modulo unsigned arithmetic.
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/CPreproc.cpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1068,7 +1068,7 @@
+ 					if (PP::LINE==directive_type)
+ 						{
+ 						if (C99_VA_ARGS_flinch(*TokenList[i],sizeof(&quot;#line &quot;)-1))
+-							{	//! \todo need test case (but need to distinguish error from the other one that'll happen)
++							{	//! \test cpp/line.C99/Error_VA_ARGS.h, cpp/line.C99/Error_VA_ARGS.hpp
+ 							message_header(*TokenList[i]);
+ 							INFORM(&quot;discarding #line directive&quot;);
+ 							TokenList.DeleteIdx(i);
+@@ -4008,10 +4008,10 @@
+ 		||	!C_PPDecimalInteger::is(TokenList[i]-&gt;data()+critical_offset,first_token_len,line_number)
+ 		||	-1==cmp(line_number,&quot;1&quot;,sizeof(&quot;1&quot;)-1)
+ 		||	 1==cmp(line_number,&quot;2147483647&quot;,sizeof(&quot;2147483647&quot;)-1))	// constant should be stringized 2^31-1
+-		{	//! \test Error_line1.hpp
+-			//! \test Error_line2.hpp
+-			//! \test Error_line3.hpp
+-			//! \test Error_line4.hpp
++		{	//! \test cpp/line.C99/Error_badnum1.h, cpp/line.C99/Error_badnum1.hpp
++			//! \test cpp/line.C99/Error_badnum2.h, cpp/line.C99/Error_badnum2.hpp
++			//! \test cpp/line.C99/Error_badnum3.h, cpp/line.C99/Error_badnum3.hpp
++			//! \test cpp/line.C99/Error_badnum4.h, cpp/line.C99/Error_badnum4.hpp
+ 		message_header(*TokenList[i]);
+ 		INC_INFORM(ERR_STR);
+ 		INFORM(&quot;#line does not have a line number between 1 and 2147483647 inclusive (C99 6.10.4p3/C++0x 16.4p3)&quot;);
+@@ -4033,17 +4033,10 @@
+ 			{
+ 			size_t j = i+1;
+ 			//! \todo loops should stop at first (valid) #line directive
+-			if (TokenList[i]-&gt;logical_line.first&lt;numeric_line_number)
+-				{
+-				const size_t inc_delta = numeric_line_number - TokenList[i]-&gt;logical_line.first;
+-				while(j&lt;TokenList.size())
+-					TokenList[j++]-&gt;logical_line.first += inc_delta;
+-				}
+-			else{
+-				const size_t dec_delta = TokenList[i]-&gt;logical_line.first - numeric_line_number;
+-				while(j&lt;TokenList.size())
+-					TokenList[j++]-&gt;logical_line.first -= dec_delta;
+-				}
++			// remember that unsigned arithmetic is modulo
++			const size_t delta = numeric_line_number - TokenList[i]-&gt;logical_line.first;
++			while(j&lt;TokenList.size())
++				TokenList[j++]-&gt;logical_line.first += delta;
+ 			};
+ 		}
+ 
+
+Deleted: trunk/tests/cpp/Error_line1.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line1.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line1.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line1.hpp
+-// #line without PPnumber
+-// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line Unwelcome
+
+Deleted: trunk/tests/cpp/Error_line2.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line2.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line2.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line2.hpp
+-// #line without integer-like PPNumber
+-// C99 standard 6.10.4 3 requires failure
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line 1.0e4
+
+Deleted: trunk/tests/cpp/Error_line3.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line3.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line3.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line3.hpp
+-// #line with PPNumber below 1
+-// C99 standard 6.10.4 3 requires failure
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line 0
+
+Deleted: trunk/tests/cpp/Error_line4.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line4.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line4.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line4.hpp
+-// #line with huge PPNumber
+-// C99 standard 6.10.4 3 requires failure
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line 12345678987654321
+
+Added: trunk/tests/cpp/line.C99/Error_VA_ARGS.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_VA_ARGS.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_VA_ARGS.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_VA_ARGS.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line __VA_ARGS__
+
+Added: trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_VA_ARGS.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line __VA_ARGS__
+
+Added: trunk/tests/cpp/line.C99/Error_badnum1.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum1.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum1.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum1.h
++// #line without PPnumber
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line Unwelcome
+
+Added: trunk/tests/cpp/line.C99/Error_badnum1.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum1.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum1.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum1.hpp
++// #line without PPnumber
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line Unwelcome
+
+Added: trunk/tests/cpp/line.C99/Error_badnum2.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum2.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum2.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum2.h
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 1.0e4
+
+Added: trunk/tests/cpp/line.C99/Error_badnum2.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum2.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum2.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum2.hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 1.0e4
+
+Added: trunk/tests/cpp/line.C99/Error_badnum3.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum3.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum3.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum3.h
++// #line with PPNumber below 1
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 0
+
+Added: trunk/tests/cpp/line.C99/Error_badnum3.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum3.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum3.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum3.hpp
++// #line with PPNumber below 1
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 0
+
+Added: trunk/tests/cpp/line.C99/Error_badnum4.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum4.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum4.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum4.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 12345678987654321
+
+Added: trunk/tests/cpp/line.C99/Error_badnum4.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum4.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum4.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum4.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 12345678987654321
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests.bat	2009-08-22 08:55:31 UTC (rev 236)
+@@ -44,6 +44,10 @@
+ @for %%f in (if.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (if.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (if.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (pragma.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (pragma.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (pragma.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests.sh	2009-08-22 08:55:31 UTC (rev 236)
+@@ -39,6 +39,8 @@
+ 	for F in ifdef.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in if.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in if.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in pragma.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in pragma.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 
+
+Modified: trunk/tests/cpp/run_tests_C99.bat
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.bat	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests_C99.bat	2009-08-22 08:55:31 UTC (rev 236)
+@@ -24,6 +24,8 @@
+ @for %%f in (ifdef.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (if.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (if.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (pragma.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (pragma.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ 
+
+Modified: trunk/tests/cpp/run_tests_C99.sh
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.sh	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests_C99.sh	2009-08-22 08:55:31 UTC (rev 236)
+@@ -25,6 +25,7 @@
+ 	for F in defined.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in ifdef.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in if.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in pragma.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 
+ 	echo Checking ISO acceptance requirements
+
+Added: trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line __VA_ARGS__
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum1.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum1.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum1.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line without PPnumber
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line Unwelcome
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum2.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum2.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum2.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 1.0e4
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum3.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum3.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum3.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line with PPNumber below 1
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 0
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum4.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum4.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum4.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 12345678987654321
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/run_tests.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -19,6 +19,7 @@
+ ERROR CPP_ISO defined.C99/Error*
+ ERROR CPP_ISO ifdef.C99/Error*
+ ERROR CPP_ISO if.C99/Error*
++ERROR CPP_ISO line.C99/Error*
+ ERROR CPP_ISO pragma.C99/Error*
+ 
+ ECHO Checking ZCC warnings on ISO-accepted code
+
+Modified: trunk/tests/cpp.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests_C99.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/run_tests_C99.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -11,6 +11,7 @@
+ ERROR CPP defined.C99/Error*
+ ERROR CPP ifdef.C99/Error*
+ ERROR CPP if.C99/Error*
++ERROR CPP line.C99/Error*
+ ERROR CPP pragma.C99/Error*
+ 
+ ECHO Checking ISO acceptance requirements
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000002.html">[Zcplusplus-commits] r235 - in trunk/tests: cpp cpp/default	cpp/default/twoscomp.trap cpp.in cpp.in/default	cpp.in/default/twoscomp.trap
+</A></li>
+	<LI>Next message: <A HREF="000004.html">[Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#3">[ date ]</a>
+              <a href="thread.html#3">[ thread ]</a>
+              <a href="subject.html#3">[ subject ]</a>
+              <a href="author.html#3">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

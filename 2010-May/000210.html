@@ -1,0 +1,626 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r443 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r443%20-%20trunk&In-Reply-To=%3C201005220739.o4M7daDf026067%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000209.html">
+   <LINK REL="Next"  HREF="000211.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r443 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r443%20-%20trunk&In-Reply-To=%3C201005220739.o4M7daDf026067%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r443 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat May 22 09:39:36 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000209.html">[Zcplusplus-commits] r442 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000211.html">[Zcplusplus-commits] r444 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#210">[ date ]</a>
+              <a href="thread.html#210">[ thread ]</a>
+              <a href="subject.html#210">[ subject ]</a>
+              <a href="author.html#210">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-22 09:39:32 +0200 (Sat, 22 May 2010)
+New Revision: 443
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+eliminate unnecessary recursion
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-20 18:10:59 UTC (rev 442)
++++ trunk/CSupport.cpp	2010-05-22 07:39:32 UTC (rev 443)
+@@ -3142,6 +3142,7 @@
+ 		zcc_errors.inc_error();
+ 		};
+ }
++#/*cut-cpp*/
+ 
+ /* deal with following type catalog
+ atomic:
+@@ -3425,9 +3426,9 @@
+ 	return 0;
+ }
+ 
+-static void C99_notice_primary_type(parse_tree&amp; src)
++static void C99_notice_primary_type_atomic(parse_tree&amp; src)
+ {
+-	if (NULL!=src.index_tokens[0].token.first)
++	if (src.is_atomic())
+ 		{
+ 		if (token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;_Bool&quot;))
+ 			{
+@@ -3442,14 +3443,18 @@
+ 			return;
+ 			}
+ 		}
++}
+ 
++static void C99_notice_primary_type(parse_tree&amp; src)
++{
++	assert(src.is_raw_list());
++	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),C99_notice_primary_type_atomic);
+ 	size_t i = 0;
+ 	size_t offset = 0;
+ 	while(i+offset&lt;src.size&lt;0&gt;())
+ 		{
+-		{
++		{	//! \todo retest object size with/without tmp_ref
+ 		parse_tree&amp; tmp_ref = src.c_array&lt;0&gt;()[i];
+-		C99_notice_primary_type(tmp_ref);
+ 		const size_t truncate_by = (!(PARSE_PRIMARY_TYPE &amp; tmp_ref.flags) &amp;&amp; NULL!=tmp_ref.index_tokens[0].token.first) 
+ 								 ? _C99_CPP_notice_multitoken_primary_type(src,i) : 0;
+ 		if (0&lt;truncate_by)
+@@ -3466,9 +3471,9 @@
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ }
+ 
+-static void CPP_notice_primary_type(parse_tree&amp; src)
++static void CPP_notice_primary_type_atomic(parse_tree&amp; src)
+ {
+-	if (NULL!=src.index_tokens[0].token.first)
++	if (src.is_atomic())
+ 		{
+ 		if (token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;bool&quot;))
+ 			{
+@@ -3489,14 +3494,18 @@
+ 			return;
+ 			}
+ 		}
++}
+ 
++static void CPP_notice_primary_type(parse_tree&amp; src)
++{
++	assert(src.is_raw_list());
++	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),CPP_notice_primary_type_atomic);
+ 	size_t i = 0;
+ 	size_t offset = 0;
+ 	while(i+offset&lt;src.size&lt;0&gt;())
+ 		{
+-		{
++		{	//! \todo retest object size with/without tmp_ref
+ 		parse_tree&amp; tmp_ref = src.c_array&lt;0&gt;()[i];
+-		CPP_notice_primary_type(tmp_ref);
+ 		const size_t truncate_by = (!(PARSE_PRIMARY_TYPE &amp; tmp_ref.flags) &amp;&amp; NULL!=tmp_ref.index_tokens[0].token.first) 
+ 								 ? _C99_CPP_notice_multitoken_primary_type(src,i) : 0;
+ 		if (0&lt;truncate_by)
+@@ -3512,6 +3521,7 @@
+ 		};
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ }
++#/*cut-cpp*/
+ 
+ //! \todo generalize -- function pointer parameter target, functor target
+ static size_t _count_identifiers(const parse_tree&amp; src)
+@@ -5415,6 +5425,7 @@
+ 	_label_one_literal(dest,types);
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
++#/*cut-cpp*/
+ 
+ // can't do much syntax-checking or immediate-evaluation here because of binary +/-
+ // unary +/- syntax checking out out of place as it's needed by all of the unary operators
+@@ -5447,8 +5458,8 @@
+ 	_label_one_literal(dest,types);
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
++#/*cut-cpp*/
+ 
+-
+ static void force_decimal_literal(parse_tree&amp; dest,const char* src,const type_system&amp; types)
+ {
+ 	assert(src &amp;&amp; *src);
+@@ -10168,9 +10179,9 @@
+ {
+ 	assert(src.is_raw_list());
+ 	_label_literals(src,types);
+-	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	C99_notice_primary_type(src);
++	if (!_match_pairs(src)) return;
+ 	// struct/union/enum specifiers can occur in all sorts of strange places
+ 	C99_notice_struct_union_enum(src);
+ }
+@@ -10322,9 +10333,9 @@
+ 	CPP_handle_pragma_relay(src);
+ 	_label_literals(src,types);
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),_label_CPP_literal);	// intercepts: true, false, this
+-	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	if (!_match_pairs(src)) return;
+ 	// do context-free part of qualified-names
+ 	CPP_notice_scope_glue(src);
+ 	// class/struct/union/enum specifiers can occur in all sorts of strange places
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-20 18:10:59 UTC (rev 442)
++++ trunk/CSupport_pp.cpp	2010-05-22 07:39:32 UTC (rev 443)
+@@ -1,4 +1,4 @@
+-// CSupport_pp.cpp
++// CSupport.cpp
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+@@ -3050,376 +3050,6 @@
+ 		};
+ }
+ 
+-/* deal with following type catalog
+-atomic:
+-bool &#147;bool&#148;	(_Bool for C)
+-char16_t &#147;char16_t&#148; (C++0x, don't worry about this yet)
+-char32_t &#147;char32_t&#148; (C++0x, don't worry about this yet)
+-wchar_t &#147;wchar_t&#148; (C++ only)
+-void &#147;void&#148;
+-
+-participates in composite:
+-char &#147;char&#148;
+-unsigned char &#147;unsigned char&#148;
+-signed char &#147;signed char&#148;
+-
+-unsigned &#147;unsigned int&#148;
+-unsigned int &#147;unsigned int&#148;
+-
+-signed &#147;int&#148;
+-signed int &#147;int&#148;
+-int &#147;int&#148;
+-
+-unsigned short int &#147;unsigned short int&#148;
+-unsigned short &#147;unsigned short int&#148;
+-
+-unsigned long int &#147;unsigned long int&#148;
+-unsigned long &#147;unsigned long int&#148;
+-
+-unsigned long long int &#147;unsigned long long int&#148;
+-unsigned long long &#147;unsigned long long int&#148;
+-
+-signed long int &#147;long int&#148;
+-signed long &#147;long int&#148;
+-
+-signed long long int &#147;long long int&#148;
+-signed long long &#147;long long int&#148;
+-long long int &#147;long long int&#148;
+-long long &#147;long long int&#148;
+-
+-long int &#147;long int&#148;
+-long &#147;long int&#148;
+-
+-signed short int &#147;short int&#148;
+-signed short &#147;short int&#148;
+-short int &#147;short int&#148;
+-short &#147;short int&#148;
+-
+-float &#147;float&#148;
+-double &#147;double&#148;
+-long double &#147;long double&#148;
+-float _Complex &quot;float&quot;
+-double _Complex &quot;double&quot;
+-long double _Complex &quot;long double&quot;
+-
+-in any case, use up a flag to track &quot;positively typename&quot; status
+-*/
+-static int _C99_CPP_notice_multitoken_primary_type_token_to_index(const zaimoni::POD_pair&lt;const char*,size_t&gt; src)
+-{
+-	assert(NULL!=src.first);
+-	return token_is_string&lt;3&gt;(src,&quot;int&quot;) ? 1
+-		: token_is_string&lt;4&gt;(src,&quot;char&quot;) ? 2
+-		: token_is_string&lt;5&gt;(src,&quot;short&quot;) ? 3
+-		: token_is_string&lt;4&gt;(src,&quot;long&quot;) ? 4 : 0;
+-}
+-
+-static size_t _C99_CPP_notice_multitoken_primary_type(parse_tree&amp; src, size_t i)
+-{
+-	assert(src.size&lt;0&gt;()&gt;i);
+-	parse_tree&amp; x = src.c_array&lt;0&gt;()[i];
+-	assert(!(PARSE_PRIMARY_TYPE &amp; x.flags) &amp;&amp; NULL!=x.index_tokens[0].token.first);
+-	if (token_is_string&lt;4&gt;(x.index_tokens[0].token,&quot;char&quot;))
+-		{
+-		x.type_code.set_type(C_TYPE::CHAR);
+-		x.flags |= PARSE_PRIMARY_TYPE;
+-		return 0;
+-		}
+-	else if (token_is_string&lt;3&gt;(x.index_tokens[0].token,&quot;int&quot;))
+-		{
+-		x.type_code.set_type(C_TYPE::INT);
+-		x.flags |= PARSE_PRIMARY_TYPE;
+-		return 0;
+-		}
+-	else if (token_is_string&lt;5&gt;(x.index_tokens[0].token,&quot;short&quot;))
+-		{
+-		const bool short_int = i&lt;src.size&lt;0&gt;()-1 &amp;&amp; robust_token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+1].index_tokens[0].token,&quot;int&quot;);
+-		if (short_int)
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;short int&quot;,0);	//! \bug should use something informative; identifier not fine
+-		x.type_code.set_type(C_TYPE::SHRT);
+-		x.flags |= PARSE_PRIMARY_TYPE;
+-		return short_int;
+-		}
+-	else if (token_is_string&lt;5&gt;(x.index_tokens[0].token,&quot;float&quot;))
+-		{
+-		const bool float__Complex = i&lt;src.size&lt;0&gt;()-1 &amp;&amp; robust_token_is_string&lt;8&gt;(src.c_array&lt;0&gt;()[i+1].index_tokens[0].token,&quot;_Complex&quot;);
+-		if (float__Complex)
+-			{
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;float _Complex&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::FLOAT__COMPLEX);
+-			}
+-		else
+-			x.type_code.set_type(C_TYPE::FLOAT);
+-		x.flags |= PARSE_PRIMARY_TYPE;
+-		return float__Complex;
+-		}
+-	else if (token_is_string&lt;6&gt;(x.index_tokens[0].token,&quot;double&quot;))
+-		{
+-		const bool double__Complex = i&lt;src.size&lt;0&gt;()-1 &amp;&amp; robust_token_is_string&lt;8&gt;(src.c_array&lt;0&gt;()[i+1].index_tokens[0].token,&quot;_Complex&quot;);
+-		if (double__Complex)
+-			{
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;double _Complex&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::DOUBLE__COMPLEX);
+-			}
+-		else
+-			x.type_code.set_type(C_TYPE::DOUBLE);
+-		x.flags |= PARSE_PRIMARY_TYPE;
+-		return double__Complex;
+-		}
+-	else if (token_is_string&lt;4&gt;(x.index_tokens[0].token,&quot;long&quot;))
+-		{
+-		const int keyindex 	= (i&gt;=src.size&lt;0&gt;()-1 || NULL==src.data&lt;0&gt;()[i+1].index_tokens[0].token.first) ? 0 
+-							: token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+1].index_tokens[0].token,&quot;int&quot;) ? 1
+-							: token_is_string&lt;4&gt;(src.c_array&lt;0&gt;()[i+1].index_tokens[0].token,&quot;long&quot;) ? 2
+-							: token_is_string&lt;6&gt;(src.c_array&lt;0&gt;()[i+1].index_tokens[0].token,&quot;double&quot;) ? 3 : 0;
+-		switch(keyindex)
+-		{
+-		case 3:	// long double
+-			{
+-			const bool long_double__Complex = (i&lt;src.size&lt;0&gt;()-2 &amp;&amp; robust_token_is_string&lt;8&gt;(src.c_array&lt;0&gt;()[i+2].index_tokens[0].token,&quot;_Complex&quot;));
+-			if (long_double__Complex)
+-				{
+-				x.grab_index_token_from_str_literal&lt;0&gt;(&quot;long double _Complex&quot;,0);	//! \bug should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::LDOUBLE__COMPLEX);
+-				}
+-			else{
+-				x.grab_index_token_from_str_literal&lt;0&gt;(&quot;long double&quot;,0);	//! \bug should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::LDOUBLE);
+-				}
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return 1+long_double__Complex;
+-			}
+-		case 2:	// long long
+-			{
+-			const bool long_long_int = (i&lt;src.size&lt;0&gt;()-2 &amp;&amp; robust_token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+2].index_tokens[0].token,&quot;int&quot;));
+-			x.grab_index_token_from_str_literal&lt;0&gt;(long_long_int ? &quot;long long int&quot; : &quot;long long&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::LLONG);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return 1+long_long_int;
+-			}
+-		case 1:	// long int
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;long int&quot;,0);	//! \bug should use something informative; identifier not fine
+-			// intentional fall-through
+-		case 0:	// long
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::LONG);
+-			src.c_array&lt;0&gt;()[i].flags |= PARSE_PRIMARY_TYPE;
+-			return keyindex;
+-		}
+-		}
+-	else if (token_is_string&lt;6&gt;(x.index_tokens[0].token,&quot;signed&quot;))
+-		{
+-		const int key_index	= (i&gt;=src.size&lt;0&gt;()-1 || NULL==src.data&lt;0&gt;()[i+1].index_tokens[0].token.first) ? 0
+-							: _C99_CPP_notice_multitoken_primary_type_token_to_index(src.data&lt;0&gt;()[i+1].index_tokens[0].token);
+-		switch(key_index)
+-		{
+-		case 4:	// signed long
+-			{
+-			const int key_index2	= (i&gt;=src.size&lt;0&gt;()-2 || NULL==src.data&lt;0&gt;()[i+2].index_tokens[0].token.first) ? 0
+-									: token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+2].index_tokens[0].token,&quot;int&quot;) ? 1
+-									: token_is_string&lt;4&gt;(src.c_array&lt;0&gt;()[i+2].index_tokens[0].token,&quot;long&quot;) ? 2 : 0;
+-			switch(key_index2)
+-			{
+-			case 2:	// signed long long
+-				{
+-				const bool signed_long_long_int = i&lt;src.size&lt;0&gt;()-3 &amp;&amp; robust_token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+3].index_tokens[0].token,&quot;int&quot;);
+-				x.grab_index_token_from_str_literal&lt;0&gt;(signed_long_long_int ? &quot;signed long long int&quot; : &quot;signed long long&quot;,0);	//! \todo should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::LLONG);
+-				x.flags |= PARSE_PRIMARY_TYPE;
+-				return 2+signed_long_long_int;
+-				}
+-			case 1:	// signed long int
+-				{
+-				x.grab_index_token_from_str_literal&lt;0&gt;(&quot;signed long int&quot;,0);	//! \bug should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::LONG);
+-				x.flags |= PARSE_PRIMARY_TYPE;
+-				return 2;
+-				}
+-			case 0:	// signed long
+-				{
+-				x.grab_index_token_from_str_literal&lt;0&gt;(&quot;signed long&quot;,0);	//! \bug should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::LONG);
+-				x.flags |= PARSE_PRIMARY_TYPE;
+-				return 1;
+-				}
+-			}
+-			break;
+-			}
+-		case 3:	// signed short
+-			{
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;signed short&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::SHRT);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return 1;
+-			}
+-		case 2:	// signed char
+-			{
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;signed char&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::SCHAR);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return 1;
+-			}
+-		case 1:	// signed int
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;signed int&quot;,0);	//! \bug should use something informative; identifier not fine
+-			// intentional fall-through
+-		case 0:	// signed
+-			x.type_code.set_type(C_TYPE::INT);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return key_index;
+-		}
+-		}
+-	else if (token_is_string&lt;8&gt;(x.index_tokens[0].token,&quot;unsigned&quot;))
+-		{
+-		const int key_index	= (i&gt;=src.size&lt;0&gt;()-1 || NULL==src.data&lt;0&gt;()[i+1].index_tokens[0].token.first) ? 0
+-							: _C99_CPP_notice_multitoken_primary_type_token_to_index(src.data&lt;0&gt;()[i+1].index_tokens[0].token);
+-		switch(key_index)
+-		{
+-		case 4:	// unsigned long
+-			{
+-			const int key_index2	= (i&gt;=src.size&lt;0&gt;()-2 || NULL==src.data&lt;0&gt;()[i+2].index_tokens[0].token.first) ? 0
+-									: token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+2].index_tokens[0].token,&quot;int&quot;) ? 1
+-									: token_is_string&lt;4&gt;(src.c_array&lt;0&gt;()[i+2].index_tokens[0].token,&quot;long&quot;) ? 2 : 0;
+-			switch(key_index2)
+-			{
+-			case 2:	// unsigned long long
+-				{
+-				const bool unsigned_long_long_int = i&lt;src.size&lt;0&gt;()-3 &amp;&amp; robust_token_is_string&lt;3&gt;(src.c_array&lt;0&gt;()[i+3].index_tokens[0].token,&quot;int&quot;);
+-				x.grab_index_token_from_str_literal&lt;0&gt;(unsigned_long_long_int ? &quot;unsigned long long int&quot; : &quot;unsigned long long&quot;,0);	//! \todo should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::ULLONG);
+-				x.flags |= PARSE_PRIMARY_TYPE;
+-				return 2+unsigned_long_long_int;
+-				}
+-			case 1:	// unsigned long int
+-				{
+-				x.grab_index_token_from_str_literal&lt;0&gt;(&quot;unsigned long int&quot;,0);	//! \bug should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::ULONG);
+-				x.flags |= PARSE_PRIMARY_TYPE;
+-				return 2;
+-				}
+-			case 0:	// unsigned long
+-				{
+-				x.grab_index_token_from_str_literal&lt;0&gt;(&quot;unsigned long&quot;,0);	//! \bug should use something informative; identifier not fine
+-				x.type_code.set_type(C_TYPE::ULONG);
+-				x.flags |= PARSE_PRIMARY_TYPE;
+-				return 1;
+-				}
+-			}
+-			break;
+-			}
+-		case 3:	// unsigned short
+-			{
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;unsigned short&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::USHRT);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return 1;
+-			}
+-		case 2:	// unsigned char
+-			{
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;unsigned char&quot;,0);	//! \bug should use something informative; identifier not fine
+-			x.type_code.set_type(C_TYPE::UCHAR);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return 1;
+-			}
+-		case 1:	// unsigned int
+-			x.grab_index_token_from_str_literal&lt;0&gt;(&quot;unsigned int&quot;,0);	//! \bug should use something informative; identifier not fine
+-			// intentional fall-through
+-		case 0:	// unsigned
+-			x.type_code.set_type(C_TYPE::UINT);
+-			x.flags |= PARSE_PRIMARY_TYPE;
+-			return key_index;
+-		}
+-		}
+-	else if (token_is_string&lt;8&gt;(x.index_tokens[0].token,&quot;_Complex&quot;))
+-		simple_error(x,&quot; does not have immediately preceding floating point type (C99 6.7.2p2)&quot;);
+-	return 0;
+-}
+-
+-static void C99_notice_primary_type(parse_tree&amp; src)
+-{
+-	if (NULL!=src.index_tokens[0].token.first)
+-		{
+-		if (token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;_Bool&quot;))
+-			{
+-			src.type_code.set_type(C_TYPE::BOOL);
+-			src.flags |= PARSE_PRIMARY_TYPE;
+-			return;
+-			};
+-		if (token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;void&quot;))
+-			{
+-			src.type_code.set_type(C_TYPE::VOID);
+-			src.flags |= PARSE_PRIMARY_TYPE;
+-			return;
+-			}
+-		}
+-
+-	size_t i = 0;
+-	size_t offset = 0;
+-	while(i+offset&lt;src.size&lt;0&gt;())
+-		{
+-		{
+-		parse_tree&amp; tmp_ref = src.c_array&lt;0&gt;()[i];
+-		C99_notice_primary_type(tmp_ref);
+-		const size_t truncate_by = (!(PARSE_PRIMARY_TYPE &amp; tmp_ref.flags) &amp;&amp; NULL!=tmp_ref.index_tokens[0].token.first) 
+-								 ? _C99_CPP_notice_multitoken_primary_type(src,i) : 0;
+-		if (0&lt;truncate_by)
+-			{
+-			src.DestroyNAtAndRotateTo&lt;0&gt;(truncate_by,i+1,src.size&lt;0&gt;()-offset);
+-			offset += truncate_by;
+-			}
+-		}
+-		// disallow consecutive primary types
+-		if (0&lt;i &amp;&amp; (PARSE_TYPE &amp; src.c_array&lt;0&gt;()[i].flags) &amp;&amp; (PARSE_TYPE &amp; src.c_array&lt;0&gt;()[i-1].flags))
+-			simple_error(src.c_array&lt;0&gt;()[i],&quot; immediately after another type&quot;);
+-		++i;
+-		};
+-	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-}
+-
+-static void CPP_notice_primary_type(parse_tree&amp; src)
+-{
+-	if (NULL!=src.index_tokens[0].token.first)
+-		{
+-		if (token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;bool&quot;))
+-			{
+-			src.type_code.set_type(C_TYPE::BOOL);
+-			src.flags |= PARSE_PRIMARY_TYPE;
+-			return;
+-			};
+-		if (token_is_string&lt;7&gt;(src.index_tokens[0].token,&quot;wchar_t&quot;))
+-			{
+-			src.type_code.set_type(C_TYPE::WCHAR_T);
+-			src.flags |= PARSE_PRIMARY_TYPE;
+-			return;
+-			}
+-		if (token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;void&quot;))
+-			{
+-			src.type_code.set_type(C_TYPE::VOID);
+-			src.flags |= PARSE_PRIMARY_TYPE;
+-			return;
+-			}
+-		}
+-
+-	size_t i = 0;
+-	size_t offset = 0;
+-	while(i+offset&lt;src.size&lt;0&gt;())
+-		{
+-		{
+-		parse_tree&amp; tmp_ref = src.c_array&lt;0&gt;()[i];
+-		CPP_notice_primary_type(tmp_ref);
+-		const size_t truncate_by = (!(PARSE_PRIMARY_TYPE &amp; tmp_ref.flags) &amp;&amp; NULL!=tmp_ref.index_tokens[0].token.first) 
+-								 ? _C99_CPP_notice_multitoken_primary_type(src,i) : 0;
+-		if (0&lt;truncate_by)
+-			{
+-			src.DestroyNAtAndRotateTo&lt;0&gt;(truncate_by,i+1,src.size&lt;0&gt;()-offset);
+-			offset += truncate_by;
+-			}
+-		}
+-		// disallow consecutive types
+-		if (0&lt;i &amp;&amp; (PARSE_TYPE &amp; src.c_array&lt;0&gt;()[i].flags) &amp;&amp; (PARSE_TYPE &amp; src.c_array&lt;0&gt;()[i-1].flags))
+-			simple_error(src.c_array&lt;0&gt;()[i],&quot; immediately after another primary type&quot;);
+-		++i;
+-		};
+-	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-}
+-
+ //! \todo generalize -- function pointer parameter target, functor target
+ static size_t _count_identifiers(const parse_tree&amp; src)
+ {
+@@ -4871,39 +4501,6 @@
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
+ 
+-// can't do much syntax-checking or immediate-evaluation here because of binary +/-
+-// unary +/- syntax checking out out of place as it's needed by all of the unary operators
+-//! \throw std::bad_alloc()
+-static void uint_to_token(uintmax_t src_int,const size_t base_type_index,POD_pair&lt;char*,lex_flags&gt;&amp; dest)
+-{
+-	assert(C_TYPE::INT&lt;=base_type_index &amp;&amp; C_TYPE::ULLONG&gt;=base_type_index);
+-	const char* const suffix = literal_suffix(base_type_index);
+-	char* buf = _new_buffer_nonNULL_throws&lt;char&gt;((VM_MAX_BIT_PLATFORM/3)+4);
+-	dest.second = literal_flags(base_type_index);
+-	dest.second |= C_TESTFLAG_DECIMAL;
+-	z_umaxtoa(src_int,buf,10);
+-	assert(!suffix || 3&gt;=strlen(suffix));
+-	assert(dest.second);
+-	if (suffix) strcat(buf,suffix);
+-
+-	// shrinking realloc should be no-fail
+-	dest.first = REALLOC(buf,ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+-}
+-
+-//! \throw std::bad_alloc()
+-static void uint_to_literal(parse_tree&amp; dest, uintmax_t src_int,const parse_tree&amp; src,const type_system&amp; types)
+-{
+-	POD_pair&lt;char*,lex_flags&gt; new_token;
+-	uint_to_token(src_int,src.type_code.base_type_index,new_token);
+-	dest.clear();
+-	dest.grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+-	dest.grab_index_token_location_from&lt;0,0&gt;(src);
+-	assert((C_TESTFLAG_CHAR_LITERAL | C_TESTFLAG_STRING_LITERAL | C_TESTFLAG_PP_NUMERAL) &amp; dest.index_tokens[0].flags);
+-	_label_one_literal(dest,types);
+-	assert(PARSE_EXPRESSION &amp; dest.flags);
+-}
+-
+-
+ static void force_decimal_literal(parse_tree&amp; dest,const char* src,const type_system&amp; types)
+ {
+ 	assert(src &amp;&amp; *src);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000209.html">[Zcplusplus-commits] r442 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000211.html">[Zcplusplus-commits] r444 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#210">[ date ]</a>
+              <a href="thread.html#210">[ thread ]</a>
+              <a href="subject.html#210">[ subject ]</a>
+              <a href="author.html#210">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,643 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r328 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r328%20-%20trunk&In-Reply-To=%3C201001150622.o0F6MKd1022377%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000094.html">
+   <LINK REL="Next"  HREF="000096.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r328 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r328%20-%20trunk&In-Reply-To=%3C201001150622.o0F6MKd1022377%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r328 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan 15 07:22:20 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000094.html">[Zcplusplus-commits] r327 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000096.html">[Zcplusplus-commits] r329 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#95">[ date ]</a>
+              <a href="thread.html#95">[ thread ]</a>
+              <a href="subject.html#95">[ subject ]</a>
+              <a href="author.html#95">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-01-15 07:22:09 +0100 (Fri, 15 Jan 2010)
+New Revision: 328
+
+Modified:
+   trunk/POSIX.dep
+   trunk/errors.cpp
+   trunk/errors.hpp
+   trunk/z_cpp.cpp
+   trunk/zcc.cpp
+Log:
+target-control options (some combinations may not be that functional yet)
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-01-11 19:12:14 UTC (rev 327)
++++ trunk/POSIX.dep	2010-01-15 06:22:09 UTC (rev 328)
+@@ -1,12 +1,12 @@
+ OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = unsigned_var_int.o CPUInfo.o unsigned_aux.o uchar_blob.o struct_type.o CSupport.o type_spec.o CPreproc_autogen.o z_cpp.o CPreproc.o load_src.o errors.o ParseTree.o type_system.o str_aux.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o AtomicString.o langroute.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
++OBJECTS_Z_CPP_LINK_PRIORITY = z_cpp.o errors.o CPreproc_autogen.o CSupport.o CPUInfo.o unsigned_var_int.o CPreproc.o unsigned_aux.o uchar_blob.o struct_type.o type_spec.o load_src.o ParseTree.o type_system.o str_aux.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o AtomicString.o langroute.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
+ 
+ OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = unsigned_var_int.o CPUInfo.o unsigned_aux.o uchar_blob.o struct_type.o CSupport.o type_spec.o CPreproc_autogen.o zcc.o CPreproc.o load_src.o errors.o ParseTree.o type_system.o str_aux.o ZParser.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o AtomicString.o langroute.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
++OBJECTS_ZCC_LINK_PRIORITY = zcc.o errors.o CPreproc_autogen.o CSupport.o CPUInfo.o unsigned_var_int.o CPreproc.o unsigned_aux.o uchar_blob.o struct_type.o type_spec.o load_src.o ParseTree.o type_system.o str_aux.o ZParser.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o AtomicString.o langroute.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
+ 
+ # dependencies
+-z_cpp.o: Zaimoni.STL/LexParse/Token.hpp CSupport.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h unsigned_fixed_int.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
+-errors.o: errors.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
++z_cpp.o: Zaimoni.STL/LexParse/Token.hpp CSupport.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h unsigned_fixed_int.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
++errors.o: errors.hpp langroute.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ langroute.o: langroute.hpp CSupport.hpp Zaimoni.STL/Logging.h Zaimoni.STL/POD.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp
+ AtomicString.o: AtomicString.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ str_aux.o: str_aux.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -31,5 +31,5 @@
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/comptest.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+ CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_fixed_int.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_fixed_int.hpp unsigned_var_int.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-zcc.o: Zaimoni.STL/LexParse/Token.hpp CSupport.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h unsigned_fixed_int.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
++zcc.o: Zaimoni.STL/LexParse/Token.hpp CSupport.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h unsigned_fixed_int.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+ ZParser.o: ZParser.hpp CSupport.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+
+Modified: trunk/errors.cpp
+===================================================================
+--- trunk/errors.cpp	2010-01-11 19:12:14 UTC (rev 327)
++++ trunk/errors.cpp	2010-01-15 06:22:09 UTC (rev 328)
+@@ -1,10 +1,12 @@
+ // errors.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;errors.hpp&quot;
++#include &quot;langroute.hpp&quot;
+ #include &quot;Zaimoni.STL/OS/mutex.hpp&quot;
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+ #include &quot;Zaimoni.STL/Logging.h&quot;
++#include &quot;Zaimoni.STL/Pure.C/format_util.h&quot;
+ 
+ const bool bool_options_default[MAX_OPT_BOOL]
+ 	= 	{	default_option(boolean_option(0)),
+@@ -41,9 +43,111 @@
+ 			default_option(string_option(1))
+ 		};
+ 
++/*! 
++ * If the given string is recognized as a language, set stringopt::lang.
++ * Otherwise, be ACID and don't update anything.
++ *
++ * \pre string is safe to pin for program duration
++ *
++ * \param x candidate language string
++ * 
++ * \return true iff language was accepted
++ */
++bool interpret_stringopt_lang(const char* x)
++{
++	const char* test = echo_valid_lang(x);
++	if (NULL==test) return false;
++	string_options[stringopt::lang] = test;
++	return true;
++}
++
++/*! 
++ * just pass through the proposed header name with only minimal reality checking
++ * 
++ * \param x system header name to check
++ * 
++ * \return bool (always true)
++ */
++static bool interpret_stringopt_system_include(const char* x)
++{
++	string_options[stringopt::system_include] = x;
++	return true;
++}
++
++string_opt_handler* option_handler_string[MAX_OPT_STRING]
++	=	{	default_handler(string_option(0)),
++			default_handler(string_option(1))
++		};
++
+ int int_options[MAX_OPT_INT]
+-	= {default_option(int_option(0))};
++	= 	{	default_option(int_option(0)),
++			default_option(int_option(1)),
++			default_option(int_option(2)),
++			default_option(int_option(3)),
++			default_option(int_option(4)),
++			default_option(int_option(5))
++		};
+ 
++
++static bool interpret_intopt_error_ub(const char* x)
++{
++	uintmax_t tmp = z_atoumax(x,10);
++	if (0&gt;=tmp || INT_MAX&lt;tmp) return false;
++	int_options[intopt::error_ub] = tmp;
++	return true;
++}
++
++static bool interpret_intopt_target_char_bit(const char* x)
++{
++	uintmax_t tmp = z_atoumax(x,10);
++	if (0&gt;=tmp || (USHRT_MAX&lt;INT_MAX ? USHRT_MAX : INT_MAX)&lt;tmp) return false;
++	int_options[intopt::target_char_bit] = tmp;
++	return true;
++}
++
++static bool interpret_intopt_target_short_size(const char* x)
++{
++	uintmax_t tmp = z_atoumax(x,10);
++	if (0&gt;=tmp || (USHRT_MAX&lt;INT_MAX ? USHRT_MAX : INT_MAX)&lt;tmp) return false;
++	int_options[intopt::target_char_bit] = tmp;
++	return true;
++}
++
++static bool interpret_intopt_target_int_size(const char* x)
++{
++	uintmax_t tmp = z_atoumax(x,10);
++	if (0&gt;=tmp || (USHRT_MAX&lt;INT_MAX ? USHRT_MAX : INT_MAX)&lt;tmp) return false;
++	int_options[intopt::target_char_bit] = tmp;
++	return true;
++}
++
++static bool interpret_intopt_target_long_size(const char* x)
++{
++	uintmax_t tmp = z_atoumax(x,10);
++	if (0&gt;=tmp || (USHRT_MAX&lt;INT_MAX ? USHRT_MAX : INT_MAX)&lt;tmp) return false;
++	int_options[intopt::target_char_bit] = tmp;
++	return true;
++}
++
++static bool interpret_intopt_target_long_long_size(const char* x)
++{
++	uintmax_t tmp = z_atoumax(x,10);
++	if (0&gt;=tmp || (USHRT_MAX&lt;INT_MAX ? USHRT_MAX : INT_MAX)&lt;tmp) return false;
++	int_options[intopt::target_char_bit] = tmp;
++	return true;
++}
++
++string_opt_handler* option_handler_int[MAX_OPT_INT]
++	=	{	default_handler(int_option(0)),
++			default_handler(int_option(1)),
++			default_handler(int_option(2)),
++			default_handler(int_option(3)),
++			default_handler(int_option(4)),
++			default_handler(int_option(5))
++		};
++
++// unsigned short _char_bit, unsigned short _sizeof_short, unsigned short _sizeof_int, unsigned short _sizeof_long, unsigned short _sizeof_long_long
++
+ zaimoni::OS::mutex errno_mutex;
+ 
+ #ifndef NDEBUG
+@@ -85,16 +189,53 @@
+ 	// platform-specific goo
+ 	// for now, go with Intel
+ 	// this should be overridable by command-line options
++	bool unreal_config = false;
+ 	// deal with the int-format options
+ 	{	// handle integer representation trait options
+ 	const unsigned int int_opt_count = bool_options[boolopt::int_sign_magnitude]+bool_options[boolopt::int_ones_complement]+bool_options[boolopt::int_twos_complement];
+-	if (2&lt;=int_opt_count) FATAL(&quot;error: the integer format options are mutually exclusive&quot;);
++	if (2&lt;=int_opt_count)
++		{
++		INFORM(&quot;error: the integer format options are mutually exclusive&quot;);
++		unreal_config = true;
++		}
+ 	if (0==int_opt_count) bool_options[boolopt::int_twos_complement] = true;	// go with intel for now
+ 	}
+ 	{	// handle char as signed/unsigned char
+ 	const unsigned int char_opt_count = bool_options[boolopt::char_is_signed]+bool_options[boolopt::char_is_unsigned];
+-	if (2&lt;=char_opt_count) FATAL(&quot;error: the character format options are mutually exclusive&quot;);
++	if (2&lt;=char_opt_count)
++		{
++		INFORM(&quot;error: the character format options are mutually exclusive&quot;);
++		unreal_config = true;
++		};
+ 	if (0==char_opt_count) bool_options[boolopt::char_is_unsigned] = true;	// unsigned makes our life easier
+ 	}
++	// target defaults: Win32 for now
++	// referencing C/C++ is intentional
++	if (!int_options[intopt::target_char_bit])
++		int_options[intopt::target_char_bit] = 8;
++	if (!int_options[intopt::target_short_size])
++		int_options[intopt::target_short_size] = 2;
++	if (!int_options[intopt::target_int_size])
++		int_options[intopt::target_int_size] = int_options[intopt::target_short_size]&gt;4 ? int_options[intopt::target_short_size] : 4;
++	if (!int_options[intopt::target_long_size])
++		int_options[intopt::target_long_size] = int_options[intopt::target_int_size]&gt;4 ? int_options[intopt::target_int_size] : 4;
++	if (!int_options[intopt::target_long_long_size])
++		int_options[intopt::target_long_long_size] = int_options[intopt::target_long_size]&gt;8 ? int_options[intopt::target_long_size] : 8;
++	if (int_options[intopt::target_short_size]&gt;int_options[intopt::target_int_size])
++		{
++		INFORM(&quot;C/C++ short must be at least as large as C/C++ int&quot;);
++		unreal_config = true;
++		}
++	if (int_options[intopt::target_int_size]&gt;int_options[intopt::target_long_size])
++		{
++		INFORM(&quot;C/C++ int must be at least as large as C/C++ long&quot;);
++		unreal_config = true;
++		}
++	if (int_options[intopt::target_long_size]&gt;int_options[intopt::target_long_long_size])
++		{
++		INFORM(&quot;C/C++ long must be at least as large as C/C++ long long&quot;);
++		unreal_config = true;
++		}
++	if (unreal_config) _fatal(&quot;Cannot target an unreal machine.&quot;);
+ }
+ 
+
+Modified: trunk/errors.hpp
+===================================================================
+--- trunk/errors.hpp	2010-01-11 19:12:14 UTC (rev 327)
++++ trunk/errors.hpp	2010-01-15 06:22:09 UTC (rev 328)
+@@ -1,5 +1,5 @@
+ // errors.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef ERRORS_HPP
+ #define ERRORS_HPP 1
+@@ -14,6 +14,8 @@
+ template&lt;class T1, class T2, class T3&gt; struct POD_triple;
+ }
+ 
++typedef bool string_opt_handler(const char* const);
++
+ #define default_option2(A) DEFAULT_##A
+ #define default_option(A) default_option2(A)
+ #define default_handler2(A) HANDLER_##A
+@@ -99,16 +101,40 @@
+ 
+ namespace intopt {
+ enum int_options {
+-	error_ub = 0
++	error_ub = 0,
+ #define int_option_0 error_ub
+ #define int_option_error_ub 0
+ #define DEFAULT_error_ub 100
+ #define HANDLER_error_ub interpret_intopt_error_ub
+-
++	target_char_bit,
++#define int_option_1 target_char_bit
++#define int_option_target_char_bit 1
++#define DEFAULT_target_char_bit 0
++#define HANDLER_target_char_bit interpret_intopt_target_char_bit
++	target_short_size,
++#define int_option_2 target_short_size
++#define int_option_target_short_size 2
++#define DEFAULT_target_short_size 0
++#define HANDLER_target_short_size interpret_intopt_target_short_size
++	target_int_size,
++#define int_option_3 target_int_size
++#define int_option_target_int_size 3
++#define DEFAULT_target_int_size 0
++#define HANDLER_target_int_size interpret_intopt_target_int_size
++	target_long_size,
++#define int_option_4 target_long_size
++#define int_option_target_long_size 4
++#define DEFAULT_target_long_size 0
++#define HANDLER_target_long_size interpret_intopt_target_long_size
++	target_long_long_size
++#define int_option_5 target_long_long_size
++#define int_option_target_long_long_size 5
++#define DEFAULT_target_long_long_size 0
++#define HANDLER_target_long_long_size interpret_intopt_target_long_long_size
+ };
+ 
+ #define int_option(A) int_option_##A
+-#define MAX_OPT_INT (intopt::error_ub+1)
++#define MAX_OPT_INT (intopt::target_long_long_size+1)
+ 
+ }
+ 
+@@ -116,7 +142,9 @@
+ extern const bool bool_options_default[MAX_OPT_BOOL];
+ extern bool bool_options[MAX_OPT_BOOL];
+ extern const char* string_options[MAX_OPT_STRING];
++extern string_opt_handler* option_handler_string[MAX_OPT_STRING];
+ extern int int_options[MAX_OPT_INT];
++extern string_opt_handler* option_handler_int[MAX_OPT_INT];
+ 
+ extern zaimoni::OS::mutex errno_mutex;
+ 
+@@ -127,6 +155,8 @@
+ int recognize_bool_option(const char* const x,const zaimoni::POD_triple&lt;const char*, size_t, const char*&gt;* option_map,size_t j);
+ int recognize_parameter_option(const char* const x,const zaimoni::POD_triple&lt;const char*, size_t, const char*&gt;* option_map,size_t j);
+ 
++bool interpret_stringopt_lang(const char* x);
++
+ void message_header(const char* const filename, size_t line_number);
+ void enforce_mutually_exclusive_exhaustive_options(void);
+ 
+
+Modified: trunk/z_cpp.cpp
+===================================================================
+--- trunk/z_cpp.cpp	2010-01-11 19:12:14 UTC (rev 327)
++++ trunk/z_cpp.cpp	2010-01-15 06:22:09 UTC (rev 328)
+@@ -15,7 +15,6 @@
+ #include &quot;errcount.hpp&quot;
+ 
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+-#include &quot;Zaimoni.STL/Pure.C/format_util.h&quot;
+ 
+ #include &lt;stdio.h&gt;
+ 
+@@ -36,35 +35,20 @@
+ 		{ &quot;--int-neg-div-rounds-away-from-zero&quot;,	boolopt::int_neg_div_rounds_away_from_zero, 	&quot;make -3/-2==-2 contrary to C99 recommendation\n&quot;}
+ 	};
+ 
+-typedef bool string_opt_handler(const char* const);
+-
+ static const POD_triple&lt;const char*, size_t, const char*&gt; option_map_string[]
+ 	=	{	{ &quot;-x&quot;,	stringopt::lang, &quot;language override\n&quot;},		// GCC compatibility
+ 			{ &quot;--system-include&quot;,	stringopt::system_include, &quot;unpreprocessed #include&lt;...&gt; to stdout\n&quot;}
+ 		};
+ 
+ static const POD_triple&lt;const char*, size_t, const char*&gt; option_map_int[]
+-=	{	{ &quot;-fmax-errors&quot;,		intopt::error_ub, 					&quot;how many errors are too many (default 100)\n&quot;}	// GFortran compatibility
+-	};
++=	{	{ &quot;-fmax-errors&quot;,		intopt::error_ub, 					&quot;how many errors are too many (default 100)\n&quot;},	// GFortran compatibility
++		{&quot;--target-char-bit&quot;,	intopt::target_char_bit,	&quot;target CHAR_BIT\n&quot;},
++		{&quot;--target-sizeof-short&quot;,	intopt::target_short_size,	&quot;target sizeof(short), sizeof(unsigned short)\n&quot;},
++		{&quot;--target-sizeof-int&quot;,	intopt::target_int_size,	&quot;target sizeof(int), sizeof(unsigned int)\n&quot;},
++		{&quot;--target-sizeof-long&quot;,	intopt::target_long_size,	&quot;target sizeof(long), sizeof(unsigned long)\n&quot;},
++		{&quot;--target-sizeof-long-long&quot;,	intopt::target_long_long_size,	&quot;target sizeof(long long), sizeof(unsigned long long)\n&quot;}
++	}; 
+ 
+-/*! 
+- * If the given string is recognized as a language, set stringopt::lang.
+- * Otherwise, be ACID and don't update anything.
+- *
+- * \pre string is safe to pin for program duration
+- *
+- * \param x candidate language string
+- * 
+- * \return true iff language was accepted
+- */
+-static bool interpret_stringopt_lang(const char* x)
+-{
+-	const char* test = echo_valid_lang(x);
+-	if (NULL==test) return false;
+-	string_options[stringopt::lang] = test;
+-	return true;
+-}
+-
+ void guess_lang_from_filename(const char* const x)
+ {
+ 	if (!x || !*x) return;
+@@ -92,35 +76,6 @@
+ 		}
+ }
+ 
+-/*! 
+- * just pass through the proposed header name with only minimal reality checking
+- * 
+- * \param x system header name to check
+- * 
+- * \return bool (always true)
+- */
+-bool interpret_stringopt_system_include(const char* x)
+-{
+-	string_options[stringopt::system_include] = x;
+-	return true;
+-}
+-
+-static string_opt_handler* option_handler_string[MAX_OPT_STRING]
+-	=	{	default_handler(string_option(0)),
+-			default_handler(string_option(1))
+-		};
+-
+-static bool interpret_intopt_error_ub(const char* x)
+-{
+-	uintmax_t tmp = z_atoumax(x,10);
+-	if (0&gt;=tmp || INT_MAX&lt;tmp) return false;
+-	int_options[intopt::error_ub] = tmp;
+-	return true;
+-}
+-
+-static string_opt_handler* option_handler_int[MAX_OPT_STRING]
+-	=	{default_handler(int_option(0))};
+-
+ static bool process_options(const size_t argc, char* argv[])
+ {
+ 	size_t last_arg_used_in_option = 0;
+@@ -239,18 +194,16 @@
+ 	// error count enforcement
+ 	zcc_errors.set_error_ub(int_options[intopt::error_ub]);
+ 
+-	virtual_machine::CPUInfo target_machine(8,2,4,4,8,(bool_options[boolopt::int_twos_complement]) ? virtual_machine::twos_complement : (bool_options[boolopt::int_ones_complement]) ? virtual_machine::ones_complement : virtual_machine::sign_and_magnitude,bool_options[boolopt::char_is_signed],virtual_machine::std_int_int);
++	virtual_machine::CPUInfo target_machine(int_options[intopt::target_char_bit],
++											int_options[intopt::target_short_size],
++											int_options[intopt::target_int_size],
++											int_options[intopt::target_long_size],
++											int_options[intopt::target_long_long_size],
++											(bool_options[boolopt::int_twos_complement]) ? virtual_machine::twos_complement : (bool_options[boolopt::int_ones_complement]) ? virtual_machine::ones_complement : virtual_machine::sign_and_magnitude,
++											bool_options[boolopt::char_is_signed],
++											virtual_machine::std_int_int);
+ 
+ 	// check that we actually can preprocess for this machine
+-	//! \todo remove these limitations at some point
+-	if (CHAR_BIT&lt;target_machine.C_char_bit())
+-		{
+-		INC_INFORM(&quot;error: target machine has larger CHAR_BIT than ours [&quot;);
+-		INC_INFORM(target_machine.C_char_bit());
+-		INC_INFORM(&quot; vs &quot;);
+-		INC_INFORM((uintmax_t)(CHAR_BIT));
+-		FATAL(&quot;]&quot;);
+-		};
+ 	if (7&gt;target_machine.C_char_bit())
+ 		{
+ 		INC_INFORM(&quot;error: target machine CHAR_BIT&lt;7 cannot represent C source character set&quot;);
+@@ -259,14 +212,6 @@
+ 		INC_INFORM((uintmax_t)(CHAR_BIT));
+ 		FATAL(&quot;]&quot;);
+ 		};
+-	if (C_UNICODE_MAX&lt;target_machine.unsigned_max(target_machine.UNICODE_wchar_t()))
+-		{
+-		INC_INFORM(&quot;error: target machine has larger unsigned WCHAR_MAX than ours [&quot;);
+-		INC_INFORM(target_machine.unsigned_max(target_machine.UNICODE_wchar_t()).to_uint());
+-		INC_INFORM(&quot; vs &quot;);
+-		INC_INFORM((uintmax_t)(C_UNICODE_MAX));
+-		FATAL(&quot;]&quot;);
+-		};
+ 
+ 	try	{
+ 		autovalarray_ptr&lt;Token&lt;char&gt;* &gt; TokenList;
+
+Modified: trunk/zcc.cpp
+===================================================================
+--- trunk/zcc.cpp	2010-01-11 19:12:14 UTC (rev 327)
++++ trunk/zcc.cpp	2010-01-15 06:22:09 UTC (rev 328)
+@@ -17,7 +17,6 @@
+ #include &quot;ZParser.hpp&quot;
+ 
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+-#include &quot;Zaimoni.STL/Pure.C/format_util.h&quot;
+ 
+ #include &lt;stdio.h&gt;
+ 
+@@ -40,35 +39,20 @@
+ 		{ &quot;-Wbackport&quot;,	boolopt::warn_backport,	&quot;Warn when something legal would be an error under an older standard\n&quot;}
+ 	};
+ 
+-typedef bool string_opt_handler(const char* const);
+-
+ static const POD_triple&lt;const char*, size_t, const char*&gt; option_map_string[]
+ 	=	{	{ &quot;-x&quot;,	stringopt::lang, &quot;language override\n&quot;},		// GCC compatibility
+ 			{ &quot;--system-include&quot;,	stringopt::system_include, &quot;unpreprocessed #include&lt;...&gt; to stdout\n&quot;}
+ 		};
+ 
+ static const POD_triple&lt;const char*, size_t, const char*&gt; option_map_int[]
+-=	{	{ &quot;-fmax-errors&quot;,		intopt::error_ub, 					&quot;how many errors are too many (default 100)\n&quot;}	// GFortran compatibility
+-	};
++=	{	{ &quot;-fmax-errors&quot;,		intopt::error_ub, 					&quot;how many errors are too many (default 100)\n&quot;},	// GFortran compatibility
++		{&quot;--target-char-bit&quot;,	intopt::target_char_bit,	&quot;target CHAR_BIT\n&quot;},
++		{&quot;--target-sizeof-short&quot;,	intopt::target_short_size,	&quot;target sizeof(short), sizeof(unsigned short)\n&quot;},
++		{&quot;--target-sizeof-int&quot;,	intopt::target_int_size,	&quot;target sizeof(int), sizeof(unsigned int)\n&quot;},
++		{&quot;--target-sizeof-long&quot;,	intopt::target_long_size,	&quot;target sizeof(long), sizeof(unsigned long)\n&quot;},
++		{&quot;--target-sizeof-long-long&quot;,	intopt::target_long_long_size,	&quot;target sizeof(long long), sizeof(unsigned long long)\n&quot;}
++	}; 
+ 
+-/*! 
+- * If the given string is recognized as a language, set stringopt::lang.
+- * Otherwise, be ACID and don't update anything.
+- *
+- * \pre string is safe to pin for program duration
+- *
+- * \param x candidate language string
+- * 
+- * \return true iff language was accepted
+- */
+-static bool interpret_stringopt_lang(const char* x)
+-{
+-	const char* test = echo_valid_lang(x);
+-	if (NULL==test) return false;
+-	string_options[stringopt::lang] = test;
+-	return true;
+-}
+-
+ void guess_lang_from_filename(const char* const x)
+ {
+ 	if (!x || !*x) return;
+@@ -96,35 +80,6 @@
+ 		}
+ }
+ 
+-/*! 
+- * just pass through the proposed header name with only minimal reality checking
+- * 
+- * \param x system header name to check
+- * 
+- * \return bool (always true)
+- */
+-bool interpret_stringopt_system_include(const char* x)
+-{
+-	string_options[stringopt::system_include] = x;
+-	return true;
+-}
+-
+-static string_opt_handler* option_handler_string[MAX_OPT_STRING]
+-	=	{	default_handler(string_option(0)),
+-			default_handler(string_option(1))
+-		};
+-
+-static bool interpret_intopt_error_ub(const char* x)
+-{
+-	uintmax_t tmp = z_atoumax(x,10);
+-	if (0&gt;=tmp || INT_MAX&lt;tmp) return false;
+-	int_options[intopt::error_ub] = tmp;
+-	return true;
+-}
+-
+-static string_opt_handler* option_handler_int[MAX_OPT_STRING]
+-	=	{default_handler(int_option(0))};
+-
+ static bool process_options(const size_t argc, char* argv[])
+ {
+ 	size_t last_arg_used_in_option = 0;
+@@ -243,18 +198,16 @@
+ 	// error count enforcement
+ 	zcc_errors.set_error_ub(int_options[intopt::error_ub]);
+ 
+-	virtual_machine::CPUInfo target_machine(8,2,4,4,8,(bool_options[boolopt::int_twos_complement]) ? virtual_machine::twos_complement : (bool_options[boolopt::int_ones_complement]) ? virtual_machine::ones_complement : virtual_machine::sign_and_magnitude,bool_options[boolopt::char_is_signed],virtual_machine::std_int_int);
++	virtual_machine::CPUInfo target_machine(int_options[intopt::target_char_bit],
++											int_options[intopt::target_short_size],
++											int_options[intopt::target_int_size],
++											int_options[intopt::target_long_size],
++											int_options[intopt::target_long_long_size],
++											(bool_options[boolopt::int_twos_complement]) ? virtual_machine::twos_complement : (bool_options[boolopt::int_ones_complement]) ? virtual_machine::ones_complement : virtual_machine::sign_and_magnitude,
++											bool_options[boolopt::char_is_signed],
++											virtual_machine::std_int_int);
+ 
+ 	// check that we actually can preprocess for this machine
+-	//! \todo remove these limitations at some point
+-	if (CHAR_BIT&lt;target_machine.C_char_bit())
+-		{
+-		INC_INFORM(&quot;error: target machine has larger CHAR_BIT than ours [&quot;);
+-		INC_INFORM(target_machine.C_char_bit());
+-		INC_INFORM(&quot; vs &quot;);
+-		INC_INFORM((uintmax_t)(CHAR_BIT));
+-		FATAL(&quot;]&quot;);
+-		};
+ 	if (7&gt;target_machine.C_char_bit())
+ 		{
+ 		INC_INFORM(&quot;error: target machine CHAR_BIT&lt;7 cannot represent C source character set&quot;);
+@@ -263,14 +216,6 @@
+ 		INC_INFORM((uintmax_t)(CHAR_BIT));
+ 		FATAL(&quot;]&quot;);
+ 		};
+-	if (C_UNICODE_MAX&lt;target_machine.unsigned_max(target_machine.UNICODE_wchar_t()))
+-		{
+-		INC_INFORM(&quot;error: target machine has larger unsigned WCHAR_MAX than ours [&quot;);
+-		INC_INFORM(target_machine.unsigned_max(target_machine.UNICODE_wchar_t()).to_uint());
+-		INC_INFORM(&quot; vs &quot;);
+-		INC_INFORM((uintmax_t)(C_UNICODE_MAX));
+-		FATAL(&quot;]&quot;);
+-		};
+ 
+ 	try	{
+ 		autovalarray_ptr&lt;Token&lt;char&gt;*&gt; TokenList;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000094.html">[Zcplusplus-commits] r327 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000096.html">[Zcplusplus-commits] r329 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#95">[ date ]</a>
+              <a href="thread.html#95">[ thread ]</a>
+              <a href="subject.html#95">[ subject ]</a>
+              <a href="author.html#95">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

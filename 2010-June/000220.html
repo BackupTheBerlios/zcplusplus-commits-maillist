@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r453 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r453%20-%20trunk&In-Reply-To=%3C201006030314.o533E03A009742%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000219.html">
+   <LINK REL="Next"  HREF="000221.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r453 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r453%20-%20trunk&In-Reply-To=%3C201006030314.o533E03A009742%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r453 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun  3 05:14:00 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000219.html">[Zcplusplus-commits] r452 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000221.html">[Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#220">[ date ]</a>
+              <a href="thread.html#220">[ thread ]</a>
+              <a href="subject.html#220">[ subject ]</a>
+              <a href="author.html#220">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-03 05:13:56 +0200 (Thu, 03 Jun 2010)
+New Revision: 453
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+reduce memory footprint for representing C++ namespaces; place for a formatting hook for ParseTree
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-02 04:59:29 UTC (rev 452)
++++ trunk/CSupport.cpp	2010-06-03 03:13:56 UTC (rev 453)
+@@ -13353,13 +13353,13 @@
+ static bool is_CPP_namespace(const parse_tree&amp; src)
+ {
+ 	return		robust_token_is_string&lt;9&gt;(src.index_tokens[0].token,&quot;namespace&quot;)
+-			&amp;&amp;	2==src.size&lt;2&gt;()
+-			&amp;&amp;	src.data&lt;2&gt;()[0].is_atomic()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	1==src.size&lt;2&gt;()
+ #ifndef NDEBUG
+-			&amp;&amp;	C_TESTFLAG_IDENTIFIER==src.data&lt;2&gt;()[0].index_tokens[0].flags
++			&amp;&amp;	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
+ #endif
+-			&amp;&amp;	robust_token_is_char&lt;'{'&gt;(src.data&lt;2&gt;()[1].index_tokens[0].token)
+-			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.data&lt;2&gt;()[1].index_tokens[1].token);
++			&amp;&amp;	robust_token_is_char&lt;'{'&gt;(src.data&lt;2&gt;()[0].index_tokens[0].token)
++			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.data&lt;2&gt;()[0].index_tokens[1].token);
+ }
+ #endif
+ 
+@@ -13790,14 +13790,14 @@
+ 					//! \test zcc/namespace.CPP/Warn_emptybody2.hpp
+ 					// regardless of official linkage, entities in anonymous namespaces aren't very accessible outside of the current translation unit;
+ 					// any reasonable linker thinks they have static linkage
+-				src.c_array&lt;0&gt;()[i].resize&lt;2&gt;(2);
+-				src.c_array&lt;0&gt;()[i+1].OverwriteInto(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[1]);
++				src.c_array&lt;0&gt;()[i].resize&lt;2&gt;(1);
++				src.c_array&lt;0&gt;()[i+1].OverwriteInto(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0]);
+ 				src.DeleteIdx&lt;0&gt;(i+1);
+ 
+ 				// anonymous namespace names are technically illegal
+ 				// GCC uses &lt;unknown&gt; and handles uniqueness at link time
+-				src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0].grab_index_token_from_str_literal&lt;0&gt;(&quot;&lt;unknown&gt;&quot;,C_TESTFLAG_IDENTIFIER);	// pretend it's an identifier
+-				src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0].grab_index_token_location_from&lt;0,0&gt;(src.data&lt;0&gt;()[i].data&lt;2&gt;()[1]);	// inject it at where the namespace body starts
++				src.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;1&gt;(&quot;&lt;unknown&gt;&quot;,C_TESTFLAG_IDENTIFIER);	// pretend it's an identifier
++				src.c_array&lt;0&gt;()[i].grab_index_token_location_from&lt;1,0&gt;(src.data&lt;0&gt;()[i].data&lt;2&gt;()[0]);	// inject it at where the namespace body starts
+ 				src.c_array&lt;0&gt;()[i].flags |= parse_tree::GOOD_LINE_BREAK;
+ 				assert(is_CPP_namespace(src.data&lt;0&gt;()[i]));
+ 
+@@ -13807,11 +13807,11 @@
+ 					strcpy(new_active_namespace,active_namespace);
+ 					strcat(new_active_namespace,&quot;::&lt;unknown&gt;&quot;);
+ 					strcat(new_active_namespace,&quot;&quot;);
+-					CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[1],types,new_active_namespace);
++					CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0],types,new_active_namespace);
+ 					free(new_active_namespace);
+ 					}
+ 				else{
+-					CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[1],types,&quot;&lt;unknown&gt;&quot;);
++					CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0],types,&quot;&lt;unknown&gt;&quot;);
+ 					}
+ 				++i;
+ 				continue;
+@@ -13852,9 +13852,10 @@
+ 			// namespace definition body: postfix arg 2
+ 			// the namespace name is likely to be reused: atomic string target
+ 			register_token&lt;0&gt;(src.c_array&lt;0&gt;()[i+1]);
+-			src.c_array&lt;0&gt;()[i].resize&lt;2&gt;(2);
+-			src.c_array&lt;0&gt;()[i+1].OverwriteInto(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0]);
+-			src.c_array&lt;0&gt;()[i+2].OverwriteInto(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[1]);
++			src.c_array&lt;0&gt;()[i].resize&lt;2&gt;(1);
++			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
++			src.c_array&lt;0&gt;()[i].grab_index_token_location_from&lt;1,0&gt;(src.data&lt;0&gt;()[i+1]);	// inject it at where the namespace body starts
++			src.c_array&lt;0&gt;()[i+2].OverwriteInto(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0]);
+ 			src.DeleteNSlotsAt&lt;0&gt;(2,i+1);
+ 			src.c_array&lt;0&gt;()[i].flags |= parse_tree::GOOD_LINE_BREAK;
+ 			assert(is_CPP_namespace(src.data&lt;0&gt;()[i]));
+@@ -13862,12 +13863,12 @@
+ 			if (NULL==active_namespace)
+ 				{	// global
+ 					//! \todo expand namespace aliases
+-				CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[1],types,src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0].index_tokens[0].token.first);
++				CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0],types,src.c_array&lt;0&gt;()[i].index_tokens[1].token.first);
+ 				}
+ 			else{	// nested
+ 					//! \todo expand namespace aliases
+-				char* const new_active_namespace = type_system::namespace_concatenate(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0].index_tokens[0].token.first,active_namespace,&quot;::&quot;);
+-				CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[1],types,new_active_namespace);
++				char* const new_active_namespace = type_system::namespace_concatenate(src.c_array&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,&quot;::&quot;);
++				CPP_ParseNamespace(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0],types,new_active_namespace);
+ 				free(new_active_namespace);
+ 				}
+ 			++i;
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2010-06-02 04:59:29 UTC (rev 452)
++++ trunk/ParseTree.cpp	2010-06-03 03:13:56 UTC (rev 453)
+@@ -5,6 +5,8 @@
+ 
+ using namespace zaimoni;
+ 
++bool (*parse_tree::hook_INC_INFORM)(const parse_tree&amp;) = NULL;
++
+ // in case we have to debug memory corruption
+ // #define IRRATIONAL_CAUTION 1
+ 
+@@ -452,6 +454,7 @@
+ 
+ void INC_INFORM(const parse_tree&amp; src)
+ {	// generally...
++	if (parse_tree::hook_INC_INFORM &amp;&amp; parse_tree::hook_INC_INFORM(src)) return;
+ 	// prefix data
+ #define USER_MASK (ULONG_MAX-((1U&lt;&lt;parse_tree::PREDEFINED_STRICT_UB)-1))
+ 	const lex_flags my_rank = src.flags &amp; USER_MASK;
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-06-02 04:59:29 UTC (rev 452)
++++ trunk/ParseTree.hpp	2010-06-03 03:13:56 UTC (rev 453)
+@@ -49,6 +49,9 @@
+ 	// XXX synchronized against type_system.hpp
+     type_spec type_code;
+ 
++    // language-specific helper for INC_INFORM
++    static bool (*hook_INC_INFORM)(const parse_tree&amp;); 
++    
+ 	void MoveInto(parse_tree&amp; dest);
+ 	void OverwriteInto(parse_tree&amp; dest);
+ 
+@@ -310,6 +313,7 @@
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)&gt;src_idx);
+ 		if (own_index_token&lt;dest_idx&gt;()) free(const_cast&lt;char*&gt;(index_tokens[dest_idx].token.first));
+ 		index_tokens[dest_idx].token = tmp.index_tokens[src_idx].token;
++		index_tokens[dest_idx].flags = tmp.index_tokens[src_idx].flags;
+ 		control_index_token&lt;dest_idx&gt;(tmp.own_index_token&lt;src_idx&gt;());
+ 		tmp.control_index_token&lt;src_idx&gt;(false);
+ 		}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000219.html">[Zcplusplus-commits] r452 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000221.html">[Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#220">[ date ]</a>
+              <a href="thread.html#220">[ thread ]</a>
+              <a href="subject.html#220">[ subject ]</a>
+              <a href="author.html#220">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

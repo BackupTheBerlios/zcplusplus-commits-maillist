@@ -1,0 +1,341 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r454%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201006052309.o55N9ovE011338%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000220.html">
+   <LINK REL="Next"  HREF="000222.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r454%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201006052309.o55N9ovE011338%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Jun  6 01:09:50 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000220.html">[Zcplusplus-commits] r453 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000222.html">[Zcplusplus-commits] r455 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#221">[ date ]</a>
+              <a href="thread.html#221">[ thread ]</a>
+              <a href="subject.html#221">[ subject ]</a>
+              <a href="author.html#221">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-06 01:09:38 +0200 (Sun, 06 Jun 2010)
+New Revision: 454
+
+Added:
+   trunk/Zaimoni.STL/Perl_localize.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/POSIX.dep
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+actually use that language-specific printing hook
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/CSupport.cpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -38,6 +38,7 @@
+ #include &quot;struct_type.hpp&quot;
+ #include &quot;kleene_star.hpp&quot;
+ #include &quot;cond_act.hpp&quot;
++#include &quot;Zaimoni.STL/Perl_localize.hpp&quot;
+ #/*cut-cpp*/
+ #include &quot;CheckReturn.hpp&quot;
+ 
+@@ -12882,6 +12883,113 @@
+ 	return true;
+ }
+ 
++// language-specific printing overrides
++static void render_type(const type_spec&amp; src,const type_system&amp; types, const char* const name)
++{	// function types will need a different naming scheme
++	const char* const type_name = types.name(src.base_type_index);
++	// each ptr to array transition needs a parentheses pair to group properly
++	size_t i = src.pointer_power;
++	size_t start_ptr_scan = src.pointer_power;
++	while(0&lt;i)
++		{
++		if (type_spec::_array &amp; src.qualifier(i--)) continue;
++		if (0&lt;i &amp;&amp; (type_spec::_array &amp; src.qualifier(i)) &amp;&amp; !(type_spec::_array &amp; src.qualifier(i+1)))
++			{
++			while(--start_ptr_scan&gt;i)
++				{
++				if (type_spec::_array &amp; src.qualifier(start_ptr_scan+1)) continue;
++				INC_INFORM('*');
++				if (type_spec::_restrict &amp; src.qualifier(start_ptr_scan+1))
++					INC_INFORM(&quot;restrict &quot;);
++				if (type_spec::_const &amp; src.qualifier(start_ptr_scan+1))
++					INC_INFORM(&quot;const &quot;);
++				if (type_spec::_volatile &amp; src.qualifier(start_ptr_scan+1))
++					INC_INFORM(&quot;volatile &quot;);
++				};
++			INC_INFORM(&quot;(&quot;);
++			}
++		}
++		
++	if (type_spec::_const &amp; src.qualifier&lt;0&gt;())
++		INC_INFORM(&quot;const &quot;);
++	if (type_spec::_volatile &amp; src.qualifier&lt;0&gt;())
++		INC_INFORM(&quot;volatile &quot;);
++	INC_INFORM(type_name ? type_name : &quot;&lt;unresolved type&gt;&quot;);
++
++	while(0&lt;start_ptr_scan--)
++		{
++		if (type_spec::_array &amp; src.qualifier(start_ptr_scan+1)) continue;
++		INC_INFORM('*');
++		if (type_spec::_restrict &amp; src.qualifier(start_ptr_scan+1))
++			INC_INFORM(&quot;restrict &quot;);
++		if (type_spec::_const &amp; src.qualifier(start_ptr_scan+1))
++			INC_INFORM(&quot;const &quot;);
++		if (type_spec::_volatile &amp; src.qualifier(start_ptr_scan+1))
++			INC_INFORM(&quot;volatile &quot;);		
++		}
++
++	if (name &amp;&amp; *name) INC_INFORM(name);
++		
++	i = 0;
++	while(i&lt;src.pointer_power)
++		{
++		if (!(type_spec::_array &amp; src.qualifier(++i)))
++			{
++			if (type_spec::_array &amp; src.qualifier(i-1))
++				INC_INFORM(&quot;)&quot;);
++			continue;
++			}
++		INC_INFORM(&quot;[&quot;);
++		if (src.extent_vector[i-1]) INC_INFORM(src.extent_vector[i-1]); 
++		INC_INFORM(&quot;]&quot;);
++		}
++	
++}
++
++static bool C99_hook_INC_INFORM(const parse_tree&amp; src)
++{
++	if (PARSE_TYPE &amp; src.flags)
++		{
++		assert(parse_tree::types);
++		render_type(src.type_code,*parse_tree::types,NULL);
++		return true;
++		}
++	return false;
++}
++
++static bool is_CPP_namespace(const parse_tree&amp; src)
++{
++	return	robust_token_is_string&lt;9&gt;(src.index_tokens[0].token,&quot;namespace&quot;)
++		&amp;&amp;	src.index_tokens[1].token.first
++		&amp;&amp;	1==src.size&lt;2&gt;()
++#ifndef NDEBUG
++		&amp;&amp;	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
++#endif
++		&amp;&amp;	robust_token_is_char&lt;'{'&gt;(src.data&lt;2&gt;()[0].index_tokens[0].token)
++		&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.data&lt;2&gt;()[0].index_tokens[1].token);
++}
++
++static bool CPP_hook_INC_INFORM(const parse_tree&amp; src)
++{
++	if (PARSE_TYPE &amp; src.flags)
++		{
++		assert(parse_tree::types);
++		render_type(src.type_code,*parse_tree::types,NULL);
++		return true;
++		}
++	if (is_CPP_namespace(src) &amp;&amp; robust_token_is_string&lt;9&gt;(src.index_tokens[1].token,&quot;&lt;unknown&gt;&quot;))
++		{	// make anonymous namespaces look like authentic source code
++		// first index token
++		INC_INFORM(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
++		INC_INFORM(' ');
++		// postfix data
++		INC_INFORM(*src.data&lt;2&gt;());
++		if (src.flags &amp; parse_tree::GOOD_LINE_BREAK) INC_INFORM('\n');
++		return true;
++		};
++	return false;
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -12905,6 +13013,8 @@
+ 	// note that typedefs and struct/union declarations/definitions create new types; if this happens we are no longer context-free (so second pass with context-based parsing)
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
++	zaimoni::Perl::localize&lt;bool (*)(const parse_tree&amp;)&gt;(parse_tree::hook_INC_INFORM,C99_hook_INC_INFORM);
++	zaimoni::Perl::localize&lt;type_system*&gt;(parse_tree::types,&amp;types);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -13349,20 +13459,6 @@
+ 		}
+ }
+ 
+-#ifndef NDEBUG
+-static bool is_CPP_namespace(const parse_tree&amp; src)
+-{
+-	return		robust_token_is_string&lt;9&gt;(src.index_tokens[0].token,&quot;namespace&quot;)
+-			&amp;&amp;	src.index_tokens[1].token.first
+-			&amp;&amp;	1==src.size&lt;2&gt;()
+-#ifndef NDEBUG
+-			&amp;&amp;	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
+-#endif
+-			&amp;&amp;	robust_token_is_char&lt;'{'&gt;(src.data&lt;2&gt;()[0].index_tokens[0].token)
+-			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.data&lt;2&gt;()[0].index_tokens[1].token);
+-}
+-#endif
+-
+ // handle namespaces or else
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc
+@@ -14098,6 +14194,8 @@
+ //! \throw std::bad_alloc
+ static void CPP_ContextParse(parse_tree&amp; src,type_system&amp; types)
+ {
++	zaimoni::Perl::localize&lt;bool (*)(const parse_tree&amp;)&gt;(parse_tree::hook_INC_INFORM,CPP_hook_INC_INFORM);
++	zaimoni::Perl::localize&lt;type_system*&gt;(parse_tree::types,&amp;types);
+ 	CPP_ParseNamespace(src,types,NULL);
+ }
+ #/*cut-cpp*/
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/POSIX.dep	2010-06-05 23:09:38 UTC (rev 454)
+@@ -35,7 +35,7 @@
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+-CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic!
+ _lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp Zaimoni.STL/Perl_localize.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio!
+ _autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/l!
+ ogic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/ParseTree.cpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -6,6 +6,7 @@
+ using namespace zaimoni;
+ 
+ bool (*parse_tree::hook_INC_INFORM)(const parse_tree&amp;) = NULL;
++type_system* parse_tree::types = NULL;
+ 
+ // in case we have to debug memory corruption
+ // #define IRRATIONAL_CAUTION 1
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/ParseTree.hpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -13,6 +13,7 @@
+ // Unfortunately, new/delete and realloc don't mix -- and this type can have multiple lists of tokens underneath it....
+ 
+ struct parse_tree;
++class type_system;
+ 
+ namespace boost {
+ 
+@@ -49,8 +50,9 @@
+ 	// XXX synchronized against type_system.hpp
+     type_spec type_code;
+ 
+-    // language-specific helper for INC_INFORM
+-    static bool (*hook_INC_INFORM)(const parse_tree&amp;); 
++    // language-specific helpers for INC_INFORM
++    static bool (*hook_INC_INFORM)(const parse_tree&amp;);
++    static type_system* types;
+     
+ 	void MoveInto(parse_tree&amp; dest);
+ 	void OverwriteInto(parse_tree&amp; dest);
+
+Added: trunk/Zaimoni.STL/Perl_localize.hpp
+===================================================================
+--- trunk/Zaimoni.STL/Perl_localize.hpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/Zaimoni.STL/Perl_localize.hpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -0,0 +1,38 @@
++// Perl_localize.hpp
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++#ifndef ZAIMONI_STL_PERL_LOCALIZE_HPP
++#define ZAIMONI_STL_PERL_LOCALIZE_HPP 1
++
++/*
++ Perl's local operator pushes the current value of the target global variable 
++ onto the stack, then initializes the variable to the desired value.  When
++ the scope of the local operator ends, the original value is restored by 
++ popping from the stack.
++
++ We'd like other versions for when operator= can fail but something else
++ cannot fail.
++ */
++
++namespace zaimoni {
++namespace Perl {
++
++template&lt;class T&gt;
++class localize
++{
++private:
++	const T _backup;
++	T&amp; _target;
++	// uncopyable
++	localize(const localize&amp; src);
++	void operator=(const localize&amp; src);
++public:
++	localize(T&amp; target, const T&amp; src)
++	:	_backup(target),_target(target) { target = src; };
++	~localize() { _target = _backup; };
++};
++
++}	// end namespace Perl
++}	// end namespace zaimoni
++
++#endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000220.html">[Zcplusplus-commits] r453 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000222.html">[Zcplusplus-commits] r455 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#221">[ date ]</a>
+              <a href="thread.html#221">[ thread ]</a>
+              <a href="subject.html#221">[ subject ]</a>
+              <a href="author.html#221">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

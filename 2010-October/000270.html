@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r503 - trunk/tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r503%20-%20trunk/tests/zcc/decl.C99&In-Reply-To=%3C20101026034512.0653C4801EB%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000269.html">
+   <LINK REL="Next"  HREF="000271.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r503 - trunk/tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r503%20-%20trunk/tests/zcc/decl.C99&In-Reply-To=%3C20101026034512.0653C4801EB%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r503 - trunk/tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Oct 26 05:45:11 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000269.html">[Zcplusplus-commits] r502 - in trunk: . tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000271.html">[Zcplusplus-commits] r504 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#270">[ date ]</a>
+              <a href="thread.html#270">[ thread ]</a>
+              <a href="subject.html#270">[ subject ]</a>
+              <a href="author.html#270">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-26 05:45:11 +0200 (Tue, 26 Oct 2010)
+New Revision: 503
+
+Added:
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const2.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile2.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile3.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile4.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile5.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile6.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile.hpp
+   trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile2.hpp
+Log:
+test cases prelude
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const class {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const2.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const2.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class {
++	int x_factor;
++} const;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const_volatile.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile class {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile2.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const_volatile2.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile const class {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile3.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const_volatile3.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const class {
++	int x_factor;
++} volatile;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile4.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile4.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile4.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const_volatile4.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile class {
++	int x_factor;
++} const;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile5.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile5.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile5.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_const_volatile5.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class {
++	int x_factor;
++} const volatile;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile6.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile6.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_const_volatile6.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_def_anon_const_volatile6.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class {
++	int x_factor;
++} volatile const;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_volatile.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile class {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_anon_def_volatile2.hpp	2010-10-26 03:45:11 UTC (rev 503)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_anon_def_volatile2.hpp
++// using singly defined class
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class {
++	int x_factor;
++} volatile;
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000269.html">[Zcplusplus-commits] r502 - in trunk: . tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000271.html">[Zcplusplus-commits] r504 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#270">[ date ]</a>
+              <a href="thread.html#270">[ thread ]</a>
+              <a href="subject.html#270">[ subject ]</a>
+              <a href="author.html#270">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

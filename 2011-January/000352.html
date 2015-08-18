@@ -1,0 +1,585 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r585 - in trunk: . tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r585%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20110123015954.038B748126F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000351.html">
+   <LINK REL="Next"  HREF="000353.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r585 - in trunk: . tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r585%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20110123015954.038B748126F%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r585 - in trunk: . tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan 23 02:59:53 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000351.html">[Zcplusplus-commits] r584 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000353.html">[Zcplusplus-commits] r586 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#352">[ date ]</a>
+              <a href="thread.html#352">[ thread ]</a>
+              <a href="subject.html#352">[ subject ]</a>
+              <a href="author.html#352">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-23 02:59:53 +0100 (Sun, 23 Jan 2011)
+New Revision: 585
+
+Added:
+   trunk/tests/zcc/decl.C99/Pass_enum_def2.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system.hpp
+   trunk/type_system.hpp.in
+Log:
+C++ enumeration variable declaration test
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-22 21:07:14 UTC (rev 584)
++++ trunk/CSupport.cpp	2011-01-23 01:59:53 UTC (rev 585)
+@@ -14216,6 +14216,7 @@
+ 		{	// wouldn't work for unnamed function parameters
+ 		const size_t strict_ub = src.size&lt;0&gt;()-i;
+ 		const parse_tree* const origin = src.data&lt;0&gt;()+i;
++rescan:
+ 		while(pre_invariant_decl_scanner(origin[pre_invariant_decl_scanner.size()]))
+ 			// if we ran out of tokens, bad
+ 			if (strict_ub &lt;= pre_invariant_decl_scanner.size())
+@@ -14236,6 +14237,54 @@
+ 				src.DeleteNSlotsAt&lt;0&gt;(strict_ub,i);
+ 				return;
+ 				};
++		// more generally, we should recover any type-id; haven't checked how much we can do here
++		// this doesn't generalize fully to C
++		// do not have namespace available in CPP0X_type_or_invariant_decl_specifier_or_tag so can't punt there (unsure if this is worth a global)
++		// identifier might be type name: recover
++		if (0==pre_invariant_decl_scanner.count(STATIC_SIZE(CPP0X_nontype_decl_specifier_list)))
++			{
++			parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+pre_invariant_decl_scanner.size()];					
++			if (tmp2.is_atomic() &amp;&amp; (tmp2.index_tokens[0].flags &amp; C_TESTFLAG_IDENTIFIER))
++				{
++				{
++				type_system::type_index tmp = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[0].token.first,active_namespace);
++				if (tmp)
++					{	// is an enum
++					tmp2.grab_index_token_from&lt;1,0&gt;(tmp2);
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					goto rescan;
++#if 0
++					}
++				else if (tmp = parse_tree::types-&gt;get_id_union_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace))
++					{	// is a union
++					tmp2.grab_index_token_from&lt;1,0&gt;(tmp2);
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					goto rescan;
++					}
++				else if (tmp = parse_tree::types-&gt;get_id_struct_class_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace))
++					{	// is a struct/class
++					const union_struct_decl* const tmp3 = parse_tree::types-&gt;get_structdecl(tmp);
++					assert(tmp3);
++					const char* const text = text_from_keyword(*tmp3);
++					tmp2.grab_index_token_from&lt;1,0&gt;(tmp2);
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
++					assert(is_C99_named_specifier(tmp2,text));
++					goto rescan;
++#endif
++					};
++				}
++#if 0
++				{
++				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_typedef_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace);
++				if (tmp)
++					{
++					}
++				}
++#endif
++				}
++			}
+ 		}
+ 		if (!pre_invariant_decl_scanner.empty())
+ 			{
+@@ -14329,7 +14378,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_union.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14448,7 +14497,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_union.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14581,7 +14630,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_struct.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14698,7 +14747,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_struct2.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14829,7 +14878,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_class.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14945,7 +14994,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_class2.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -15074,7 +15123,7 @@
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+-				if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_multidef.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -15138,7 +15187,7 @@
+ 				//! \test zcc/decl.C99/Pass_enum_def.hpp
+ 				// enum-specifier doesn't have a specific declaration mode
+ 				const type_system::type_index tmp3 = parse_tree::types-&gt;register_enum_def_CPP(tmp2.index_tokens[1].token.first,active_namespace,tmp2.index_tokens[1].logical_line,tmp2.index_tokens[1].src_filename);
+-				assert(parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace)==tmp3);
++				assert(parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace)==tmp3);
+ 				tmp2.type_code.set_type(tmp3);	// C++: enums are own type
+ 				tmp2.flags |= PARSE_ENUM_TYPE;
+ 				if (!record_enum_values(*tmp2.c_array&lt;2&gt;(),tmp3,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-22 21:07:14 UTC (rev 584)
++++ trunk/CSupport.cpp.in	2011-01-23 01:59:53 UTC (rev 585)
+@@ -14360,6 +14360,7 @@
+ 		{	// wouldn't work for unnamed function parameters
+ 		const size_t strict_ub = src.size&lt;0&gt;()-i;
+ 		const parse_tree* const origin = src.data&lt;0&gt;()+i;
++rescan:
+ 		while(pre_invariant_decl_scanner(origin[pre_invariant_decl_scanner.size()]))
+ 			// if we ran out of tokens, bad
+ 			if (strict_ub &lt;= pre_invariant_decl_scanner.size())
+@@ -14380,19 +14381,26 @@
+ 				src.DeleteNSlotsAt&lt;0&gt;(strict_ub,i);
+ 				return;
+ 				};
+-#/*cut-nocpp*/
+ 		// more generally, we should recover any type-id; haven't checked how much we can do here
+ 		// this doesn't generalize fully to C
+ 		// do not have namespace available in CPP0X_type_or_invariant_decl_specifier_or_tag so can't punt there (unsure if this is worth a global)
+ 		// identifier might be type name: recover
+ 		if (0==pre_invariant_decl_scanner.count(STATIC_SIZE(CPP0X_nontype_decl_specifier_list)))
+ 			{
+-			if (origin[pre_invariant_decl_scanner.size()].index_tokens[0].flags &amp; C_TESTFLAG_IDENTIFIER)
++			parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+pre_invariant_decl_scanner.size()];					
++			if (tmp2.is_atomic() &amp;&amp; (tmp2.index_tokens[0].flags &amp; C_TESTFLAG_IDENTIFIER))
+ 				{
+-				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];					
+ 				{
+-				type_system::type_index tmp = parse_tree::types-&gt;get_id_union_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace);
++				type_system::type_index tmp = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[0].token.first,active_namespace);
+ 				if (tmp)
++					{	// is an enum
++					tmp2.grab_index_token_from&lt;1,0&gt;(tmp2);
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					goto rescan;
++#if 0
++					}
++				else if (tmp = parse_tree::types-&gt;get_id_union_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace))
+ 					{	// is a union
+ 					tmp2.grab_index_token_from&lt;1,0&gt;(tmp2);
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+@@ -14408,24 +14416,19 @@
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+ 					assert(is_C99_named_specifier(tmp2,text));
+ 					goto rescan;
+-					}
+-				else if (tmp = parse_tree::types-&gt;get_id_enum_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace))
+-					{	// is an enum
+-					tmp2.grab_index_token_from&lt;1,0&gt;(tmp2);
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+-					goto rescan;
++#endif
+ 					};
+ 				}
++#if 0
+ 				{
+ 				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_typedef_CPP(pre_invariant_decl_scanner.size()].index_tokens[0],active_namespace);
+ 				if (tmp)
+ 					{
+ 					}
+ 				}
++#endif
+ 				}
+ 			}
+-#/*cut-nocpp*/
+ 		}
+ 		if (!pre_invariant_decl_scanner.empty())
+ 			{
+@@ -14519,7 +14522,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_union.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14638,7 +14641,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_union.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14771,7 +14774,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_struct.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -14888,7 +14891,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_struct2.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -15019,7 +15022,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_class.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -15135,7 +15138,7 @@
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_class2.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -15264,7 +15267,7 @@
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+-				if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace))
++				if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace))
+ 					{	//! \test zcc/decl.C99/Error_enum_multidef.hpp
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -15328,7 +15331,7 @@
+ 				//! \test zcc/decl.C99/Pass_enum_def.hpp
+ 				// enum-specifier doesn't have a specific declaration mode
+ 				const type_system::type_index tmp3 = parse_tree::types-&gt;register_enum_def_CPP(tmp2.index_tokens[1].token.first,active_namespace,tmp2.index_tokens[1].logical_line,tmp2.index_tokens[1].src_filename);
+-				assert(parse_tree::types-&gt;get_id_enum_CPP(tmp2.index_tokens[1].token.first,active_namespace)==tmp3);
++				assert(parse_tree::types-&gt;get_id_enum_CPP_exact(tmp2.index_tokens[1].token.first,active_namespace)==tmp3);
+ 				tmp2.type_code.set_type(tmp3);	// C++: enums are own type
+ 				tmp2.flags |= PARSE_ENUM_TYPE;
+ 				if (!record_enum_values(*tmp2.c_array&lt;2&gt;(),tmp3,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+
+Added: trunk/tests/zcc/decl.C99/Pass_enum_def2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def2.hpp	2011-01-23 01:59:53 UTC (rev 585)
+@@ -0,0 +1,136 @@
++// decl.C99\Pass_enum_def2.hpp
++// using singly defined enum
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++
++enum good_test {
++	x_factor = 1
++};
++
++// this section checks that suppressing enum keyword works
++// ringing the changes on extern
++extern good_test x1;
++extern const good_test x2;
++extern volatile good_test x3;
++extern const volatile good_test x4;
++extern volatile const good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static good_test x6;
++static volatile good_test x7;
++static const volatile good_test x8;
++static volatile const good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern good_test x10;
++volatile extern good_test x11;
++const extern volatile good_test x12;
++const volatile extern good_test x13;
++volatile extern const good_test x14;
++volatile const extern good_test x15;
++
++volatile static good_test x16;
++const static volatile good_test x17;
++const volatile static good_test x18;
++volatile static const good_test x19;
++volatile const static good_test x20;
++
++// check that things work properly in namespaces
++namespace test {
++enum good_test {
++	x_factor = 1
++};
++
++// ringing the changes on extern
++extern enum good_test x1;
++extern const enum good_test x2;
++extern volatile enum good_test x3;
++extern const volatile enum good_test x4;
++extern volatile const enum good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static enum good_test x6;
++static volatile enum good_test x7;
++static const volatile enum good_test x8;
++static volatile const enum good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern enum good_test x10;
++volatile extern enum good_test x11;
++const extern volatile enum good_test x12;
++const volatile extern enum good_test x13;
++volatile extern const enum good_test x14;
++volatile const extern enum good_test x15;
++
++volatile static enum good_test x16;
++const static volatile enum good_test x17;
++const volatile static enum good_test x18;
++volatile static const enum good_test x19;
++volatile const static enum good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern enum good_test2 { x_factor2 = 1 } x21;
++extern const enum good_test3 { x_factor3 = 1 } x22;
++extern volatile enum good_test4 { x_factor4 = 1 } x23;
++extern const volatile enum good_test5 { x_factor5 = 1 } x24;
++extern volatile const enum good_test6 { x_factor6 = 1 } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static enum good_test7 { x_factor7 = 1 } x26;
++static volatile enum good_test8 { x_factor8 = 1 } x27;
++static const volatile enum good_test9 { x_factor9 = 1 } x28;
++static volatile const enum good_test10 { x_factor10 = 1 } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern enum good_test11 { x_factor11 = 1 } x30;
++volatile extern enum good_test12 { x_factor12 = 1 } x31;
++const extern volatile enum good_test13 { x_factor13 = 1 } x32;
++const volatile extern enum good_test14 { x_factor14 = 1 } x33;
++volatile extern const enum good_test15 { x_factor15 = 1 } x34;
++volatile const extern enum good_test16 { x_factor16 = 1 } x35;
++
++volatile static enum good_test17 { x_factor17 = 1 } x16;
++const static volatile enum good_test18 { x_factor18 = 1 } x37;
++const volatile static enum good_test19 { x_factor19 = 1 } x38;
++volatile static const enum good_test20 { x_factor20 = 1 } x39;
++volatile const static enum good_test21 { x_factor21 = 1 } x40;
++}	// end namespace test
++
++// check that enum suppression works in namespaces
++namespace test2 {
++enum good_test {
++	x_factor = 1
++};
++
++// ringing the changes on extern
++extern good_test x1;
++extern const good_test x2;
++extern volatile good_test x3;
++extern const volatile good_test x4;
++extern volatile const good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static good_test x6;
++static volatile good_test x7;
++static const volatile good_test x8;
++static volatile const good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern good_test x10;
++volatile extern good_test x11;
++const extern volatile good_test x12;
++const volatile extern good_test x13;
++volatile extern const good_test x14;
++volatile const extern good_test x15;
++
++volatile static good_test x16;
++const static volatile good_test x17;
++const volatile static good_test x18;
++volatile static const good_test x19;
++volatile const static good_test x20;
++
++}	// end namespace test2
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-01-22 21:07:14 UTC (rev 584)
++++ trunk/type_system.cpp	2011-01-23 01:59:53 UTC (rev 585)
+@@ -259,6 +259,22 @@
+ 	return _get_id_enum_CPP(alias);
+ }
+ 
++// for checking for pre-existing type system definitions
++type_system::type_index
++type_system::get_id_enum_CPP_exact(const char* alias,const char* active_namespace) const
++{
++	assert(alias &amp;&amp; *alias);
++	assert(!strstr(alias,&quot;::&quot;));
++	
++	if (active_namespace &amp;&amp; *active_namespace)
++		{	// ok..march up to global
++		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
++		const type_index tmp2 = is_string_registered(tmp_alias) ? _get_id_enum(tmp_alias) : 0;
++		return (free(tmp_alias),tmp2);
++		}
++	return _get_id_enum(alias);
++}
++
+ void type_system::use_type(type_index id)
+ {
+ 	assert(core_types_size+dynamic_types.size()&gt;=id);
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-01-22 21:07:14 UTC (rev 584)
++++ trunk/type_system.cpp.in	2011-01-23 01:59:53 UTC (rev 585)
+@@ -270,6 +270,22 @@
+ 	return _get_id_enum_CPP(alias);
+ }
+ 
++// for checking for pre-existing type system definitions
++type_system::type_index
++type_system::get_id_enum_CPP_exact(const char* alias,const char* active_namespace) const
++{
++	assert(alias &amp;&amp; *alias);
++	assert(!strstr(alias,&quot;::&quot;));
++	
++	if (active_namespace &amp;&amp; *active_namespace)
++		{	// ok..march up to global
++		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
++		const type_index tmp2 = is_string_registered(tmp_alias) ? _get_id_enum(tmp_alias) : 0;
++		return (free(tmp_alias),tmp2);
++		}
++	return _get_id_enum(alias);
++}
++
+ void type_system::use_type(type_index id)
+ {
+ 	assert(core_types_size+dynamic_types.size()&gt;=id);
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2011-01-22 21:07:14 UTC (rev 584)
++++ trunk/type_system.hpp	2011-01-23 01:59:53 UTC (rev 585)
+@@ -60,6 +60,7 @@
+ 		return _get_id_enum(x);
+ 		}
+ 	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
++	type_index get_id_enum_CPP_exact(const char* alias,const char* active_namespace) const;
+ 	void use_type(type_index id);
+ 	void unuse_type(type_index id);
+ 	size_t use_count(type_index id) const
+
+Modified: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	2011-01-22 21:07:14 UTC (rev 584)
++++ trunk/type_system.hpp.in	2011-01-23 01:59:53 UTC (rev 585)
+@@ -75,6 +75,7 @@
+ 		return _get_id_enum(x);
+ 		}
+ 	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
++	type_index get_id_enum_CPP_exact(const char* alias,const char* active_namespace) const;
+ 	void use_type(type_index id);
+ 	void unuse_type(type_index id);
+ 	size_t use_count(type_index id) const
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000351.html">[Zcplusplus-commits] r584 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000353.html">[Zcplusplus-commits] r586 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#352">[ date ]</a>
+              <a href="thread.html#352">[ thread ]</a>
+              <a href="subject.html#352">[ subject ]</a>
+              <a href="author.html#352">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

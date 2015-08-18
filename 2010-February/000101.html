@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r334 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r334%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C201002171545.o1HFjg7F019116%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000100.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r334 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r334%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C201002171545.o1HFjg7F019116%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r334 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Feb 17 16:45:42 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000100.html">[Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#101">[ date ]</a>
+              <a href="thread.html#101">[ thread ]</a>
+              <a href="subject.html#101">[ subject ]</a>
+              <a href="author.html#101">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-02-17 16:45:35 +0100 (Wed, 17 Feb 2010)
+New Revision: 334
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in
+   trunk/tests/zcc/decl.C99/Error_typedef_enum.h
+   trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp
+   trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+other half of prohibited multiple definitions of enumerators and typedefs
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/CSupport.cpp	2010-02-17 15:45:35 UTC (rev 334)
+@@ -11664,8 +11664,23 @@
+ 								}	
+ 							// do not re-register if there is a prior definition
+ 							}
+-						else	// register this with types object
++						else{	// prepare to register this with types object
++							const type_system::enumerator_info* tmp2 = types.get_enumerator(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first);
++							if (tmp2)
++								{	//! \bug needs test case
++								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++								INC_INFORM(ERR_STR);
++//								INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3/C++98 3.2)&quot;);
++								INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)&quot;);
++								INC_INFORM(tmp2-&gt;second.second.first);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp2-&gt;second.second.second.first);
++								INFORM(&quot;: enumerator definition here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
+ 							types.set_typedef(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first,src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].src_filename,src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].logical_line.first,bootstrap);
++							}
+ 						}
+ #if 0
+ 					else{	// something else
+@@ -12399,6 +12414,19 @@
+ 							}
+ 						else{	// register this with types object
+ 							free(namespace_name);
++							const type_system::enumerator_info* tmp2 = types.get_enumerator_CPP(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first,active_namespace);
++							if (tmp2)
++								{	//! \bug needs test case
++								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;enumerator is already defined, conflicts with typedef (C++98 3.2)&quot;);
++								INC_INFORM(tmp2-&gt;second.second.first);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp2-&gt;second.second.second.first);
++								INFORM(&quot;: enumerator definition here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}							
+ 							types.set_typedef_CPP(src.c_array&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first,active_namespace,src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].src_filename,src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].logical_line.first,bootstrap);
+ 							}
+ 						}
+
+Added: trunk/tests/zcc/decl.C99/Error_typedef_enum.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_typedef_enum.h	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc/decl.C99/Error_typedef_enum.h	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,9 @@
++// decl.C99\Error_typedef_enum.h
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
+
+Added: trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,9 @@
++// decl.C99\Error_typedef_enum.hpp
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
+
+Added: trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_typedef_enum2.hpp
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
++
++}
+
+Added: trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,9 @@
++SUFFIXES h hpp
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000100.html">[Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#101">[ date ]</a>
+              <a href="thread.html#101">[ thread ]</a>
+              <a href="subject.html#101">[ subject ]</a>
+              <a href="author.html#101">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

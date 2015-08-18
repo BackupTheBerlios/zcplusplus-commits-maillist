@@ -1,0 +1,283 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r472 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r472%20-%20trunk&In-Reply-To=%3C20100729023525.CC088480BE8%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000238.html">
+   <LINK REL="Next"  HREF="000240.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r472 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r472%20-%20trunk&In-Reply-To=%3C20100729023525.CC088480BE8%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r472 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 29 04:35:25 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000238.html">[Zcplusplus-commits] r471 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000240.html">[Zcplusplus-commits] r473 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#239">[ date ]</a>
+              <a href="thread.html#239">[ thread ]</a>
+              <a href="subject.html#239">[ subject ]</a>
+              <a href="author.html#239">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-29 04:35:25 +0200 (Thu, 29 Jul 2010)
+New Revision: 472
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+Log:
+indentation/lines of code reduction
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-07-28 21:51:33 UTC (rev 471)
++++ trunk/CPreproc.cpp	2010-07-29 02:35:25 UTC (rev 472)
+@@ -90,32 +90,30 @@
+ 
+ static void init_fixed_system_include_search(void)
+ {
+-	if (!fixed_system_include_exists_init)
+-		{
+-		char filepath[FILENAME_MAX];
+-		char workpath[FILENAME_MAX];
+-		size_t i = STATIC_SIZE(fixed_system_include_search);
+-		do	{
+-			--i;
+-			assert(!is_empty_string(fixed_system_include_search[i]));
+-			if ('.'==fixed_system_include_search[i][0] &amp;&amp; FILENAME_MAX&gt;strlen(self_path)+strlen(fixed_system_include_search[i])+1)
+-				{	// obviously relative path
+-				z_dirname(workpath,self_path);
+-				strcat(workpath,ZAIMONI_PATH_SEP);
+-				strcat(workpath,fixed_system_include_search[i]);
+-				char* exists = z_realpath(filepath,workpath);
+-				if (NULL!=exists &amp;&amp; !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				}
+-			else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
+-				{	// absolute path, current drive
+-				char* exists = z_realpath(filepath,fixed_system_include_search[i]);
+-				if (NULL!=exists &amp;&amp; !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				};
++	if (fixed_system_include_exists_init) return;
++	char filepath[FILENAME_MAX];
++	char workpath[FILENAME_MAX];
++	size_t i = STATIC_SIZE(fixed_system_include_search);
++	do	{
++		--i;
++		assert(!is_empty_string(fixed_system_include_search[i]));
++		if ('.'==fixed_system_include_search[i][0] &amp;&amp; FILENAME_MAX&gt;strlen(self_path)+strlen(fixed_system_include_search[i])+1)
++			{	// obviously relative path
++			z_dirname(workpath,self_path);
++			strcat(workpath,ZAIMONI_PATH_SEP);
++			strcat(workpath,fixed_system_include_search[i]);
++			char* exists = z_realpath(filepath,workpath);
++			if (exists &amp;&amp; !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
+ 			}
+-		while(0&lt;i);
++		else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
++			{	// absolute path, current drive
++			char* exists = z_realpath(filepath,fixed_system_include_search[i]);
++			if (exists &amp;&amp; !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
++			};
+ 		}
++	while(0&lt;i);
+ }
+ 
+ #define LEXER_STRICT_UB (Lexer::CPlusPlus+1)
+@@ -2303,16 +2301,14 @@
+ 
+ static void _complete_string_character_literal(Token&lt;char&gt;&amp; x,const char delim, const char* const end_error)
+ {
+-	if (delim!=x.back())
+-		{
+-		message_header2(x,x.original_line.second);
+-		INC_INFORM(ERR_STR);
+-		INC_INFORM(&quot;unterminated&quot;);
+-		if ('L'==x.front()) INC_INFORM(&quot; wide&quot;);
+-		INFORM(end_error);
+-		zcc_errors.inc_error();
+-		x.append(delim);
+-		}
++	if (delim==x.back()) return;
++	message_header2(x,x.original_line.second);
++	INC_INFORM(ERR_STR);
++	INC_INFORM(&quot;unterminated&quot;);
++	if ('L'==x.front()) INC_INFORM(&quot; wide&quot;);
++	INFORM(end_error);
++	zcc_errors.inc_error();
++	x.append(delim);
+ }
+ 
+ static void complete_string_character_literal(Token&lt;char&gt;&amp; x)
+@@ -3995,14 +3991,12 @@
+ 
+ void CPreprocessor::die_on_pp_errors() const
+ {
+-	if (0&lt;zcc_errors.err_count())
+-		{
+-		INC_INFORM(&quot;FATAL: &quot;);
+-		INC_INFORM(zcc_errors.err_count());
+-		INC_INFORM(&quot; preprocessing error&quot;);
+-		INFORM((1==zcc_errors.err_count()) ? &quot;\n&quot; : &quot;s\n&quot;);
+-		exit(EXIT_FAILURE);
+-		};
++	if (0&gt;=zcc_errors.err_count()) return;
++	INC_INFORM(&quot;FATAL: &quot;);
++	INC_INFORM(zcc_errors.err_count());
++	INC_INFORM(&quot; preprocessing error&quot;);
++	INFORM((1==zcc_errors.err_count()) ? &quot;\n&quot; : &quot;s\n&quot;);
++	exit(EXIT_FAILURE);
+ }
+ 
+ void
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-07-28 21:51:33 UTC (rev 471)
++++ trunk/CPreproc_pp.cpp	2010-07-29 02:35:25 UTC (rev 472)
+@@ -83,32 +83,30 @@
+ 
+ static void init_fixed_system_include_search(void)
+ {
+-	if (!fixed_system_include_exists_init)
+-		{
+-		char filepath[FILENAME_MAX];
+-		char workpath[FILENAME_MAX];
+-		size_t i = STATIC_SIZE(fixed_system_include_search);
+-		do	{
+-			--i;
+-			assert(!is_empty_string(fixed_system_include_search[i]));
+-			if ('.'==fixed_system_include_search[i][0] &amp;&amp; FILENAME_MAX&gt;strlen(self_path)+strlen(fixed_system_include_search[i])+1)
+-				{	// obviously relative path
+-				z_dirname(workpath,self_path);
+-				strcat(workpath,ZAIMONI_PATH_SEP);
+-				strcat(workpath,fixed_system_include_search[i]);
+-				char* exists = z_realpath(filepath,workpath);
+-				if (NULL!=exists &amp;&amp; !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				}
+-			else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
+-				{	// absolute path, current drive
+-				char* exists = z_realpath(filepath,fixed_system_include_search[i]);
+-				if (NULL!=exists &amp;&amp; !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				};
++	if (fixed_system_include_exists_init) return;
++	char filepath[FILENAME_MAX];
++	char workpath[FILENAME_MAX];
++	size_t i = STATIC_SIZE(fixed_system_include_search);
++	do	{
++		--i;
++		assert(!is_empty_string(fixed_system_include_search[i]));
++		if ('.'==fixed_system_include_search[i][0] &amp;&amp; FILENAME_MAX&gt;strlen(self_path)+strlen(fixed_system_include_search[i])+1)
++			{	// obviously relative path
++			z_dirname(workpath,self_path);
++			strcat(workpath,ZAIMONI_PATH_SEP);
++			strcat(workpath,fixed_system_include_search[i]);
++			char* exists = z_realpath(filepath,workpath);
++			if (exists &amp;&amp; !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
+ 			}
+-		while(0&lt;i);
++		else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
++			{	// absolute path, current drive
++			char* exists = z_realpath(filepath,fixed_system_include_search[i]);
++			if (exists &amp;&amp; !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
++			};
+ 		}
++	while(0&lt;i);
+ }
+ 
+ #define LEXER_STRICT_UB (Lexer::CPlusPlus+1)
+@@ -2241,16 +2239,14 @@
+ 
+ static void _complete_string_character_literal(Token&lt;char&gt;&amp; x,const char delim, const char* const end_error)
+ {
+-	if (delim!=x.back())
+-		{
+-		message_header2(x,x.original_line.second);
+-		INC_INFORM(ERR_STR);
+-		INC_INFORM(&quot;unterminated&quot;);
+-		if ('L'==x.front()) INC_INFORM(&quot; wide&quot;);
+-		INFORM(end_error);
+-		zcc_errors.inc_error();
+-		x.append(delim);
+-		}
++	if (delim==x.back()) return;
++	message_header2(x,x.original_line.second);
++	INC_INFORM(ERR_STR);
++	INC_INFORM(&quot;unterminated&quot;);
++	if ('L'==x.front()) INC_INFORM(&quot; wide&quot;);
++	INFORM(end_error);
++	zcc_errors.inc_error();
++	x.append(delim);
+ }
+ 
+ static void complete_string_character_literal(Token&lt;char&gt;&amp; x)
+@@ -3933,14 +3929,12 @@
+ 
+ void CPreprocessor::die_on_pp_errors() const
+ {
+-	if (0&lt;zcc_errors.err_count())
+-		{
+-		INC_INFORM(&quot;FATAL: &quot;);
+-		INC_INFORM(zcc_errors.err_count());
+-		INC_INFORM(&quot; preprocessing error&quot;);
+-		INFORM((1==zcc_errors.err_count()) ? &quot;\n&quot; : &quot;s\n&quot;);
+-		exit(EXIT_FAILURE);
+-		};
++	if (0&gt;=zcc_errors.err_count()) return;
++	INC_INFORM(&quot;FATAL: &quot;);
++	INC_INFORM(zcc_errors.err_count());
++	INC_INFORM(&quot; preprocessing error&quot;);
++	INFORM((1==zcc_errors.err_count()) ? &quot;\n&quot; : &quot;s\n&quot;);
++	exit(EXIT_FAILURE);
+ }
+ 
+ void
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000238.html">[Zcplusplus-commits] r471 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000240.html">[Zcplusplus-commits] r473 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#239">[ date ]</a>
+              <a href="thread.html#239">[ thread ]</a>
+              <a href="subject.html#239">[ subject ]</a>
+              <a href="author.html#239">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

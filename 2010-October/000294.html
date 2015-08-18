@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r527 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r527%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20101031205528.710C1480BF9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000293.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r527 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r527%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20101031205528.710C1480BF9%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r527 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 31 21:55:28 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000293.html">[Zcplusplus-commits] r526 - in trunk: . lib
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#294">[ date ]</a>
+              <a href="thread.html#294">[ thread ]</a>
+              <a href="subject.html#294">[ subject ]</a>
+              <a href="author.html#294">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-31 21:55:28 +0100 (Sun, 31 Oct 2010)
+New Revision: 527
+
+Modified:
+   trunk/Zaimoni.STL/POD.hpp
+Log:
+fix MingW32 4.2.1 build
+
+Modified: trunk/Zaimoni.STL/POD.hpp
+===================================================================
+--- trunk/Zaimoni.STL/POD.hpp	2010-10-31 18:23:20 UTC (rev 526)
++++ trunk/Zaimoni.STL/POD.hpp	2010-10-31 20:55:28 UTC (rev 527)
+@@ -200,6 +200,12 @@
+ #undef ZAIMONI_CLASS_SPEC
+ #undef ZAIMONI_TEMPLATE_SPEC
+ 
++#define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2,typename _T3,typename _T4&gt;
++#define ZAIMONI_CLASS_SPEC zaimoni::POD_quartet&lt;_T1,_T2,_T3,_T4&gt;
++ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
++#undef ZAIMONI_CLASS_SPEC
++#undef ZAIMONI_TEMPLATE_SPEC
++
+ #define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2&gt;
+ #define ZAIMONI_CLASS_SPEC zaimoni::union_pair&lt;_T1,_T2&gt;
+ ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000293.html">[Zcplusplus-commits] r526 - in trunk: . lib
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#294">[ date ]</a>
+              <a href="thread.html#294">[ thread ]</a>
+              <a href="subject.html#294">[ subject ]</a>
+              <a href="author.html#294">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

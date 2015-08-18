@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r614 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r614%20-%20trunk&In-Reply-To=%3C20110214190942.906044813D5%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000380.html">
+   <LINK REL="Next"  HREF="000382.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r614 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r614%20-%20trunk&In-Reply-To=%3C20110214190942.906044813D5%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r614 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Feb 14 20:09:42 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000380.html">[Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+        <LI>Next message: <A HREF="000382.html">[Zcplusplus-commits] r615 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#381">[ date ]</a>
+              <a href="thread.html#381">[ thread ]</a>
+              <a href="subject.html#381">[ subject ]</a>
+              <a href="author.html#381">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-14 20:09:42 +0100 (Mon, 14 Feb 2011)
+New Revision: 614
+
+Modified:
+   trunk/POSIX.dep
+   trunk/str_aux.cpp
+   trunk/str_aux.h
+Log:
+new function C_make_string; future changes to dependencies
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2011-02-11 11:01:18 UTC (rev 613)
++++ trunk/POSIX.dep	2011-02-14 19:09:42 UTC (rev 614)
+@@ -9,7 +9,7 @@
+ errors.o: errors.hpp langroute.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ langroute.o: langroute.hpp _CSupport1.hpp Zaimoni.STL/Logging.h Zaimoni.STL/POD.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp
+ AtomicString.o: AtomicString.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+-str_aux.o: str_aux.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
++str_aux.o: str_aux.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/flat_alg.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp
+ lex_core.o: lex_core.h Zaimoni.STL/lite_alg.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ filesystem.o: filesystem.h Zaimoni.STL/Compiler.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h
+ uchar_blob.o: uchar_blob.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp
+@@ -17,7 +17,7 @@
+ CPUInfo.o: CPUInfo.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp
+ struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
+ type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+-ParseTree.o: ParseTree.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp weak_token.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h
++ParseTree.o: ParseTree.hpp str_aux.h type_spec.hpp Zaimoni.STL/MetaRAM2.hpp weak_token.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h
+ type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -32,12 +32,12 @@
+ end_lc.o: end_lc.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_nl.o: end_nl.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+-CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp str_aux.h type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimon
+ i.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
++ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp str_aux.h type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
+ z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
+ type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+-CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimon
+ i.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp str_aux.h type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.
+ hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+
+Modified: trunk/str_aux.cpp
+===================================================================
+--- trunk/str_aux.cpp	2011-02-11 11:01:18 UTC (rev 613)
++++ trunk/str_aux.cpp	2011-02-14 19:09:42 UTC (rev 614)
+@@ -1,10 +1,16 @@
+ // str_aux.cpp
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt 
+ 
+ #include &quot;str_aux.h&quot;
+ 
+ #include &lt;string.h&gt;
+ #include &quot;Zaimoni.STL/Logging.h&quot;
+ 
++#ifdef __cplusplus
++#include &quot;Zaimoni.STL/Compiler.h&quot;
++#include &quot;Zaimoni.STL/MetaRAM2.hpp&quot;
++#endif
++
+ EXTERN_C size_t count_disjoint_substring_instances(const char* const src,const char* const match)
+ {
+ 	assert(src &amp;&amp; *src);
+@@ -44,3 +50,15 @@
+ 	assert(0&lt;n);
+ }
+ 
++EXTERN_C char* C_make_string(const char* src,size_t src_len)
++{
++	assert(src);
++#ifdef __cplusplus
++	char* const tmp = zaimoni::_new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(src_len));
++#else
++	char* const tmp = (char*)calloc(1,ZAIMONI_LEN_WITH_NULL(src_len));
++	if (!tmp) _fatal(&quot;FATAL: RAM exhaustion&quot;);
++#endif
++	memmove(tmp,src,src_len);
++}
++
+
+Modified: trunk/str_aux.h
+===================================================================
+--- trunk/str_aux.h	2011-02-11 11:01:18 UTC (rev 613)
++++ trunk/str_aux.h	2011-02-14 19:09:42 UTC (rev 614)
+@@ -1,4 +1,5 @@
+ // str_aux.h
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt 
+ 
+ #ifndef STR_AUX_H
+ #define STR_AUX_H 1
+@@ -30,6 +31,15 @@
+  */
+ void report_disjoint_substring_instances(const char* src,const char* match,const char** index_stack,size_t index_stack_size);
+ 
++/**
++ * copies the C string pointed to by src of length src_len, to a calloc'ed 
++ * buffer suitable for freeing.
++ *
++ * \return non-NULL copy of string.  C++ implementation throws std::bad_alloc;
++ * C implementation terminates with exit code EXIT_FAILURE.
++ */
++char* C_make_string(const char* src,size_t src_len);
++
+ #ifdef __cplusplus
+ }	/* extern &quot;C&quot; */
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000380.html">[Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+	<LI>Next message: <A HREF="000382.html">[Zcplusplus-commits] r615 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#381">[ date ]</a>
+              <a href="thread.html#381">[ thread ]</a>
+              <a href="subject.html#381">[ subject ]</a>
+              <a href="author.html#381">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

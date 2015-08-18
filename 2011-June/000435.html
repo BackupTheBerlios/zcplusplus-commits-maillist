@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r668 - trunk/tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r668%20-%20trunk/tools&In-Reply-To=%3C20110610174521.8D0634801AA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000434.html">
+   <LINK REL="Next"  HREF="000436.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r668 - trunk/tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r668%20-%20trunk/tools&In-Reply-To=%3C20110610174521.8D0634801AA%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r668 - trunk/tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 10 19:45:21 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000434.html">[Zcplusplus-commits] r667 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000436.html">[Zcplusplus-commits] r669 - trunk/tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#435">[ date ]</a>
+              <a href="thread.html#435">[ thread ]</a>
+              <a href="subject.html#435">[ subject ]</a>
+              <a href="author.html#435">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-10 19:45:20 +0200 (Fri, 10 Jun 2011)
+New Revision: 668
+
+Modified:
+   trunk/tools/decl_infile.py
+Log:
+C keyword is _Thread_local, not _Thread_Local #1
+
+Modified: trunk/tools/decl_infile.py
+===================================================================
+--- trunk/tools/decl_infile.py	2011-06-10 04:48:17 UTC (rev 667)
++++ trunk/tools/decl_infile.py	2011-06-10 17:45:20 UTC (rev 668)
+@@ -11,7 +11,7 @@
+ 
+ invariant_header_lines = [
+ 'SUFFIXES h hpp\n'
+-'OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local\n'
++'OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local\n'
+ '// (C)2009,2011 Kenneth Boyd, license: MIT.txt\n'
+ ]
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000434.html">[Zcplusplus-commits] r667 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000436.html">[Zcplusplus-commits] r669 - trunk/tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#435">[ date ]</a>
+              <a href="thread.html#435">[ thread ]</a>
+              <a href="subject.html#435">[ subject ]</a>
+              <a href="author.html#435">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

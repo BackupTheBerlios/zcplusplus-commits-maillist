@@ -1,0 +1,444 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r528 - in trunk: . tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r528%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C20101102030120.31AA5481115%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000296.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r528 - in trunk: . tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r528%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C20101102030120.31AA5481115%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r528 - in trunk: . tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov  2 04:01:19 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000296.html">[Zcplusplus-commits] r529 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-02 04:01:19 +0100 (Tue, 02 Nov 2010)
+New Revision: 528
+
+Added:
+   trunk/type_spec_pp.cpp
+Modified:
+   trunk/MakeMake.cfg
+   trunk/POSIX.dep
+   trunk/tools/POSIX.inc
+   trunk/type_spec.cpp
+Log:
+allow compiler to auto-update use counts for types
+
+Modified: trunk/MakeMake.cfg
+===================================================================
+--- trunk/MakeMake.cfg	2010-10-31 20:55:28 UTC (rev 527)
++++ trunk/MakeMake.cfg	2010-11-02 03:01:19 UTC (rev 528)
+@@ -1,5 +1,5 @@
+ ########
+-ProgObjects = {	'z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system_pp','ParseTree','type_spec','CSupport_pp','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc_pp','CPreproc_autogen_pp'),
++ProgObjects = {	'z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system_pp','ParseTree','type_spec_pp','CSupport_pp','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc_pp','CPreproc_autogen_pp'),
+ 				'zcc':('zcc','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc','CPreproc_autogen','ZParser')}
+ MainPrograms = ['z_cpp','zcc']
+ 
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-10-31 20:55:28 UTC (rev 527)
++++ trunk/POSIX.dep	2010-11-02 03:01:19 UTC (rev 528)
+@@ -1,5 +1,5 @@
+-OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system_pp.o ParseTree.o type_spec.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = type_system_pp.o CSupport_pp.o CPreproc_pp.o CPreproc_autogen_pp.o ParseTree.o type_spec.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o z_cpp.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system_pp.o ParseTree.o type_spec_pp.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
++OBJECTS_Z_CPP_LINK_PRIORITY = type_spec_pp.o CPreproc_pp.o type_system_pp.o CSupport_pp.o CPreproc_autogen_pp.o ParseTree.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o z_cpp.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+ OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+ OBJECTS_ZCC_LINK_PRIORITY = type_system.o CSupport.o CPreproc.o CPreproc_autogen.o ZParser.o ParseTree.o type_spec.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o zcc.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+@@ -18,7 +18,7 @@
+ struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
+ type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-type_spec.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
++type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPDecimalInteger.o: C_PPDecimalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -36,6 +36,7 @@
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+ type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
++type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+
+Modified: trunk/tools/POSIX.inc
+===================================================================
+--- trunk/tools/POSIX.inc	2010-10-31 20:55:28 UTC (rev 527)
++++ trunk/tools/POSIX.inc	2010-11-02 03:01:19 UTC (rev 528)
+@@ -22,7 +22,8 @@
+ C_MACROS = 
+ CXX_MACROS = -D__STDC_LIMIT_MACROS
+ 
+-# build rules
++# maintainer-mode build rules for derived files
++# PYTHON variable does require configuration when moved to another machine
+ PYTHON = c:\Python26\python
+ SELECTIVE_CUT = tools\selective_cut.py
+ SUPPRESS_CUT = tools\suppress_cut.py
+@@ -62,6 +63,10 @@
+ 	$(PYTHON) $(SELECTIVE_CUT) nocpp CSupport.cpp.alt2 CSupport.cpp.alt 
+ 	if cmp -s CSupport.cpp CSupport.cpp.alt; then rm CSupport.cpp.alt ; else mv CSupport.cpp.alt CSupport.cpp; fi
+ 	rm CSupport.cpp.alt2
++
++type_spec_pp.cpp: type_spec.cpp
++	$(PYTHON) $(SELECTIVE_CUT) cpp type_spec.cpp type_spec_pp.cpp.alt 
++	if cmp -s type_spec_pp.cpp type_spec_pp.cpp.alt; then rm type_spec_pp.cpp.alt ; else mv type_spec_pp.cpp.alt type_spec_pp.cpp; fi
+ 	
+ type_system_pp.hpp: type_system.hpp.in
+ 	$(PYTHON) $(SELECTIVE_CUT) cpp type_system.hpp.in type_system_pp.hpp.alt2 
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2010-10-31 20:55:28 UTC (rev 527)
++++ trunk/type_spec.cpp	2010-11-02 03:01:19 UTC (rev 528)
+@@ -2,6 +2,10 @@
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;type_spec.hpp&quot;
++#/*cut-cpp*/
++#include &quot;ParseTree.hpp&quot;
++#include &quot;type_system.hpp&quot;
++#/*cut-cpp*/
+ 
+ #include &quot;Zaimoni.STL/MetaRAM2.hpp&quot;
+ using namespace zaimoni;
+@@ -81,6 +85,13 @@
+ 		dest = tmp;
+ 		}
+ 	else{	// non-enlarging doesn't throw
++#/*cut-cpp*/
++		if (parse_tree::types)
++			{
++			parse_tree::types-&gt;unuse_type(dest.base_type_index);
++			parse_tree::types-&gt;use_type(src.base_type_index);
++			}
++#/*cut-cpp*/
+ 		dest.base_type_index = src.base_type_index;
+ 		dest.set_pointer_power(src.pointer_power);
+ 		if (dest.q_vector.size()==src.q_vector.size())
+@@ -123,6 +134,13 @@
+ #endif
+ 	if (0==pointer_power) return false;
+ 	assert(lvalue &amp; q_vector.data()[pointer_power-1]);	// result of dereference is a C/C++ lvalue; problem is elsewhere if this triggers
++#/*cut-cpp*/
++	if (parse_tree::types)
++		{
++		parse_tree::types-&gt;unuse_type(dest.base_type_index);
++		parse_tree::types-&gt;use_type(base_type_index);
++		}
++#/*cut-cpp*/
+ 	dest.base_type_index = base_type_index; 
+ 	dest.set_pointer_power(pointer_power-1); // lost a level of indirection
+ 	memmove(dest.q_vector.c_array(),q_vector.data(),dest.q_vector.size());
+@@ -149,6 +167,9 @@
+ 	FREE_AND_NULL(extent_vector);
+ 	q_vector.resize(1);
+ 	q_vector.front() = '\0';
++#/*cut-cpp*/
++	if (parse_tree::types) parse_tree::types-&gt;unuse_type(base_type_index);
++#/*cut-cpp*/
+ 	base_type_index = 0;
+ 	pointer_power = 0;
+ }
+@@ -161,6 +182,13 @@
+ 	FREE_AND_NULL(extent_vector);
+ 	q_vector.resize(1);
+ 	q_vector.front() = '\0';
++#/*cut-cpp*/
++	if (parse_tree::types)
++		{
++		parse_tree::types-&gt;unuse_type(base_type_index);
++		parse_tree::types-&gt;use_type(_base_type_index);
++		};
++#/*cut-cpp*/
+ 	base_type_index = _base_type_index;
+ 	pointer_power = 0;
+ }
+
+Added: trunk/type_spec_pp.cpp
+===================================================================
+--- trunk/type_spec_pp.cpp	                        (rev 0)
++++ trunk/type_spec_pp.cpp	2010-11-02 03:01:19 UTC (rev 528)
+@@ -0,0 +1,226 @@
++// type_spec.cpp
++// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
++
++#include &quot;type_spec.hpp&quot;
++
++#include &quot;Zaimoni.STL/MetaRAM2.hpp&quot;
++using namespace zaimoni;
++
++//! \throw std::bad_alloc only if _size&gt;pointer_power
++void type_spec::set_pointer_power(size_t _size)
++{
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	if (_size==pointer_power) return;
++	assert(0&lt;_size);
++	const bool shrinking = _size&lt;pointer_power;
++	const size_t old_ptr_power = pointer_power;
++	// zaimoni::_resize always succeeds when shrinking; if it fails, then reverting q_vector's resize 
++	// is a shrinking operation which always succeeds.
++	q_vector.resize(_size+1);
++#ifndef ZAIMONI_FORCE_ISO
++	if (!zaimoni::_resize(extent_vector,_size))
++#else
++	if (!zaimoni::_resize(extent_vector,pointer_power,_size))
++#endif
++		{
++		q_vector.resize(old_ptr_power+1);
++		throw std::bad_alloc();
++		};
++#ifndef ZAIMONI_FORCE_ISO
++	pointer_power = _size;
++#endif
++	if (!shrinking)
++		{
++		memset(extent_vector+old_ptr_power,0,sizeof(uintmax_t)*(_size-old_ptr_power));
++		size_t i = old_ptr_power;
++		while(i&lt;_size) q_vector.c_array()[i++] = lvalue;
++		// q_vector.second[new_ptr_power] = '\0';	// handled by uchar_blob
++		};
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++}
++
++//! \throw std::bad_alloc
++void type_spec::make_C_array(uintmax_t _size)
++{	// can't count on type_spec being initialized correctly beforehand
++	// (could be 0 coming in, but then pointer_power=0 as well coming in)
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	set_pointer_power(pointer_power+1);
++	q_vector.back() |= _array;
++	q_vector.c_array()[q_vector.size()-2] |= lvalue;
++	extent_vector[pointer_power-1] = _size;
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++}
++
++
++// XXX properly operator= in C++, but type_spec has to be POD
++// ACID
++//! \throw std::bad_alloc only if dest.pointer_power&lt;src.pointer_power 
++void value_copy(type_spec&amp; dest,const type_spec&amp; src)
++{	// again, can't count on src.syntax_ok()
++#ifndef ZAIMONI_FORCE_ISO
++	assert(src.syntax_ok());
++#endif
++	if (dest.pointer_power&lt;src.pointer_power)
++		{	// set_pointer_power can throw anyway, so be ACID
++		type_spec tmp;
++		tmp.clear();
++		tmp.set_type(src.base_type_index);
++		tmp.set_pointer_power(src.pointer_power);
++		if (tmp.q_vector.size()==src.q_vector.size())
++			value_copy(tmp.q_vector,src.q_vector);
++		if (0&lt;src.pointer_power) memmove(tmp.extent_vector,src.extent_vector,src.pointer_power*sizeof(uintmax_t));
++		dest.destroy();
++		dest = tmp;
++		}
++	else{	// non-enlarging doesn't throw
++		dest.base_type_index = src.base_type_index;
++		dest.set_pointer_power(src.pointer_power);
++		if (dest.q_vector.size()==src.q_vector.size())
++			value_copy(dest.q_vector,src.q_vector);
++		if (0&lt;src.pointer_power) memmove(dest.extent_vector,src.extent_vector,src.pointer_power*sizeof(uintmax_t));
++		}
++#ifndef ZAIMONI_FORCE_ISO
++	assert(dest.syntax_ok());
++#endif
++}
++
++bool type_spec::dereference()
++{
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	if (0==pointer_power) return false;
++//	q_vector.c_array()[old_ptr_power] = '\0';	// redundant, wiped by q_vector.resize()
++	assert(lvalue &amp; q_vector.data()[pointer_power-1]);	// result of dereference is a C/C++ lvalue; problem is elsewhere if this triggers
++	q_vector.resize(pointer_power);	// lost a level of indirection
++#if ZAIMONI_REALLOC_TO_ZERO_IS_NULL
++	extent_vector = REALLOC(extent_vector,--pointer_power*sizeof(*extent_vector));
++#else
++	if (0== --pointer_power)
++		FREE_AND_NULL(extent_vector);
++	else
++		extent_vector = REALLOC(extent_vector,pointer_power*sizeof(*extent_vector));
++#endif
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	return true;
++}
++
++//! \throw std::bad_alloc only if pointer_power-1&gt;dest.pointer_power
++bool type_spec::dereference(type_spec&amp; dest) const
++{
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	if (0==pointer_power) return false;
++	assert(lvalue &amp; q_vector.data()[pointer_power-1]);	// result of dereference is a C/C++ lvalue; problem is elsewhere if this triggers
++	dest.base_type_index = base_type_index; 
++	dest.set_pointer_power(pointer_power-1); // lost a level of indirection
++	memmove(dest.q_vector.c_array(),q_vector.data(),dest.q_vector.size());
++	if (0&lt;dest.pointer_power) memmove(dest.extent_vector,extent_vector,dest.pointer_power*sizeof(*extent_vector));
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	return true;
++}
++
++void type_spec::clear()
++{
++	base_type_index = 0;
++	pointer_power = 0;
++	q_vector.init(1);
++	extent_vector = NULL;
++}
++
++void type_spec::destroy()
++{
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	FREE_AND_NULL(extent_vector);
++	q_vector.resize(1);
++	q_vector.front() = '\0';
++	base_type_index = 0;
++	pointer_power = 0;
++}
++
++void type_spec::set_type(size_t _base_type_index)
++{
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	FREE_AND_NULL(extent_vector);
++	q_vector.resize(1);
++	q_vector.front() = '\0';
++	base_type_index = _base_type_index;
++	pointer_power = 0;
++}
++
++bool type_spec::operator==(const type_spec&amp; rhs) const
++{
++	return 	base_type_index==rhs.base_type_index
++		&amp;&amp;	pointer_power==rhs.pointer_power
++		&amp;&amp;  q_vector==rhs.q_vector
++		&amp;&amp; (0==pointer_power || !memcmp(extent_vector,rhs.extent_vector,sizeof(uintmax_t)*pointer_power));
++}
++
++bool type_spec::typeid_equal(const type_spec&amp; rhs) const
++{
++	if (   base_type_index==rhs.base_type_index
++		&amp;&amp; pointer_power==rhs.pointer_power)
++		{	// C++0X 5.2.8p5: lose the topmost level of 
++			// C++ cv-qualification (extending to C would be 
++			// C type-qualifiers)
++		if (0==pointer_power) return true;
++		if (	!memcmp(extent_vector,rhs.extent_vector,sizeof(uintmax_t)*pointer_power)
++			&amp;&amp;	!memcmp(q_vector.data(),rhs.q_vector.data(),pointer_power))
++			return true;
++		}
++	return false;
++}
++
++void type_spec::MoveInto(type_spec&amp; dest)
++{
++	dest.destroy();
++	dest = *this;
++	clear();
++}
++
++void type_spec::OverwriteInto(type_spec&amp; dest)
++{
++	dest = *this;
++	clear();
++}
++
++#ifndef ZAIMONI_FORCE_ISO
++bool type_spec::syntax_ok() const
++{
++	if (0==q_vector.size() &amp;&amp; 0==pointer_power &amp;&amp; !extent_vector) return true;
++	if (pointer_power&gt;=q_vector.size() || pointer_power+1!=q_vector.size()) return false;
++	if (0==pointer_power)
++		{
++		if (extent_vector) return false;
++		}
++	else if (!_memory_block_start_valid(extent_vector))
++		return false;
++	return true;
++}
++
++bool type_spec::entangled_with(const type_spec&amp; x) const
++{
++	if (extent_vector &amp;&amp; x.extent_vector &amp;&amp; extent_vector==x.extent_vector)
++		return true;
++	//! \todo Law of Demeter would delegate the entangled check for q_vector
++	return false;
++}
++#endif
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000296.html">[Zcplusplus-commits] r529 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#295">[ date ]</a>
+              <a href="thread.html#295">[ thread ]</a>
+              <a href="subject.html#295">[ subject ]</a>
+              <a href="author.html#295">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r405 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r405%20-%20trunk&In-Reply-To=%3C201005051806.o45I6uYe025541%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000171.html">
+   <LINK REL="Next"  HREF="000173.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r405 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r405%20-%20trunk&In-Reply-To=%3C201005051806.o45I6uYe025541%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r405 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed May  5 20:06:56 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000171.html">[Zcplusplus-commits] r404 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000173.html">[Zcplusplus-commits] r406 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#172">[ date ]</a>
+              <a href="thread.html#172">[ thread ]</a>
+              <a href="subject.html#172">[ subject ]</a>
+              <a href="author.html#172">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-05 20:06:53 +0200 (Wed, 05 May 2010)
+New Revision: 405
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+reduce RAM flogging; minor code cleanup
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-05 17:55:01 UTC (rev 404)
++++ trunk/CSupport.cpp	2010-05-05 18:06:53 UTC (rev 405)
+@@ -5307,14 +5307,8 @@
+ 	assert(dest.second);
+ 	if (suffix) strcat(buf,suffix);
+ 
+-	dest.first = _new_buffer&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+-	if (!dest.first)
+-		{
+-		free(buf);
+-		return false;
+-		}
+-	strcpy(dest.first,buf);
+-	free(buf);
++	// shrinking realloc should be no-fail
++	dest.first = REALLOC(buf,ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+ 	return true;
+ }
+ 
+@@ -5913,12 +5907,12 @@
+ {
+ 	umaxint tmp_int(target_machine-&gt;signed_max(machine_type));
+ 	parse_tree* const tmp = _new_buffer&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+-	if (NULL==tmp) return false;
++	if (!tmp) return false;
+ 	if (!VM_to_literal(*tmp,tmp_int,src_loc,types)) return false;
+ 
+ 	tmp_int = 1;
+ 	parse_tree* const tmp2 = _new_buffer&lt;parse_tree&gt;(1);
+-	if (NULL==tmp2)
++	if (!tmp2)
+ 		{
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+@@ -5934,7 +5928,7 @@
+ 		}
+ 
+ 	parse_tree* const tmp3 = _new_buffer&lt;parse_tree&gt;(1);
+-	if (NULL==tmp3)
++	if (!tmp3)
+ 		{
+ 		tmp2-&gt;destroy();
+ 		_flush(tmp2);
+@@ -6261,6 +6255,20 @@
+ 		{
+ 		if (eval_sizeof_core_type(src,src.data&lt;2&gt;()-&gt;type_code.base_type_index,types)) return true;
+ 		}
++	else if (!(type_spec::_array &amp; src.type_code.qualifier&lt;0&gt;()))
++		{	// data or function pointer...fine
++			//! \bug need test cases
++		const size_t size_t_type = unsigned_type_from_machine_type(target_machine-&gt;size_t_type());
++		parse_tree tmp;
++		src.type_code.set_type(size_t_type);
++		//! \todo eventually, need to check for data vs function pointer when pointer_power is 1
++		if (!VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_data_ptr()),src,types)) return false;
++		src.destroy();
++		src = tmp;			
++		assert(size_t_type==src.type_code.base_type_index);
++		return true;
++		}
++	// actual array of something
+ 	return false;
+ }
+ 
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-05 17:55:01 UTC (rev 404)
++++ trunk/CSupport_pp.cpp	2010-05-05 18:06:53 UTC (rev 405)
+@@ -4837,14 +4837,8 @@
+ 	assert(dest.second);
+ 	if (suffix) strcat(buf,suffix);
+ 
+-	dest.first = _new_buffer&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+-	if (!dest.first)
+-		{
+-		free(buf);
+-		return false;
+-		}
+-	strcpy(dest.first,buf);
+-	free(buf);
++	// shrinking realloc should be no-fail
++	dest.first = REALLOC(buf,ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+ 	return true;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000171.html">[Zcplusplus-commits] r404 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000173.html">[Zcplusplus-commits] r406 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#172">[ date ]</a>
+              <a href="thread.html#172">[ thread ]</a>
+              <a href="subject.html#172">[ subject ]</a>
+              <a href="author.html#172">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

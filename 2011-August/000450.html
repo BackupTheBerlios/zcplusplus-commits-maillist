@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r683 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r683%20-%20trunk&In-Reply-To=%3C20110830184955.9501D4811B9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000449.html">
+   <LINK REL="Next"  HREF="000451.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r683 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r683%20-%20trunk&In-Reply-To=%3C20110830184955.9501D4811B9%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r683 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 30 20:49:55 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000449.html">[Zcplusplus-commits] r682 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000451.html">[Zcplusplus-commits] r684 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#450">[ date ]</a>
+              <a href="thread.html#450">[ thread ]</a>
+              <a href="subject.html#450">[ subject ]</a>
+              <a href="author.html#450">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-08-30 20:49:54 +0200 (Tue, 30 Aug 2011)
+New Revision: 683
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+actually use the function type wrappers
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-08-30 18:32:28 UTC (rev 682)
++++ trunk/CSupport.cpp	2011-08-30 18:49:54 UTC (rev 683)
+@@ -12190,14 +12190,14 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier&lt;0&gt;() &amp; type_spec::_function_return_value))
++				if (target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				continue;
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier&lt;0&gt;() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				continue;
+ 				}
+@@ -12352,7 +12352,7 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier&lt;0&gt;() &amp; type_spec::_function_return_value))
++				if (!target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				if (x.size&lt;0&gt;()-i&gt;ub) ub += is_CPP0X_attribute(x.data&lt;0&gt;()[i+ub]);
+@@ -12360,7 +12360,7 @@
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier&lt;0&gt;() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				if (x.size&lt;0&gt;()-i&gt;ub) ub += is_CPP0X_attribute(x.data&lt;0&gt;()[i+ub]);
+ 				if (x.size&lt;0&gt;()-i&gt;ub) ub += CPP_cv_qualifier_span(x,i+ub,target_type);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-08-30 18:32:28 UTC (rev 682)
++++ trunk/CSupport.cpp.in	2011-08-30 18:49:54 UTC (rev 683)
+@@ -12338,14 +12338,14 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier&lt;0&gt;() &amp; type_spec::_function_return_value))
++				if (target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				continue;
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier&lt;0&gt;() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				continue;
+ 				}
+@@ -12500,7 +12500,7 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier&lt;0&gt;() &amp; type_spec::_function_return_value))
++				if (!target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				if (x.size&lt;0&gt;()-i&gt;ub) ub += is_CPP0X_attribute(x.data&lt;0&gt;()[i+ub]);
+@@ -12508,7 +12508,7 @@
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data&lt;0&gt;()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier&lt;0&gt;() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				if (x.size&lt;0&gt;()-i&gt;ub) ub += is_CPP0X_attribute(x.data&lt;0&gt;()[i+ub]);
+ 				if (x.size&lt;0&gt;()-i&gt;ub) ub += CPP_cv_qualifier_span(x,i+ub,target_type);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000449.html">[Zcplusplus-commits] r682 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000451.html">[Zcplusplus-commits] r684 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#450">[ date ]</a>
+              <a href="thread.html#450">[ thread ]</a>
+              <a href="subject.html#450">[ subject ]</a>
+              <a href="author.html#450">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

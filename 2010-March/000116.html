@@ -1,0 +1,298 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r349 - in trunk: tests/zcc tests/zcc/default	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in tests/zcc.in/default tests/zcc.in/default/staticassert	tests/zcc.in/staticassert.C1X tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r349%20-%20in%20trunk%3A%20tests/zcc%20tests/zcc/default%0A%09tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in%20tests/zcc.in/default%20tests/zcc.in/default/staticassert%0A%09tests/zcc.in/staticassert.C1X%20tools&In-Reply-To=%3C201003101840.o2AIeKYe000091%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000115.html">
+   <LINK REL="Next"  HREF="000117.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r349 - in trunk: tests/zcc tests/zcc/default	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in tests/zcc.in/default tests/zcc.in/default/staticassert	tests/zcc.in/staticassert.C1X tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r349%20-%20in%20trunk%3A%20tests/zcc%20tests/zcc/default%0A%09tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in%20tests/zcc.in/default%20tests/zcc.in/default/staticassert%0A%09tests/zcc.in/staticassert.C1X%20tools&In-Reply-To=%3C201003101840.o2AIeKYe000091%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r349 - in trunk: tests/zcc tests/zcc/default	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in tests/zcc.in/default tests/zcc.in/default/staticassert	tests/zcc.in/staticassert.C1X tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Mar 10 19:40:20 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000115.html">[Zcplusplus-commits] r348 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000117.html">[Zcplusplus-commits] r350 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#116">[ date ]</a>
+              <a href="thread.html#116">[ thread ]</a>
+              <a href="subject.html#116">[ subject ]</a>
+              <a href="author.html#116">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-10 19:40:08 +0100 (Wed, 10 Mar 2010)
+New Revision: 349
+
+Added:
+   trunk/tests/zcc.in/default/
+   trunk/tests/zcc.in/default/staticassert/
+   trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc/default/
+   trunk/tests/zcc/default/staticassert/
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess2.hpp
+Modified:
+   trunk/tests/zcc.in/run_tests.in
+   trunk/tests/zcc/run_tests.bat
+   trunk/tests/zcc/run_tests.sh
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+   trunk/tools/preproc_testbuilder.py
+Log:
+augment test cases; adjust preproc_testbuilder.py
+
+Added: trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-03-10 18:40:08 UTC (rev 349)
+@@ -0,0 +1,7 @@
++// default\staticassert\Pass_autosuccess.h
++// ZCC-specific check on extended constant expressions common to C and C++
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise string literal uses in (extended) integer constant expressions
++_Static_Assert(&quot;A&quot;,&quot;automatic success has failed&quot;);
++
+
+Added: trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-03-10 18:40:08 UTC (rev 349)
+@@ -0,0 +1,7 @@
++// default\staticassert\Pass_autosuccess.hpp
++// ZCC-specific check on extended constant expressions common to C and C++
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise string literal uses in (extended) integer constant expressions
++static_assert(&quot;A&quot;,&quot;automatic success has failed&quot;);
++
+
+Added: trunk/tests/zcc/default/staticassert/Pass_autosuccess2.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess2.hpp	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess2.hpp	2010-03-10 18:40:08 UTC (rev 349)
+@@ -0,0 +1,6 @@
++// tests/zcc/default/staticassert/Pass_autosuccess2.hpp
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++
++// unary operator + is identity for pointers in C++
++static_assert(+&quot;A&quot;,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/run_tests.bat
+===================================================================
+--- trunk/tests/zcc/run_tests.bat	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/run_tests.bat	2010-03-10 18:40:08 UTC (rev 349)
+@@ -63,6 +63,13 @@
+ @for %%f in (staticassert.C1X\Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (staticassert.C1X\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ 
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ZCC implementation-defined errors and features
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\staticassert\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\staticassert\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\staticassert\Pass*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\staticassert\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
++
+ @echo %BAD_PASS% of %REJECT_TEST% rejection tests accepted
+ @if not &quot;%BAD_PASS_NAME%&quot;==&quot;LastAccepted:&quot; @echo %BAD_PASS_NAME%
+ @echo %FAILED% of %ACCEPT_TEST% acceptance tests rejected
+
+Modified: trunk/tests/zcc/run_tests.sh
+===================================================================
+--- trunk/tests/zcc/run_tests.sh	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/run_tests.sh	2010-03-10 18:40:08 UTC (rev 349)
+@@ -53,6 +53,11 @@
+ 	for F in staticassert.C1X/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in staticassert.C1X/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 
++	echo Checking ZCC implementation-defined errors and features
++	echo ====
++	for F in default/staticassert/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/staticassert/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++
+ 	echo -E $BAD_PASS of $REJECT_TEST rejection tests accepted
+ 	if test -n &quot;$BAD_PASS_NAME&quot;; then echo -E $BAD_PASS_NAME; fi
+ 	echo -E $FAILED of $ACCEPT_TEST acceptance tests rejected
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-10 18:40:08 UTC (rev 349)
+@@ -1,5 +1,13 @@
+-// tests/zcc/staticassert.C99/Error_autosuccess.h
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// staticassert.C1X\Pass_autosuccess.h
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(1,&quot;automatic success&quot;);
++_Static_Assert(1,&quot;automatic success has failed&quot;);
+ 
++// check unary +
++_Static_Assert(+1,&quot;automatic success has failed&quot;);
++_Static_Assert(+'A',&quot;automatic success has failed&quot;);
++
++// check unary -
++_Static_Assert(-1,&quot;automatic success has failed&quot;);
++_Static_Assert(-'A',&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-10 18:40:08 UTC (rev 349)
+@@ -1,5 +1,13 @@
+-// tests/zcc/staticassert.C99/Error_autosuccess.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// staticassert.C1X\Pass_autosuccess.hpp
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+-static_assert(1,&quot;automatic success&quot;);
++static_assert(1,&quot;automatic success has failed&quot;);
+ 
++// check unary +
++static_assert(+1,&quot;automatic success has failed&quot;);
++static_assert(+'A',&quot;automatic success has failed&quot;);
++
++// check unary -
++static_assert(-1,&quot;automatic success has failed&quot;);
++static_assert(-'A',&quot;automatic success has failed&quot;);
++
+
+Added: trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-03-10 18:40:08 UTC (rev 349)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_Assert static_assert
++// ZCC-specific check on extended constant expressions common to C and C++
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise string literal uses in (extended) integer constant expressions
++STATIC_ASSERT(&quot;A&quot;,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/run_tests.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests.in	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc.in/run_tests.in	2010-03-10 18:40:08 UTC (rev 349)
+@@ -24,5 +24,8 @@
+ PASS CPP_ISO decl.C99/Pass*
+ PASS CPP_ISO staticassert.C1X/Pass*
+ 
++ECHO Checking ZCC implementation-defined errors and features
++PASS CPP default/staticassert/Pass*
++
+ EPILOG
+ 
+
+Added: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-10 18:40:08 UTC (rev 349)
+@@ -0,0 +1,14 @@
++SUFFIXES h hpp
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_Assert static_assert
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++
++STATIC_ASSERT(1,&quot;automatic success has failed&quot;);
++
++// check unary +
++STATIC_ASSERT(+1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(+'A',&quot;automatic success has failed&quot;);
++
++// check unary -
++STATIC_ASSERT(-1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-'A',&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tools/preproc_testbuilder.py
+===================================================================
+--- trunk/tools/preproc_testbuilder.py	2010-03-09 03:47:01 UTC (rev 348)
++++ trunk/tools/preproc_testbuilder.py	2010-03-10 18:40:08 UTC (rev 349)
+@@ -48,6 +48,7 @@
+ 	test_lines = []
+ 	suffixes = []
+ 	include_files = []
++	object_macros = {}
+ 	with open(filename,'r') as f:
+ 		for line in f:
+ 			if line.startswith('SUFFIXES '):
+@@ -62,6 +63,20 @@
+ 				target = line[17:].strip()
+ 				test_lines.append('#if '+target+'\n')
+ 				test_lines.append('#endif\n')
++			elif line.startswith('TRUE_EXPRESSION '):
++				target = line[16:].strip()
++				test_lines.append('#if '+target+'\n')
++				test_lines.append('#else\n')
++				test_lines.append('#error '+target+' is false\n')
++				test_lines.append('#endif\n')
++			elif line.startswith('FALSE_EXPRESSION '):
++				target = line[17:].strip()
++				test_lines.append('#if '+target+'\n')
++				test_lines.append('#error '+target+' is true\n')
++				test_lines.append('#endif\n')
++			elif line.startswith('OBJECTLIKE_MACRO '):
++				target = line[17:].strip().split()
++				object_macros[target[0]] = target[1:]
+ 			else:
+ 				test_lines.append(line);
+ 
+@@ -74,6 +89,11 @@
+ 		for line in test_lines:
+ 			if line.startswith('INCLUDE_FILES '):
+ 				TargetFile.write('#include &lt;'+include_files[Idx]+'&gt;\n')
++			elif 0&lt;len(object_macros):
++				for x in object_macros.keys():
++					if -1&lt;line.find(x):
++						line = object_macros[x][Idx].join(line.split(x))
++				TargetFile.write(line)
+ 			else:
+ 				TargetFile.write(line)
+ 		TargetFile.close()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000115.html">[Zcplusplus-commits] r348 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000117.html">[Zcplusplus-commits] r350 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#116">[ date ]</a>
+              <a href="thread.html#116">[ thread ]</a>
+              <a href="subject.html#116">[ subject ]</a>
+              <a href="author.html#116">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

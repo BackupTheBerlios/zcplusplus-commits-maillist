@@ -1,0 +1,311 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r302 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r302%20-%20trunk&In-Reply-To=%3C200912070732.nB77WtOF016409%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000068.html">
+   <LINK REL="Next"  HREF="000070.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r302 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r302%20-%20trunk&In-Reply-To=%3C200912070732.nB77WtOF016409%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r302 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  7 08:32:55 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000068.html">[Zcplusplus-commits] r301 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000070.html">[Zcplusplus-commits] r303 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-07 08:32:47 +0100 (Mon, 07 Dec 2009)
+New Revision: 302
+
+Modified:
+   trunk/CPreproc.cpp
+Log:
+mostly object file size reduction.  One vi readability fix, one theoretical overflow bug fix
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-12-07 02:34:13 UTC (rev 301)
++++ trunk/CPreproc.cpp	2009-12-07 07:32:47 UTC (rev 302)
+@@ -272,16 +272,16 @@
+ {
+ 	switch(lang_code)
+ 	{
+-	case Lang::C:			{
+-							macro_identifier_default = C99_macro_identifier_default;
+-							macro_identifier_default_count = STATIC_SIZE(C99_macro_identifier_default);
+-							break;
+-							};
+-	case Lang::CPlusPlus:	{
+-							macro_identifier_default = CPP0x_macro_identifier_default;
+-							macro_identifier_default_count = STATIC_SIZE(CPP0x_macro_identifier_default);
+-							break;
+-							};
++	case Lang::C: {
++			macro_identifier_default = C99_macro_identifier_default;
++			macro_identifier_default_count = STATIC_SIZE(C99_macro_identifier_default);
++			break;
++		};
++	case Lang::CPlusPlus: {
++			macro_identifier_default = CPP0x_macro_identifier_default;
++			macro_identifier_default_count = STATIC_SIZE(CPP0x_macro_identifier_default);
++			break;
++		};
+ 	default: FATAL(&quot;Invalid language code&quot;);
+ 	}
+ 	init_fixed_system_include_search();
+@@ -844,24 +844,17 @@
+ static unsigned int
+ detect_hardcoded_system_header(const char* const look_for,size_t lang_code)
+ {
+-	// C,C++: limits.h is hardcoded
+-	// C++: climits is hardcoded
+-	if (	(!strcmp(look_for,&quot;limits.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-		||	(!strcmp(look_for,&quot;climits&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-		return 1;
+-
+-	// C,C++: stddef.h is hardcoded
+-	// C++: cstddef is hardcoded
+-	if (	(!strcmp(look_for,&quot;stddef.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-		||	(!strcmp(look_for,&quot;cstddef&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-		return 2;
+-
+-	// C,C++: stdint.h is hardcoded
+-	// C++: cstdint is hardcoded
+-	if (	(!strcmp(look_for,&quot;stdint.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-		||	(!strcmp(look_for,&quot;cstdint&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-		return 3;
+-
++	switch(lang_code)
++	{
++	case Lang::CPlusPlus:	// C++ hard-coded system headers
++		if (!strcmp(look_for,&quot;climits&quot;)) return 1;
++		if (!strcmp(look_for,&quot;cstddef&quot;)) return 2;
++		if (!strcmp(look_for,&quot;cstdint&quot;)) return 3;
++	case Lang::C:	// C, C++ hard-coded system headers
++		if (!strcmp(look_for,&quot;limits.h&quot;)) return 1;
++		if (!strcmp(look_for,&quot;stddef.h&quot;)) return 2;
++		if (!strcmp(look_for,&quot;stdint.h&quot;)) return 3;
++	}
+ 	return 0;
+ }
+ 
+@@ -2129,32 +2122,22 @@
+ 	char buf[FILENAME_MAX];
+ 	// raw system include has minimal macro context, so don't worry about legality check
+ 
+-	// C,C++: limits.h is hardcoded
+-	// C++: climits is hardcoded
+-	if (	(!strcmp(look_for,&quot;limits.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-		||	(!strcmp(look_for,&quot;climits&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-		{	// header is limits.h
++	switch(detect_hardcoded_system_header(look_for,lang_code))
++	{
++#ifndef NDEBUG
++	default: FATAL(&quot;detect_hardcoded_system_header() return value out of 0..3 range&quot;);
++#endif
++	case 1:	// header is limits.h/climits
+ 		create_limits_header(IncludeTokenList,look_for);	// not included yet
+ 		return true;
+-		};
+-
+-	// C,C++: stddef.h is hardcoded
+-	// C++: cstddef is hardcoded
+-	if (	(!strcmp(look_for,&quot;stddef.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-		||	(!strcmp(look_for,&quot;cstddef&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-		{	// header is stddef.h
++	case 2:	// header is stddef.h/cstddef
+ 		create_stddef_header(IncludeTokenList,look_for);	// not included yet
+ 		return true;
+-		};
+-
+-	// C,C++: stddef.h is hardcoded
+-	// C++: cstddef is hardcoded
+-	if (	(!strcmp(look_for,&quot;stdint.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-		||	(!strcmp(look_for,&quot;cstdint&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-		{	// header is stddef.h
++	case 3:	// header is stdint.h/cstdint
+ 		create_stdint_header(IncludeTokenList,look_for);	// not included yet
+ 		return true;
+-		};
++	case 0:;
++	}
+ 
+ 	if (find_system_include(look_for, buf))
+ 		return load_raw_sourcefile(IncludeTokenList,buf);
+@@ -2645,18 +2628,15 @@
+ static void _construct_matched_pairs(const Token&lt;char&gt;&amp; x, const autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized, autovalarray_ptr&lt;POD_pair&lt;size_t,size_t&gt; &gt;&amp; pair_stack,const char l_match,const char r_match)
+ {
+ 	POD_pair&lt;size_t,size_t&gt; depth = balanced_character_count(x.data(),pretokenized,l_match,r_match);	// pre-scan
+-	size_t err_count = 0;
++	DEBUG_STATEMENT(size_t err_count = 0;)
+ 	if (0&lt;depth.first &amp;&amp; 0&lt;depth.second)
+ 		{
+ 		// reality-check: balanced parentheses
+-		autovalarray_ptr&lt;size_t&gt; lparen_fixedstack(depth.first);
+-		autovalarray_ptr&lt;POD_pair&lt;size_t,size_t&gt; &gt; parenpair_fixedstack(depth.first&lt;depth.second ? depth.first : depth.second);
++		autovalarray_ptr_throws&lt;size_t&gt; lparen_fixedstack(depth.first);
++		autovalarray_ptr_throws&lt;POD_pair&lt;size_t,size_t&gt; &gt; parenpair_fixedstack(depth.first&lt;depth.second ? depth.first : depth.second);
+ 		size_t balanced_paren = 0;
+ 		size_t i = 0;
+ 
+-		if (lparen_fixedstack.empty()) throw std::bad_alloc();
+-		if (parenpair_fixedstack.empty()) throw std::bad_alloc();
+-
+ 		depth.first = 0;
+ 		depth.second = 0;
+ 		do	if (1==pretokenized[i].second)
+@@ -2666,7 +2646,7 @@
+ 					if (0&lt;depth.second)
+ 						{
+ 						depth.second = 0;
+-						++err_count;
++						DEBUG_STATEMENT(++err_count;)
+ 						}
+ 					lparen_fixedstack[depth.first++] = i;
+ 					}
+@@ -2682,7 +2662,7 @@
+ 					};
+ 				}
+ 		while(pretokenized.size() &gt; ++i);
+-		if (0==depth.first &amp;&amp; 0==depth.second &amp;&amp; 0==err_count)
++		if (0==depth.first &amp;&amp; 0==depth.second DEBUG_STATEMENT(&amp;&amp; 0==err_count))
+ 			{
+ 			assert(parenpair_fixedstack.size()==balanced_paren);
+ 			parenpair_fixedstack.MoveInto(pair_stack);
+@@ -2690,8 +2670,8 @@
+ 		};
+ 
+ 	assert(0==depth.first || 0==depth.second);
+-	if (0&lt;depth.second) ++err_count;
+-	if (0&lt;depth.first) ++err_count;
++	DEBUG_STATEMENT(if (0&lt;depth.second) ++err_count;)
++	DEBUG_STATEMENT(if (0&lt;depth.first) ++err_count;)
+ 	assert(0==err_count);
+ }
+ 
+@@ -2705,18 +2685,15 @@
+ void construct_matched_pairs&lt;'[',']'&gt;(const Token&lt;char&gt;&amp; x, const autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized, autovalarray_ptr&lt;POD_pair&lt;size_t,size_t&gt; &gt;&amp; pair_stack)
+ {
+ 	POD_pair&lt;size_t,size_t&gt; depth = balanced_character_count(x.data(),pretokenized,'[',']');	// pre-scan
+-	size_t err_count = 0;
++	DEBUG_STATEMENT(size_t err_count = 0;)
+ 	if (0&lt;depth.first &amp;&amp; 0&lt;depth.second)
+ 		{
+ 		// reality-check: balanced parentheses
+-		autovalarray_ptr&lt;size_t&gt; lparen_fixedstack(depth.first);
+-		autovalarray_ptr&lt;POD_pair&lt;size_t,size_t&gt; &gt; parenpair_fixedstack(depth.first&lt;depth.second ? depth.first : depth.second);
++		autovalarray_ptr_throws&lt;size_t&gt; lparen_fixedstack(depth.first);
++		autovalarray_ptr_throws&lt;POD_pair&lt;size_t,size_t&gt; &gt; parenpair_fixedstack(depth.first&lt;depth.second ? depth.first : depth.second);
+ 		size_t balanced_paren = 0;
+ 		size_t i = 0;
+ 
+-		if (lparen_fixedstack.empty()) throw std::bad_alloc();
+-		if (parenpair_fixedstack.empty()) throw std::bad_alloc();
+-
+ 		depth.first = 0;
+ 		depth.second = 0;
+ 		do	if 		(detect_C_left_bracket_op(x.data()+pretokenized[i].first,pretokenized[i].second))
+@@ -2724,7 +2701,7 @@
+ 				if (0&lt;depth.second)
+ 					{
+ 					depth.second = 0;
+-					++err_count;
++					DEBUG_STATEMENT(++err_count;)
+ 					}
+ 				lparen_fixedstack[depth.first++] = i;
+ 				}
+@@ -2739,7 +2716,7 @@
+ 					++depth.second;
+ 				}
+ 		while(pretokenized.size() &gt; ++i);
+-		if (0==depth.first &amp;&amp; 0==depth.second &amp;&amp; 0==err_count)
++		if (0==depth.first &amp;&amp; 0==depth.second DEBUG_STATEMENT(&amp;&amp; 0==err_count))
+ 			{
+ 			assert(parenpair_fixedstack.size()==balanced_paren);
+ 			parenpair_fixedstack.MoveInto(pair_stack);
+@@ -2747,8 +2724,8 @@
+ 		};
+ 
+ 	assert(0==depth.first || 0==depth.second);
+-	if (0&lt;depth.second) ++err_count;
+-	if (0&lt;depth.first) ++err_count;
++	DEBUG_STATEMENT(if (0&lt;depth.second) ++err_count;)
++	DEBUG_STATEMENT(if (0&lt;depth.first) ++err_count;)
+ 	assert(0==err_count);
+ }
+ 
+@@ -3467,9 +3444,8 @@
+ 	size_t var_origin = 0;
+ 	size_t offset = 1;
+ 	size_t count_args = 0;
+-	assert(!arglist.empty());
+-	assert('('==arglist.front());
+ 	assert(2&lt;=arglist.size());
++	assert('('==arglist.front());
+ 	assert(')'==arglist.back());
+ 	if (2==arglist.size())
+ 		{
+@@ -3529,7 +3505,7 @@
+ CPreprocessor::dynamic_macro_replace_once(Token&lt;char&gt;&amp; x, size_t&amp; critical_offset, size_t token_len, const autovalarray_ptr&lt;char*&gt;&amp; macros_object, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_object_expansion, const autovalarray_ptr&lt;char*&gt;&amp; macros_function, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_arglist, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_expansion, autovalarray_ptr&lt;char*&gt;* const used_macro_stack)
+ {
+ 	assert(x.size()&gt;critical_offset);
+-	assert(x.size()&gt;=critical_offset+token_len);
++	assert(x.size()-critical_offset&gt;=token_len);
+ 	assert(macros_object.size()==macros_object_expansion.size());
+ 	assert(macros_function.size()==macros_function_expansion.size());
+ 	const errr object_macro_index = binary_find(x.data()+critical_offset,token_len,macros_object);
+@@ -4068,7 +4044,6 @@
+ bool
+ CPreprocessor::C99_VA_ARGS_flinch(const Token&lt;char&gt;&amp; x, const size_t critical_offset) const
+ {	//! \todo option to bypass this
+-	assert(!x.empty());
+ 	assert(x.size()&gt;critical_offset);
+ 	if (SIZE_MAX!=lang.lex_find(x.data()+critical_offset,x.size()-critical_offset,&quot;__VA_ARGS__&quot;,sizeof(&quot;__VA_ARGS__&quot;)-1))
+ 		{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000068.html">[Zcplusplus-commits] r301 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000070.html">[Zcplusplus-commits] r303 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#69">[ date ]</a>
+              <a href="thread.html#69">[ thread ]</a>
+              <a href="subject.html#69">[ subject ]</a>
+              <a href="author.html#69">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

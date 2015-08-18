@@ -1,0 +1,243 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r596 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r596%20-%20trunk&In-Reply-To=%3C20110126103554.0B270480C1C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000362.html">
+   <LINK REL="Next"  HREF="000364.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r596 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r596%20-%20trunk&In-Reply-To=%3C20110126103554.0B270480C1C%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r596 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan 26 11:35:53 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000362.html">[Zcplusplus-commits] r595 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000364.html">[Zcplusplus-commits] r597 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#363">[ date ]</a>
+              <a href="thread.html#363">[ thread ]</a>
+              <a href="subject.html#363">[ subject ]</a>
+              <a href="author.html#363">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-26 11:35:53 +0100 (Wed, 26 Jan 2011)
+New Revision: 596
+
+Modified:
+   trunk/ParseTree.cpp
+Log:
+reduce lines of code
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-01-26 09:58:05 UTC (rev 595)
++++ trunk/ParseTree.cpp	2011-01-26 10:35:53 UTC (rev 596)
+@@ -71,27 +71,19 @@
+ 	return true;
+ }
+ 
++template&lt;class iter,class src&gt;
++bool entangled_with(src&amp; x,iter begin,iter end)
++{
++	while(begin!=end) if ((begin++)-&gt;entangled_with(x)) return true;
++	return false;
++}
++
+ bool parse_tree::entangled_with(const type_spec&amp; x) const
+ {
+ 	if (x.entangled_with(type_code)) return true;
+-	size_t i = 0;
+-	while(size&lt;0&gt;()&gt;i)
+-		{
+-		if (data&lt;0&gt;()[i].entangled_with(x)) return true;
+-		++i;
+-		}
+-	i = 0;
+-	while(size&lt;1&gt;()&gt;i)
+-		{
+-		if (data&lt;1&gt;()[i].entangled_with(x)) return true;
+-		++i;
+-		}
+-	i = 0;
+-	while(size&lt;2&gt;()&gt;i)
+-		{
+-		if (data&lt;2&gt;()[i].entangled_with(x)) return true;
+-		++i;
+-		}
++	if (::entangled_with(x,begin&lt;0&gt;(),end&lt;0&gt;())) return true;
++	if (::entangled_with(x,begin&lt;1&gt;(),end&lt;1&gt;())) return true;
++	if (::entangled_with(x,begin&lt;2&gt;(),end&lt;2&gt;())) return true;
+ 	return false;
+ }
+ 
+@@ -109,73 +101,27 @@
+ 	if (args[2] &amp;&amp; x.args[2] &amp;&amp; args[2]==x.args[2]) return true;
+ 
+ 	size_t i = 0;
+-	size_t j = 0;
+ 	while(size&lt;0&gt;()&gt;i)
+ 		{
+-		while(x.size&lt;0&gt;()&gt;j)
+-			{
+-			if (data&lt;0&gt;()[i].entangled_with(x.data&lt;0&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
+-		while(x.size&lt;1&gt;()&gt;j)
+-			{
+-			if (data&lt;0&gt;()[i].entangled_with(x.data&lt;1&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
+-		while(x.size&lt;2&gt;()&gt;j)
+-			{
+-			if (data&lt;0&gt;()[i].entangled_with(x.data&lt;2&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
++		if (::entangled_with(data&lt;0&gt;()[i],x.begin&lt;0&gt;(),x.end&lt;0&gt;())) return true;
++		if (::entangled_with(data&lt;0&gt;()[i],x.begin&lt;1&gt;(),x.end&lt;1&gt;())) return true;
++		if (::entangled_with(data&lt;0&gt;()[i],x.begin&lt;2&gt;(),x.end&lt;2&gt;())) return true;
+ 		++i;
+ 		}
+ 	i = 0;
+ 	while(size&lt;1&gt;()&gt;i)
+ 		{
+-		while(x.size&lt;0&gt;()&gt;j)
+-			{
+-			if (data&lt;1&gt;()[i].entangled_with(x.data&lt;0&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
+-		while(x.size&lt;1&gt;()&gt;j)
+-			{
+-			if (data&lt;1&gt;()[i].entangled_with(x.data&lt;1&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
+-		while(x.size&lt;2&gt;()&gt;j)
+-			{
+-			if (data&lt;1&gt;()[i].entangled_with(x.data&lt;2&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
++		if (::entangled_with(data&lt;1&gt;()[i],x.begin&lt;0&gt;(),x.end&lt;0&gt;())) return true;
++		if (::entangled_with(data&lt;1&gt;()[i],x.begin&lt;1&gt;(),x.end&lt;1&gt;())) return true;
++		if (::entangled_with(data&lt;1&gt;()[i],x.begin&lt;2&gt;(),x.end&lt;2&gt;())) return true;
+ 		++i;
+ 		}
+ 	i = 0;
+ 	while(size&lt;2&gt;()&gt;i)
+ 		{
+-		while(x.size&lt;0&gt;()&gt;j)
+-			{
+-			if (data&lt;2&gt;()[i].entangled_with(x.data&lt;0&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
+-		while(x.size&lt;1&gt;()&gt;j)
+-			{
+-			if (data&lt;2&gt;()[i].entangled_with(x.data&lt;1&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
+-		while(x.size&lt;2&gt;()&gt;j)
+-			{
+-			if (data&lt;2&gt;()[i].entangled_with(x.data&lt;2&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
++		if (::entangled_with(data&lt;2&gt;()[i],x.begin&lt;0&gt;(),x.end&lt;0&gt;())) return true;
++		if (::entangled_with(data&lt;2&gt;()[i],x.begin&lt;1&gt;(),x.end&lt;1&gt;())) return true;
++		if (::entangled_with(data&lt;2&gt;()[i],x.begin&lt;2&gt;(),x.end&lt;2&gt;())) return true;
+ 		++i;
+ 		}
+ 	return false;
+@@ -188,17 +134,11 @@
+ 	if (args[1] &amp;&amp; args[2] &amp;&amp; args[1]==args[2]) return true;
+ 
+ 	size_t i = 0;
+-	size_t j = 0;
+ 	while(size&lt;0&gt;()&gt;i)
+ 		{
+ 		if (data&lt;0&gt;()[i].self_entangled()) return true;
+ 		if (data&lt;0&gt;()[i].entangled_with(type_code)) return true;
+-		while(i&gt;j)
+-			{
+-			if (data&lt;0&gt;()[i].entangled_with(data&lt;0&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
++		if (0&lt;i &amp;&amp; ::entangled_with(data&lt;0&gt;()[i],begin&lt;0&gt;(),begin&lt;0&gt;()+i)) return true;
+ 		++i;
+ 		}
+ 	i = 0;
+@@ -206,12 +146,7 @@
+ 		{
+ 		if (data&lt;1&gt;()[i].self_entangled()) return true;
+ 		if (data&lt;1&gt;()[i].entangled_with(type_code)) return true;
+-		while(i&gt;j)
+-			{
+-			if (data&lt;1&gt;()[i].entangled_with(data&lt;1&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
++		if (0&lt;i &amp;&amp; ::entangled_with(data&lt;1&gt;()[i],begin&lt;1&gt;(),begin&lt;1&gt;()+i)) return true;
+ 		++i;
+ 		}
+ 	i = 0;
+@@ -219,12 +154,7 @@
+ 		{
+ 		if (data&lt;2&gt;()[i].self_entangled()) return true;
+ 		if (data&lt;2&gt;()[i].entangled_with(type_code)) return true;
+-		while(i&gt;j)
+-			{
+-			if (data&lt;2&gt;()[i].entangled_with(data&lt;2&gt;()[j])) return true;
+-			++j;
+-			}
+-		j = 0;
++		if (0&lt;i &amp;&amp; ::entangled_with(data&lt;2&gt;()[i],begin&lt;2&gt;(),begin&lt;2&gt;()+i)) return true;
+ 		++i;
+ 		}
+ 	return false;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000362.html">[Zcplusplus-commits] r595 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000364.html">[Zcplusplus-commits] r597 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#363">[ date ]</a>
+              <a href="thread.html#363">[ thread ]</a>
+              <a href="subject.html#363">[ subject ]</a>
+              <a href="author.html#363">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

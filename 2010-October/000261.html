@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r494 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r494%20-%20trunk&In-Reply-To=%3C20101012222423.3F3E4481142%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000260.html">
+   <LINK REL="Next"  HREF="000262.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r494 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r494%20-%20trunk&In-Reply-To=%3C20101012222423.3F3E4481142%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r494 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Oct 13 00:24:23 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000260.html">[Zcplusplus-commits] r493 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000262.html">[Zcplusplus-commits] r495 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#261">[ date ]</a>
+              <a href="thread.html#261">[ thread ]</a>
+              <a href="subject.html#261">[ subject ]</a>
+              <a href="author.html#261">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-13 00:24:23 +0200 (Wed, 13 Oct 2010)
+New Revision: 494
+
+Added:
+   trunk/type_system.hpp.in
+Modified:
+   trunk/type_system.hpp
+   trunk/type_system_pp.hpp
+Log:
+adjust build system for type_system.hpp, etc.
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2010-10-12 20:28:46 UTC (rev 493)
++++ trunk/type_system.hpp	2010-10-12 22:24:23 UTC (rev 494)
+@@ -5,7 +5,6 @@
+ #define TYPE_SYSTEM_HPP 1
+ 
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+-#/*cut-cpp*/
+ #include &quot;Zaimoni.STL/AutoPtr.hpp&quot;
+ #include &quot;type_spec.hpp&quot;
+ 
+@@ -13,34 +12,26 @@
+ class union_struct_decl;
+ class C_union_struct_def;
+ class enum_def;
+-#/*cut-cpp*/
+-#ifndef assert
+-#include &quot;Zaimoni.STL/Logging.h&quot;
+-#endif
+ 
+ class type_system
+ {
+ public:
+ 	typedef size_t type_index;
+-#/*cut-cpp*/
+ 	// { {type, representation, value}, {filename, location }}
+ 	// uchar_blob is a POD backing store for unsigned_var_int here
+ 	typedef zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;zaimoni::POD_triple&lt;type_index,unsigned char,uchar_blob&gt;, zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;size_t,size_t&gt; &gt; &gt; &gt; enumerator_info;
+-#/*cut-cpp*/
+ 
+ 	const zaimoni::POD_pair&lt;const char* const,size_t&gt;* const core_types;
+ 	const type_index* const int_priority;
+ 	const size_t core_types_size;
+ 	const size_t int_priority_size;
+ private:
+-#/*cut-cpp*/
+ 	typedef zaimoni::POD_quartet&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt;, size_t&gt; dynamic_type_format;
+ 	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+ 	zaimoni::weakautovalarray_ptr&lt;const char*&gt; inline_namespace_alias_targets;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,const char*&gt; &gt; inline_namespace_alias_map;
+ 	zaimoni::autovalarray_ptr&lt;enumerator_info&gt; enumerator_registry;
+-#/*cut-cpp*/
+ 	// uncopyable
+ 	type_system(const type_system&amp; src);
+ 	void operator=(const type_system&amp; src);
+@@ -51,7 +42,6 @@
+ 		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
+ 		int_priority_size((assert(0&lt;_int_priority_size),_int_priority_size)) {};
+ 
+-#/*cut-cpp*/
+ 	type_index get_id_union(const char* x) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+@@ -70,20 +60,11 @@
+ 		return _get_id_enum(x);
+ 		}
+ 	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
+-#/*cut-cpp*/
+ 	const char* name(type_index id) const
+ 		{
+-#/*cut-cpp*/
+ 		assert(core_types_size+dynamic_types.size()&gt;=id);
+-#define ZCC_CPP_SCREEN 1
+-#/*cut-cpp*/
+-#ifndef ZCC_CPP_SCREEN
+-		assert(core_types_size&gt;=id);
+-#endif
+-#undef ZCC_CPP_SCREEN
+ 		return _name(id);
+ 		}
+-#/*cut-cpp*/
+ 
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	// defer five other variants for now (YAGNI)
+@@ -137,10 +118,8 @@
+ 	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
+ 	void set_enum_underlying_type(type_index i,size_t new_type);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+-#/*cut-cpp*/
+ private:
+ 	const char* _name(type_index id) const;
+-#/*cut-cpp*/
+ 	type_index _get_id_union(const char* x) const;
+ 	type_index _get_id_union_CPP(const char* x) const;
+ 	type_index _get_id_enum(const char* x) const;
+@@ -159,6 +138,5 @@
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+ 	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+-#/*cut-cpp*/
+ };
+ #endif
+
+Added: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	                        (rev 0)
++++ trunk/type_system.hpp.in	2010-10-12 22:24:23 UTC (rev 494)
+@@ -0,0 +1,162 @@
++// type_system.hpp
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++
++#ifndef TYPE_SYSTEM_HPP
++#define TYPE_SYSTEM_HPP 1
++
++#include &quot;Zaimoni.STL/POD.hpp&quot;
++#/*cut-cpp*/
++#include &quot;Zaimoni.STL/AutoPtr.hpp&quot;
++#include &quot;type_spec.hpp&quot;
++
++class function_type;
++class union_struct_decl;
++class C_union_struct_def;
++class enum_def;
++#/*cut-cpp*/
++#/*cut-nocpp*/
++#include &quot;Zaimoni.STL/Logging.h&quot;
++#/*cut-nocpp*/
++
++class type_system
++{
++public:
++	typedef size_t type_index;
++#/*cut-cpp*/
++	// { {type, representation, value}, {filename, location }}
++	// uchar_blob is a POD backing store for unsigned_var_int here
++	typedef zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;zaimoni::POD_triple&lt;type_index,unsigned char,uchar_blob&gt;, zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;size_t,size_t&gt; &gt; &gt; &gt; enumerator_info;
++#/*cut-cpp*/
++
++	const zaimoni::POD_pair&lt;const char* const,size_t&gt;* const core_types;
++	const type_index* const int_priority;
++	const size_t core_types_size;
++	const size_t int_priority_size;
++private:
++#/*cut-cpp*/
++	typedef zaimoni::POD_quartet&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt;, size_t&gt; dynamic_type_format;
++	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
++	zaimoni::weakautovalarray_ptr&lt;const char*&gt; inline_namespace_alias_targets;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,const char*&gt; &gt; inline_namespace_alias_map;
++	zaimoni::autovalarray_ptr&lt;enumerator_info&gt; enumerator_registry;
++#/*cut-cpp*/
++	// uncopyable
++	type_system(const type_system&amp; src);
++	void operator=(const type_system&amp; src);
++public:
++	type_system(const zaimoni::POD_pair&lt;const char* const,size_t&gt;* _core_types,size_t _core_types_size,const type_index* _int_priority,size_t _int_priority_size)
++	:	core_types((assert(_core_types),_core_types)),
++		int_priority((assert(_int_priority),_int_priority)),
++		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
++		int_priority_size((assert(0&lt;_int_priority_size),_int_priority_size)) {};
++
++#/*cut-cpp*/
++	type_index get_id_union(const char* x) const
++		{
++		assert(x &amp;&amp; *x);
++		return _get_id_union(x);
++		}
++	type_index get_id_union_CPP(const char* alias,const char* active_namespace) const;
++	type_index get_id_struct_class(const char* x) const
++		{
++		assert(x &amp;&amp; *x);
++		return _get_id_struct_class(x);
++		}
++	type_index get_id_struct_class_CPP(const char* alias,const char* active_namespace) const;
++	type_index get_id_enum(const char* x) const
++		{
++		assert(x &amp;&amp; *x);
++		return _get_id_enum(x);
++		}
++	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
++#/*cut-cpp*/
++	const char* name(type_index id) const
++		{
++#/*cut-cpp*/
++		assert(core_types_size+dynamic_types.size()&gt;=id);
++#/*cut-cpp*/
++#/*cut-nocpp*/
++		assert(core_types_size&gt;=id);
++#/*cut-nocpp*/
++		return _name(id);
++		}
++#/*cut-cpp*/
++
++	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
++	// defer five other variants for now (YAGNI)
++	static char* namespace_concatenate(const char* const name, const char* const active_namespace,const char* namespace_separator)
++		{
++		assert(name &amp;&amp; *name);
++		assert(active_namespace &amp;&amp; *active_namespace);
++		assert(namespace_separator &amp;&amp; *namespace_separator);
++		return _namespace_concatenate(name,strlen(name),active_namespace,strlen(active_namespace),namespace_separator,strlen(namespace_separator));
++		};
++	static void namespace_concatenate(char* buf, const char* const name, const char* const active_namespace,const char* namespace_separator)
++		{
++		assert(buf);
++		assert(name &amp;&amp; *name);
++		assert(active_namespace &amp;&amp; *active_namespace);
++		assert(namespace_separator &amp;&amp; *namespace_separator);
++		_namespace_concatenate(buf,name,strlen(name),active_namespace,strlen(active_namespace),namespace_separator,strlen(namespace_separator));
++		};
++	static void namespace_concatenate(char* buf, const char* const name, const char* const active_namespace,size_t active_namespace_len,const char* namespace_separator)
++		{
++		assert(buf);
++		assert(name &amp;&amp; *name);
++		assert(active_namespace &amp;&amp; *active_namespace);
++		assert(0&lt;active_namespace_len &amp;&amp; active_namespace_len&lt;=strlen(active_namespace));
++		assert(namespace_separator &amp;&amp; *namespace_separator);
++		_namespace_concatenate(buf,name,strlen(name),active_namespace,active_namespace_len,namespace_separator,strlen(namespace_separator));
++		};
++
++	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
++	void set_typedef_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
++	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
++	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef_CPP(const char* alias,const char* active_namespace) const;
++
++	void set_enumerator_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename,unsigned char representation,const uchar_blob&amp; src,type_index type);
++	void set_enumerator_def_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename,unsigned char representation,const uchar_blob&amp; src,type_index type);
++	const enumerator_info* get_enumerator(const char* alias) const;
++	const enumerator_info* get_enumerator_CPP(const char* alias,const char* active_namespace) const;
++
++	type_index register_functype(const char* const alias, function_type*&amp; src);
++	type_index register_functype_CPP(const char* name, const char* active_namespace, function_type*&amp; src);
++//	keyword actually should be type union_struct_decl::keywords, but that increases coupling unacceptably
++	type_index register_structdecl(const char* alias, int keyword);
++	type_index register_structdecl_CPP(const char* name, const char* active_namespace, int keyword);
++	type_index register_C_structdef(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
++	type_index register_C_structdef_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
++	type_index register_enum_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
++	type_index register_enum_def_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
++	const function_type* get_functype(type_index i) const;
++	const union_struct_decl* get_structdecl(type_index i) const;
++	const C_union_struct_def* get_C_structdef(type_index i) const;
++	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
++	void set_enum_underlying_type(type_index i,size_t new_type);
++	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
++#/*cut-cpp*/
++private:
++	const char* _name(type_index id) const;
++#/*cut-cpp*/
++	type_index _get_id_union(const char* x) const;
++	type_index _get_id_union_CPP(const char* x) const;
++	type_index _get_id_enum(const char* x) const;
++	type_index _get_id_enum_CPP(const char* x) const;
++	type_index _get_id_struct_class(const char* x) const;
++	type_index _get_id_struct_class_CPP(const char* x) const;
++	enum_def* _get_enum_def(type_index i) const;
++	
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
++	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
++	const enumerator_info* _get_enumerator_CPP(const char* alias) const;
++	bool is_inline_namespace_CPP(const char* active_namespace, size_t active_namespace_len) const;
++	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
++	const char* construct_canonical_name_and_aliasing_CPP(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len);
++
++	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
++	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
++	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
++#/*cut-cpp*/
++};
++#endif
+
+Modified: trunk/type_system_pp.hpp
+===================================================================
+--- trunk/type_system_pp.hpp	2010-10-12 20:28:46 UTC (rev 493)
++++ trunk/type_system_pp.hpp	2010-10-12 22:24:23 UTC (rev 494)
+@@ -5,9 +5,7 @@
+ #define TYPE_SYSTEM_HPP 1
+ 
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+-#ifndef assert
+ #include &quot;Zaimoni.STL/Logging.h&quot;
+-#endif
+ 
+ class type_system
+ {
+@@ -31,10 +29,7 @@
+ 
+ 	const char* name(type_index id) const
+ 		{
+-#ifndef ZCC_CPP_SCREEN
+ 		assert(core_types_size&gt;=id);
+-#endif
+-#undef ZCC_CPP_SCREEN
+ 		return _name(id);
+ 		}
+ private:
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000260.html">[Zcplusplus-commits] r493 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000262.html">[Zcplusplus-commits] r495 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#261">[ date ]</a>
+              <a href="thread.html#261">[ thread ]</a>
+              <a href="subject.html#261">[ subject ]</a>
+              <a href="author.html#261">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

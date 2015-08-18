@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r299 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r299%20-%20trunk&In-Reply-To=%3C200912070123.nB71NWOO004080%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000065.html">
+   <LINK REL="Next"  HREF="000067.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r299 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r299%20-%20trunk&In-Reply-To=%3C200912070123.nB71NWOO004080%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r299 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  7 02:23:32 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000065.html">[Zcplusplus-commits] r298 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000067.html">[Zcplusplus-commits] r300 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#66">[ date ]</a>
+              <a href="thread.html#66">[ thread ]</a>
+              <a href="subject.html#66">[ subject ]</a>
+              <a href="author.html#66">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-07 02:23:29 +0100 (Mon, 07 Dec 2009)
+New Revision: 299
+
+Modified:
+   trunk/struct_type.cpp
+Log:
+theoretical fix
+
+Modified: trunk/struct_type.cpp
+===================================================================
+--- trunk/struct_type.cpp	2009-12-07 01:09:09 UTC (rev 298)
++++ trunk/struct_type.cpp	2009-12-07 01:23:29 UTC (rev 299)
+@@ -39,8 +39,6 @@
+ 
+ const C_union_struct_def&amp; C_union_struct_def::operator=(const C_union_struct_def&amp; src)
+ {
+-	zaimoni::autovalarray_ptr_throws&lt;type_spec&gt; data_field_spec;
+-	
+ 	const size_t src_field_count = src.data_field_spec.size();
+ 	const size_t now_field_count = data_field_spec.size();
+ 	if (0==src_field_count)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000065.html">[Zcplusplus-commits] r298 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000067.html">[Zcplusplus-commits] r300 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#66">[ date ]</a>
+              <a href="thread.html#66">[ thread ]</a>
+              <a href="subject.html#66">[ subject ]</a>
+              <a href="author.html#66">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

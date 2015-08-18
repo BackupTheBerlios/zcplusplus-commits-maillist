@@ -1,0 +1,713 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r691 - trunk/tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r691%20-%20trunk/tests/zcc/decl.C99&In-Reply-To=%3C20110902230847.1869C480A1C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000457.html">
+   <LINK REL="Next"  HREF="000459.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r691 - trunk/tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r691%20-%20trunk/tests/zcc/decl.C99&In-Reply-To=%3C20110902230847.1869C480A1C%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r691 - trunk/tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep  3 01:08:46 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000457.html">[Zcplusplus-commits] r690 - trunk/tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000459.html">[Zcplusplus-commits] r692 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#458">[ date ]</a>
+              <a href="thread.html#458">[ thread ]</a>
+              <a href="subject.html#458">[ subject ]</a>
+              <a href="author.html#458">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-09-03 01:08:46 +0200 (Sat, 03 Sep 2011)
+New Revision: 691
+
+Modified:
+   trunk/tests/zcc/decl.C99/Pass_union_def_decl.h
+   trunk/tests/zcc/decl.C99/Pass_union_def_decl.hpp
+Log:
+update series #1 for generated test cases: test cases #3
+
+Modified: trunk/tests/zcc/decl.C99/Pass_union_def_decl.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_def_decl.h	2011-09-02 23:07:07 UTC (rev 690)
++++ trunk/tests/zcc/decl.C99/Pass_union_def_decl.h	2011-09-02 23:08:46 UTC (rev 691)
+@@ -1,4 +1,4 @@
+-// decl.C99\Pass_union_def_decl.h
++// Pass_union_def_decl.h
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined union
+ 
+@@ -14,106 +14,215 @@
+ extern volatile const union good_test x5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static union good_test x6;
+-static volatile union good_test x7;
+-static const volatile union good_test x8;
+-static volatile const union good_test x9;
++static const union good_test x7;
++static volatile union good_test x8;
++static const volatile union good_test x9;
++static volatile const union good_test x10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern union good_test x10;
+-volatile extern union good_test x11;
+-const extern volatile union good_test x12;
+-const volatile extern union good_test x13;
+-volatile extern const union good_test x14;
+-volatile const extern union good_test x15;
+-volatile static union good_test x16;
+-const static volatile union good_test x17;
+-const volatile static union good_test x18;
+-volatile static const union good_test x19;
+-volatile const static union good_test x20;
++// extern/static not in first position is deprecated, but legal
++const extern union good_test x11;
++volatile extern union good_test x12;
++const extern volatile union good_test x13;
++const volatile extern union good_test x14;
++volatile extern const union good_test x15;
++volatile const extern union good_test x16;
++const static union good_test x17;
++volatile static union good_test x18;
++const static volatile union good_test x19;
++const volatile static union good_test x20;
++volatile static const union good_test x21;
++volatile const static union good_test x22;
+ 
+ // ringing the changes on _Thread_local extern
+-extern _Thread_local union good_test x21;
+-extern _Thread_local const union good_test x22;
+-extern _Thread_local volatile union good_test x23;
+-extern _Thread_local const volatile union good_test x24;
+-extern _Thread_local volatile const union good_test x25;
+-_Thread_local extern union good_test x26;
+-_Thread_local extern const union good_test x27;
+-_Thread_local extern volatile union good_test x28;
+-_Thread_local extern const volatile union good_test x29;
+-_Thread_local extern volatile const union good_test x30;
++extern _Thread_local union good_test x23;
++extern _Thread_local const union good_test x24;
++extern _Thread_local volatile union good_test x25;
++extern _Thread_local const volatile union good_test x26;
++extern _Thread_local volatile const union good_test x27;
++_Thread_local extern union good_test x28;
++_Thread_local extern const union good_test x29;
++_Thread_local extern volatile union good_test x30;
++_Thread_local extern const volatile union good_test x31;
++_Thread_local extern volatile const union good_test x32;
+ 
+ // ringing the changes on _Thread_local static
+-static _Thread_local union good_test x31;
+-static _Thread_local const union good_test x32;
+-static _Thread_local volatile union good_test x33;
+-static _Thread_local const volatile union good_test x34;
+-static _Thread_local volatile const union good_test x35;
+-_Thread_local static union good_test x36;
+-_Thread_local static const union good_test x37;
+-_Thread_local static volatile union good_test x38;
+-_Thread_local static const volatile union good_test x39;
+-_Thread_local static volatile const union good_test x40;
++static _Thread_local union good_test x33;
++static _Thread_local const union good_test x34;
++static _Thread_local volatile union good_test x35;
++static _Thread_local const volatile union good_test x36;
++static _Thread_local volatile const union good_test x37;
++_Thread_local static union good_test x38;
++_Thread_local static const union good_test x39;
++_Thread_local static volatile union good_test x40;
++_Thread_local static const volatile union good_test x41;
++_Thread_local static volatile const union good_test x42;
+ 
+-// _Thread_local extern not in first two postions is deprecated, but legal
+-extern const _Thread_local union good_test x41;
+-const extern _Thread_local union good_test x42;
+-extern volatile _Thread_local union good_test x43;
+-volatile extern _Thread_local union good_test x44;
+-extern const _Thread_local volatile union good_test x45;
+-extern const volatile _Thread_local union good_test x46;
+-const extern _Thread_local volatile union good_test x47;
+-const extern volatile _Thread_local union good_test x48;
+-const volatile extern _Thread_local union good_test x49;
+-extern volatile _Thread_local const union good_test x50;
+-extern volatile const _Thread_local union good_test x51;
+-volatile extern _Thread_local const union good_test x52;
+-volatile extern const _Thread_local union good_test x53;
+-volatile const extern _Thread_local union good_test x54;
+-_Thread_local const extern union good_test x55;
+-const _Thread_local extern union good_test x56;
+-_Thread_local volatile extern union good_test x57;
+-volatile _Thread_local extern union good_test x58;
+-_Thread_local const extern volatile union good_test x59;
+-_Thread_local const volatile extern union good_test x60;
+-const _Thread_local extern volatile union good_test x61;
+-const _Thread_local volatile extern union good_test x62;
+-const volatile _Thread_local extern union good_test x63;
+-_Thread_local volatile extern const union good_test x64;
+-_Thread_local volatile const extern union good_test x65;
+-volatile _Thread_local extern const union good_test x66;
+-volatile _Thread_local const extern union good_test x67;
+-volatile const _Thread_local extern union good_test x68;
++// _Thread_local extern not in first two positions is deprecated, but legal
++extern const _Thread_local union good_test x43;
++const extern _Thread_local union good_test x44;
++extern volatile _Thread_local union good_test x45;
++volatile extern _Thread_local union good_test x46;
++extern const _Thread_local volatile union good_test x47;
++extern const volatile _Thread_local union good_test x48;
++const extern _Thread_local volatile union good_test x49;
++const extern volatile _Thread_local union good_test x50;
++const volatile extern _Thread_local union good_test x51;
++extern volatile _Thread_local const union good_test x52;
++extern volatile const _Thread_local union good_test x53;
++volatile extern _Thread_local const union good_test x54;
++volatile extern const _Thread_local union good_test x55;
++volatile const extern _Thread_local union good_test x56;
++_Thread_local const extern union good_test x57;
++const _Thread_local extern union good_test x58;
++_Thread_local volatile extern union good_test x59;
++volatile _Thread_local extern union good_test x60;
++_Thread_local const extern volatile union good_test x61;
++_Thread_local const volatile extern union good_test x62;
++const _Thread_local extern volatile union good_test x63;
++const _Thread_local volatile extern union good_test x64;
++const volatile _Thread_local extern union good_test x65;
++_Thread_local volatile extern const union good_test x66;
++_Thread_local volatile const extern union good_test x67;
++volatile _Thread_local extern const union good_test x68;
++volatile _Thread_local const extern union good_test x69;
++volatile const _Thread_local extern union good_test x70;
+ 
+-// _Thread_local static not in first two postions is deprecated, but legal
+-static const _Thread_local union good_test x69;
+-const static _Thread_local union good_test x70;
+-static volatile _Thread_local union good_test x71;
+-volatile static _Thread_local union good_test x72;
+-static const _Thread_local volatile union good_test x73;
+-static const volatile _Thread_local union good_test x74;
+-const static _Thread_local volatile union good_test x75;
+-const static volatile _Thread_local union good_test x76;
+-const volatile static _Thread_local union good_test x77;
+-static volatile _Thread_local const union good_test x78;
+-static volatile const _Thread_local union good_test x79;
+-volatile static _Thread_local const union good_test x80;
+-volatile static const _Thread_local union good_test x81;
+-volatile const static _Thread_local union good_test x82;
+-_Thread_local const static union good_test x83;
+-const _Thread_local static union good_test x84;
+-_Thread_local volatile static union good_test x85;
+-volatile _Thread_local static union good_test x86;
+-_Thread_local const static volatile union good_test x87;
+-_Thread_local const volatile static union good_test x88;
+-const _Thread_local static volatile union good_test x89;
+-const _Thread_local volatile static union good_test x90;
+-const volatile _Thread_local static union good_test x91;
+-_Thread_local volatile static const union good_test x92;
+-_Thread_local volatile const static union good_test x93;
+-volatile _Thread_local static const union good_test x94;
+-volatile _Thread_local const static union good_test x95;
+-volatile const _Thread_local static union good_test x96;
++// _Thread_local static not in first two positions is deprecated, but legal
++static const _Thread_local union good_test x71;
++const static _Thread_local union good_test x72;
++static volatile _Thread_local union good_test x73;
++volatile static _Thread_local union good_test x74;
++static const _Thread_local volatile union good_test x75;
++static const volatile _Thread_local union good_test x76;
++const static _Thread_local volatile union good_test x77;
++const static volatile _Thread_local union good_test x78;
++const volatile static _Thread_local union good_test x79;
++static volatile _Thread_local const union good_test x80;
++static volatile const _Thread_local union good_test x81;
++volatile static _Thread_local const union good_test x82;
++volatile static const _Thread_local union good_test x83;
++volatile const static _Thread_local union good_test x84;
++_Thread_local const static union good_test x85;
++const _Thread_local static union good_test x86;
++_Thread_local volatile static union good_test x87;
++volatile _Thread_local static union good_test x88;
++_Thread_local const static volatile union good_test x89;
++_Thread_local const volatile static union good_test x90;
++const _Thread_local static volatile union good_test x91;
++const _Thread_local volatile static union good_test x92;
++const volatile _Thread_local static union good_test x93;
++_Thread_local volatile static const union good_test x94;
++_Thread_local volatile const static union good_test x95;
++volatile _Thread_local static const union good_test x96;
++volatile _Thread_local const static union good_test x97;
++volatile const _Thread_local static union good_test x98;
+ 
++
++// check ZCC compiler extensions
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++// the type names should have no linkage in C, external linkage in C++
++_Static_assert(0==__zcc_linkage(good_test),&quot;good_test has incorrect linkage&quot;);
++
++// check external linkage of variables
++_Static_assert(2==__zcc_linkage(x1),&quot;x1 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x2),&quot;x2 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x3),&quot;x3 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x4),&quot;x4 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x5),&quot;x5 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x11),&quot;x11 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x12),&quot;x12 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x13),&quot;x13 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x14),&quot;x14 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x15),&quot;x15 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x16),&quot;x16 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x23),&quot;x23 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x24),&quot;x24 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x25),&quot;x25 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x26),&quot;x26 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x27),&quot;x27 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x28),&quot;x28 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x29),&quot;x29 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x30),&quot;x30 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x31),&quot;x31 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x32),&quot;x32 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x43),&quot;x43 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x44),&quot;x44 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x45),&quot;x45 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x46),&quot;x46 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x47),&quot;x47 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x48),&quot;x48 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x49),&quot;x49 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x50),&quot;x50 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x51),&quot;x51 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x52),&quot;x52 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x53),&quot;x53 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x54),&quot;x54 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x55),&quot;x55 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x56),&quot;x56 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x57),&quot;x57 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x58),&quot;x58 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x59),&quot;x59 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x60),&quot;x60 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x61),&quot;x61 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x62),&quot;x62 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x63),&quot;x63 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x64),&quot;x64 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x65),&quot;x65 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x66),&quot;x66 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x67),&quot;x67 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x68),&quot;x68 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x69),&quot;x69 has incorrect linkage&quot;);
++_Static_assert(2==__zcc_linkage(x70),&quot;x70 has incorrect linkage&quot;);
++
++// check internal linkage of variables
++_Static_assert(1==__zcc_linkage(x6),&quot;x6 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x7),&quot;x7 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x8),&quot;x8 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x9),&quot;x9 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x10),&quot;x10 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x17),&quot;x17 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x18),&quot;x18 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x19),&quot;x19 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x20),&quot;x20 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x21),&quot;x21 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x22),&quot;x22 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x33),&quot;x33 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x34),&quot;x34 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x35),&quot;x35 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x36),&quot;x36 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x37),&quot;x37 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x38),&quot;x38 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x39),&quot;x39 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x40),&quot;x40 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x41),&quot;x41 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x42),&quot;x42 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x71),&quot;x71 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x72),&quot;x72 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x73),&quot;x73 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x74),&quot;x74 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x75),&quot;x75 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x76),&quot;x76 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x77),&quot;x77 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x78),&quot;x78 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x79),&quot;x79 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x80),&quot;x80 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x81),&quot;x81 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x82),&quot;x82 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x83),&quot;x83 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x84),&quot;x84 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x85),&quot;x85 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x86),&quot;x86 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x87),&quot;x87 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x88),&quot;x88 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x89),&quot;x89 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x90),&quot;x90 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x91),&quot;x91 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x92),&quot;x92 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x93),&quot;x93 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x94),&quot;x94 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x95),&quot;x95 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x96),&quot;x96 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x97),&quot;x97 has incorrect linkage&quot;);
++_Static_assert(1==__zcc_linkage(x98),&quot;x98 has incorrect linkage&quot;);
++#endif
+
+Modified: trunk/tests/zcc/decl.C99/Pass_union_def_decl.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_def_decl.hpp	2011-09-02 23:07:07 UTC (rev 690)
++++ trunk/tests/zcc/decl.C99/Pass_union_def_decl.hpp	2011-09-02 23:08:46 UTC (rev 691)
+@@ -1,4 +1,4 @@
+-// decl.C99\Pass_union_def_decl.hpp
++// Pass_union_def_decl.hpp
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined union
+ 
+@@ -14,106 +14,215 @@
+ extern volatile const union good_test x5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static union good_test x6;
+-static volatile union good_test x7;
+-static const volatile union good_test x8;
+-static volatile const union good_test x9;
++static const union good_test x7;
++static volatile union good_test x8;
++static const volatile union good_test x9;
++static volatile const union good_test x10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern union good_test x10;
+-volatile extern union good_test x11;
+-const extern volatile union good_test x12;
+-const volatile extern union good_test x13;
+-volatile extern const union good_test x14;
+-volatile const extern union good_test x15;
+-volatile static union good_test x16;
+-const static volatile union good_test x17;
+-const volatile static union good_test x18;
+-volatile static const union good_test x19;
+-volatile const static union good_test x20;
++// extern/static not in first position is deprecated, but legal
++const extern union good_test x11;
++volatile extern union good_test x12;
++const extern volatile union good_test x13;
++const volatile extern union good_test x14;
++volatile extern const union good_test x15;
++volatile const extern union good_test x16;
++const static union good_test x17;
++volatile static union good_test x18;
++const static volatile union good_test x19;
++const volatile static union good_test x20;
++volatile static const union good_test x21;
++volatile const static union good_test x22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local union good_test x21;
+-extern thread_local const union good_test x22;
+-extern thread_local volatile union good_test x23;
+-extern thread_local const volatile union good_test x24;
+-extern thread_local volatile const union good_test x25;
+-thread_local extern union good_test x26;
+-thread_local extern const union good_test x27;
+-thread_local extern volatile union good_test x28;
+-thread_local extern const volatile union good_test x29;
+-thread_local extern volatile const union good_test x30;
++extern thread_local union good_test x23;
++extern thread_local const union good_test x24;
++extern thread_local volatile union good_test x25;
++extern thread_local const volatile union good_test x26;
++extern thread_local volatile const union good_test x27;
++thread_local extern union good_test x28;
++thread_local extern const union good_test x29;
++thread_local extern volatile union good_test x30;
++thread_local extern const volatile union good_test x31;
++thread_local extern volatile const union good_test x32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local union good_test x31;
+-static thread_local const union good_test x32;
+-static thread_local volatile union good_test x33;
+-static thread_local const volatile union good_test x34;
+-static thread_local volatile const union good_test x35;
+-thread_local static union good_test x36;
+-thread_local static const union good_test x37;
+-thread_local static volatile union good_test x38;
+-thread_local static const volatile union good_test x39;
+-thread_local static volatile const union good_test x40;
++static thread_local union good_test x33;
++static thread_local const union good_test x34;
++static thread_local volatile union good_test x35;
++static thread_local const volatile union good_test x36;
++static thread_local volatile const union good_test x37;
++thread_local static union good_test x38;
++thread_local static const union good_test x39;
++thread_local static volatile union good_test x40;
++thread_local static const volatile union good_test x41;
++thread_local static volatile const union good_test x42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local union good_test x41;
+-const extern thread_local union good_test x42;
+-extern volatile thread_local union good_test x43;
+-volatile extern thread_local union good_test x44;
+-extern const thread_local volatile union good_test x45;
+-extern const volatile thread_local union good_test x46;
+-const extern thread_local volatile union good_test x47;
+-const extern volatile thread_local union good_test x48;
+-const volatile extern thread_local union good_test x49;
+-extern volatile thread_local const union good_test x50;
+-extern volatile const thread_local union good_test x51;
+-volatile extern thread_local const union good_test x52;
+-volatile extern const thread_local union good_test x53;
+-volatile const extern thread_local union good_test x54;
+-thread_local const extern union good_test x55;
+-const thread_local extern union good_test x56;
+-thread_local volatile extern union good_test x57;
+-volatile thread_local extern union good_test x58;
+-thread_local const extern volatile union good_test x59;
+-thread_local const volatile extern union good_test x60;
+-const thread_local extern volatile union good_test x61;
+-const thread_local volatile extern union good_test x62;
+-const volatile thread_local extern union good_test x63;
+-thread_local volatile extern const union good_test x64;
+-thread_local volatile const extern union good_test x65;
+-volatile thread_local extern const union good_test x66;
+-volatile thread_local const extern union good_test x67;
+-volatile const thread_local extern union good_test x68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local union good_test x43;
++const extern thread_local union good_test x44;
++extern volatile thread_local union good_test x45;
++volatile extern thread_local union good_test x46;
++extern const thread_local volatile union good_test x47;
++extern const volatile thread_local union good_test x48;
++const extern thread_local volatile union good_test x49;
++const extern volatile thread_local union good_test x50;
++const volatile extern thread_local union good_test x51;
++extern volatile thread_local const union good_test x52;
++extern volatile const thread_local union good_test x53;
++volatile extern thread_local const union good_test x54;
++volatile extern const thread_local union good_test x55;
++volatile const extern thread_local union good_test x56;
++thread_local const extern union good_test x57;
++const thread_local extern union good_test x58;
++thread_local volatile extern union good_test x59;
++volatile thread_local extern union good_test x60;
++thread_local const extern volatile union good_test x61;
++thread_local const volatile extern union good_test x62;
++const thread_local extern volatile union good_test x63;
++const thread_local volatile extern union good_test x64;
++const volatile thread_local extern union good_test x65;
++thread_local volatile extern const union good_test x66;
++thread_local volatile const extern union good_test x67;
++volatile thread_local extern const union good_test x68;
++volatile thread_local const extern union good_test x69;
++volatile const thread_local extern union good_test x70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local union good_test x69;
+-const static thread_local union good_test x70;
+-static volatile thread_local union good_test x71;
+-volatile static thread_local union good_test x72;
+-static const thread_local volatile union good_test x73;
+-static const volatile thread_local union good_test x74;
+-const static thread_local volatile union good_test x75;
+-const static volatile thread_local union good_test x76;
+-const volatile static thread_local union good_test x77;
+-static volatile thread_local const union good_test x78;
+-static volatile const thread_local union good_test x79;
+-volatile static thread_local const union good_test x80;
+-volatile static const thread_local union good_test x81;
+-volatile const static thread_local union good_test x82;
+-thread_local const static union good_test x83;
+-const thread_local static union good_test x84;
+-thread_local volatile static union good_test x85;
+-volatile thread_local static union good_test x86;
+-thread_local const static volatile union good_test x87;
+-thread_local const volatile static union good_test x88;
+-const thread_local static volatile union good_test x89;
+-const thread_local volatile static union good_test x90;
+-const volatile thread_local static union good_test x91;
+-thread_local volatile static const union good_test x92;
+-thread_local volatile const static union good_test x93;
+-volatile thread_local static const union good_test x94;
+-volatile thread_local const static union good_test x95;
+-volatile const thread_local static union good_test x96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local union good_test x71;
++const static thread_local union good_test x72;
++static volatile thread_local union good_test x73;
++volatile static thread_local union good_test x74;
++static const thread_local volatile union good_test x75;
++static const volatile thread_local union good_test x76;
++const static thread_local volatile union good_test x77;
++const static volatile thread_local union good_test x78;
++const volatile static thread_local union good_test x79;
++static volatile thread_local const union good_test x80;
++static volatile const thread_local union good_test x81;
++volatile static thread_local const union good_test x82;
++volatile static const thread_local union good_test x83;
++volatile const static thread_local union good_test x84;
++thread_local const static union good_test x85;
++const thread_local static union good_test x86;
++thread_local volatile static union good_test x87;
++volatile thread_local static union good_test x88;
++thread_local const static volatile union good_test x89;
++thread_local const volatile static union good_test x90;
++const thread_local static volatile union good_test x91;
++const thread_local volatile static union good_test x92;
++const volatile thread_local static union good_test x93;
++thread_local volatile static const union good_test x94;
++thread_local volatile const static union good_test x95;
++volatile thread_local static const union good_test x96;
++volatile thread_local const static union good_test x97;
++volatile const thread_local static union good_test x98;
+ 
++
++// check ZCC compiler extensions
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++// the type names should have no linkage in C, external linkage in C++
++static_assert(2==__zcc_linkage(good_test),&quot;good_test has incorrect linkage&quot;);
++
++// check external linkage of variables
++static_assert(2==__zcc_linkage(x1),&quot;x1 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x2),&quot;x2 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x3),&quot;x3 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x4),&quot;x4 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x5),&quot;x5 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x11),&quot;x11 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x12),&quot;x12 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x13),&quot;x13 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x14),&quot;x14 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x15),&quot;x15 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x16),&quot;x16 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x23),&quot;x23 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x24),&quot;x24 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x25),&quot;x25 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x26),&quot;x26 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x27),&quot;x27 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x28),&quot;x28 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x29),&quot;x29 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x30),&quot;x30 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x31),&quot;x31 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x32),&quot;x32 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x43),&quot;x43 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x44),&quot;x44 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x45),&quot;x45 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x46),&quot;x46 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x47),&quot;x47 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x48),&quot;x48 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x49),&quot;x49 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x50),&quot;x50 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x51),&quot;x51 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x52),&quot;x52 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x53),&quot;x53 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x54),&quot;x54 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x55),&quot;x55 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x56),&quot;x56 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x57),&quot;x57 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x58),&quot;x58 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x59),&quot;x59 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x60),&quot;x60 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x61),&quot;x61 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x62),&quot;x62 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x63),&quot;x63 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x64),&quot;x64 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x65),&quot;x65 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x66),&quot;x66 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x67),&quot;x67 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x68),&quot;x68 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x69),&quot;x69 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x70),&quot;x70 has incorrect linkage&quot;);
++
++// check internal linkage of variables
++static_assert(1==__zcc_linkage(x6),&quot;x6 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x7),&quot;x7 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x8),&quot;x8 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x9),&quot;x9 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x10),&quot;x10 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x17),&quot;x17 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x18),&quot;x18 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x19),&quot;x19 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x20),&quot;x20 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x21),&quot;x21 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x22),&quot;x22 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x33),&quot;x33 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x34),&quot;x34 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x35),&quot;x35 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x36),&quot;x36 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x37),&quot;x37 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x38),&quot;x38 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x39),&quot;x39 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x40),&quot;x40 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x41),&quot;x41 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x42),&quot;x42 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x71),&quot;x71 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x72),&quot;x72 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x73),&quot;x73 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x74),&quot;x74 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x75),&quot;x75 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x76),&quot;x76 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x77),&quot;x77 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x78),&quot;x78 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x79),&quot;x79 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x80),&quot;x80 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x81),&quot;x81 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x82),&quot;x82 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x83),&quot;x83 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x84),&quot;x84 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x85),&quot;x85 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x86),&quot;x86 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x87),&quot;x87 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x88),&quot;x88 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x89),&quot;x89 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x90),&quot;x90 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x91),&quot;x91 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x92),&quot;x92 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x93),&quot;x93 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x94),&quot;x94 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x95),&quot;x95 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x96),&quot;x96 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x97),&quot;x97 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x98),&quot;x98 has incorrect linkage&quot;);
++#endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000457.html">[Zcplusplus-commits] r690 - trunk/tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000459.html">[Zcplusplus-commits] r692 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#458">[ date ]</a>
+              <a href="thread.html#458">[ thread ]</a>
+              <a href="subject.html#458">[ subject ]</a>
+              <a href="author.html#458">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

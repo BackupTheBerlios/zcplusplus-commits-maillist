@@ -1,0 +1,777 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r233 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r233%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C200908220601.n7M61oiY014133%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000001.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r233 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r233%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C200908220601.n7M61oiY014133%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r233 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug 22 08:01:50 CEST 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000001.html">[Zcplusplus-commits] r234 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#0">[ date ]</a>
+              <a href="thread.html#0">[ thread ]</a>
+              <a href="subject.html#0">[ subject ]</a>
+              <a href="author.html#0">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-22 08:01:27 +0200 (Sat, 22 Aug 2009)
+New Revision: 233
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_extern_static.in
+   trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_static_typedef.in
+   trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in
+   trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_static.h
+   trunk/tests/zcc/decl.C99/Error_extern_static.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h
+   trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_typedef.h
+   trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h
+   trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_static_typedef.h
+   trunk/tests/zcc/decl.C99/Error_static_typedef.hpp
+   trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h
+   trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+test case coverage; also, the LLONG_MIN fixup made some other code never execute so remove that
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/CSupport.cpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -6563,16 +6563,6 @@
+ 	return false;
+ }
+ 
+-static void C99_CPP_binary_minus_to_unary_minus(parse_tree&amp; x)
+-{
+-	assert(is_C99_add_operator_expression&lt;'-'&gt;(x));
+-	x.DeleteIdx&lt;1&gt;(0);
+-	x.core_flag_update();
+-	x.flags |= PARSE_STRICT_UNARY_EXPRESSION;
+-	BOOST_STATIC_ASSERT(C99_UNARY_SUBTYPE_NEG==C99_ADD_SUBTYPE_MINUS);
+-	assert(is_C99_unary_operator_expression&lt;'-'&gt;(x));
+-}
+-
+ // this one hides a slight inefficiency: negative literals take 2 dynamic memory allocations, positive literals take one
+ static bool VM_to_signed_literal(parse_tree&amp; x,const bool is_negative, const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+ {
+@@ -6703,123 +6693,6 @@
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_lhs_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_rhs_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_lhs_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_rhs_int;
+-			// fear C++ operator overloading
+-			const int want_lhs_details 	= lhs_converted ? 0
+-										: is_C99_add_operator_expression&lt;'+'&gt;(*src.data&lt;1&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression&lt;'-'&gt;(*src.data&lt;1&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 2 : 0;
+-			if (!lhs_converted &amp;&amp; !want_lhs_details) break;	// nothing to work with
+-			// fear C++ operator overloading
+-			const int want_rhs_details 	= rhs_converted ? 0
+-										: is_C99_add_operator_expression&lt;'+'&gt;(*src.data&lt;2&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 2 : 0;
+-			if (!rhs_converted &amp;&amp; !want_rhs_details) break;	// nothing to work with
+-
+-			const bool lhs_lhs_converted = want_lhs_details &amp;&amp; intlike_literal_to_VM(lhs_lhs_int,*src.data&lt;1&gt;()-&gt;data&lt;1&gt;());
+-			const bool lhs_rhs_converted = want_lhs_details &amp;&amp; intlike_literal_to_VM(lhs_rhs_int,*src.data&lt;1&gt;()-&gt;data&lt;2&gt;());
+-			const bool rhs_lhs_converted = want_rhs_details &amp;&amp; intlike_literal_to_VM(rhs_lhs_int,*src.data&lt;2&gt;()-&gt;data&lt;1&gt;());
+-			const bool rhs_rhs_converted = want_rhs_details &amp;&amp; intlike_literal_to_VM(rhs_rhs_int,*src.data&lt;2&gt;()-&gt;data&lt;2&gt;());
+-
+-			const bool lhs_lhs_negative = lhs_lhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(lhs_lhs_int,promote_aux(src.data&lt;1&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index),lhs);
+-			const bool lhs_rhs_negative = lhs_rhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(lhs_rhs_int,promote_aux(src.data&lt;1&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index),lhs);
+-			if (rhs_lhs_converted) target_machine-&gt;C_promote_integer(rhs_lhs_int,promote_aux(src.data&lt;2&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index),rhs);
+-			if (rhs_rhs_converted) target_machine-&gt;C_promote_integer(rhs_rhs_int,promote_aux(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index),rhs);
+-
+-			if (rhs_converted &amp;&amp; 2==want_lhs_details)
+-				{
+-				const bool rhs_cancel_lhs_lhs = lhs_lhs_converted &amp;&amp; rhs_negative!=lhs_lhs_negative;
+-				const bool rhs_cancel_lhs_rhs = lhs_rhs_converted &amp;&amp; rhs_negative==lhs_rhs_negative;
+-				if (rhs_cancel_lhs_lhs || rhs_cancel_lhs_rhs)
+-					{
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-					if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_test,old.machine_type);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_lhs_test(lhs_lhs_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_rhs_test(lhs_rhs_int);
+-					if (rhs_cancel_lhs_lhs &amp;&amp; lhs_lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_lhs_test,lhs.machine_type);
+-					if (rhs_cancel_lhs_rhs &amp;&amp; lhs_rhs_negative) target_machine-&gt;signed_additive_inverse(lhs_rhs_test,lhs.machine_type);
+-					if (rhs_cancel_lhs_rhs &amp;&amp; rhs_test==lhs_rhs_test)
+-						{	// lose two terms
+-							//! \bug needs test case
+-						src.c_array&lt;1&gt;()-&gt;eval_to_arg&lt;1&gt;(0);
+-						src.eval_to_arg&lt;1&gt;(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						};
+-					if (rhs_cancel_lhs_lhs &amp;&amp; rhs_test==lhs_lhs_test)
+-						{	// lose two terms
+-							//! \test cpp/default/twoscomp.notrap/Pass_min_int.h, cpp/default/twoscomp.notrap/Pass_min_int.hpp
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array&lt;1&gt;());
+-						src.eval_to_arg&lt;1&gt;(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						};
+-					if (rhs_cancel_lhs_rhs &amp;&amp; rhs_test&lt;lhs_rhs_test)
+-						{	// lose rhs
+-							//! \bug needs test case
+-						lhs_rhs_test -= rhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,lhs_rhs_negative,lhs_rhs_test,*src.c_array&lt;1&gt;()-&gt;c_array&lt;2&gt;(),types)) return false;
+-						src.c_array&lt;1&gt;()-&gt;c_array&lt;2&gt;()-&gt;destroy();
+-						*src.c_array&lt;1&gt;()-&gt;c_array&lt;2&gt;() = tmp;
+-
+-						src.eval_to_arg&lt;1&gt;(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					if (rhs_cancel_lhs_lhs &amp;&amp; rhs_test&lt;lhs_lhs_test)
+-						{	// lose rhs
+-							//! \bug needs test case
+-						lhs_lhs_test -= rhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,lhs_lhs_negative,lhs_lhs_test,*src.c_array&lt;1&gt;()-&gt;c_array&lt;1&gt;(),types)) return false;
+-						src.c_array&lt;1&gt;()-&gt;c_array&lt;2&gt;()-&gt;destroy();
+-						*src.c_array&lt;1&gt;()-&gt;c_array&lt;2&gt;() = tmp;
+-
+-						src.eval_to_arg&lt;1&gt;(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					if (rhs_cancel_lhs_rhs /* &amp;&amp; rhs_test&gt;lhs_rhs_test */)
+-						{	// lose lhs_rhs
+-							//! \bug needs test case
+-						rhs_test -= lhs_rhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,rhs_negative,rhs_test,*src.c_array&lt;2&gt;(),types)) return false;
+-						src.c_array&lt;2&gt;()-&gt;destroy();
+-						*src.c_array&lt;2&gt;() = tmp;
+-
+-						src.c_array&lt;1&gt;()-&gt;eval_to_arg&lt;1&gt;(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					if (rhs_cancel_lhs_lhs /* &amp;&amp; rhs_test&gt;lhs_lhs_test */)
+-						{	// lose lhs_lhs
+-							//! \bug needs test case
+-						rhs_test -= lhs_lhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,rhs_negative,rhs_test,*src.c_array&lt;2&gt;(),types)) return false;
+-						src.c_array&lt;2&gt;()-&gt;destroy();
+-						*src.c_array&lt;2&gt;() = tmp;
+-
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array&lt;1&gt;());
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					}
+-				}
+ 			break;
+ 			}
+ 	case 1:	{
+@@ -7682,77 +7555,6 @@
+ 				force_decimal_literal(src,(lhs_int==rhs_int)==is_equal_op ? &quot;1&quot; : &quot;0&quot;,types);
+ 				return true;
+ 				};
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_lhs_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_rhs_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_lhs_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_rhs_int;
+-			// fear C++ operator overloading
+-			const int want_lhs_details 	= lhs_converted ? 0
+-										: is_C99_add_operator_expression&lt;'+'&gt;(*src.data&lt;1&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression&lt;'-'&gt;(*src.data&lt;1&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 2 : 0;
+-			if (!lhs_converted &amp;&amp; !want_lhs_details) break;	// nothing to work with
+-			// fear C++ operator overloading
+-			const int want_rhs_details 	= rhs_converted ? 0
+-										: is_C99_add_operator_expression&lt;'+'&gt;(*src.data&lt;2&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index) &amp;&amp; converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index) ? 2 : 0;
+-			if (!rhs_converted &amp;&amp; !want_rhs_details) break;	// nothing to work with
+-
+-			const bool lhs_lhs_converted = want_lhs_details &amp;&amp; intlike_literal_to_VM(lhs_lhs_int,*src.data&lt;1&gt;()-&gt;data&lt;1&gt;());
+-			const bool lhs_rhs_converted = want_lhs_details &amp;&amp; intlike_literal_to_VM(lhs_rhs_int,*src.data&lt;1&gt;()-&gt;data&lt;2&gt;());
+-			const bool rhs_lhs_converted = want_rhs_details &amp;&amp; intlike_literal_to_VM(rhs_lhs_int,*src.data&lt;2&gt;()-&gt;data&lt;1&gt;());
+-			const bool rhs_rhs_converted = want_rhs_details &amp;&amp; intlike_literal_to_VM(rhs_rhs_int,*src.data&lt;2&gt;()-&gt;data&lt;2&gt;());
+-
+-			const bool lhs_lhs_negative = lhs_lhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(lhs_lhs_int,promote_aux(src.data&lt;1&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index),lhs);
+-			const bool lhs_rhs_negative = lhs_rhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(lhs_rhs_int,promote_aux(src.data&lt;1&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index),lhs);
+-			const bool rhs_lhs_negative = rhs_lhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(rhs_lhs_int,promote_aux(src.data&lt;2&gt;()-&gt;data&lt;1&gt;()-&gt;type_code.base_type_index),rhs);
+-			const bool rhs_rhs_negative = rhs_rhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(rhs_rhs_int,promote_aux(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code.base_type_index),rhs);
+-			if (2==want_lhs_details &amp;&amp; 2==want_rhs_details)
+-				{	// ...-... == ...-...
+-				const bool lhs_lhs_cancels_rhs_lhs = lhs_lhs_converted &amp;&amp; rhs_lhs_converted &amp;&amp; lhs_lhs_negative==rhs_lhs_negative;
+-				const bool lhs_lhs_cancels_rhs_rhs = lhs_lhs_converted &amp;&amp; rhs_lhs_converted &amp;&amp; lhs_lhs_negative!=rhs_rhs_negative;
+-				const bool lhs_rhs_cancels_rhs_lhs = lhs_rhs_converted &amp;&amp; rhs_lhs_converted &amp;&amp; lhs_rhs_negative!=rhs_lhs_negative;
+-				const bool lhs_rhs_cancels_rhs_rhs = lhs_rhs_converted &amp;&amp; rhs_lhs_converted &amp;&amp; lhs_rhs_negative==rhs_rhs_negative;
+-				if (lhs_lhs_cancels_rhs_lhs || lhs_lhs_cancels_rhs_rhs || lhs_rhs_cancels_rhs_lhs || lhs_rhs_cancels_rhs_rhs)
+-					{
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_lhs_test(lhs_lhs_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_rhs_test(lhs_rhs_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_lhs_test(rhs_lhs_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_rhs_test(rhs_rhs_int);
+-
+-					if (lhs_lhs_negative &amp;&amp; (lhs_lhs_cancels_rhs_lhs || lhs_lhs_cancels_rhs_rhs)) target_machine-&gt;signed_additive_inverse(lhs_lhs_test,lhs.machine_type);
+-					if (lhs_rhs_negative &amp;&amp; (lhs_rhs_cancels_rhs_lhs || lhs_rhs_cancels_rhs_rhs)) target_machine-&gt;signed_additive_inverse(lhs_rhs_test,lhs.machine_type);
+-					if (rhs_lhs_negative &amp;&amp; (lhs_lhs_cancels_rhs_lhs || lhs_rhs_cancels_rhs_lhs)) target_machine-&gt;signed_additive_inverse(rhs_lhs_test,rhs.machine_type);
+-					if (rhs_rhs_negative &amp;&amp; (lhs_lhs_cancels_rhs_rhs || lhs_rhs_cancels_rhs_rhs)) target_machine-&gt;signed_additive_inverse(rhs_rhs_test,rhs.machine_type);
+-
+-					// memory conserving transforms first
+-					if (lhs_lhs_cancels_rhs_lhs &amp;&amp; lhs_lhs_test==rhs_lhs_test)
+-						{	//! \bug needs test case
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array&lt;1&gt;());
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array&lt;2&gt;());
+-						return true;
+-						};
+-					if (lhs_lhs_cancels_rhs_rhs &amp;&amp; lhs_lhs_test==rhs_rhs_test)
+-						{	//! \bug needs test case
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array&lt;1&gt;());
+-						src.c_array&lt;2&gt;()-&gt;eval_to_arg&lt;1&gt;(0);
+-						return true;
+-						};
+-					if (lhs_rhs_cancels_rhs_lhs &amp;&amp; lhs_rhs_test==rhs_lhs_test)
+-						{	//! \bug needs test case
+-						src.c_array&lt;1&gt;()-&gt;eval_to_arg&lt;1&gt;(0);
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array&lt;2&gt;());
+-						return true;
+-						};
+-					if (lhs_rhs_cancels_rhs_rhs &amp;&amp; lhs_rhs_test==rhs_rhs_test)
+-						{	//! \bug needs test case
+-						src.c_array&lt;1&gt;()-&gt;eval_to_arg&lt;1&gt;(0);
+-						src.c_array&lt;2&gt;()-&gt;eval_to_arg&lt;1&gt;(0);
+-						return true;
+-						};
+-#if 0
+-#endif
+-					};
+-				}
+ //			break;
+ 			}
+ 	};
+@@ -9253,7 +9055,7 @@
+ //! \todo really should be somewhere in natural-language output
+ void INFORM_separated_list(const char* const* x,size_t x_len, const char* const sep)
+ {
+-	assert(NULL!=sep &amp;&amp; !*sep);
++	assert(NULL!=sep &amp;&amp; *sep);
+ 	assert(NULL!=x);
+ 	if (0&lt;x_len)
+ 		{
+@@ -9353,7 +9155,7 @@
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_register_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = &quot;register&quot;;
+ 				++erased_count;
+@@ -9365,7 +9167,7 @@
+ 				flags &amp;= ~C99_CPP0X_DECLSPEC_REGISTER;
+ 				}
+ 			if (C99_DECLSPEC_AUTO &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_auto_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = &quot;auto&quot;;
+ 				++erased_count;
+@@ -9377,7 +9179,10 @@
+ 				flags &amp;= ~C99_DECLSPEC_AUTO;
+ 				};
+ 			if (1&lt;storage_count)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_extern_static.h
++					//! \test zcc/decl.C99/Error_extern_typedef.h
++					//! \test zcc/decl.C99/Error_static_typedef.h
++					//! \test zcc/decl.C99/Error_extern_static_typedef.h
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
+@@ -9514,7 +9319,7 @@
+ 		if (CPP_locate_qualified_name(x,i))
+ 			{
+ 			if (parse_tree::INVALID &amp; x.data&lt;0&gt;()[i].flags)
+-				{	//! \todo error
++				{	//! \test zcc/decl.C99/Error_doublecolon_type.hpp
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;qualified-name may not end in :: (C++98 7.1.5.3p1, 5.1p8)&quot;);
+@@ -9594,7 +9399,7 @@
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_register_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = &quot;register&quot;;
+ 				++erased_count;
+@@ -9606,7 +9411,7 @@
+ 				flags &amp;= ~C99_CPP0X_DECLSPEC_REGISTER;
+ 				}
+ 			if (CPP_DECLSPEC_MUTABLE &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_mutable_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = &quot;mutable&quot;;
+ 				++erased_count;
+@@ -9618,13 +9423,16 @@
+ 				flags &amp;= ~CPP_DECLSPEC_MUTABLE;
+ 				};
+ 			if (1&lt;storage_count)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_extern_static.hpp
++					//! \test zcc/decl.C99/Error_extern_typedef.hpp
++					//! \test zcc/decl.C99/Error_static_typedef.hpp
++					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
+ 				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+-				INFORM(&quot; (C99 6.7.1p2)&quot;);
++				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
+ 				zcc_errors.inc_error();
+ 				}
+ 			storage_count -= erased_count;
+@@ -9633,7 +9441,7 @@
+ 			// typedef must have a function type to tolerate anything (but kills inline)
+ 			// virtual and explicit can only be used in class declarations: erase (C++0X 7.1.2p5, 7.1.2p6
+ 			if (CPP_DECLSPEC_VIRTUAL &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_virtual_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -9643,7 +9451,7 @@
+ 				flags &amp;= ~CPP_DECLSPEC_VIRTUAL;
+ 				};
+ 			if (CPP_DECLSPEC_EXPLICIT &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_explicit_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -9654,7 +9462,7 @@
+ 				};
+ 			// friend is only usable within a class
+ 			if (CPP_DECLSPEC_FRIEND &amp; flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_friend_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -9741,7 +9549,11 @@
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+ 			if (src.size&lt;0&gt;()-i&lt;=decl_count)
+ 				{	// unterminated declaration
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_scope.h
++					//! \test zcc/decl.C99/Error_static_scope.h
++					//! \test zcc/decl.C99/Error_typedef_scope.h
++					//! \test zcc/decl.C99/Error_register_scope.h
++					//! \test zcc/decl.C99/Error_auto_scope.h
+ 				if (src.size&lt;0&gt;()&gt;i) message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;declaration cut off by end of scope (C99 6.7p1)&quot;);
+@@ -9753,7 +9565,11 @@
+ 				};
+ 			if (src.data&lt;0&gt;()[i+decl_count].is_atomic() &amp;&amp; token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count].index_tokens[0].token))
+ 				{	// C99 7p2 error: must declare something
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_semicolon.h
++					//! \test zcc/decl.C99/Error_static_semicolon.h
++					//! \test zcc/decl.C99/Error_typedef_semicolon.h
++					//! \test zcc/decl.C99/Error_register_semicolon.h
++					//! \test zcc/decl.C99/Error_auto_semicolon.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;declaration must declare something (C99 6.7p2)&quot;);
+@@ -9826,28 +9642,29 @@
+ 							{
+ 							if (bootstrap==tmp-&gt;first)
+ 								{	// warn if there is a prior, consistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
++									//! \todo control this warning with an option --no-OAOO or --no-DRY
+ 								message_header(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(WARN_STR);
+-								INC_INFORM(&quot;redeclaring &quot;);
+-								INC_INFORM(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first);
+-								INC_INFORM(&quot;, prior typedef at &quot;);
++								INC_INFORM(&quot;redeclaring typedef &quot;);
++								INFORM(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first);
+ 								INC_INFORM(tmp-&gt;second);
+ 								INC_INFORM(':');
+-								INFORM(tmp-&gt;third);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior typedef&quot;);
+ 								if (bool_options[boolopt::warnings_are_errors])
+ 									zcc_errors.inc_error();
+ 								}
+ 							else{	// error if there is a prior, inconsistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
+ 								message_header(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+-								INC_INFORM(&quot;redeclaring &quot;);
+-								INC_INFORM(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first);
+-								INC_INFORM(&quot;, prior typedef at &quot;);
++								INC_INFORM(&quot;redeclaring typedef &quot;);
++								INFORM(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first);
+ 								INC_INFORM(tmp-&gt;second);
+ 								INC_INFORM(':');
+-								INFORM(tmp-&gt;third);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior typedef&quot;);
+ 								zcc_errors.inc_error();
+ 								}	
+ 							// do not re-register if there is a prior definition
+@@ -10086,7 +9903,14 @@
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+ 			if (src.size&lt;0&gt;()-i&lt;=decl_count)
+ 				{	// unterminated declaration
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_scope.hpp
++					//! \test zcc/decl.C99/Error_static_scope.hpp
++					//! \test zcc/decl.C99/Error_typedef_scope.hpp
++					//! \test zcc/decl.C99/Error_register_scope.hpp
++					//! \test zcc/decl.C99/Error_mutable_scope.hpp
++					//! \test zcc/decl.C99/Error_virtual_scope.hpp
++					//! \test zcc/decl.C99/Error_friend_scope.hpp
++					//! \test zcc/decl.C99/Error_explicit_scope.hpp
+ 				if (src.size&lt;0&gt;()&gt;i) message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;declaration cut off by end of scope (C++98 7p1)&quot;);
+@@ -10098,7 +9922,14 @@
+ 				};
+ 			if (src.data&lt;0&gt;()[i+decl_count].is_atomic() &amp;&amp; token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count].index_tokens[0].token))
+ 				{	// must declare something
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_semicolon.hpp
++					//! \test zcc/decl.C99/Error_static_semicolon.hpp
++					//! \test zcc/decl.C99/Error_typedef_semicolon.hpp
++					//! \test zcc/decl.C99/Error_register_semicolon.hpp
++					//! \test zcc/decl.C99/Error_mutable_semicolon.hpp
++					//! \test zcc/decl.C99/Error_virtual_semicolon.hpp
++					//! \test zcc/decl.C99/Error_friend_semicolon.hpp
++					//! \test zcc/decl.C99/Error_explicit_semicolon.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;declaration must declare something (C++98 7p4)&quot;);
+@@ -10183,28 +10014,29 @@
+ 							{
+ 							if (bootstrap==tmp-&gt;first)
+ 								{	// warn if there is a prior, consistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Warn_redeclare_typedef.hpp
++									//! \todo control this warning with an option --no-OAOO or --no-DRY
+ 								message_header(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(WARN_STR);
+-								INC_INFORM(&quot;redeclaring &quot;);
+-								INC_INFORM(fullname);
+-								INC_INFORM(&quot;, prior typedef at &quot;);
++								INC_INFORM(&quot;redeclaring typedef &quot;);
++								INFORM(fullname);
+ 								INC_INFORM(tmp-&gt;second);
+ 								INC_INFORM(':');
+-								INFORM(tmp-&gt;third);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior typedef&quot;);
+ 								if (bool_options[boolopt::warnings_are_errors])
+ 									zcc_errors.inc_error();
+ 								}
+ 							else{	// error if there is a prior, inconsistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Error_redeclare_typedef.hpp
+ 								message_header(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+-								INC_INFORM(&quot;redeclaring &quot;);
+-								INC_INFORM(fullname);
+-								INC_INFORM(&quot;, prior typedef at &quot;);
++								INC_INFORM(&quot;redeclaring typedef &quot;);
++								INFORM(fullname);
+ 								INC_INFORM(tmp-&gt;second);
+ 								INC_INFORM(':');
+-								INFORM(tmp-&gt;third);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior typedef&quot;);
+ 								zcc_errors.inc_error();
+ 								}
+ 							// do not re-register if there is a prior definition
+
+Added: trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_doublecolon_type.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static std:: ;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static_typedef.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_typedef.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_redeclare_typedef.h
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef long test;
+
+Added: trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_redeclare_typedef.hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef long test;
+
+Added: trunk/tests/zcc/decl.C99/Error_static_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_static_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_static_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_static_typedef.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_static_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_static_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_static_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_static_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_redeclare_typedef.h
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef int test;
+
+Added: trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_redeclare_typedef.hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef int test;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_static.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_static.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_static.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef long test;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_static_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_static_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_static_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef int test;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000001.html">[Zcplusplus-commits] r234 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#0">[ date ]</a>
+              <a href="thread.html#0">[ thread ]</a>
+              <a href="subject.html#0">[ subject ]</a>
+              <a href="author.html#0">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

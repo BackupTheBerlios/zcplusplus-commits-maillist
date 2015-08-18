@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r357 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r357%20-%20trunk&In-Reply-To=%3C201003260304.o2Q34tup004219%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000123.html">
+   <LINK REL="Next"  HREF="000125.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r357 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r357%20-%20trunk&In-Reply-To=%3C201003260304.o2Q34tup004219%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r357 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar 26 04:04:55 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000123.html">[Zcplusplus-commits] r356 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000125.html">[Zcplusplus-commits] r358 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#124">[ date ]</a>
+              <a href="thread.html#124">[ thread ]</a>
+              <a href="subject.html#124">[ subject ]</a>
+              <a href="author.html#124">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-26 04:04:50 +0100 (Fri, 26 Mar 2010)
+New Revision: 357
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+be able to set underlying type for an enumeration
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-03-25 03:35:02 UTC (rev 356)
++++ trunk/type_system.cpp	2010-03-26 03:04:50 UTC (rev 357)
+@@ -838,7 +838,7 @@
+ 	return tmp.third.first.third;
+ }
+ 
+-const enum_def* type_system::get_enum_def(type_index i)  const
++enum_def* type_system::_get_enum_def(type_index i) const
+ {
+ 	if (core_types_size&gt;=i) return NULL;
+ 	i -= core_types_size;
+@@ -849,6 +849,14 @@
+ 	return tmp.third.first.fourth;
+ }
+ 
++void type_system::set_enum_underlying_type(type_index i,size_t new_type)
++{
++	assert(UCHAR_MAX&gt;=new_type);
++	enum_def* const tmp = _get_enum_def(i);
++	assert(tmp);
++	tmp-&gt;represent_as = new_type;
++}
++
+ void type_system::upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src)
+ {	// cf. get_structdecl
+ 	assert(src);
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2010-03-25 03:35:02 UTC (rev 356)
++++ trunk/type_system.hpp	2010-03-26 03:04:50 UTC (rev 357)
+@@ -120,7 +120,8 @@
+ 	const function_type* get_functype(type_index i) const;
+ 	const union_struct_decl* get_structdecl(type_index i) const;
+ 	const C_union_struct_def* get_C_structdef(type_index i) const;
+-	const enum_def* get_enum_def(type_index i) const;
++	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
++	void set_enum_underlying_type(type_index i,size_t new_type);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+ #/*cut-cpp*/
+ private:
+@@ -131,7 +132,8 @@
+ 	type_index _get_id_enum_CPP(const char* x) const;
+ 	type_index _get_id_struct_class(const char* x) const;
+ 	type_index _get_id_struct_class_CPP(const char* x) const;
+-
++	enum_def* _get_enum_def(type_index i) const;
++	
+ #/*cut-cpp*/
+ 	const char* _name(type_index id) const;
+ #/*cut-cpp*/
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000123.html">[Zcplusplus-commits] r356 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000125.html">[Zcplusplus-commits] r358 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#124">[ date ]</a>
+              <a href="thread.html#124">[ thread ]</a>
+              <a href="subject.html#124">[ subject ]</a>
+              <a href="author.html#124">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

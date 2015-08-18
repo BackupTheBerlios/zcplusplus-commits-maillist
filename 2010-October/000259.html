@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r492 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r492%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20101008191036.0EB55480B02%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000258.html">
+   <LINK REL="Next"  HREF="000260.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r492 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r492%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20101008191036.0EB55480B02%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r492 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct  8 21:10:36 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000258.html">[Zcplusplus-commits] r491 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000260.html">[Zcplusplus-commits] r493 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#259">[ date ]</a>
+              <a href="thread.html#259">[ thread ]</a>
+              <a href="subject.html#259">[ subject ]</a>
+              <a href="author.html#259">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-08 21:10:35 +0200 (Fri, 08 Oct 2010)
+New Revision: 492
+
+Modified:
+   trunk/Zaimoni.STL/POD.hpp
+Log:
+Planning on using a POD_quartet; clean up POD.hpp while setting this up.
+
+Modified: trunk/Zaimoni.STL/POD.hpp
+===================================================================
+--- trunk/Zaimoni.STL/POD.hpp	2010-10-07 09:18:12 UTC (rev 491)
++++ trunk/Zaimoni.STL/POD.hpp	2010-10-08 19:10:35 UTC (rev 492)
+@@ -6,7 +6,7 @@
+ #define ZAIMONI_STL_POD_HPP 1
+ 
+ #include &quot;boost_core.hpp&quot;
+-#include &lt;cstring&gt;
++#include &lt;string.h&gt;
+ 
+ // ==, != operators a bit too sophisticated for templating, even with infrastructure to detect padding or lack thereof
+ 
+@@ -17,17 +17,17 @@
+ template&lt;typename T&gt;
+ inline typename boost::enable_if&lt;boost::has_trivial_assign&lt;T&gt;, void&gt;::type
+ clear(T&amp; x)
+-{	std::memset(&amp;x,0,sizeof(T));}
++{	memset(&amp;x,0,sizeof(T));}
+ 
+ template&lt;typename T&gt;
+ typename boost::enable_if&lt;boost::has_trivial_assign&lt;T&gt;, void&gt;::type
+ clear(T* x,size_t n)
+-{	if (NULL!=x) std::memset(x,0,n*sizeof(T));}
++{	if (x) memset(x,0,n*sizeof(T));}
+ 
+ template&lt;size_t n, typename T&gt;
+ typename boost::enable_if&lt;boost::has_trivial_assign&lt;T&gt;, void&gt;::type
+ clear(T* x)
+-{	if (NULL!=x) std::memset(x,0,n*sizeof(T));}
++{	if (x) memset(x,0,n*sizeof(T));}
+ 
+ // handle POD-struct pairs, etc. here as well
+ 
+@@ -47,15 +47,15 @@
+ 	// POD-struct has no constructors or destructors
+ };
+ 
+-template&lt;class T1, class T2, class T3, class T4&gt;
++template&lt;class T1, class T2, class U1, class U2&gt;
+ inline bool
+-operator==(const POD_pair&lt;T1, T2&gt;&amp; x, const POD_pair&lt;T3, T4&gt;&amp; y)
++operator==(const POD_pair&lt;T1, T2&gt;&amp; x, const POD_pair&lt;U1, U2&gt;&amp; y)
+ {	return x.first==y.first &amp;&amp; x.second==y.second;	}
+ 
+ // dictionary ordering
+-template&lt;class T1, class T2, class T3, class T4&gt;
++template&lt;class T1, class T2, class U1, class U2&gt;
+ inline bool
+-operator&lt;(const POD_pair&lt;T1, T2&gt;&amp; x, const POD_pair&lt;T3, T4&gt;&amp; y)
++operator&lt;(const POD_pair&lt;T1, T2&gt;&amp; x, const POD_pair&lt;U1, U2&gt;&amp; y)
+ {
+ 	if (x.first&lt;y.first) return true;
+ 	if (y.first&lt;x.first) return false;
+@@ -80,15 +80,15 @@
+ 	// POD-struct has no constructors or destructors
+ };
+ 
+-template&lt;class T1, class T2, class T3, class T4, class T5, class T6&gt;
++template&lt;class T1, class T2, class T3, class U1, class U2, class U3&gt;
+ inline bool
+-operator==(const POD_triple&lt;T1, T2, T3&gt;&amp; x, const POD_triple&lt;T4, T5, T6&gt;&amp; y)
++operator==(const POD_triple&lt;T1, T2, T3&gt;&amp; x, const POD_triple&lt;U1, U2, U3&gt;&amp; y)
+ {	return x.first==y.first &amp;&amp; x.second==y.second &amp;&amp; x.third==y.third;	}
+ 
+ // dictionary ordering
+-template&lt;class T1, class T2, class T3, class T4, class T5, class T6&gt;
++template&lt;class T1, class T2, class T3, class U1, class U2, class U3&gt;
+ inline bool
+-operator&lt;(const POD_triple&lt;T1, T2, T3&gt;&amp; x, const POD_triple&lt;T4, T5, T6&gt;&amp; y)
++operator&lt;(const POD_triple&lt;T1, T2, T3&gt;&amp; x, const POD_triple&lt;U1, U2, U3&gt;&amp; y)
+ {
+ 	if (x.first&lt;y.first) return true;
+ 	if (y.first&lt;x.first) return false;
+@@ -97,6 +97,47 @@
+ 	return x.third&lt;y.third;
+ }
+ 
++template&lt;class T1, class T2, class T3, class T4&gt;
++struct POD_quartet
++{
++	BOOST_STATIC_ASSERT(boost::is_pod&lt;T1&gt;::value);
++	BOOST_STATIC_ASSERT(boost::is_pod&lt;T2&gt;::value);
++	BOOST_STATIC_ASSERT(boost::is_pod&lt;T3&gt;::value);
++	BOOST_STATIC_ASSERT(boost::is_pod&lt;T4&gt;::value);
++
++	typedef T1 first_type;
++	typedef T2 second_type;
++	typedef T3 third_type;
++	typedef T4 fourth_type;
++
++	T1 first;
++	T2 second;
++	T3 third;
++	T4 fourth;
++
++	// POD-struct has no constructors or destructors
++};
++
++template&lt;class T1, class T2, class T3, class T4, class U1, class U2, class U3, class U4&gt;
++inline bool
++operator==(const POD_quartet&lt;T1, T2, T3, T4&gt;&amp; x, const POD_quartet&lt;U1, U2, U3, U4&gt;&amp; y)
++{	return x.first==y.first &amp;&amp; x.second==y.second &amp;&amp; x.third==y.third &amp;&amp; x.fourth==y.fourth;	}
++
++// dictionary ordering
++template&lt;class T1, class T2, class T3, class T4, class U1, class U2, class U3, class U4&gt;
++inline bool
++operator&lt;(const POD_quartet&lt;T1, T2, T3, T4&gt;&amp; x, const POD_quartet&lt;U1, U2, U3, U4&gt;&amp; y)
++{
++	if (x.first&lt;y.first) return true;
++	if (y.first&lt;x.first) return false;
++	if (x.second&lt;y.second) return true;
++	if (y.second&lt;x.second) return false;
++	if (x.third&lt;y.third) return true;
++	if (y.third&lt;x.third) return false;
++	return x.fourth&lt;y.fourth;
++}
++
++
+ template&lt;class T1, class T2&gt;
+ union union_pair
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000258.html">[Zcplusplus-commits] r491 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000260.html">[Zcplusplus-commits] r493 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#259">[ date ]</a>
+              <a href="thread.html#259">[ thread ]</a>
+              <a href="subject.html#259">[ subject ]</a>
+              <a href="author.html#259">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

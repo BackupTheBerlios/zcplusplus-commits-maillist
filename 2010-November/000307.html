@@ -1,0 +1,571 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r540%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20101110044837.9FB3B48112E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000306.html">
+   <LINK REL="Next"  HREF="000308.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r540%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20101110044837.9FB3B48112E%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 10 05:48:37 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000306.html">[Zcplusplus-commits] r539 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000308.html">[Zcplusplus-commits] r541 - trunk/tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#307">[ date ]</a>
+              <a href="thread.html#307">[ thread ]</a>
+              <a href="subject.html#307">[ subject ]</a>
+              <a href="author.html#307">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-10 05:48:36 +0100 (Wed, 10 Nov 2010)
+New Revision: 540
+
+Added:
+   trunk/tests/zcc/decl.C99/Error_class_as_union.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union2.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union3.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union4.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union5.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union6.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union7.hpp
+   trunk/tests/zcc/decl.C99/Error_class_as_union8.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_as_union5.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_as_union6.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_as_union7.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_as_union8.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+Log:
+increase test case coverage for erroring when referring to class/struct as union
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-11-09 05:26:17 UTC (rev 539)
++++ trunk/CSupport.cpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -12993,11 +12993,16 @@
+ 			// C1X 6.7.2.3p2 states that conflicting enum or struct must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
+ 				{	//! \test zcc/decl.C99/Error_struct_as_union.h
++					//! \test zcc/decl.C99/Error_struct_as_union3.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 				INFORM(&quot; declared as struct (C99 6.7.2.3p2)&quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;));
+@@ -13150,12 +13155,17 @@
+ 				}
+ 			// C1X 6.7.2.3p2 states that conflicting enum or struct must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
+-				{	//! \test zcc/decl.C99/Error_struct_as_union.h
++				{	//! \test zcc/decl.C99/Error_struct_as_union2.h
++					//! \test zcc/decl.C99/Error_struct_as_union4.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 				INFORM(&quot; declared as struct (C99 6.7.2.3p2)&quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
+@@ -13675,16 +13685,8 @@
+ 
+ 	if (types.get_enum_def(src.base_type_index))
+ 		INC_INFORM(&quot;enum &quot;);
+-	else{
+-		zaimoni::POD_pair&lt;const union_struct_decl*,const C_union_struct_def*&gt; tmp;
+-		tmp.first = types.get_structdecl(src.base_type_index);
+-		if (tmp.first) INC_INFORM(text_from_keyword(*tmp.first));
+-		else{
+-			tmp.second = types.get_C_structdef(src.base_type_index);
+-			if (tmp.second)
+-				INC_INFORM(text_from_keyword(tmp.second-&gt;_decl));
+-			}
+-		}
++	else if (const union_struct_decl* tmp = types.get_structdecl(src.base_type_index))
++		INC_INFORM(text_from_keyword(*tmp));
+ 	INC_INFORM(type_name ? type_name : &quot;&lt;unresolved type&gt;&quot;);
+ 
+ 	while(0&lt;start_ptr_scan--)
+@@ -13889,11 +13891,20 @@
+ 			// One Definition Rule states that conflicting enum, struct, or class must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace))
+ 				{	//! \test zcc/decl.C99/Error_struct_as_union.hpp
++					//! \test zcc/decl.C99/Error_struct_as_union3.hpp
++					//! \test zcc/decl.C99/Error_class_as_union.hpp
++					//! \test zcc/decl.C99/Error_class_as_union3.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-				INFORM(&quot; declared as struct or class (C++98 One Definition Rule)&quot;);
++				INFORM(&quot; declared as &quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				INC_INFORM(text_from_keyword(*tmp2));
++				INFORM(&quot; (C++98 One Definition Rule)&quot;);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;));
+@@ -14112,12 +14123,21 @@
+ 				}
+ 			// One Definition Rule states that conflicting enum, struct, or class must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace))
+-				{	//! \test zcc/decl.C99/Error_struct_as_union.hpp
++				{	//! \test zcc/decl.C99/Error_struct_as_union2.hpp
++					//! \test zcc/decl.C99/Error_struct_as_union4.hpp
++					//! \test zcc/decl.C99/Error_class_as_union2.hpp
++					//! \test zcc/decl.C99/Error_class_as_union4.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-				INFORM(&quot; declared as struct or class (C++98 One Definition Rule)&quot;);
++				INFORM(&quot; declared as &quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				INC_INFORM(text_from_keyword(*tmp2));
++				INFORM(&quot; (C++98 One Definition Rule)&quot;);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
+@@ -14151,7 +14171,7 @@
+ 			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 			//! \todo record field structure, etc.
+ 			parse_tree::types-&gt;upgrade_decl_to_def(vr_tmp,tmp4);
+-			assert(parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==vr_tmp);
++			assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==vr_tmp);
+ 			assert(parse_tree::types-&gt;get_C_structdef(vr_tmp));
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+@@ -14211,7 +14231,7 @@
+ 			//! \todo record field structure, etc.
+ 			parse_tree::types-&gt;upgrade_decl_to_def(vr_tmp,tmp4);
+ 			assert(2 &amp;&amp; 0&lt;parse_tree::types-&gt;use_count(vr_tmp));
+-			assert(parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==vr_tmp);
++			assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==vr_tmp);
+ 			assert(parse_tree::types-&gt;get_C_structdef(vr_tmp));
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+@@ -14269,7 +14289,7 @@
+ 			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 			//! \todo record field structure, etc.
+ 			parse_tree::types-&gt;upgrade_decl_to_def(vr_tmp,tmp4);
+-			assert(parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==vr_tmp);
++			assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==vr_tmp);
+ 			assert(parse_tree::types-&gt;get_C_structdef(vr_tmp));
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-11-09 05:26:17 UTC (rev 539)
++++ trunk/CSupport.cpp.in	2010-11-10 04:48:36 UTC (rev 540)
+@@ -13137,11 +13137,16 @@
+ 			// C1X 6.7.2.3p2 states that conflicting enum or struct must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
+ 				{	//! \test zcc/decl.C99/Error_struct_as_union.h
++					//! \test zcc/decl.C99/Error_struct_as_union3.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 				INFORM(&quot; declared as struct (C99 6.7.2.3p2)&quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;));
+@@ -13294,12 +13299,17 @@
+ 				}
+ 			// C1X 6.7.2.3p2 states that conflicting enum or struct must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
+-				{	//! \test zcc/decl.C99/Error_struct_as_union.h
++				{	//! \test zcc/decl.C99/Error_struct_as_union2.h
++					//! \test zcc/decl.C99/Error_struct_as_union4.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 				INFORM(&quot; declared as struct (C99 6.7.2.3p2)&quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
+@@ -13819,16 +13829,8 @@
+ 
+ 	if (types.get_enum_def(src.base_type_index))
+ 		INC_INFORM(&quot;enum &quot;);
+-	else{
+-		zaimoni::POD_pair&lt;const union_struct_decl*,const C_union_struct_def*&gt; tmp;
+-		tmp.first = types.get_structdecl(src.base_type_index);
+-		if (tmp.first) INC_INFORM(text_from_keyword(*tmp.first));
+-		else{
+-			tmp.second = types.get_C_structdef(src.base_type_index);
+-			if (tmp.second)
+-				INC_INFORM(text_from_keyword(tmp.second-&gt;_decl));
+-			}
+-		}
++	else if (const union_struct_decl* tmp = types.get_structdecl(src.base_type_index))
++		INC_INFORM(text_from_keyword(*tmp));
+ 	INC_INFORM(type_name ? type_name : &quot;&lt;unresolved type&gt;&quot;);
+ 
+ 	while(0&lt;start_ptr_scan--)
+@@ -14033,11 +14035,20 @@
+ 			// One Definition Rule states that conflicting enum, struct, or class must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace))
+ 				{	//! \test zcc/decl.C99/Error_struct_as_union.hpp
++					//! \test zcc/decl.C99/Error_struct_as_union3.hpp
++					//! \test zcc/decl.C99/Error_class_as_union.hpp
++					//! \test zcc/decl.C99/Error_class_as_union3.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-				INFORM(&quot; declared as struct or class (C++98 One Definition Rule)&quot;);
++				INFORM(&quot; declared as &quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				INC_INFORM(text_from_keyword(*tmp2));
++				INFORM(&quot; (C++98 One Definition Rule)&quot;);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;));
+@@ -14256,12 +14267,21 @@
+ 				}
+ 			// One Definition Rule states that conflicting enum, struct, or class must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace))
+-				{	//! \test zcc/decl.C99/Error_struct_as_union.hpp
++				{	//! \test zcc/decl.C99/Error_struct_as_union2.hpp
++					//! \test zcc/decl.C99/Error_struct_as_union4.hpp
++					//! \test zcc/decl.C99/Error_class_as_union2.hpp
++					//! \test zcc/decl.C99/Error_class_as_union4.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-				INFORM(&quot; declared as struct or class (C++98 One Definition Rule)&quot;);
++				INFORM(&quot; declared as &quot;);
++				const union_struct_decl* const tmp2 = parse_tree::types-&gt;get_structdecl(fatal_def);
++				assert(tmp2);
++				INC_INFORM(text_from_keyword(*tmp2));
++				INFORM(&quot; (C++98 One Definition Rule)&quot;);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				src.c_array&lt;0&gt;()[i].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+ 				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,10 @@
++// decl.C99\Error_class_as_union.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class bad_test {
++	int x_factor;
++};
++
++union bad_test;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union2.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_class_as_union2.hpp
++// using class as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class bad_test {
++	int x_factor;
++};
++
++union bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union3.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_class_as_union3.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class bad_test;
++
++union bad_test;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union4.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union4.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union4.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,10 @@
++// decl.C99\Error_class_as_union4.hpp
++// using class as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class bad_test;
++
++union bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union5.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union5.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union5.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_class_as_union5.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++class bad_test {
++	int x_factor;
++};
++
++union bad_test;
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union6.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union6.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union6.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,15 @@
++// decl.C99\Error_class_as_union6.hpp
++// using class as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++class bad_test {
++	int x_factor;
++};
++
++union bad_test {
++	int x_factor;
++};
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union7.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union7.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union7.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_class_as_union7.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++class bad_test;
++
++union bad_test;
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_class_as_union8.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_as_union8.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_as_union8.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_class_as_union8.hpp
++// using class as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++class bad_test;
++
++union bad_test {
++	int x_factor;
++};
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_as_union5.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_as_union5.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_struct_as_union5.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_struct_as_union5.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++struct bad_test {
++	int x_factor;
++};
++
++union bad_test;
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_as_union6.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_as_union6.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_struct_as_union6.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,15 @@
++// decl.C99\Error_struct_as_union6.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++struct bad_test {
++	int x_factor;
++};
++
++union bad_test {
++	int x_factor;
++};
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_as_union7.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_as_union7.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_struct_as_union7.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_struct_as_union7.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++	
++struct bad_test;
++
++union bad_test;
++
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_as_union8.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_as_union8.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_struct_as_union8.hpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_struct_as_union8.hpp
++// using struct as union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++struct bad_test;
++
++union bad_test {
++	int x_factor;
++};
++
++}
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-11-09 05:26:17 UTC (rev 539)
++++ trunk/type_system.cpp	2010-11-10 04:48:36 UTC (rev 540)
+@@ -843,6 +843,9 @@
+ 	i -= core_types_size;
+ 	if (dynamic_types.size()&lt;= --i) return NULL;
+ 	const dynamic_type_format&amp; tmp = dynamic_types[i];
++	// struct_def also has a struct_decl member
++	if (DYNAMIC_C_STRUCTDEF==tmp.third.second)
++		return &amp;tmp.third.first.third-&gt;_decl;
+ 	if (DYNAMIC_STRUCTDECL!=tmp.third.second) return NULL;
+ 	return tmp.third.first.second;
+ }
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2010-11-09 05:26:17 UTC (rev 539)
++++ trunk/type_system.cpp.in	2010-11-10 04:48:36 UTC (rev 540)
+@@ -858,6 +858,9 @@
+ 	i -= core_types_size;
+ 	if (dynamic_types.size()&lt;= --i) return NULL;
+ 	const dynamic_type_format&amp; tmp = dynamic_types[i];
++	// struct_def also has a struct_decl member
++	if (DYNAMIC_C_STRUCTDEF==tmp.third.second)
++		return &amp;tmp.third.first.third-&gt;_decl;
+ 	if (DYNAMIC_STRUCTDECL!=tmp.third.second) return NULL;
+ 	return tmp.third.first.second;
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000306.html">[Zcplusplus-commits] r539 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000308.html">[Zcplusplus-commits] r541 - trunk/tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#307">[ date ]</a>
+              <a href="thread.html#307">[ thread ]</a>
+              <a href="subject.html#307">[ subject ]</a>
+              <a href="author.html#307">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

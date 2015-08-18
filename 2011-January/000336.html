@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r569 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r569%20-%20trunk&In-Reply-To=%3C20110110035651.4820B480DF3%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000335.html">
+   <LINK REL="Next"  HREF="000337.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r569 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r569%20-%20trunk&In-Reply-To=%3C20110110035651.4820B480DF3%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r569 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 10 04:56:50 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000335.html">[Zcplusplus-commits] r568 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000337.html">[Zcplusplus-commits] r570 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-10 04:56:50 +0100 (Mon, 10 Jan 2011)
+New Revision: 569
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+morally dead switch cleanup
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-10 03:48:06 UTC (rev 568)
++++ trunk/CSupport.cpp	2011-01-10 03:56:50 UTC (rev 569)
+@@ -14176,7 +14176,6 @@
+ 		}
+ 
+ 	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
+-	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1+12,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+@@ -14189,12 +14188,12 @@
+ 			continue;
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+-		// pre-scan for declaration-like items
++		// check naked declarations first; handle namespaces later
+ 		{
++		kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1+12,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier_or_tag);
+ 		{	// wouldn't work for unnamed function parameters
+ 		const size_t strict_ub = src.size&lt;0&gt;()-i;
+ 		const parse_tree* const origin = src.data&lt;0&gt;()+i;
+-		pre_invariant_decl_scanner.clear();	// fail-safe
+ 		while(pre_invariant_decl_scanner(origin[pre_invariant_decl_scanner.size()]))
+ 			// if we ran out of tokens, bad
+ 			if (strict_ub &lt;= pre_invariant_decl_scanner.size())
+@@ -15143,32 +15142,7 @@
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+ 			};
+ 		}
+-		// check naked declarations first; handle namespaces later
+ reparse:
+-		pre_invariant_decl_scanner.clear();	// just in case; RAM conservation
+-		const int tag_type = notice_CPP_tag(src.data&lt;0&gt;()[i]);
+-		if (tag_type)
+-			{
+-			switch(tag_type)
+-			{	//! \todo deal with indentation violations later
+-#ifndef NDEBUG
+-			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
+-#endif
+-			case UNION_NAME: break;	/* already handled */
+-			case STRUCT_NAME: break;	/* already handled */
+-			case CLASS_NAME: break;	/* already handled */
+-			case UNION_NAMED_DEF: break;	/* already handled */
+-			case STRUCT_NAMED_DEF: break;	/* already handled */
+-			case CLASS_NAMED_DEF: break;	/* already handled */
+-			case UNION_ANON_DEF: break;	/* already handled */
+-			case STRUCT_ANON_DEF: break;	/* already handled */
+-			case CLASS_ANON_DEF: break;	/* already handled */
+-			case ENUM_NAME: break;	/* already handled */
+-			case ENUM_NAMED_DEF: break;	/* already handled */
+-			case ENUM_ANON_DEF: break;	/* already handled */
+-			}
+-			};
+-
+ 		// namespace scanner
+ 		// need some scheme to handle unnamed namespaces (probably alphabetical counter after something illegal so unmatchable)
+ 		// C++0X has inline namespaces; ignore these for now (well, maybe not: consuming the inline will prevent problems)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-10 03:48:06 UTC (rev 568)
++++ trunk/CSupport.cpp.in	2011-01-10 03:56:50 UTC (rev 569)
+@@ -14323,7 +14323,6 @@
+ 		}
+ 
+ 	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
+-	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1+12,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+@@ -14336,12 +14335,12 @@
+ 			continue;
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+-		// pre-scan for declaration-like items
++		// check naked declarations first; handle namespaces later
+ 		{
++		kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1+12,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier_or_tag);
+ 		{	// wouldn't work for unnamed function parameters
+ 		const size_t strict_ub = src.size&lt;0&gt;()-i;
+ 		const parse_tree* const origin = src.data&lt;0&gt;()+i;
+-		pre_invariant_decl_scanner.clear();	// fail-safe
+ 		while(pre_invariant_decl_scanner(origin[pre_invariant_decl_scanner.size()]))
+ 			// if we ran out of tokens, bad
+ 			if (strict_ub &lt;= pre_invariant_decl_scanner.size())
+@@ -15290,32 +15289,7 @@
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+ 			};
+ 		}
+-		// check naked declarations first; handle namespaces later
+ reparse:
+-		pre_invariant_decl_scanner.clear();	// just in case; RAM conservation
+-		const int tag_type = notice_CPP_tag(src.data&lt;0&gt;()[i]);
+-		if (tag_type)
+-			{
+-			switch(tag_type)
+-			{	//! \todo deal with indentation violations later
+-#ifndef NDEBUG
+-			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
+-#endif
+-			case UNION_NAME: break;	/* already handled */
+-			case STRUCT_NAME: break;	/* already handled */
+-			case CLASS_NAME: break;	/* already handled */
+-			case UNION_NAMED_DEF: break;	/* already handled */
+-			case STRUCT_NAMED_DEF: break;	/* already handled */
+-			case CLASS_NAMED_DEF: break;	/* already handled */
+-			case UNION_ANON_DEF: break;	/* already handled */
+-			case STRUCT_ANON_DEF: break;	/* already handled */
+-			case CLASS_ANON_DEF: break;	/* already handled */
+-			case ENUM_NAME: break;	/* already handled */
+-			case ENUM_NAMED_DEF: break;	/* already handled */
+-			case ENUM_ANON_DEF: break;	/* already handled */
+-			}
+-			};
+-
+ 		// namespace scanner
+ 		// need some scheme to handle unnamed namespaces (probably alphabetical counter after something illegal so unmatchable)
+ 		// C++0X has inline namespaces; ignore these for now (well, maybe not: consuming the inline will prevent problems)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000335.html">[Zcplusplus-commits] r568 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000337.html">[Zcplusplus-commits] r570 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#336">[ date ]</a>
+              <a href="thread.html#336">[ thread ]</a>
+              <a href="subject.html#336">[ subject ]</a>
+              <a href="author.html#336">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

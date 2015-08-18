@@ -1,0 +1,709 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r551 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r551%20-%20trunk&In-Reply-To=%3C20101209104626.EE66A480E5F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000317.html">
+   <LINK REL="Next"  HREF="000319.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r551 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r551%20-%20trunk&In-Reply-To=%3C20101209104626.EE66A480E5F%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r551 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  9 11:46:26 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000317.html">[Zcplusplus-commits] r550 - in trunk/tests/zcc: compat decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000319.html">[Zcplusplus-commits] r552 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#318">[ date ]</a>
+              <a href="thread.html#318">[ thread ]</a>
+              <a href="subject.html#318">[ subject ]</a>
+              <a href="author.html#318">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-12-09 11:46:26 +0100 (Thu, 09 Dec 2010)
+New Revision: 551
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+first stage of aligning declaration parsing with standards
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-12-09 10:37:16 UTC (rev 550)
++++ trunk/CSupport.cpp	2010-12-09 10:46:26 UTC (rev 551)
+@@ -3080,9 +3080,10 @@
+ #define PARSE_PRIMARY_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-19))
+ #define PARSE_UNION_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-20))
+ #define PARSE_CLASS_STRUCT_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-21))
++#define PARSE_ENUM_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-22))
+ 
+ // check for collision with lowest three bits
+-BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=20);
++BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=22);
+ 
+ /* nonstrict expression types */
+ #define PARSE_POSTFIX_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION)
+@@ -3104,7 +3105,7 @@
+ #define PARSE_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION | PARSE_STRICT_UNARY_EXPRESSION | PARSE_STRICT_CAST_EXPRESSION | PARSE_STRICT_PM_EXPRESSION | PARSE_STRICT_MULT_EXPRESSION | PARSE_STRICT_ADD_EXPRESSION | PARSE_STRICT_SHIFT_EXPRESSION | PARSE_STRICT_RELATIONAL_EXPRESSION | PARSE_STRICT_EQUALITY_EXPRESSION | PARSE_STRICT_BITAND_EXPRESSION | PARSE_STRICT_BITXOR_EXPRESSION | PARSE_STRICT_BITOR_EXPRESSION | PARSE_STRICT_LOGICAND_EXPRESSION | PARSE_STRICT_LOGICOR_EXPRESSION | PARSE_STRICT_CONDITIONAL_EXPRESSION | PARSE_STRICT_ASSIGNMENT_EXPRESSION | PARSE_STRICT_COMMA_EXPRESSION)
+ 
+ /* nonstrict type categories */
+-#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE | PARSE_CLASS_STRUCT_TYPE)
++#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE | PARSE_CLASS_STRUCT_TYPE | PARSE_ENUM_TYPE)
+ 
+ /* already-parsed */
+ #define PARSE_OBVIOUS (PARSE_EXPRESSION | PARSE_TYPE | parse_tree::INVALID)
+@@ -10456,7 +10457,7 @@
+ 		DICT_STRUCT(&quot;friend&quot;)
+ 	};
+ 
+-size_t C99_type_or_invariant_decl_specifier(const parse_tree&amp; x)
++static size_t C99_type_or_invariant_decl_specifier(const parse_tree&amp; x)
+ {
+ 	if (PARSE_TYPE &amp; x.flags)
+ 		return STATIC_SIZE(C99_nontype_decl_specifier_list);
+@@ -10468,7 +10469,7 @@
+ 	return SIZE_MAX;
+ }
+ 
+-size_t CPP0X_type_or_invariant_decl_specifier(const parse_tree&amp; x)
++static size_t CPP0X_type_or_invariant_decl_specifier(const parse_tree&amp; x)
+ {
+ 	if (PARSE_TYPE &amp; x.flags)
+ 		return STATIC_SIZE(CPP0X_nontype_decl_specifier_list); 
+@@ -12901,6 +12902,34 @@
+ 
+ #undef ZCC_CORE_NOTICE_TAG
+ 
++static size_t C99_type_or_invariant_decl_specifier_or_tag(const parse_tree&amp; x)
++{
++	if (PARSE_TYPE &amp; x.flags)
++		return STATIC_SIZE(C99_nontype_decl_specifier_list);
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list));
++		if (STATIC_SIZE(C99_nontype_decl_specifier_list)&gt;i) return i;
++		}
++	int tmp = notice_C99_tag(x);
++	if (tmp) return STATIC_SIZE(C99_nontype_decl_specifier_list)+tmp;
++	return SIZE_MAX;
++}
++
++static size_t CPP0X_type_or_invariant_decl_specifier_or_tag(const parse_tree&amp; x)
++{
++	if (PARSE_TYPE &amp; x.flags)
++		return STATIC_SIZE(CPP0X_nontype_decl_specifier_list); 
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
++		if (STATIC_SIZE(CPP0X_nontype_decl_specifier_list)&gt;i) return i;
++		}
++	int tmp = notice_CPP_tag(x);
++	if (tmp) return STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+tmp;
++	return SIZE_MAX;
++}	
++
+ static void _forward_declare_C_union(parse_tree&amp; src, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+@@ -12959,6 +12988,7 @@
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
++	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1+9,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(C99_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -12970,6 +13000,61 @@
+ 			continue;
+ 			};
+ 		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
++		// pre-scan for declaration-like items
++		{
++rescan:
++		size_t j = 0;
++		while(pre_invariant_decl_scanner(src.data&lt;0&gt;()[i+j++]) &amp;&amp; src.size&lt;0&gt;()-i &gt; j);
++		if (!pre_invariant_decl_scanner.empty())
++			{	// if we ran out of tokens, bad
++			if (src.size&lt;0&gt;()-i &lt;= pre_invariant_decl_scanner.size())
++				{	// unterminated declaration, top-level
++				//! \test zcc/decl.C99/Error_extern_scope.h
++				//! \test zcc/decl.C99/Error_static_scope.h
++				//! \test zcc/decl.C99/Error_typedef_scope.h
++				//! \test zcc/decl.C99/Error_register_scope.h
++				//! \test zcc/decl.C99/Error_auto_scope.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;declaration cut off by end of scope (C99 6.7p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DeleteNSlotsAt&lt;0&gt;(src.size&lt;0&gt;()-i,i);
++				return;
++				};
++			//! \todo naked identifier beyond could be an already-existing typedef which would trigger a rescan
++			//! \todo ; means decl terminates w/o identifier which is an error 
++			//! \todo if there are unparsed tags, scan for them and parse
++			size_t k = 0;
++			do	switch(pre_invariant_decl_scanner[k]-STATIC_SIZE(C99_nontype_decl_specifier_list))
++				{
++				case UNION_NAME: break;
++				case UNION_NAMED_DEF: break;
++				case UNION_ANON_DEF: break;
++				case STRUCT_NAME: break;
++				case STRUCT_NAMED_DEF: break;
++				case STRUCT_ANON_DEF: break;
++				case ENUM_NAME: break;
++				case ENUM_NAMED_DEF: break;
++				case ENUM_ANON_DEF:
++				{	// enum-specifier doesn't have a specific declaration mode
++					//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
++				const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i+k].index_tokens[0].logical_line,src.data&lt;0&gt;()[i+k].index_tokens[0].src_filename);
++				src.c_array&lt;0&gt;()[i+k].type_code.set_type(tmp);	// C: enums are int (although we'd like to extend this a bit)
++				src.c_array&lt;0&gt;()[i+k].flags |= PARSE_ENUM_TYPE;
++				if (!record_enum_values(*src.c_array&lt;0&gt;()[i+k].c_array&lt;2&gt;(),tmp,NULL,false,C99_echo_reserved_keyword,C99_intlike_literal_to_VM,C99_CondenseParseTree,C99_EvalParseTree))
++					{
++					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++					return;
++					}
++				pre_invariant_decl_scanner.clear();
++				goto rescan;
++				}
++				}
++			while(pre_invariant_decl_scanner.size()&gt; ++k);
++			pre_invariant_decl_scanner.clear();
++			};
++		}
+ 		// check naked declarations first
+ reparse:
+ 		const int tag_type = notice_C99_tag(src.data&lt;0&gt;()[i]);
+@@ -13534,20 +13619,9 @@
+ 				}
+ 			}
+ 			break;
+-			case ENUM_ANON_DEF:
+-			{	// enum-specifier doesn't have a specific declaration mode
+-				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+-			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);	// C: enums are int (although we'd like to extend this a bit)
+-			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),tmp,NULL,false,C99_echo_reserved_keyword,C99_intlike_literal_to_VM,C99_CondenseParseTree,C99_EvalParseTree))
+-				{
+-				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+-				return;
+-				}
++			case ENUM_ANON_DEF: break;	/* already handled */
+ 			}
+-			break;
+ 			}
+-			}
+ 			
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+@@ -13567,22 +13641,7 @@
+ 		if (decl_count)
+ 			{
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+-			if (src.size&lt;0&gt;()-i&lt;=decl_count)
+-				{	// unterminated declaration
+-					//! \test zcc/decl.C99/Error_extern_scope.h
+-					//! \test zcc/decl.C99/Error_static_scope.h
+-					//! \test zcc/decl.C99/Error_typedef_scope.h
+-					//! \test zcc/decl.C99/Error_register_scope.h
+-					//! \test zcc/decl.C99/Error_auto_scope.h
+-				if (src.size&lt;0&gt;()&gt;i) message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;declaration cut off by end of scope (C99 6.7p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				if (src.size&lt;0&gt;()&gt;i)
+-					src.DeleteNSlotsAt&lt;0&gt;(decl_count,i);
+-				return;
+-				};
++			assert(src.size&lt;0&gt;()-i&gt;decl_count);	// unterminated declaration handled above
+ 			if (robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count]))
+ 				{	// C99 7p2 error: must declare something
+ 					//! \test zcc/decl.C99/Error_extern_semicolon.h
+@@ -13968,6 +14027,7 @@
+ 		}
+ 
+ 	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
++	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1+12,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -13979,6 +14039,67 @@
+ 			continue;
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
++		// pre-scan for declaration-like items
++		{
++rescan:
++		size_t j = 0;
++		while(pre_invariant_decl_scanner(src.data&lt;0&gt;()[i+j++]) &amp;&amp; src.size&lt;0&gt;()-i &gt; j);
++		if (!pre_invariant_decl_scanner.empty())
++			{	// if we ran out of tokens, bad
++			if (src.size&lt;0&gt;()-i &lt;= pre_invariant_decl_scanner.size())
++				{	// unterminated declaration, top-level
++				//! \test zcc/decl.C99/Error_extern_scope.hpp
++				//! \test zcc/decl.C99/Error_static_scope.hpp
++				//! \test zcc/decl.C99/Error_typedef_scope.hpp
++				//! \test zcc/decl.C99/Error_register_scope.hpp
++				//! \test zcc/decl.C99/Error_mutable_scope.hpp
++				//! \test zcc/decl.C99/Error_virtual_scope.hpp
++				//! \test zcc/decl.C99/Error_friend_scope.hpp
++				//! \test zcc/decl.C99/Error_explicit_scope.hpp
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;declaration cut off by end of scope (C++98 7p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DeleteNSlotsAt&lt;0&gt;(src.size&lt;0&gt;()-i,i);
++				return;
++				};
++			//! \todo naked identifier beyond could be an already-existing typedef which would trigger a rescan
++			//! \todo ; means decl terminates w/o identifier which is an error 
++			//! \todo if there are unparsed tags, scan for them and parse
++			size_t k = 0;
++			do	switch(pre_invariant_decl_scanner[k]-STATIC_SIZE(CPP0X_nontype_decl_specifier_list))
++				{
++				case UNION_NAME: break;
++				case UNION_NAMED_DEF: break;
++				case UNION_ANON_DEF: break;
++				case STRUCT_NAME: break;
++				case STRUCT_NAMED_DEF: break;
++				case STRUCT_ANON_DEF: break;
++				case CLASS_NAME: break;
++				case CLASS_NAMED_DEF: break;
++				case CLASS_ANON_DEF: break;
++				case ENUM_NAME: break;
++				case ENUM_NAMED_DEF: break;
++				case ENUM_ANON_DEF:
++				{	// enum-specifier doesn't have a specific declaration mode
++					//! \test zcc/decl.C99/Pass_anonymous_enum_def.hpp
++				const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i+k].index_tokens[0].logical_line,src.data&lt;0&gt;()[i+k].index_tokens[0].src_filename);
++				src.c_array&lt;0&gt;()[i+k].type_code.set_type(tmp);	// C++: enums are own type
++				src.c_array&lt;0&gt;()[i+k].flags |= PARSE_ENUM_TYPE;
++				if (!record_enum_values(*src.c_array&lt;0&gt;()[i+k].c_array&lt;2&gt;(),tmp,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
++					{
++					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++					return;
++					}
++				pre_invariant_decl_scanner.clear();
++				goto rescan;
++				}
++				}
++			while(pre_invariant_decl_scanner.size()&gt; ++k);
++			pre_invariant_decl_scanner.clear();
++			};
++		}
+ 		// check naked declarations first; handle namespaces later
+ reparse:
+ 		const int tag_type = notice_CPP_tag(src.data&lt;0&gt;()[i]);
+@@ -14783,19 +14904,8 @@
+ 				}
+ 			}
+ 			break;
+-			case ENUM_ANON_DEF:
+-			{	// enum-specifier doesn't have a specific declaration mode
+-				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+-			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);	// C++: enums are own type
+-			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),tmp,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+-				{
+-				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+-				return;
+-				}
++			case ENUM_ANON_DEF: break;	/* already handled */
+ 			}
+-			break;
+-			}
+ 			};
+ 
+ 		// namespace scanner
+@@ -14932,25 +15042,7 @@
+ 		if (decl_count)
+ 			{
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+-			if (src.size&lt;0&gt;()-i&lt;=decl_count)
+-				{	// unterminated declaration
+-					//! \test zcc/decl.C99/Error_extern_scope.hpp
+-					//! \test zcc/decl.C99/Error_static_scope.hpp
+-					//! \test zcc/decl.C99/Error_typedef_scope.hpp
+-					//! \test zcc/decl.C99/Error_register_scope.hpp
+-					//! \test zcc/decl.C99/Error_mutable_scope.hpp
+-					//! \test zcc/decl.C99/Error_virtual_scope.hpp
+-					//! \test zcc/decl.C99/Error_friend_scope.hpp
+-					//! \test zcc/decl.C99/Error_explicit_scope.hpp
+-				if (src.size&lt;0&gt;()&gt;i) message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;declaration cut off by end of scope (C++98 7p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				if (src.size&lt;0&gt;()&gt;i)
+-					src.DeleteNSlotsAt&lt;0&gt;(decl_count,i);
+-				return;
+-				};
++			assert(src.size&lt;0&gt;()-i&gt;decl_count);	/* unterminated declarations already handled */
+ 			if (robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count]))
+ 				{	// must declare something
+ 					//! \test zcc/decl.C99/Error_extern_semicolon.hpp
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-12-09 10:37:16 UTC (rev 550)
++++ trunk/CSupport.cpp.in	2010-12-09 10:46:26 UTC (rev 551)
+@@ -3135,9 +3135,10 @@
+ #define PARSE_PRIMARY_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-19))
+ #define PARSE_UNION_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-20))
+ #define PARSE_CLASS_STRUCT_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-21))
++#define PARSE_ENUM_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-22))
+ 
+ // check for collision with lowest three bits
+-BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=20);
++BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=22);
+ 
+ /* nonstrict expression types */
+ #define PARSE_POSTFIX_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION)
+@@ -3159,7 +3160,7 @@
+ #define PARSE_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION | PARSE_STRICT_UNARY_EXPRESSION | PARSE_STRICT_CAST_EXPRESSION | PARSE_STRICT_PM_EXPRESSION | PARSE_STRICT_MULT_EXPRESSION | PARSE_STRICT_ADD_EXPRESSION | PARSE_STRICT_SHIFT_EXPRESSION | PARSE_STRICT_RELATIONAL_EXPRESSION | PARSE_STRICT_EQUALITY_EXPRESSION | PARSE_STRICT_BITAND_EXPRESSION | PARSE_STRICT_BITXOR_EXPRESSION | PARSE_STRICT_BITOR_EXPRESSION | PARSE_STRICT_LOGICAND_EXPRESSION | PARSE_STRICT_LOGICOR_EXPRESSION | PARSE_STRICT_CONDITIONAL_EXPRESSION | PARSE_STRICT_ASSIGNMENT_EXPRESSION | PARSE_STRICT_COMMA_EXPRESSION)
+ 
+ /* nonstrict type categories */
+-#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE | PARSE_CLASS_STRUCT_TYPE)
++#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE | PARSE_CLASS_STRUCT_TYPE | PARSE_ENUM_TYPE)
+ 
+ /* already-parsed */
+ #define PARSE_OBVIOUS (PARSE_EXPRESSION | PARSE_TYPE | parse_tree::INVALID)
+@@ -10592,7 +10593,7 @@
+ 		DICT_STRUCT(&quot;friend&quot;)
+ 	};
+ 
+-size_t C99_type_or_invariant_decl_specifier(const parse_tree&amp; x)
++static size_t C99_type_or_invariant_decl_specifier(const parse_tree&amp; x)
+ {
+ 	if (PARSE_TYPE &amp; x.flags)
+ 		return STATIC_SIZE(C99_nontype_decl_specifier_list);
+@@ -10604,7 +10605,7 @@
+ 	return SIZE_MAX;
+ }
+ 
+-size_t CPP0X_type_or_invariant_decl_specifier(const parse_tree&amp; x)
++static size_t CPP0X_type_or_invariant_decl_specifier(const parse_tree&amp; x)
+ {
+ 	if (PARSE_TYPE &amp; x.flags)
+ 		return STATIC_SIZE(CPP0X_nontype_decl_specifier_list); 
+@@ -13045,6 +13046,34 @@
+ 
+ #undef ZCC_CORE_NOTICE_TAG
+ 
++static size_t C99_type_or_invariant_decl_specifier_or_tag(const parse_tree&amp; x)
++{
++	if (PARSE_TYPE &amp; x.flags)
++		return STATIC_SIZE(C99_nontype_decl_specifier_list);
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list));
++		if (STATIC_SIZE(C99_nontype_decl_specifier_list)&gt;i) return i;
++		}
++	int tmp = notice_C99_tag(x);
++	if (tmp) return STATIC_SIZE(C99_nontype_decl_specifier_list)+tmp;
++	return SIZE_MAX;
++}
++
++static size_t CPP0X_type_or_invariant_decl_specifier_or_tag(const parse_tree&amp; x)
++{
++	if (PARSE_TYPE &amp; x.flags)
++		return STATIC_SIZE(CPP0X_nontype_decl_specifier_list); 
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
++		if (STATIC_SIZE(CPP0X_nontype_decl_specifier_list)&gt;i) return i;
++		}
++	int tmp = notice_CPP_tag(x);
++	if (tmp) return STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+tmp;
++	return SIZE_MAX;
++}	
++
+ static void _forward_declare_C_union(parse_tree&amp; src, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+@@ -13103,6 +13132,7 @@
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
++	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1+9,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(C99_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -13114,6 +13144,61 @@
+ 			continue;
+ 			};
+ 		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
++		// pre-scan for declaration-like items
++		{
++rescan:
++		size_t j = 0;
++		while(pre_invariant_decl_scanner(src.data&lt;0&gt;()[i+j++]) &amp;&amp; src.size&lt;0&gt;()-i &gt; j);
++		if (!pre_invariant_decl_scanner.empty())
++			{	// if we ran out of tokens, bad
++			if (src.size&lt;0&gt;()-i &lt;= pre_invariant_decl_scanner.size())
++				{	// unterminated declaration, top-level
++				//! \test zcc/decl.C99/Error_extern_scope.h
++				//! \test zcc/decl.C99/Error_static_scope.h
++				//! \test zcc/decl.C99/Error_typedef_scope.h
++				//! \test zcc/decl.C99/Error_register_scope.h
++				//! \test zcc/decl.C99/Error_auto_scope.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;declaration cut off by end of scope (C99 6.7p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DeleteNSlotsAt&lt;0&gt;(src.size&lt;0&gt;()-i,i);
++				return;
++				};
++			//! \todo naked identifier beyond could be an already-existing typedef which would trigger a rescan
++			//! \todo ; means decl terminates w/o identifier which is an error 
++			//! \todo if there are unparsed tags, scan for them and parse
++			size_t k = 0;
++			do	switch(pre_invariant_decl_scanner[k]-STATIC_SIZE(C99_nontype_decl_specifier_list))
++				{
++				case UNION_NAME: break;
++				case UNION_NAMED_DEF: break;
++				case UNION_ANON_DEF: break;
++				case STRUCT_NAME: break;
++				case STRUCT_NAMED_DEF: break;
++				case STRUCT_ANON_DEF: break;
++				case ENUM_NAME: break;
++				case ENUM_NAMED_DEF: break;
++				case ENUM_ANON_DEF:
++				{	// enum-specifier doesn't have a specific declaration mode
++					//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
++				const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i+k].index_tokens[0].logical_line,src.data&lt;0&gt;()[i+k].index_tokens[0].src_filename);
++				src.c_array&lt;0&gt;()[i+k].type_code.set_type(tmp);	// C: enums are int (although we'd like to extend this a bit)
++				src.c_array&lt;0&gt;()[i+k].flags |= PARSE_ENUM_TYPE;
++				if (!record_enum_values(*src.c_array&lt;0&gt;()[i+k].c_array&lt;2&gt;(),tmp,NULL,false,C99_echo_reserved_keyword,C99_intlike_literal_to_VM,C99_CondenseParseTree,C99_EvalParseTree))
++					{
++					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++					return;
++					}
++				pre_invariant_decl_scanner.clear();
++				goto rescan;
++				}
++				}
++			while(pre_invariant_decl_scanner.size()&gt; ++k);
++			pre_invariant_decl_scanner.clear();
++			};
++		}
+ 		// check naked declarations first
+ reparse:
+ 		const int tag_type = notice_C99_tag(src.data&lt;0&gt;()[i]);
+@@ -13678,20 +13763,9 @@
+ 				}
+ 			}
+ 			break;
+-			case ENUM_ANON_DEF:
+-			{	// enum-specifier doesn't have a specific declaration mode
+-				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+-			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);	// C: enums are int (although we'd like to extend this a bit)
+-			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),tmp,NULL,false,C99_echo_reserved_keyword,C99_intlike_literal_to_VM,C99_CondenseParseTree,C99_EvalParseTree))
+-				{
+-				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+-				return;
+-				}
++			case ENUM_ANON_DEF: break;	/* already handled */
+ 			}
+-			break;
+ 			}
+-			}
+ 			
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+@@ -13711,22 +13785,7 @@
+ 		if (decl_count)
+ 			{
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+-			if (src.size&lt;0&gt;()-i&lt;=decl_count)
+-				{	// unterminated declaration
+-					//! \test zcc/decl.C99/Error_extern_scope.h
+-					//! \test zcc/decl.C99/Error_static_scope.h
+-					//! \test zcc/decl.C99/Error_typedef_scope.h
+-					//! \test zcc/decl.C99/Error_register_scope.h
+-					//! \test zcc/decl.C99/Error_auto_scope.h
+-				if (src.size&lt;0&gt;()&gt;i) message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;declaration cut off by end of scope (C99 6.7p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				if (src.size&lt;0&gt;()&gt;i)
+-					src.DeleteNSlotsAt&lt;0&gt;(decl_count,i);
+-				return;
+-				};
++			assert(src.size&lt;0&gt;()-i&gt;decl_count);	// unterminated declaration handled above
+ 			if (robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count]))
+ 				{	// C99 7p2 error: must declare something
+ 					//! \test zcc/decl.C99/Error_extern_semicolon.h
+@@ -14112,6 +14171,7 @@
+ 		}
+ 
+ 	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
++	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1+12,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -14123,6 +14183,67 @@
+ 			continue;
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
++		// pre-scan for declaration-like items
++		{
++rescan:
++		size_t j = 0;
++		while(pre_invariant_decl_scanner(src.data&lt;0&gt;()[i+j++]) &amp;&amp; src.size&lt;0&gt;()-i &gt; j);
++		if (!pre_invariant_decl_scanner.empty())
++			{	// if we ran out of tokens, bad
++			if (src.size&lt;0&gt;()-i &lt;= pre_invariant_decl_scanner.size())
++				{	// unterminated declaration, top-level
++				//! \test zcc/decl.C99/Error_extern_scope.hpp
++				//! \test zcc/decl.C99/Error_static_scope.hpp
++				//! \test zcc/decl.C99/Error_typedef_scope.hpp
++				//! \test zcc/decl.C99/Error_register_scope.hpp
++				//! \test zcc/decl.C99/Error_mutable_scope.hpp
++				//! \test zcc/decl.C99/Error_virtual_scope.hpp
++				//! \test zcc/decl.C99/Error_friend_scope.hpp
++				//! \test zcc/decl.C99/Error_explicit_scope.hpp
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;declaration cut off by end of scope (C++98 7p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DeleteNSlotsAt&lt;0&gt;(src.size&lt;0&gt;()-i,i);
++				return;
++				};
++			//! \todo naked identifier beyond could be an already-existing typedef which would trigger a rescan
++			//! \todo ; means decl terminates w/o identifier which is an error 
++			//! \todo if there are unparsed tags, scan for them and parse
++			size_t k = 0;
++			do	switch(pre_invariant_decl_scanner[k]-STATIC_SIZE(CPP0X_nontype_decl_specifier_list))
++				{
++				case UNION_NAME: break;
++				case UNION_NAMED_DEF: break;
++				case UNION_ANON_DEF: break;
++				case STRUCT_NAME: break;
++				case STRUCT_NAMED_DEF: break;
++				case STRUCT_ANON_DEF: break;
++				case CLASS_NAME: break;
++				case CLASS_NAMED_DEF: break;
++				case CLASS_ANON_DEF: break;
++				case ENUM_NAME: break;
++				case ENUM_NAMED_DEF: break;
++				case ENUM_ANON_DEF:
++				{	// enum-specifier doesn't have a specific declaration mode
++					//! \test zcc/decl.C99/Pass_anonymous_enum_def.hpp
++				const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i+k].index_tokens[0].logical_line,src.data&lt;0&gt;()[i+k].index_tokens[0].src_filename);
++				src.c_array&lt;0&gt;()[i+k].type_code.set_type(tmp);	// C++: enums are own type
++				src.c_array&lt;0&gt;()[i+k].flags |= PARSE_ENUM_TYPE;
++				if (!record_enum_values(*src.c_array&lt;0&gt;()[i+k].c_array&lt;2&gt;(),tmp,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
++					{
++					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++					return;
++					}
++				pre_invariant_decl_scanner.clear();
++				goto rescan;
++				}
++				}
++			while(pre_invariant_decl_scanner.size()&gt; ++k);
++			pre_invariant_decl_scanner.clear();
++			};
++		}
+ 		// check naked declarations first; handle namespaces later
+ reparse:
+ 		const int tag_type = notice_CPP_tag(src.data&lt;0&gt;()[i]);
+@@ -14927,19 +15048,8 @@
+ 				}
+ 			}
+ 			break;
+-			case ENUM_ANON_DEF:
+-			{	// enum-specifier doesn't have a specific declaration mode
+-				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+-			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);	// C++: enums are own type
+-			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),tmp,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+-				{
+-				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+-				return;
+-				}
++			case ENUM_ANON_DEF: break;	/* already handled */
+ 			}
+-			break;
+-			}
+ 			};
+ 
+ 		// namespace scanner
+@@ -15076,25 +15186,7 @@
+ 		if (decl_count)
+ 			{
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+-			if (src.size&lt;0&gt;()-i&lt;=decl_count)
+-				{	// unterminated declaration
+-					//! \test zcc/decl.C99/Error_extern_scope.hpp
+-					//! \test zcc/decl.C99/Error_static_scope.hpp
+-					//! \test zcc/decl.C99/Error_typedef_scope.hpp
+-					//! \test zcc/decl.C99/Error_register_scope.hpp
+-					//! \test zcc/decl.C99/Error_mutable_scope.hpp
+-					//! \test zcc/decl.C99/Error_virtual_scope.hpp
+-					//! \test zcc/decl.C99/Error_friend_scope.hpp
+-					//! \test zcc/decl.C99/Error_explicit_scope.hpp
+-				if (src.size&lt;0&gt;()&gt;i) message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;declaration cut off by end of scope (C++98 7p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				if (src.size&lt;0&gt;()&gt;i)
+-					src.DeleteNSlotsAt&lt;0&gt;(decl_count,i);
+-				return;
+-				};
++			assert(src.size&lt;0&gt;()-i&gt;decl_count);	/* unterminated declarations already handled */
+ 			if (robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count]))
+ 				{	// must declare something
+ 					//! \test zcc/decl.C99/Error_extern_semicolon.hpp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000317.html">[Zcplusplus-commits] r550 - in trunk/tests/zcc: compat decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000319.html">[Zcplusplus-commits] r552 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#318">[ date ]</a>
+              <a href="thread.html#318">[ thread ]</a>
+              <a href="subject.html#318">[ subject ]</a>
+              <a href="author.html#318">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

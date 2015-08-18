@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r251 - trunk/POSIX/cmp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r251%20-%20trunk/POSIX/cmp&In-Reply-To=%3C200909110349.n8B3n67c008841%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000017.html">
+   <LINK REL="Next"  HREF="000019.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r251 - trunk/POSIX/cmp</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r251%20-%20trunk/POSIX/cmp&In-Reply-To=%3C200909110349.n8B3n67c008841%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r251 - trunk/POSIX/cmp">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 11 05:49:07 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000017.html">[Zcplusplus-commits] r250 - trunk/doc
+</A></li>
+        <LI>Next message: <A HREF="000019.html">[Zcplusplus-commits] r252 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-11 05:49:03 +0200 (Fri, 11 Sep 2009)
+New Revision: 251
+
+Modified:
+   trunk/POSIX/cmp/cmp.c
+Log:
+would like to include cmp in binary release, so it must build as-is and substitute for vendor cmp adequately
+
+Modified: trunk/POSIX/cmp/cmp.c
+===================================================================
+--- trunk/POSIX/cmp/cmp.c	2009-09-11 00:17:46 UTC (rev 250)
++++ trunk/POSIX/cmp/cmp.c	2009-09-11 03:49:03 UTC (rev 251)
+@@ -8,7 +8,7 @@
+ #include &lt;stdio.h&gt;
+ #include &lt;limits.h&gt;
+ #include &lt;fcntl.h&gt;
+-#include &quot;Zaimoni.STL/Logging.h&quot;
++#include &quot;../../Zaimoni.STL/Logging.h&quot;
+ 
+ #define OUTPUT_DEFAULT 0
+ #define OUTPUT_VERBOSE 1
+@@ -155,6 +155,8 @@
+ 		/* clamp byte number and line number at INT_MAX, to avoid undefined behavior */
+ 		if (INT_MAX&gt;bytenum) ++bytenum;
+ 		if ('\n'==file0_char &amp;&amp; INT_MAX&gt;linenum) ++linenum;
++		file0_char = fgetc(files[0]);
++		file1_char = fgetc(files[1]);
+ 		};
+ 	if (already_errored) exit(EXIT_FAILURE);
+ 	{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000017.html">[Zcplusplus-commits] r250 - trunk/doc
+</A></li>
+	<LI>Next message: <A HREF="000019.html">[Zcplusplus-commits] r252 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#18">[ date ]</a>
+              <a href="thread.html#18">[ thread ]</a>
+              <a href="subject.html#18">[ subject ]</a>
+              <a href="author.html#18">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

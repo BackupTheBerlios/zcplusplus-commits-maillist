@@ -1,0 +1,370 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r239%20-%20in%20trunk%3A%20Zaimoni.STL%20tools&In-Reply-To=%3C200908252321.n7PNLkTw007099%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000005.html">
+   <LINK REL="Next"  HREF="000007.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r239%20-%20in%20trunk%3A%20Zaimoni.STL%20tools&In-Reply-To=%3C200908252321.n7PNLkTw007099%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug 26 01:21:46 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000005.html">[Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS
+</A></li>
+        <LI>Next message: <A HREF="000007.html">[Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#6">[ date ]</a>
+              <a href="thread.html#6">[ thread ]</a>
+              <a href="subject.html#6">[ subject ]</a>
+              <a href="author.html#6">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-26 01:21:39 +0200 (Wed, 26 Aug 2009)
+New Revision: 239
+
+Modified:
+   trunk/Zaimoni.STL/Logging.h
+   trunk/Zaimoni.STL/flat_alg.h
+   trunk/tools/MakeMake.py
+Log:
+make build system C90-friendlier
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-08-24 21:39:42 UTC (rev 238)
++++ trunk/Zaimoni.STL/Logging.h	2009-08-25 23:21:39 UTC (rev 239)
+@@ -107,7 +107,22 @@
+ inline void INC_INFORM(unsigned char B) {return INC_INFORM((uintmax_t)(B));}
+ #endif
+ 
++#else	/* !defined(__cplusplus) */
++#ifdef NDEBUG
++#	define FATAL(B) _fatal(B)
++#	define FATAL_CODE(B,CODE) _fatal_code(B,CODE)
++#elif defined(__GNUC__)
++#	define FATAL(B) _fatal((_LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#else
++/* if no extensions, assume C99 */
++#	define FATAL(B) _fatal((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
++#define INC_INFORM(B) _inc_inform(B,strlen(B))
++#define INFORM(B) _inform(B,strlen(B))
++#define LOG(B) _log(B,strlen(B))
++#endif
+ 
+ /* this should look like an assert even in NDEBUG mode */
+ #define SUCCEED_OR_DIE(A) ((A) ? (void)0 : FATAL_CODE(#A,3))
+@@ -115,15 +130,14 @@
+ /* match assert.h C standard header, which uses NDEBUG */
+ #ifndef NDEBUG	/* self-aware version */
+ /* use similar extensions on other compilers */
+-#ifdef __GNUC__
+-#define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
+-#define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#ifdef __cplusplus
++#	ifdef __GNUC__
++#		define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#	else	/* if no extensions, assume C99 */		
++#		define FATAL(B) FATAL((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+-
+-/* if no extensions, assume C99 */
+-#ifndef FATAL
+-#define FATAL(B) FATAL((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
+-#define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+ 
+ #define ARG_TRACE_PARAMS , const char* const _file, long _line
+
+Modified: trunk/Zaimoni.STL/flat_alg.h
+===================================================================
+--- trunk/Zaimoni.STL/flat_alg.h	2009-08-24 21:39:42 UTC (rev 238)
++++ trunk/Zaimoni.STL/flat_alg.h	2009-08-25 23:21:39 UTC (rev 239)
+@@ -19,11 +19,11 @@
+ 
+ #ifdef __cplusplus
+ 
+-// from boost::numeric::interval
+-// not useful for built-in types, but allows uniform code with interval arithmetic
++/* from boost::numeric::interval
++ * not useful for built-in types, but allows uniform code with interval arithmetic */
+ inline long double square(const long double&amp; x) { return x*x;}
+ 
+-// signum function
++/* signum function */
+ template&lt;class T&gt;
+ inline signed int sgn(T x) {return (0&lt;x) ? 1 : (0==x ? 0 : -1);}
+ 
+@@ -32,14 +32,14 @@
+ ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned short)
+ ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned int)
+ ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned long)
+-//ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned long long)
++/*ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned long long) */
+ #undef ZAIMONI_DEFINE_UNSIGNED_SGN
+ 
+-// cmp function
++/* cmp function */
+ template&lt;class T1, class T2&gt;
+ inline signed int cmp(T1 x, T2 y) {return (x&lt;y) ? -1 : (x==y ? 0 : 1);}
+ 
+-// -1^N
++/* -1^N */
+ template&lt;class T&gt;
+ inline signed int negative_one_pow(T N) {return (N%2) ? -1 : 1;}
+ 
+@@ -53,10 +53,10 @@
+ 		|| x==0;
+ }
+ 
+-// modeled on std::transform
+-// but the unary operation is assumed to mutate its operand
+-// probably closest conceptually to std::for_each
+-// range version
++/* modeled on std::transform
++ * but the unary operation is assumed to mutate its operand
++ * probably closest conceptually to std::for_each */
++/* range version */
+ template&lt;class IO_Iterator,typename unary_op&gt;
+ inline void autotransform(IO_Iterator first,IO_Iterator last,unary_op op)
+ {
+@@ -64,7 +64,7 @@
+ 		op(*first++);
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template&lt;class IO_Iterator,typename unary_op&gt;
+ inline void autotransform_n(IO_Iterator first,size_t N,unary_op op)
+ {
+@@ -75,7 +75,7 @@
+ 		};
+ }
+ 
+-// range version
++/* range version */
+ template&lt;typename unary_op,class IO_Iterator&gt;
+ inline bool and_range(unary_op op,IO_Iterator first,IO_Iterator last)
+ {
+@@ -84,7 +84,7 @@
+ 	return true;
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template&lt;typename unary_op,class IO_Iterator&gt;
+ inline bool and_range_n(unary_op op,IO_Iterator first,size_t N)
+ {
+@@ -96,7 +96,7 @@
+ 	return true;
+ }
+ 
+-// range version
++/* range version */
+ template&lt;typename binary_op,class IO_Iterator&gt;
+ inline bool and_range(binary_op op,IO_Iterator first,IO_Iterator last,IO_Iterator first2)
+ {
+@@ -105,7 +105,7 @@
+ 	return true;
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template&lt;typename binary_op,class IO_Iterator&gt;
+ inline bool and_range_n(binary_op op,IO_Iterator first,size_t N,IO_Iterator first2)
+ {
+@@ -117,7 +117,7 @@
+ 	return true;
+ }
+ 
+-// range version
++/* range version */
+ template&lt;typename unary_op,class IO_Iterator&gt;
+ inline bool or_range(unary_op op,IO_Iterator first,IO_Iterator last)
+ {
+@@ -126,7 +126,7 @@
+ 	return false;
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template&lt;typename unary_op,class IO_Iterator&gt;
+ inline bool or_range_n(unary_op op,IO_Iterator first,size_t N)
+ {
+@@ -155,18 +155,18 @@
+ #if 0
+ template&lt;IntType&gt;
+ inline void self_abs(IntType&amp; n)
+-{	// do not rely on abs for the default (broken compilers, etc.)
+-	// user types with efficient self_abs will redefine this
++{	/* do not rely on abs for the default (broken compilers, etc.)
++	 * user types with efficient self_abs will redefine this */
+ 	if (n&lt;0) n = -n;
+ }
+ 
+ namespace detail {
+ 
+-// These two ripped from Boost.Rational and de-robustified
+-// lowercased to dodge macro conventions
++/* These two ripped from Boost.Rational and de-robustified
++ * lowercased to dodge macro conventions */
+ 
+-// We use n and m as temporaries in this function, so there is no value
+-// in using const IntType&amp; as we would only need to make a copy anyway...
++/* We use n and m as temporaries in this function, so there is no value
++ * in using const IntType&amp; as we would only need to make a copy anyway... */
+ template&lt;class IntType&gt;
+ IntType
+ gcd(IntType n, IntType m)
+@@ -174,9 +174,9 @@
+ 	self_abs(n);
+ 	self_abs(m);
+ 	
+-    // As n and m are now positive, we can be sure that %= returns a
+-    // positive value (the standard guarantees this for built-in types,
+-    // and we require it of user-defined types).
++    /* As n and m are now positive, we can be sure that %= returns a
++     * positive value (the standard guarantees this for built-in types,
++     * and we require it of user-defined types). */
+ 	while(true)
+ 	{
+ 		if (m==0) return n;
+@@ -200,7 +200,7 @@
+     return n;
+ }
+ 
+-}	// namespace detail
++}	/* namespace detail */
+ 
+ #endif
+ 
+
+Modified: trunk/tools/MakeMake.py
+===================================================================
+--- trunk/tools/MakeMake.py	2009-08-24 21:39:42 UTC (rev 238)
++++ trunk/tools/MakeMake.py	2009-08-25 23:21:39 UTC (rev 239)
+@@ -1,5 +1,8 @@
+ #!/usr/bin/python
+ 
++# <A HREF="http://www.boost.org/more/license_info.html">http://www.boost.org/more/license_info.html</A>
++# Boost Software License - Version 1.0 - August 17th, 2003
++
+ # Permission is hereby granted, free of charge, to any person or organization
+ # obtaining a copy of the software and accompanying documentation covered by
+ # this license (the &quot;Software&quot;) to use, reproduce, display, distribute,
+@@ -22,6 +25,14 @@
+ # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ # DEALINGS IN THE SOFTWARE.
+ 
++# backward fixup note
++# old version of configuring *.exe objects was
++# ObjfileTuple = ('main','Mockup','Agent','render_curses')
++# ProgName = 'Skirmish'
++# 
++# This didn't work well for Z.C++.  New style is
++# ProgObjects = {'Skirmish':('main','Mockup','Agent','render_curses')}
++
+ from string import join
+ from os import stat,getcwd
+ from os.path import isfile
+@@ -33,7 +44,7 @@
+ C_system_includedirs = [C_compiler_master_directory+'/include']
+ C_system_libdirs = [C_compiler_master_directory+'/lib']
+ CPP_compiler = 'g++'
+-CPP_system_includedirs = [C_compiler_master_directory+'/include']
++CPP_system_includedirs = [C_compiler_master_directory+'/include',C_compiler_master_directory+'/include/c++/3.4.5']
+ C_backtrack_dirs = []
+ 
+ def InjectAlternateSystemHeaderDir(Dirname):
+@@ -139,7 +150,7 @@
+ 	HeaderCache[Target] = LineList2
+ 	return LineList2
+ 	
+-def CoreCRules(LineList):
++def CoreCPPRules(LineList):
+ #	if C_hard_nonsystem_includedirs:
+ #		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_hard_nonsystem_includedirs),' ') +' -I- \\\n')
+ #	if C_soft_nonsystem_includedirs:
+@@ -155,6 +166,22 @@
+ 	if object_strip:
+ 		LineList.append('\t'+object_strip+'\n')
+ 
++def CoreCRules(LineList):
++#	if C_hard_nonsystem_includedirs:
++#		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_hard_nonsystem_includedirs),' ') +' -I- \\\n')
++#	if C_soft_nonsystem_includedirs:
++#		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_soft_nonsystem_includedirs),' ') +' \\\n')
++#	if C_defines:
++#		LineList.append('\t '+ join(map(lambda x: '-D'+x,C_defines),' ') +' \\\n')
++	if C_assembly_preprocessing:
++		LineList.append('\t -o $*.s -S -xc -pipe $&lt;\n')
++		LineList.append('\t'+C_assembly_preprocessing+'\n')
++		LineList.append('\tas -o $*.o $*.s\n')
++	else:
++		LineList.append('\t -o $*.o -c -xc -pipe $&lt;\n')
++	if object_strip:
++		LineList.append('\t'+object_strip+'\n')
++
+ def MakeMakefile():
+ 	LineList = []	# makefile
+ 	LineList2 = []	# dependencies
+@@ -222,9 +249,10 @@
+ 		LineList.append('# defines\n')
+ 	LineList.append('# processing details\n')
+ 
+-	LineList.append(CPP_suffix+'.o:\n')
+-	LineList.append('\t$(CXX) $(CFLAGS) $(CXXFLAGS) $(ARCH_FLAGS) $(OTHER_INCLUDEDIR) $(C_MACROS) $(CXX_MACROS) \\\n')
+-	CoreCRules(LineList)
++	if CPP_suffix:
++		LineList.append(CPP_suffix+'.o:\n')
++		LineList.append('\t$(CXX) $(CFLAGS) $(CXXFLAGS) $(ARCH_FLAGS) $(OTHER_INCLUDEDIR) $(C_MACROS) $(CXX_MACROS) \\\n')
++		CoreCPPRules(LineList)
+ 
+ 	if C_enabled:
+ 		LineList.append('\n.c.o:\n')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000005.html">[Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS
+</A></li>
+	<LI>Next message: <A HREF="000007.html">[Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#6">[ date ]</a>
+              <a href="thread.html#6">[ thread ]</a>
+              <a href="subject.html#6">[ subject ]</a>
+              <a href="author.html#6">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

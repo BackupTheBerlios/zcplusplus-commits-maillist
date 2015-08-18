@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r309 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/compile.test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r309%20-%20in%20trunk%3A%20.%20POSIX/cmp%20Zaimoni.STL%0A%09Zaimoni.STL/Pure.C%20Zaimoni.STL/Pure.C/compile.test&In-Reply-To=%3C200912191838.nBJIcWOi003690%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000075.html">
+   <LINK REL="Next"  HREF="000077.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r309 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/compile.test</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r309%20-%20in%20trunk%3A%20.%20POSIX/cmp%20Zaimoni.STL%0A%09Zaimoni.STL/Pure.C%20Zaimoni.STL/Pure.C/compile.test&In-Reply-To=%3C200912191838.nBJIcWOi003690%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r309 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/compile.test">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec 19 19:38:32 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000075.html">[Zcplusplus-commits] r308 - in trunk/Zaimoni.STL: . Pure.C
+</A></li>
+        <LI>Next message: <A HREF="000077.html">[Zcplusplus-commits] r310 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#76">[ date ]</a>
+              <a href="thread.html#76">[ thread ]</a>
+              <a href="subject.html#76">[ subject ]</a>
+              <a href="author.html#76">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-19 19:38:23 +0100 (Sat, 19 Dec 2009)
+New Revision: 309
+
+Added:
+   trunk/Zaimoni.STL/Pure.C/compile.test/
+   trunk/Zaimoni.STL/Pure.C/compile.test/exists_MS_io_h.c
+   trunk/Zaimoni.STL/Pure.C/comptest.in
+Modified:
+   trunk/NMake.inc
+   trunk/POSIX/cmp/cmp.c
+   trunk/Zaimoni.STL/Compiler.h
+   trunk/Zaimoni.STL/Pure.C/GNUmakefile
+   trunk/Zaimoni.STL/Pure.C/NMakefile
+   trunk/Zaimoni.STL/cstdio
+Log:
+use a compile test to detect Microsoft io.h
+
+Modified: trunk/NMake.inc
+===================================================================
+--- trunk/NMake.inc	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/NMake.inc	2009-12-19 18:38:23 UTC (rev 309)
+@@ -6,6 +6,12 @@
+ includedir = $(exec_prefix)\include
+ libdir = $(exec_prefix)\lib
+ 
++host_prefix = c:\MSVC9.0\VC
++host_exec_prefix = $(host_prefix)
++host_bindir = $(host_exec_prefix)\bin
++host_includedir = $(host_exec_prefix)\include
++host_libdir = $(host_exec_prefix)\lib
++
+ AR = lib
+ 
+ EXEEXT = exe
+
+Modified: trunk/POSIX/cmp/cmp.c
+===================================================================
+--- trunk/POSIX/cmp/cmp.c	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/POSIX/cmp/cmp.c	2009-12-19 18:38:23 UTC (rev 309)
+@@ -9,6 +9,7 @@
+ #include &lt;limits.h&gt;
+ #include &lt;fcntl.h&gt;
+ #include &quot;../../Zaimoni.STL/Logging.h&quot;
++#include &quot;../../Zaimoni.STL/Pure.C/comptest.h&quot;
+ 
+ #define OUTPUT_DEFAULT 0
+ #define OUTPUT_VERBOSE 1
+
+Modified: trunk/Zaimoni.STL/Compiler.h
+===================================================================
+--- trunk/Zaimoni.STL/Compiler.h	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/Zaimoni.STL/Compiler.h	2009-12-19 18:38:23 UTC (rev 309)
+@@ -92,11 +92,6 @@
+ #	define z_realpath(TARGET,SRC) realpath(TARGET,SRC)
+ #endif
+ 
+-/* detection of Microsoftish io.h : provides _filelength and _fileno */
+-#if defined(__MINGW32__)
+-#define ZAIMONI_HAVE_MICROSOFT_IO_H 1
+-#endif
+-
+ /* hooks for properties of the libraries */
+ /* undefine this if C/C++ library sqrt() is inaccurate [use _root(x,2) in med_alg.hpp to replace] */
+ #define ZAIMONI_ALLOW_SQRT 1
+
+Modified: trunk/Zaimoni.STL/Pure.C/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/GNUmakefile	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/Zaimoni.STL/Pure.C/GNUmakefile	2009-12-19 18:38:23 UTC (rev 309)
+@@ -11,10 +11,10 @@
+ LIBS := libz_format_util.a
+ 
+ # GNU targets we know about
+-all: $(LIBS) auto_int.h
++all: $(LIBS) auto_int.h comptest.h
+ 
+ clean:
+-	rm -f *.a *.o auto_int.h
++	rm -f *.a *.o auto_int.h comptest.h
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
+ 
+@@ -29,6 +29,12 @@
+ 	./int_probe.exe &gt; auto_int.h
+ 	rm int_probe.exe
+ 
++comptest.h : comptest.in compile.test/exists_MS_io_h.c
++	cp comptest.in comptest.h
++	-$(CC) -oexists_MS_io_h.exe $(CFLAGS) -mconsole $(ARCH_FLAGS) compile.test/exists_MS_io_h.c
++	-./exists_MS_io_h.exe &gt;&gt; comptest.h
++	-rm exists_MS_io_h.exe
++
+ .c.o:
+ 	$(CC) -c $&lt; $(CFLAGS) $(ARCH_FLAGS) -o $*.o
+ 
+
+Modified: trunk/Zaimoni.STL/Pure.C/NMakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/NMakefile	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/Zaimoni.STL/Pure.C/NMakefile	2009-12-19 18:38:23 UTC (rev 309)
+@@ -12,10 +12,10 @@
+ LIBS = z_format_util.lib
+ 
+ # GNU targets we know about
+-all: $(LIBS) auto_int.h
++all: $(LIBS) auto_int.h comptest.h
+ 
+ clean:
+-	del *.lib *.obj auto_int.h
++	del *.lib *.obj auto_int.h comptest.h
+ 
+ install: $(libdir)\z_format_util.lib $(libdir)\z_logging.lib
+ 
+@@ -31,6 +31,13 @@
+ 	del int_probe.exe.manifest
+ 	del int_probe.exe
+ 
++comptest.h : comptest.in compile.test/exists_MS_io_h.c
++	copy comptest.in comptest.h
++	$(CC) /OUT:exists_MS_io_h.exe $(CFLAGS) compile.test/exists_MS_io_h.c
++	.\exists_MS_io_h.exe &gt;&gt; comptest.h
++	del exists_MS_io_h.exe.manifest
++	del exists_MS_io_h.exe
++
+ # defaulting .c.obj
+ z_format_util.lib: format_util.obj
+ 	$(AR) /OUT:z_format_util.lib format_util.obj
+
+Added: trunk/Zaimoni.STL/Pure.C/compile.test/exists_MS_io_h.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/compile.test/exists_MS_io_h.c	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/Zaimoni.STL/Pure.C/compile.test/exists_MS_io_h.c	2009-12-19 18:38:23 UTC (rev 309)
+@@ -0,0 +1,19 @@
++/* exists_MS_io_h.c */
++/* tests for Microsoftish io.h */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include &lt;stdio.h&gt;
++#include &lt;io.h&gt;
++
++#define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
++
++long get_filelength(FILE* src)
++{
++	return _filelength(_fileno(src));
++}
++
++int main()
++{
++	STRING_LITERAL_TO_STDOUT(&quot;#define ZAIMONI_HAS_MICROSOFT_IO_H 1\n&quot;);
++	return 0;
++}
+
+Added: trunk/Zaimoni.STL/Pure.C/comptest.in
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/comptest.in	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/Zaimoni.STL/Pure.C/comptest.in	2009-12-19 18:38:23 UTC (rev 309)
+@@ -0,0 +1,6 @@
++/* comptest.h */
++/* compile test summary */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++/* HAVE_MICROSOFT_IO_H: #include &lt;io.h&gt; works and allows compiling Microsoft-specific idioms */
++
+
+Modified: trunk/Zaimoni.STL/cstdio
+===================================================================
+--- trunk/Zaimoni.STL/cstdio	2009-12-19 06:14:59 UTC (rev 308)
++++ trunk/Zaimoni.STL/cstdio	2009-12-19 18:38:23 UTC (rev 309)
+@@ -7,7 +7,8 @@
+ 
+ #include &quot;Logging.h&quot;
+ #include &quot;MetaRAM.hpp&quot;
+-#include &lt;cstdio&gt;
++#include &lt;stdio.h&gt;
++#include &quot;Pure.C/comptest.h&quot;
+ 
+ #ifdef ZAIMONI_HAVE_MICROSOFT_IO_H
+ #include &lt;io.h&gt;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000075.html">[Zcplusplus-commits] r308 - in trunk/Zaimoni.STL: . Pure.C
+</A></li>
+	<LI>Next message: <A HREF="000077.html">[Zcplusplus-commits] r310 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#76">[ date ]</a>
+              <a href="thread.html#76">[ thread ]</a>
+              <a href="subject.html#76">[ subject ]</a>
+              <a href="author.html#76">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

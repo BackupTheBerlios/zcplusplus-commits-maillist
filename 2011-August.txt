@@ -1,0 +1,865 @@
+From zaimoni at mail.berlios.de  Sun Aug  7 21:48:44 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun,  7 Aug 2011 21:48:44 +0200
+Subject: [Zcplusplus-commits] r680 - trunk/Zaimoni.STL/core.RAM
+Message-ID: <20110807194845.018BF481261@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-08-07 21:48:44 +0200 (Sun, 07 Aug 2011)
+New Revision: 680
+
+Modified:
+   trunk/Zaimoni.STL/core.RAM/memory.cpp
+Log:
+fix infinite loop in invalid free detection
+
+Modified: trunk/Zaimoni.STL/core.RAM/memory.cpp
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-07-29 14:59:22 UTC (rev 679)
++++ trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-08-07 19:48:44 UTC (rev 680)
+@@ -215,7 +215,7 @@
+ 	// binary-searching the array pointed to by BasePtrIndex.  
+ 	// Idx is a strict upper bound to the valid indices.
+ 	size_t lb = 0;
+-	while(lb<=strict_ub)
++	while(lb<strict_ub)
+ 		{
+ 		const size_t midpoint = lb + (strict_ub-lb)/2;
+ 		if (Target==BasePtrIndex[midpoint]._address)
+
+
+
+From zaimoni at mail.berlios.de  Tue Aug 30 20:31:46 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue, 30 Aug 2011 20:31:46 +0200
+Subject: [Zcplusplus-commits] r681 - trunk
+Message-ID: <20110830183146.4C5CF4811B9@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-08-30 20:31:45 +0200 (Tue, 30 Aug 2011)
+New Revision: 681
+
+Modified:
+   trunk/type_spec.hpp
+Log:
+wrap function return type handling
+
+Modified: trunk/type_spec.hpp
+===================================================================
+--- trunk/type_spec.hpp	2011-08-07 19:48:44 UTC (rev 680)
++++ trunk/type_spec.hpp	2011-08-30 18:31:45 UTC (rev 681)
+@@ -56,6 +56,11 @@
+ 	template<size_t i> unsigned char& qualifier() {return q_vector.c_array()[i];}
+ 	template<size_t i> unsigned char qualifier() const {return q_vector.data()[i];}
+ 
++	// standardize function return value weirdness
++	bool is_function() const {return q_vector.front() & _function_return_value;};
++	void set_function() {q_vector.front() |= _function_return_value;};
++	bool CPP_global_linkage_is_static() const {return (q_vector.front() & type_spec::_function_return_value) && (q_vector.back() & _const);};
++	
+ 	void clear();	// XXX should be constructor; good way to leak memory in other contexts
+ 	void destroy();	// XXX should be destructor
+ 	void set_type(size_t _base_type_index);
+
+
+
+From zaimoni at mail.berlios.de  Tue Aug 30 20:32:28 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue, 30 Aug 2011 20:32:28 +0200
+Subject: [Zcplusplus-commits] r682 - trunk
+Message-ID: <20110830183228.A9EAE4811B9@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-08-30 20:32:28 +0200 (Tue, 30 Aug 2011)
+New Revision: 682
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+turn on object registry
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-08-30 18:31:45 UTC (rev 681)
++++ trunk/CSupport.cpp	2011-08-30 18:32:28 UTC (rev 682)
+@@ -14187,20 +14187,95 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-#if 0
++					// all declarations must agree regarding _Thread_local (C1X 6.7.1p3), which does not apply to functions (C1X 6.9.1p4...only extern, static work for functions)
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types->get_object(initdecl_identifier->index_tokens[0].token.first);
++					if (tmp && tmp->first!=bootstrap)
++						{	// check pre-existing type; want compatible types, in particular
++							// multiple translation units is not an issue here: C1X 6.2.7
++							// * enumerations cause implementation-defined weirdness: C1X 6.7.2.2p4 
++							// * qualifiers: C1X 6.7.3p10
++							// * functions: C1X 6.7.6.2p15
++							// reject incompatible prior type as undefined behavior
++						message_header(initdecl_identifier->index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("already defined with some other type (this error needs to implement proper incompatible type rejection) (C99 6.2.7 and related)");
++						INC_INFORM(tmp->second);
++						INC_INFORM(":");
++						INC_INFORM(tmp->third);
++						INFORM(": prior declaration here");
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with _Thread_local at this point
+ 					if (C99_CPP0X_DECLSPEC_STATIC & declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration will invoke undefined behavior [C1X 6.2.2p7], so error out then
++						if (tmp)
++							{
++							if (type_system::linkage_static!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("already defined with some linkage other than static at global scope: undefined behavior (C1X 6.2.2p7)");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object(initdecl_identifier->index_tokens[0].token.first, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN & declFind.get_flags())
+ 						{	// explicit extern.
+ 							// no effect on pre-existing declaration, other than to convert no-linkage to extern (if this can indeed be tripped)
+ 							// we need a cross-lang warning if there is a pre-existing static declaration, as this will error in C++
++explicit_extern:		if (tmp)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility] && type_system::linkage_extern_C!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM("already defined with some linkage other than extern at global scope: no effect in C, C++ would error");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							//! \bug need test case								
++							// redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object(initdecl_identifier->index_tokens[0].token.first, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_C);
++							}
+ 						}
+ 					else{	// something else: C99 defaults to extern no matter what for global functions and objects.
+ 							// we need a cross-lang warning for const objects as C++ will default to static then
++						if (bool_options[boolopt::warn_crosslang_compatibility] && bootstrap.CPP_global_linkage_is_static())
++							{	//! \bug need test case
++							message_header(initdecl_identifier->index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INFORM("global const objects have default linkage extern in C, static in C++");
++							if (bool_options[boolopt::warnings_are_errors])
++								{	//! \bug need test case
++								zcc_errors.inc_error();
++								return;
++								}
++							}
++						goto explicit_extern;	// handle as extern
+ 						};
+-#endif						
+ 					};
+ 				decl_offset += initdecl_span;
+ 				if (src.size<0>()-(i+decl_count)<=decl_offset)
+@@ -15770,28 +15845,102 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-					free(namespace_name);
+-#if 0
+ 					// so...type_system needs to handle following when registering an object/function as well
+ 					// linkage: static/internal, extern/external
+ 					// external linkage class: C, C++
+ 					// it is an error to have more than one object definition
+ 					// it is an error to have more than one function type (including parameter list) for a given identifier with C linkage
++					// all declarations must agree regarding thread_local (C++0X 7.1.1p1), which cannot apply to functions (C++0X 7.1.1p4; only extern and static work)
+ 					// obviously C cannot name most things with C++ linkage
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types->get_object(fullname);
++					//! \todo react to overloaded function issues here
++					free(namespace_name);
++					if (tmp && tmp->first!=bootstrap)
++						{	// check pre-existing type
++						message_header(initdecl_identifier->index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("already defined with some other type (this error needs to implement proper incompatible type rejection)");
++						INC_INFORM(tmp->second);
++						INC_INFORM(":");
++						INC_INFORM(tmp->third);
++						INFORM(": prior declaration here");
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with thread_local here
++					//! \todo deal with extern "C", etc. (should be passing current default language for linkage in, should be reading linkage overrides for declFind)
+ 					if (C99_CPP0X_DECLSPEC_STATIC & declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration is an error: C++0X 7.1.1p8
++explicit_static:		if (tmp)
++							{
++							if (type_system::linkage_static!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("already defined with some linkage other than static at global scope (C++0X 7.1.1p8)");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case								
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object_CPP(initdecl_identifier->index_tokens[0].token.first, active_namespace, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN & declFind.get_flags())
+ 						{	// explicit extern.
+ 							// pre-existing static declaration is an error: C++0X 7.1.1p8
++explicit_extern:		if (tmp)
++							{
++							if (type_system::linkage_extern_CPP!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("already defined with some linkage other than extern at global scope (C++0X 7.1.1p8)");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already extern, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object_CPP(initdecl_identifier->index_tokens[0].token.first, active_namespace, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_CPP);
++							}
+ 						}
+ 					else{	// something else: C++ defaults to extern no matter what for global functions and objects.
+ 							// const objects default to static.  All others default to enclosing namespace.  
+ 							// we need a cross-lang warning for global const objects as C will default to extern then
+ 							// redeclaration will go with whatever was there previously
++						bool default_static = bootstrap.CPP_global_linkage_is_static();
++						if (default_static)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility])
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM("global const objects have default linkage extern in C, static in C++");
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							goto explicit_static;	// handle as static	
++							};
++						goto explicit_extern;	// handle as extern
+ 						}
+-#endif					
+ 				};
+ 				decl_offset += initdecl_span;
+ 				if (src.size<0>()-(i+decl_count)<=decl_offset)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-08-30 18:31:45 UTC (rev 681)
++++ trunk/CSupport.cpp.in	2011-08-30 18:32:28 UTC (rev 682)
+@@ -14335,20 +14335,95 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-#if 0
++					// all declarations must agree regarding _Thread_local (C1X 6.7.1p3), which does not apply to functions (C1X 6.9.1p4...only extern, static work for functions)
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types->get_object(initdecl_identifier->index_tokens[0].token.first);
++					if (tmp && tmp->first!=bootstrap)
++						{	// check pre-existing type; want compatible types, in particular
++							// multiple translation units is not an issue here: C1X 6.2.7
++							// * enumerations cause implementation-defined weirdness: C1X 6.7.2.2p4 
++							// * qualifiers: C1X 6.7.3p10
++							// * functions: C1X 6.7.6.2p15
++							// reject incompatible prior type as undefined behavior
++						message_header(initdecl_identifier->index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("already defined with some other type (this error needs to implement proper incompatible type rejection) (C99 6.2.7 and related)");
++						INC_INFORM(tmp->second);
++						INC_INFORM(":");
++						INC_INFORM(tmp->third);
++						INFORM(": prior declaration here");
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with _Thread_local at this point
+ 					if (C99_CPP0X_DECLSPEC_STATIC & declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration will invoke undefined behavior [C1X 6.2.2p7], so error out then
++						if (tmp)
++							{
++							if (type_system::linkage_static!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("already defined with some linkage other than static at global scope: undefined behavior (C1X 6.2.2p7)");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object(initdecl_identifier->index_tokens[0].token.first, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN & declFind.get_flags())
+ 						{	// explicit extern.
+ 							// no effect on pre-existing declaration, other than to convert no-linkage to extern (if this can indeed be tripped)
+ 							// we need a cross-lang warning if there is a pre-existing static declaration, as this will error in C++
++explicit_extern:		if (tmp)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility] && type_system::linkage_extern_C!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM("already defined with some linkage other than extern at global scope: no effect in C, C++ would error");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							//! \bug need test case								
++							// redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object(initdecl_identifier->index_tokens[0].token.first, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_C);
++							}
+ 						}
+ 					else{	// something else: C99 defaults to extern no matter what for global functions and objects.
+ 							// we need a cross-lang warning for const objects as C++ will default to static then
++						if (bool_options[boolopt::warn_crosslang_compatibility] && bootstrap.CPP_global_linkage_is_static())
++							{	//! \bug need test case
++							message_header(initdecl_identifier->index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INFORM("global const objects have default linkage extern in C, static in C++");
++							if (bool_options[boolopt::warnings_are_errors])
++								{	//! \bug need test case
++								zcc_errors.inc_error();
++								return;
++								}
++							}
++						goto explicit_extern;	// handle as extern
+ 						};
+-#endif						
+ 					};
+ 				decl_offset += initdecl_span;
+ 				if (src.size<0>()-(i+decl_count)<=decl_offset)
+@@ -15918,28 +15993,102 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-					free(namespace_name);
+-#if 0
+ 					// so...type_system needs to handle following when registering an object/function as well
+ 					// linkage: static/internal, extern/external
+ 					// external linkage class: C, C++
+ 					// it is an error to have more than one object definition
+ 					// it is an error to have more than one function type (including parameter list) for a given identifier with C linkage
++					// all declarations must agree regarding thread_local (C++0X 7.1.1p1), which cannot apply to functions (C++0X 7.1.1p4; only extern and static work)
+ 					// obviously C cannot name most things with C++ linkage
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types->get_object(fullname);
++					//! \todo react to overloaded function issues here
++					free(namespace_name);
++					if (tmp && tmp->first!=bootstrap)
++						{	// check pre-existing type
++						message_header(initdecl_identifier->index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("already defined with some other type (this error needs to implement proper incompatible type rejection)");
++						INC_INFORM(tmp->second);
++						INC_INFORM(":");
++						INC_INFORM(tmp->third);
++						INFORM(": prior declaration here");
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with thread_local here
++					//! \todo deal with extern "C", etc. (should be passing current default language for linkage in, should be reading linkage overrides for declFind)
+ 					if (C99_CPP0X_DECLSPEC_STATIC & declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration is an error: C++0X 7.1.1p8
++explicit_static:		if (tmp)
++							{
++							if (type_system::linkage_static!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("already defined with some linkage other than static at global scope (C++0X 7.1.1p8)");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case								
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object_CPP(initdecl_identifier->index_tokens[0].token.first, active_namespace, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN & declFind.get_flags())
+ 						{	// explicit extern.
+ 							// pre-existing static declaration is an error: C++0X 7.1.1p8
++explicit_extern:		if (tmp)
++							{
++							if (type_system::linkage_extern_CPP!=tmp->fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("already defined with some linkage other than extern at global scope (C++0X 7.1.1p8)");
++								INC_INFORM(tmp->second);
++								INC_INFORM(":");
++								INC_INFORM(tmp->third);
++								INFORM(": prior declaration here");
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already extern, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types->set_object_CPP(initdecl_identifier->index_tokens[0].token.first, active_namespace, initdecl_identifier->index_tokens[0].src_filename, initdecl_identifier->index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_CPP);
++							}
+ 						}
+ 					else{	// something else: C++ defaults to extern no matter what for global functions and objects.
+ 							// const objects default to static.  All others default to enclosing namespace.  
+ 							// we need a cross-lang warning for global const objects as C will default to extern then
+ 							// redeclaration will go with whatever was there previously
++						bool default_static = bootstrap.CPP_global_linkage_is_static();
++						if (default_static)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility])
++								{	//! \bug need test case
++								message_header(initdecl_identifier->index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM("global const objects have default linkage extern in C, static in C++");
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							goto explicit_static;	// handle as static	
++							};
++						goto explicit_extern;	// handle as extern
+ 						}
+-#endif					
+ 				};
+ 				decl_offset += initdecl_span;
+ 				if (src.size<0>()-(i+decl_count)<=decl_offset)
+
+
+
+From zaimoni at mail.berlios.de  Tue Aug 30 20:49:55 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue, 30 Aug 2011 20:49:55 +0200
+Subject: [Zcplusplus-commits] r683 - trunk
+Message-ID: <20110830184955.9501D4811B9@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-08-30 20:49:54 +0200 (Tue, 30 Aug 2011)
+New Revision: 683
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+actually use the function type wrappers
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-08-30 18:32:28 UTC (rev 682)
++++ trunk/CSupport.cpp	2011-08-30 18:49:54 UTC (rev 683)
+@@ -12190,14 +12190,14 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data<0>()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier<0>() & type_spec::_function_return_value))
++				if (target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				continue;
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data<0>()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier<0>() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				continue;
+ 				}
+@@ -12352,7 +12352,7 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data<0>()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier<0>() & type_spec::_function_return_value))
++				if (!target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				if (x.size<0>()-i>ub) ub += is_CPP0X_attribute(x.data<0>()[i+ub]);
+@@ -12360,7 +12360,7 @@
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data<0>()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier<0>() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				if (x.size<0>()-i>ub) ub += is_CPP0X_attribute(x.data<0>()[i+ub]);
+ 				if (x.size<0>()-i>ub) ub += CPP_cv_qualifier_span(x,i+ub,target_type);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-08-30 18:32:28 UTC (rev 682)
++++ trunk/CSupport.cpp.in	2011-08-30 18:49:54 UTC (rev 683)
+@@ -12338,14 +12338,14 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data<0>()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier<0>() & type_spec::_function_return_value))
++				if (target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				continue;
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data<0>()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier<0>() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				continue;
+ 				}
+@@ -12500,7 +12500,7 @@
+ 			{
+ 			if (is_naked_bracket_pair(x.data<0>()[i+ub]))
+ 				{	// we'll catch the array size, etc. later
+-				if (!(target_type.qualifier<0>() & type_spec::_function_return_value))
++				if (!target_type.is_function())
+ 					target_type.make_C_array(0);
+ 				++ub;
+ 				if (x.size<0>()-i>ub) ub += is_CPP0X_attribute(x.data<0>()[i+ub]);
+@@ -12508,7 +12508,7 @@
+ 				}
+ 			else if (is_naked_parentheses_pair(x.data<0>()[i+ub]))
+ 				{	// handle the prototype later
+-				target_type.qualifier<0>() |= type_spec::_function_return_value;
++				target_type.set_function();
+ 				++ub;
+ 				if (x.size<0>()-i>ub) ub += is_CPP0X_attribute(x.data<0>()[i+ub]);
+ 				if (x.size<0>()-i>ub) ub += CPP_cv_qualifier_span(x,i+ub,target_type);
+
+
+
+From zaimoni at mail.berlios.de  Tue Aug 30 21:22:38 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue, 30 Aug 2011 21:22:38 +0200
+Subject: [Zcplusplus-commits] r684 - trunk
+Message-ID: <20110830192239.112014811B9@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-08-30 21:22:38 +0200 (Tue, 30 Aug 2011)
+New Revision: 684
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+Log:
+adjust in __zcc_linkage backend for objects/functions
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-08-30 18:49:54 UTC (rev 683)
++++ trunk/type_system.cpp	2011-08-30 19:22:38 UTC (rev 684)
+@@ -1071,13 +1071,26 @@
+ ** block-scope identifier for an object not declared extern
+ */
+ 	if (  get_typedef(alias)
+-	   || get_enumerator(alias)
+-	   || get_id_enum(alias)
+-	   || get_id_union(alias)
+-	   || get_id_struct_class(alias))
+-	   return 0;	// no linkage
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++	    || get_enumerator(alias)
++	    || get_id_enum(alias)
++	    || get_id_union(alias)
++	    || get_id_struct_class(alias))
++	    return 0;	// no linkage
++
++	if (const object_type_loc_linkage* const tmp = get_object(alias))
++		{
++		// this is draconian; we should try to allow C to call non-overloadable
++		// functions in other supported languages.  C++ is not an option.
++		switch(tmp->fourth)
++		{
++		default: _fatal_code("internal data format error: C linkage not one of none, static, extern-C",3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 2; // native/C linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ 
+ /*
+@@ -1152,7 +1165,19 @@
+ 		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
+ 		return _CPP_namespace_linkage(alias);
+ 		}
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++
++	if (const object_type_loc_linkage* const tmp = get_object_CPP(alias,active_namespace))
++		{
++		switch(tmp->fourth)
++		{
++		default: _fatal_code("internal data format error: object does not have supported linkage in C++",3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 3; // C linkage
++		case linkage_extern_CPP: return 2; // native/C++ linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ 
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-08-30 18:49:54 UTC (rev 683)
++++ trunk/type_system.cpp.in	2011-08-30 19:22:38 UTC (rev 684)
+@@ -1086,13 +1086,26 @@
+ ** block-scope identifier for an object not declared extern
+ */
+ 	if (  get_typedef(alias)
+-	   || get_enumerator(alias)
+-	   || get_id_enum(alias)
+-	   || get_id_union(alias)
+-	   || get_id_struct_class(alias))
+-	   return 0;	// no linkage
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++	    || get_enumerator(alias)
++	    || get_id_enum(alias)
++	    || get_id_union(alias)
++	    || get_id_struct_class(alias))
++	    return 0;	// no linkage
++
++	if (const object_type_loc_linkage* const tmp = get_object(alias))
++		{
++		// this is draconian; we should try to allow C to call non-overloadable
++		// functions in other supported languages.  C++ is not an option.
++		switch(tmp->fourth)
++		{
++		default: _fatal_code("internal data format error: C linkage not one of none, static, extern-C",3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 2; // native/C linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ 
+ /*
+@@ -1167,8 +1180,20 @@
+ 		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
+ 		return _CPP_namespace_linkage(alias);
+ 		}
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++
++	if (const object_type_loc_linkage* const tmp = get_object_CPP(alias,active_namespace))
++		{
++		switch(tmp->fourth)
++		{
++		default: _fatal_code("internal data format error: object does not have supported linkage in C++",3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 3; // C linkage
++		case linkage_extern_CPP: return 2; // native/C++ linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ #/*cut-cpp*/
+ 
+
+
+
+From zaimoni at mail.berlios.de  Wed Aug 31 03:10:34 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 31 Aug 2011 03:10:34 +0200
+Subject: [Zcplusplus-commits] r685 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <20110831011035.083ED4811B9@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-08-31 03:10:34 +0200 (Wed, 31 Aug 2011)
+New Revision: 685
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+Log:
+first testing of __zcc_linkage: enumerators of anonymous enumerations
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/CSupport.cpp	2011-08-31 01:10:34 UTC (rev 685)
+@@ -6953,6 +6953,15 @@
+ 		inspect_potential_paren_primary_expression(src.c_array<0>()[i+1]);
+ 		if (is_C99_unary_operator_expression<'*'>(src.data<0>()[i+1]))
+ 			C_deref_easy_syntax_check(src.c_array<0>()[i+1],types);
++		if (   src.data<0>()[i+1].is_atomic()
++			&& C_TESTFLAG_IDENTIFIER==src.data<0>()[i+1].index_tokens[0].flags)
++			{
++			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
++			src.c_array<0>()[i].type_code.set_type(C_TYPE::INT);	//! \todo would be nice to range-limit this
++			assert(is_ZCC_linkage_expression(src.c_array<0>()[i]));
++			return true;			
++			}
++		// we don't actually know how to evaluate these -- it could get messy
+ 		if (is_naked_parentheses_pair(src.data<0>()[i+1]))
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/CSupport.cpp.in	2011-08-31 01:10:34 UTC (rev 685)
+@@ -7051,6 +7051,15 @@
+ 		inspect_potential_paren_primary_expression(src.c_array<0>()[i+1]);
+ 		if (is_C99_unary_operator_expression<'*'>(src.data<0>()[i+1]))
+ 			C_deref_easy_syntax_check(src.c_array<0>()[i+1],types);
++		if (   src.data<0>()[i+1].is_atomic()
++			&& C_TESTFLAG_IDENTIFIER==src.data<0>()[i+1].index_tokens[0].flags)
++			{
++			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
++			src.c_array<0>()[i].type_code.set_type(C_TYPE::INT);	//! \todo would be nice to range-limit this
++			assert(is_ZCC_linkage_expression(src.c_array<0>()[i]));
++			return true;			
++			}
++		// we don't actually know how to evaluate these -- it could get messy
+ 		if (is_naked_parentheses_pair(src.data<0>()[i+1]))
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
+
+Modified: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2011-08-31 01:10:34 UTC (rev 685)
+@@ -1,8 +1,13 @@
+ // decl.C99\Pass_anonymous_enum_def.h
+ // using singly defined enum
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum {
+ 	x_factor = 1
+ };
+ 
++// check ZCC compiler extensions
++#if 9<=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++_Static_assert(0<=__zcc_linkage(x_factor),"x_factor is not defined");
++_Static_assert(0>=__zcc_linkage(x_factor),"x_factor has linkage");
++#endif
+
+Modified: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2011-08-31 01:10:34 UTC (rev 685)
+@@ -1,8 +1,13 @@
+ // decl.C99\Pass_anonymous_enum_def.hpp
+ // using singly defined enum
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum {
+ 	x_factor = 1
+ };
+ 
++// check ZCC compiler extensions
++#if 9<=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++static_assert(0<=__zcc_linkage(x_factor),"x_factor is not defined");
++static_assert(0>=__zcc_linkage(x_factor),"x_factor has linkage");
++#endif
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2011-08-31 01:10:34 UTC (rev 685)
+@@ -1,8 +1,14 @@
+ SUFFIXES h hpp
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_assert static_assert
+ // using singly defined enum
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum {
+ 	x_factor = 1
+ };
+ 
++// check ZCC compiler extensions
++#if 9<=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++STATIC_ASSERT(0<=__zcc_linkage(x_factor),"x_factor is not defined");
++STATIC_ASSERT(0>=__zcc_linkage(x_factor),"x_factor has linkage");
++#endif
+
+
+

@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r661 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r661%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110609020532.E2F0148130A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000427.html">
+   <LINK REL="Next"  HREF="000429.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r661 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r661%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110609020532.E2F0148130A%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r661 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun  9 04:05:32 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000427.html">[Zcplusplus-commits] r660 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000429.html">[Zcplusplus-commits] r662 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#428">[ date ]</a>
+              <a href="thread.html#428">[ thread ]</a>
+              <a href="subject.html#428">[ subject ]</a>
+              <a href="author.html#428">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-09 04:05:32 +0200 (Thu, 09 Jun 2011)
+New Revision: 661
+
+Modified:
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+minor adjust to where InsertSlotAt is
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-09 01:40:59 UTC (rev 660)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-09 02:05:32 UTC (rev 661)
+@@ -107,7 +107,7 @@
+ 	void de_novo_nothrow(size_t n) {_ptr = _new_buffer&lt;T&gt;(n);};
+ 	
+ 	size_t ArraySize() const {return zaimoni::ArraySize(_ptr);};
+-	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U _default) {return _insert_slot_at(_ptr,Idx,_default);}
++	template&lt;typename U&gt; bool InsertSlotAt(size_t i, U _default) {return _insert_slot_at(_ptr,i,_default);}
+ 	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(_ptr,n,i);};
+ 	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(_ptr,n,i)) throw std::bad_alloc();};
+ 
+@@ -122,7 +122,7 @@
+ 	void de_novo_nothrow(size_t n) {_ptr = _new_buffer&lt;T&gt;(n); _size = n;};
+ 
+ 	size_t ArraySize() const {return _size;};
+-	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U _default) {return _insert_slot_at(_ptr,_size,Idx,_default);}
++	template&lt;typename U&gt; bool InsertSlotAt(size_t i, U _default) {return _insert_slot_at(_ptr,_size,i,_default);}
+ 	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(_ptr,_size,n,i);};
+ 	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(_ptr,_size,n,i)) throw std::bad_alloc();};
+ 
+@@ -329,7 +329,6 @@
+ 	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
+ 	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,indexes,n);};
+-	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U __default) {return _insert_slot_at(this-&gt;_ptr,Idx,__default);}
+ #else
+ 	void reset(T*&amp; src,size_t n);
+ 	void MoveInto(_meta_autoarray_ptr&lt;T&gt;&amp; dest) {dest.reset(this-&gt;_ptr,this-&gt;_size);};
+@@ -339,7 +338,6 @@
+ 	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,this-&gt;_size,n,Idx);};
+ 	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,this-&gt;_size,indexes,n);};
+-	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U __default) {return _insert_slot_at(this-&gt;_ptr,this-&gt;_size,Idx,__default);}
+ #endif
+ 	void resize(size_t n) {if (!Resize(n)) throw std::bad_alloc();};	
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000427.html">[Zcplusplus-commits] r660 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000429.html">[Zcplusplus-commits] r662 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#428">[ date ]</a>
+              <a href="thread.html#428">[ thread ]</a>
+              <a href="subject.html#428">[ subject ]</a>
+              <a href="author.html#428">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

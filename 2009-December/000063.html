@@ -1,0 +1,430 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r296 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r296%20-%20trunk&In-Reply-To=%3C200912051919.nB5JJNdm009973%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000062.html">
+   <LINK REL="Next"  HREF="000064.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r296 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r296%20-%20trunk&In-Reply-To=%3C200912051919.nB5JJNdm009973%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r296 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Dec  5 20:19:23 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000062.html">[Zcplusplus-commits] r295 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000064.html">[Zcplusplus-commits] r297 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#63">[ date ]</a>
+              <a href="thread.html#63">[ thread ]</a>
+              <a href="subject.html#63">[ subject ]</a>
+              <a href="author.html#63">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-05 20:19:18 +0100 (Sat, 05 Dec 2009)
+New Revision: 296
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/POSIX.dep
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+unbreak SVN; interface cleanup
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-12-05 05:21:46 UTC (rev 295)
++++ trunk/CSupport.cpp	2009-12-05 19:19:18 UTC (rev 296)
+@@ -10693,7 +10693,7 @@
+ 			}
+ 		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;enum&quot;))
+ 			{	// can only define once
+-			type_system::type_index tmp = types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++			const type_system::type_index tmp = types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+ 				{	//! \test zcc\decl.C99\Error_enum_multidef.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -10712,9 +10712,8 @@
+ 				};
+ 			// enum-specifier doesn't have a specific declaration mode
+ 			//! \test zcc\decl.C99\Pass_enum_def.h
+-			enum_def* tmp2 = new enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+-			types.register_enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
+-			assert(types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++			const type_system::type_index tmp2 = types.register_enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			assert(types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,src.data&lt;0&gt;()[i].index_tokens[1].token.first,NULL,false,C99_echo_reserved_keyword))
+ 				{
+ 				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+@@ -10724,8 +10723,7 @@
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+-			enum_def* tmp = new enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			types.register_enum_def(&quot;&lt;unknown&gt;&quot;,tmp);
++			types.register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,NULL,NULL,false,C99_echo_reserved_keyword))
+ 				{
+ 				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+@@ -10774,8 +10772,7 @@
+ 					}
+ 				// forward-declare
+ 				//! \test zcc/decl.C99/Pass_union_forward_def.h
+-				union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-				type_system::type_index tmp2 = types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++				const type_system::type_index tmp2 = types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union);
+ 				assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 				assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 				assert(types.get_structdecl(tmp2));
+@@ -10795,8 +10792,7 @@
+ 					}
+ 				// forward-declare
+ 				//! \test zcc/decl.C99/Pass_struct_forward_def.h
+-				union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-				type_system::type_index tmp2 = types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++				const type_system::type_index tmp2 = types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct);
+ 				assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 				assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 				assert(types.get_structdecl(tmp2));
+@@ -10821,9 +10817,8 @@
+ 					}
+ 				else{	// definition
+ 						//! \test zcc/decl.C99/Pass_union_def.h
+-					tmp2 = new C_union_struct_def(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 					//! \todo record field structure, etc.
+-					const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++					const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename,union_struct_decl::decl_union);
+ 					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp3);
+ 					assert(types.get_C_structdef(tmp3));
+@@ -10849,9 +10844,8 @@
+ 					}
+ 				else{	// definition
+ 						//! \test zcc/decl.C99/Pass_struct_def.h
+-					tmp2 = new C_union_struct_def(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 					//! \todo record field structure, etc.
+-					const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++					const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename,union_struct_decl::decl_struct);
+ 					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp3);
+ 					assert(types.get_C_structdef(tmp3));
+@@ -11104,6 +11098,7 @@
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+ 		// check naked declarations first; handle namespaces later
++		//! \bug indentation fixup needed (stage 3)
+ //		if (NULL==active_namespace)
+ //			{
+ 			if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
+@@ -11237,9 +11232,8 @@
+ 				free(namespace_name);
+ 				//! \test zcc\decl.C99\Pass_enum_def.hpp
+ 				// enum-specifier doesn't have a specific declaration mode
+-				//! \todo fix up the fully-qualified name in the enum_def
+-				enum_def* tmp2 = new enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+-				types.register_enum_def_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp2);
++				const type_system::type_index tmp2 = types.register_enum_def_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++				assert(types.get_id_enum_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+ 				if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,src.data&lt;0&gt;()[i].index_tokens[1].token.first,NULL,true,CPP_echo_reserved_keyword))
+ 					{
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+@@ -11249,9 +11243,7 @@
+ 			else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
+ 				{	// enum-specifier doesn't have a specific declaration mode
+ 					//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+-				//! \todo fix up the fully-qualified name in the enum_def
+-				enum_def* tmp = new enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-				types.register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,tmp);
++				types.register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 				if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,src.data&lt;0&gt;()[i].index_tokens[1].token.first,NULL,true,CPP_echo_reserved_keyword))
+ 					{
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+@@ -11318,8 +11310,7 @@
+ 					// forward-declare
+ 					//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+ 					//! \todo fix up fully-qualified name
+-					union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-					const type_system::type_index tmp2 = types.register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp);
++					const type_system::type_index tmp2 = types.register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
+ 					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 					assert(types.get_structdecl(tmp2));
+@@ -11344,8 +11335,7 @@
+ 					// forward-declare
+ 					//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+ 					//! \todo fix up fully-qualified name
+-					union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-					const type_system::type_index tmp2 = types.register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp);
++					const type_system::type_index tmp2 = types.register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
+ 					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 					assert(types.get_structdecl(tmp2));
+@@ -11370,8 +11360,7 @@
+ 					// forward-declare
+ 					//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+ 					//! \todo fix up fully-qualified name
+-					union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+-					const type_system::type_index tmp2 = types.register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp);
++					const type_system::type_index tmp2 = types.register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
+ 					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 					assert(types.get_structdecl(tmp2));
+@@ -11399,10 +11388,8 @@
+ 						}
+ 					else{	// definition
+ 							//! \test zcc/decl.C99/Pass_union_def.hpp
+-						tmp2 = new C_union_struct_def(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 						//! \todo record field structure, etc.
+-						//! \todo fix up fully-qualified name
+-						const type_system::type_index tmp3 = types.register_C_structdef_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp2);
++						const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename,union_struct_decl::decl_union);
+ 						assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 						assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp3);
+ 						assert(types.get_C_structdef(tmp3));
+@@ -11431,10 +11418,8 @@
+ 						}
+ 					else{	// definition
+ 							//! \test zcc/decl.C99/Pass_struct_def.hpp
+-						tmp2 = new C_union_struct_def(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 						//! \todo record field structure, etc.
+-						//! \todo fix up fully-qualified name
+-						const type_system::type_index tmp3 = types.register_C_structdef_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp2);
++						const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename,union_struct_decl::decl_struct);
+ 						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp3);
+ 						assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
+@@ -11463,10 +11448,8 @@
+ 						}
+ 					else{	// definition
+ 							//! \test zcc/decl.C99/Pass_class_def.hpp
+-						tmp2 = new C_union_struct_def(union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 						//! \todo record field structure, etc.
+-						//! \todo fix up fully-qualified name
+-						const type_system::type_index tmp3 = types.register_C_structdef_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,tmp2);
++						const type_system::type_index tmp3 = types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename,union_struct_decl::decl_class);
+ 						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp3);
+ 						assert(types.get_C_structdef(tmp3));
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2009-12-05 05:21:46 UTC (rev 295)
++++ trunk/POSIX.dep	2009-12-05 19:19:18 UTC (rev 296)
+@@ -1,8 +1,8 @@
+ OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o filesystem.o CPUInfo.o enum_type.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = str_aux.o CSupport.o type_system.o CPreproc.o errors.o z_cpp.o enum_type.o struct_type.o ParseTree.o type_spec.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
++OBJECTS_Z_CPP_LINK_PRIORITY = CSupport.o type_system.o str_aux.o CPreproc.o errors.o z_cpp.o enum_type.o struct_type.o ParseTree.o type_spec.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
+ 
+ OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o filesystem.o CPUInfo.o enum_type.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = str_aux.o CSupport.o type_system.o CPreproc.o errors.o zcc.o enum_type.o struct_type.o ParseTree.o type_spec.o ZParser.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
++OBJECTS_ZCC_LINK_PRIORITY = CSupport.o type_system.o str_aux.o CPreproc.o errors.o zcc.o enum_type.o struct_type.o ParseTree.o type_spec.o ZParser.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
+ 
+ # dependencies
+ z_cpp.o: Zaimoni.STL/LexParse/Token.hpp CSupport.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h unsigned_fixed_int.hpp unsigned_aux.hpp
+@@ -14,7 +14,7 @@
+ CPUInfo.o: CPUInfo.hpp unsigned_fixed_int.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ enum_type.o: enum_type.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp CPUInfo.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_fixed_int.hpp unsigned_aux.hpp
+ struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+-type_system.o: type_system.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp CPUInfo.hpp unsigned_fixed_int.hpp unsigned_aux.hpp
+ ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ type_spec.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ CSupport.o: CSupport.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_fixed_int.hpp unsigned_aux.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-12-05 05:21:46 UTC (rev 295)
++++ trunk/type_system.cpp	2009-12-05 19:19:18 UTC (rev 296)
+@@ -2,6 +2,7 @@
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;type_system.hpp&quot;
++#include &quot;enum_type.hpp&quot;
+ #include &quot;struct_type.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
+ #include &quot;Zaimoni.STL/Pure.C/auto_int.h&quot;
+@@ -602,70 +603,72 @@
+ 	return register_functype(name,src);
+ }
+ 
+-type_system::type_index type_system::register_structdecl(const char* const alias, union_struct_decl*&amp; src)
++type_system::type_index type_system::register_structdecl(const char* const alias, int keyword)
+ {
+ 	assert(alias &amp;&amp; *alias);
+-	assert(src);
+-	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
+-	tmp.third.first.second = src;
+-
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+ 	if (	dynamic_types_max_size&lt;2+core_types_size
+ 		|| 	dynamic_types_max_size-(2+core_types_size)&lt;dynamic_types_size)
+ 		FATAL(&quot;Host implementation limit exceeded: cannot record union/struct type used in program&quot;);
+-	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp)) throw std::bad_alloc();
+-	src = NULL;
++
++	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
++	tmp.third.first.second = new union_struct_decl((union_struct_decl::keywords)keyword,alias);
++
++	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp))
++		{
++		delete tmp.third.first.second;
++		throw std::bad_alloc();
++		}
+ 	return dynamic_types_size+1+core_types_size;
+ }
+ 
+-type_system::type_index type_system::register_structdecl_CPP(const char* name, const char* const active_namespace, union_struct_decl*&amp; src)
++type_system::type_index type_system::register_structdecl_CPP(const char* name, const char* const active_namespace, int keyword)
+ {
+ 	assert(name &amp;&amp; *name);
+-	assert(src);
+ 
+ 	// use active namespace if present
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return register_structdecl(name,src);
++	return register_structdecl(name,keyword);
+ }
+ 
+-type_system::type_index type_system::register_C_structdef(const char* const alias, C_union_struct_def*&amp; src)
++type_system::type_index type_system::register_C_structdef(const char* const alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* const src_filename, int keyword)
+ {
+ 	assert(alias &amp;&amp; *alias);
+-	assert(src);
+-	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_C_STRUCTDEF}};
+-	tmp.third.first.third = src;
+-
++	assert(src_filename &amp;&amp; *src_filename);
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+ 	if (	dynamic_types_max_size&lt;2+core_types_size
+ 		|| 	dynamic_types_max_size-(2+core_types_size)&lt;dynamic_types_size)
+ 		FATAL(&quot;Host implementation limit exceeded: cannot record union/struct type used in program&quot;);
++
++	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_C_STRUCTDEF}};
++	tmp.third.first.third = new C_union_struct_def((union_struct_decl::keywords)keyword,alias,logical_line,src_filename);
++
+ 	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp)) throw std::bad_alloc();
+-	src = NULL;
+ 	return dynamic_types_size+1+core_types_size;
+ }
+ 
+-type_system::type_index type_system::register_C_structdef_CPP(const char* name, const char* const active_namespace, C_union_struct_def*&amp; src)
++type_system::type_index type_system::register_C_structdef_CPP(const char* name, const char* const active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* const src_filename, int keyword)
+ {
+ 	assert(name &amp;&amp; *name);
+-	assert(src);
++	assert(src_filename &amp;&amp; *src_filename);
+ 
+ 	// use active namespace if present
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return register_C_structdef(name,src);
++	return register_C_structdef(name,logical_line,src_filename,keyword);
+ }
+ 
+-type_system::type_index type_system::register_enum_def(const char* const alias, enum_def*&amp; src)
++type_system::type_index type_system::register_enum_def(const char* const alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* const src_filename)
+ {
+ 	assert(alias &amp;&amp; *alias);
+-	assert(src);
++	assert(src_filename &amp;&amp; *src_filename);
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_ENUMDEF}};
+-	tmp.third.first.fourth = src;
++	tmp.third.first.fourth = new enum_def(alias,logical_line,src_filename);
+ 
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+@@ -673,20 +676,19 @@
+ 		|| 	dynamic_types_max_size-(2+core_types_size)&lt;dynamic_types_size)
+ 		FATAL(&quot;Host implementation limit exceeded: cannot record enum type used in program&quot;);
+ 	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp)) throw std::bad_alloc();
+-	src = NULL;
+ 	return dynamic_types_size+1+core_types_size;
+ }
+ 
+-type_system::type_index type_system::register_enum_def_CPP(const char* name, const char* const active_namespace, enum_def*&amp; src)
++type_system::type_index type_system::register_enum_def_CPP(const char* name, const char* const active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* const src_filename)
+ {
+ 	assert(name &amp;&amp; *name);
+-	assert(src);
++	assert(src_filename &amp;&amp; *src_filename);
+ 
+ 	// use active namespace if present
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return register_enum_def(name,src);
++	return register_enum_def(name,logical_line,src_filename);
+ }
+ 
+ const function_type* type_system::get_functype(type_system::type_index i)
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-12-05 05:21:46 UTC (rev 295)
++++ trunk/type_system.hpp	2009-12-05 19:19:18 UTC (rev 296)
+@@ -99,12 +99,13 @@
+ 
+ 	type_index register_functype(const char* const alias, function_type*&amp; src);
+ 	type_index register_functype_CPP(const char* name, const char* active_namespace, function_type*&amp; src);
+-	type_index register_structdecl(const char* const alias, union_struct_decl*&amp; src);
+-	type_index register_structdecl_CPP(const char* name, const char* active_namespace, union_struct_decl*&amp; src);
+-	type_index register_C_structdef(const char* const alias, C_union_struct_def*&amp; src);
+-	type_index register_C_structdef_CPP(const char* name, const char* active_namespace, C_union_struct_def*&amp; src);
+-	type_index register_enum_def(const char* const alias, enum_def*&amp; src);
+-	type_index register_enum_def_CPP(const char* name, const char* active_namespace, enum_def*&amp; src);
++//	keyword actually should be type union_struct_decl::keywords, but that increases coupling unacceptably
++	type_index register_structdecl(const char* alias, int keyword);
++	type_index register_structdecl_CPP(const char* name, const char* active_namespace, int keyword);
++	type_index register_C_structdef(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
++	type_index register_C_structdef_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
++	type_index register_enum_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
++	type_index register_enum_def_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
+ 	const function_type* get_functype(type_index i);
+ 	const union_struct_decl* get_structdecl(type_index i);
+ 	const C_union_struct_def* get_C_structdef(type_index i);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000062.html">[Zcplusplus-commits] r295 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000064.html">[Zcplusplus-commits] r297 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#63">[ date ]</a>
+              <a href="thread.html#63">[ thread ]</a>
+              <a href="subject.html#63">[ subject ]</a>
+              <a href="author.html#63">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

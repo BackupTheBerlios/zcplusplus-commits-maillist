@@ -1,0 +1,313 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r577 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r577%20-%20trunk&In-Reply-To=%3C20110111030430.4EC5D480514%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000343.html">
+   <LINK REL="Next"  HREF="000345.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r577 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r577%20-%20trunk&In-Reply-To=%3C20110111030430.4EC5D480514%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r577 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Jan 11 04:04:29 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000343.html">[Zcplusplus-commits] r576 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000345.html">[Zcplusplus-commits] r578 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#344">[ date ]</a>
+              <a href="thread.html#344">[ thread ]</a>
+              <a href="subject.html#344">[ subject ]</a>
+              <a href="author.html#344">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-11 04:04:29 +0100 (Tue, 11 Jan 2011)
+New Revision: 577
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+remove morally dead switch; proper use of tmp2 variable
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-11 02:53:16 UTC (rev 576)
++++ trunk/CSupport.cpp	2011-01-11 03:04:29 UTC (rev 577)
+@@ -13172,52 +13172,56 @@
+ 				case UNION_NAME:
+ 				{
+ 				const type_system::type_index tmp = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first);
++				{
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
+ 				if (tmp)
+ 					{
+ 					assert(0&lt;parse_tree::types-&gt;use_count(tmp));
+-					src.c_array&lt;0&gt;()[i+k].type_code.set_type(tmp);
+-					src.c_array&lt;0&gt;()[i+k].flags |= PARSE_UNION_TYPE;
++					tmp2.type_code.set_type(tmp);
++					tmp2.flags |= PARSE_UNION_TYPE;
+ 					_condense_const_volatile_onto_type_preparsed(src,i,k,pre_invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+ 					}
+ 				// C1X 6.7.2.3p2 states that conflicting enum or struct must error
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(tmp2.index_tokens[1].token.first))
+ 					{	//! \test zcc/decl.C99/Error_struct_as_union.h
+ 						//! \test zcc/decl.C99/Error_struct_as_union3.h
+-					message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;union &quot;);
+-					INC_INFORM(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first);
++					INC_INFORM(tmp2.index_tokens[1].token.first);
+ 					INFORM(&quot; declared as struct (C99 6.7.2.3p2)&quot;);
+ 					const union_struct_decl* const tmp3 = parse_tree::types-&gt;get_structdecl(fatal_def);
+ 					assert(tmp3);
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					src.c_array&lt;0&gt;()[i+k].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+-					assert(is_C99_named_specifier(src.data&lt;0&gt;()[i+k],&quot;struct&quot;));
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;struct&quot;));
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+STRUCT_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum(tmp2.index_tokens[1].token.first))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_union.h
+-					message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;union &quot;);
+-					INC_INFORM(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first);
++					INC_INFORM(tmp2.index_tokens[1].token.first);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+ 					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+ 					assert(tmp3);
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					src.c_array&lt;0&gt;()[i+k].set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					assert(is_C99_named_specifier(src.data&lt;0&gt;()[i+k],&quot;enum&quot;));
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+ 				// tentatively forward-declare immediately
+ 				//! \test zcc/decl.C99/Pass_union_forward_def.h
+ 				else _forward_declare_C_union_preparsed(src,i,k,pre_invariant_decl_scanner);
++				}
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
+ 				if (semicolon_terminated_decl)
+ 					{	// check for forward-declaration here (C99 6.7.2.3)
+ 					//! \test decl.C99/Warn_union_forward_def_const.h
+@@ -13240,7 +13244,7 @@
+ 					//! \test decl.C99/Warn_union_forward_def_const_volatile10.h
+ 					//! \test decl.C99/Warn_union_forward_def_const_volatile11.h
+ 					//! \test decl.C99/Warn_union_forward_def_const_volatile12.h
+-					C99_flush_const_volatile_without_object(src.c_array&lt;0&gt;()[i+k]);
++					C99_flush_const_volatile_without_object(tmp2);
+ 					if (tmp)
+ 						{	// but if already (forward-)declared then this is a no-op
+ 							// think this is common enough to not warrant OAOO/DRY treatment
+@@ -13256,7 +13260,7 @@
+ 				else if (!tmp)
+ 					{	// used without at least forward-declaring
+ 						//! \bug needs test cases
+-					message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM(&quot;used without at least forward-declaring&quot;);
+ 					zcc_errors.inc_error();
+@@ -13777,27 +13781,7 @@
+ 			};
+ 		}
+ 		// check naked declarations first
+-reparse:
+-		const int tag_type = notice_C99_tag(src.data&lt;0&gt;()[i]);
+-		if (tag_type)
+-			{
+-			switch(tag_type)
+-			{	//! \todo deal with indentation violations later
+-#ifndef NDEBUG
+-			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
+-#endif
+-			case UNION_NAME: break;	/* already handled */
+-			case STRUCT_NAME: break;	/* already handled */
+-			case UNION_NAMED_DEF: break;	/* already handled */
+-			case STRUCT_NAMED_DEF: break;	/* already handled */
+-			case UNION_ANON_DEF: break;	/* already handled */
+-			case STRUCT_ANON_DEF: break;	/* already handled */
+-			case ENUM_NAME: break;	/* already handled */
+-			case ENUM_NAMED_DEF: break;	/* already handled */
+-			case ENUM_ANON_DEF: break;	/* already handled */
+-			}
+-			}
+-			
++reparse:			
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+ 		// intercept declarations as follows
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-11 02:53:16 UTC (rev 576)
++++ trunk/CSupport.cpp.in	2011-01-11 03:04:29 UTC (rev 577)
+@@ -13316,52 +13316,56 @@
+ 				case UNION_NAME:
+ 				{
+ 				const type_system::type_index tmp = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first);
++				{
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
+ 				if (tmp)
+ 					{
+ 					assert(0&lt;parse_tree::types-&gt;use_count(tmp));
+-					src.c_array&lt;0&gt;()[i+k].type_code.set_type(tmp);
+-					src.c_array&lt;0&gt;()[i+k].flags |= PARSE_UNION_TYPE;
++					tmp2.type_code.set_type(tmp);
++					tmp2.flags |= PARSE_UNION_TYPE;
+ 					_condense_const_volatile_onto_type_preparsed(src,i,k,pre_invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+ 					}
+ 				// C1X 6.7.2.3p2 states that conflicting enum or struct must error
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_struct_class(tmp2.index_tokens[1].token.first))
+ 					{	//! \test zcc/decl.C99/Error_struct_as_union.h
+ 						//! \test zcc/decl.C99/Error_struct_as_union3.h
+-					message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;union &quot;);
+-					INC_INFORM(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first);
++					INC_INFORM(tmp2.index_tokens[1].token.first);
+ 					INFORM(&quot; declared as struct (C99 6.7.2.3p2)&quot;);
+ 					const union_struct_decl* const tmp3 = parse_tree::types-&gt;get_structdecl(fatal_def);
+ 					assert(tmp3);
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					src.c_array&lt;0&gt;()[i+k].set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+-					assert(is_C99_named_specifier(src.data&lt;0&gt;()[i+k],&quot;struct&quot;));
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;struct&quot;));
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+STRUCT_NAME);
+ 					continue;
+ 					}
+-				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first))
++				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_enum(tmp2.index_tokens[1].token.first))
+ 					{	//! \test zcc/decl.C99/Error_enum_as_union.h
+-					message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;union &quot;);
+-					INC_INFORM(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first);
++					INC_INFORM(tmp2.index_tokens[1].token.first);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+ 					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+ 					assert(tmp3);
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					src.c_array&lt;0&gt;()[i+k].set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					assert(is_C99_named_specifier(src.data&lt;0&gt;()[i+k],&quot;enum&quot;));
++					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
++					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+ 				// tentatively forward-declare immediately
+ 				//! \test zcc/decl.C99/Pass_union_forward_def.h
+ 				else _forward_declare_C_union_preparsed(src,i,k,pre_invariant_decl_scanner);
++				}
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
+ 				if (semicolon_terminated_decl)
+ 					{	// check for forward-declaration here (C99 6.7.2.3)
+ 					//! \test decl.C99/Warn_union_forward_def_const.h
+@@ -13384,7 +13388,7 @@
+ 					//! \test decl.C99/Warn_union_forward_def_const_volatile10.h
+ 					//! \test decl.C99/Warn_union_forward_def_const_volatile11.h
+ 					//! \test decl.C99/Warn_union_forward_def_const_volatile12.h
+-					C99_flush_const_volatile_without_object(src.c_array&lt;0&gt;()[i+k]);
++					C99_flush_const_volatile_without_object(tmp2);
+ 					if (tmp)
+ 						{	// but if already (forward-)declared then this is a no-op
+ 							// think this is common enough to not warrant OAOO/DRY treatment
+@@ -13400,7 +13404,7 @@
+ 				else if (!tmp)
+ 					{	// used without at least forward-declaring
+ 						//! \bug needs test cases
+-					message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM(&quot;used without at least forward-declaring&quot;);
+ 					zcc_errors.inc_error();
+@@ -13921,27 +13925,7 @@
+ 			};
+ 		}
+ 		// check naked declarations first
+-reparse:
+-		const int tag_type = notice_C99_tag(src.data&lt;0&gt;()[i]);
+-		if (tag_type)
+-			{
+-			switch(tag_type)
+-			{	//! \todo deal with indentation violations later
+-#ifndef NDEBUG
+-			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
+-#endif
+-			case UNION_NAME: break;	/* already handled */
+-			case STRUCT_NAME: break;	/* already handled */
+-			case UNION_NAMED_DEF: break;	/* already handled */
+-			case STRUCT_NAMED_DEF: break;	/* already handled */
+-			case UNION_ANON_DEF: break;	/* already handled */
+-			case STRUCT_ANON_DEF: break;	/* already handled */
+-			case ENUM_NAME: break;	/* already handled */
+-			case ENUM_NAMED_DEF: break;	/* already handled */
+-			case ENUM_ANON_DEF: break;	/* already handled */
+-			}
+-			}
+-			
++reparse:			
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+ 		// intercept declarations as follows
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000343.html">[Zcplusplus-commits] r576 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000345.html">[Zcplusplus-commits] r578 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#344">[ date ]</a>
+              <a href="thread.html#344">[ thread ]</a>
+              <a href="subject.html#344">[ subject ]</a>
+              <a href="author.html#344">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

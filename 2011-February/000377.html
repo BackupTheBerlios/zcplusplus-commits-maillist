@@ -1,0 +1,506 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r610 - in trunk: . tests/cpp tests/cpp.in	tests/zcc tests/zcc.in
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r610%20-%20in%20trunk%3A%20.%20tests/cpp%20tests/cpp.in%0A%09tests/zcc%20tests/zcc.in&In-Reply-To=%3C20110208111451.8AC11480BF3%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000376.html">
+   <LINK REL="Next"  HREF="000378.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r610 - in trunk: . tests/cpp tests/cpp.in	tests/zcc tests/zcc.in</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r610%20-%20in%20trunk%3A%20.%20tests/cpp%20tests/cpp.in%0A%09tests/zcc%20tests/zcc.in&In-Reply-To=%3C20110208111451.8AC11480BF3%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r610 - in trunk: . tests/cpp tests/cpp.in	tests/zcc tests/zcc.in">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Feb  8 12:14:51 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000376.html">[Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+        <LI>Next message: <A HREF="000378.html">[Zcplusplus-commits] r611 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#377">[ date ]</a>
+              <a href="thread.html#377">[ thread ]</a>
+              <a href="subject.html#377">[ subject ]</a>
+              <a href="author.html#377">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-08 12:14:51 +0100 (Tue, 08 Feb 2011)
+New Revision: 610
+
+Modified:
+   trunk/MakeMake.cfg
+   trunk/Makefile
+   trunk/POSIX.dep
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp.in/run_tests_C99.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+   trunk/tests/cpp/run_tests_C99.bat
+   trunk/tests/cpp/run_tests_C99.sh
+   trunk/tests/zcc.in/run_tests.in
+   trunk/tests/zcc.in/run_tests_C99.in
+   trunk/tests/zcc/run_tests.bat
+   trunk/tests/zcc/run_tests.sh
+   trunk/tests/zcc/run_tests_C99.bat
+   trunk/tests/zcc/run_tests_C99.sh
+Log:
+move destination for executables to bin subdirectory
+
+Modified: trunk/MakeMake.cfg
+===================================================================
+--- trunk/MakeMake.cfg	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/MakeMake.cfg	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,7 +1,7 @@
+ ########
+-ProgObjects = {	'z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','type_system_pp','ParseTree','type_spec_pp','CSupport_pp','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc_pp','CPreproc_autogen_pp'),
+-				'zcc':('zcc','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc','CPreproc_autogen','ZParser')}
+-MainPrograms = ['z_cpp','zcc']
++ProgObjects = {	'bin/z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','type_system_pp','ParseTree','type_spec_pp','CSupport_pp','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc_pp','CPreproc_autogen_pp'),
++				'bin/zcc':('zcc','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc','CPreproc_autogen','ZParser')}
++MainPrograms = ['bin/z_cpp','bin/zcc']
+ 
+ # process control
+ C_assembly_preprocessing = ''
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/Makefile	2011-02-08 11:14:51 UTC (rev 610)
+@@ -6,7 +6,7 @@
+ include POSIX.inc
+ 
+ # GNU targets we know about
+-all: z_cpp.exe zcc.exe
++all: bin/z_cpp.exe bin/zcc.exe
+ 
+ clean:
+ 	rm -f *.o *.exe lib/host.zcc/*.a
+@@ -18,13 +18,13 @@
+ make_Zaimoni_STL:
+ 	cd Zaimoni.STL; make host_install
+ 
+-z_cpp.exe : make_Zaimoni_STL $(OBJECTS_Z_CPP_LINK_PRIORITY)
+-	g++ $(LINK_FLAGS) -oz_cpp.exe $(OBJECTS_Z_CPP) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
+-	strip --preserve-dates --strip-unneeded z_cpp.exe
++bin/zcc.exe : make_Zaimoni_STL $(OBJECTS_BIN/ZCC_LINK_PRIORITY)
++	g++ $(LINK_FLAGS) -obin/zcc.exe $(OBJECTS_BIN/ZCC) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
++	strip --preserve-dates --strip-unneeded bin/zcc.exe
+ 
+-zcc.exe : make_Zaimoni_STL $(OBJECTS_ZCC_LINK_PRIORITY)
+-	g++ $(LINK_FLAGS) -ozcc.exe $(OBJECTS_ZCC) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
+-	strip --preserve-dates --strip-unneeded zcc.exe
++bin/z_cpp.exe : make_Zaimoni_STL $(OBJECTS_BIN/Z_CPP_LINK_PRIORITY)
++	g++ $(LINK_FLAGS) -obin/z_cpp.exe $(OBJECTS_BIN/Z_CPP) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
++	strip --preserve-dates --strip-unneeded bin/z_cpp.exe
+ 
+ # inference rules
+ # processing details
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/POSIX.dep	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,11 +1,11 @@
+-OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o type_system_pp.o ParseTree.o type_spec_pp.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = type_spec_pp.o CPreproc_pp.o type_system_pp.o CSupport_pp.o CPreproc_autogen_pp.o ParseTree.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o z_cpp.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_BIN/ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
++OBJECTS_BIN/ZCC_LINK_PRIORITY = ZParser.o CSupport.o ParseTree.o type_system.o zcc.o struct_type.o type_spec.o CPreproc.o CPreproc_autogen.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+-OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = type_system.o CSupport.o CPreproc.o CPreproc_autogen.o ZParser.o ParseTree.o type_spec.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o zcc.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_BIN/Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o type_system_pp.o ParseTree.o type_spec_pp.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
++OBJECTS_BIN/Z_CPP_LINK_PRIORITY = CSupport_pp.o ParseTree.o z_cpp.o type_spec_pp.o CPreproc_pp.o type_system_pp.o CPreproc_autogen_pp.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+ # dependencies
+-z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
++zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+ errors.o: errors.hpp langroute.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ langroute.o: langroute.hpp _CSupport1.hpp Zaimoni.STL/Logging.h Zaimoni.STL/POD.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp
+ AtomicString.o: AtomicString.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -15,10 +15,11 @@
+ uchar_blob.o: uchar_blob.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp
+ unsigned_var_int.o: unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp
+ CPUInfo.o: CPUInfo.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp
+-type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+-ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
++type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
++ParseTree.o: ParseTree.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp weak_token.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h
++type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPDecimalInteger.o: C_PPDecimalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPOctalInteger.o: C_PPOctalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -31,13 +32,12 @@
+ end_lc.o: end_lc.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_nl.o: end_nl.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+-CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimon
+ i.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+-struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
+-type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+-type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+-CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
++z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
++type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
++type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
++CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimon
+ i.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs regression tests for z_cpp.exe
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at REM</A> (C)2009 Kenneth Boyd, license: MIT.txt
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ @setlocal
+ @set BAD_PASS=0
+@@ -9,14 +9,14 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP=..\..\z_cpp
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_ISO=..\..\z_cpp --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_SIGNMAG_NOTRAP=..\..\z_cpp --int-sign-magnitude
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_SIGNMAG_TRAP=..\..\z_cpp --int-sign-magnitude --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_ONESCOMP_NOTRAP=..\..\z_cpp --int-ones-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_ONESCOMP_TRAP=..\..\z_cpp --int-ones-complement --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_TWOSCOMP_NOTRAP=..\..\z_cpp --int-twos-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_TWOSCOMP_TRAP=..\..\z_cpp --int-twos-complement --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP=..\..\bin\z_cpp
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ISO=..\..\bin\z_cpp --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_SIGNMAG_NOTRAP=..\..\bin\z_cpp --int-sign-magnitude
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_SIGNMAG_TRAP=..\..\bin\z_cpp --int-sign-magnitude --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ONESCOMP_NOTRAP=..\..\bin\z_cpp --int-ones-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ONESCOMP_TRAP=..\..\bin\z_cpp --int-ones-complement --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_TWOSCOMP_NOTRAP=..\..\bin\z_cpp --int-twos-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_TWOSCOMP_TRAP=..\..\bin\z_cpp --int-twos-complement --int-traps
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # runs regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+@@ -16,14 +16,14 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP=../../z_cpp
+-	local CPP_ISO=&quot;../../z_cpp --pedantic&quot;
+-	local CPP_SIGNMAG_NOTRAP=&quot;../../z_cpp --int-sign-magnitude&quot;
+-	local CPP_SIGNMAG_TRAP=&quot;../../z_cpp --int-sign-magnitude --int-traps&quot;
+-	local CPP_ONESCOMP_NOTRAP=&quot;../../z_cpp --int-ones-complement&quot;
+-	local CPP_ONESCOMP_TRAP=&quot;../../z_cpp --int-ones-complement --int-traps&quot;
+-	local CPP_TWOSCOMP_NOTRAP=&quot;../../z_cpp --int-twos-complement&quot;
+-	local CPP_TWOSCOMP_TRAP=&quot;../../z_cpp --int-twos-complement --int-traps&quot;
++	local CPP=../../bin/z_cpp
++	local CPP_ISO=&quot;../../bin/z_cpp --pedantic&quot;
++	local CPP_SIGNMAG_NOTRAP=&quot;../../bin/z_cpp --int-sign-magnitude&quot;
++	local CPP_SIGNMAG_TRAP=&quot;../../bin/z_cpp --int-sign-magnitude --int-traps&quot;
++	local CPP_ONESCOMP_NOTRAP=&quot;../../bin/z_cpp --int-ones-complement&quot;
++	local CPP_ONESCOMP_TRAP=&quot;../../bin/z_cpp --int-ones-complement --int-traps&quot;
++	local CPP_TWOSCOMP_NOTRAP=&quot;../../bin/z_cpp --int-twos-complement&quot;
++	local CPP_TWOSCOMP_TRAP=&quot;../../bin/z_cpp --int-twos-complement --int-traps&quot;
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/cpp/run_tests_C99.bat
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests_C99.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs only C99 regression tests for z_cpp.exe
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at REM</A> (C)2009 Kenneth Boyd, license: MIT.txt
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ @setlocal
+ @set BAD_PASS=0
+ @set BAD_PASS_NAME=LastAccepted:
+@@ -8,7 +8,7 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP=..\..\z_cpp --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP=..\..\bin\z_cpp --pedantic
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/cpp/run_tests_C99.sh
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests_C99.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # runs only C99 regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+ 
+@@ -15,7 +15,7 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP=&quot;../../z_cpp --pedantic&quot;
++	local CPP=&quot;../../bin/z_cpp --pedantic&quot;
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp.in/run_tests.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,16 +1,16 @@
+ SUFFIXES h hpp
+ DESC runs regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ PROLOG
+-VAR CPP ../../z_cpp
+-VAR CPP_ISO ../../z_cpp --pedantic
+-VAR CPP_SIGNMAG_NOTRAP ../../z_cpp --int-sign-magnitude
+-VAR CPP_SIGNMAG_TRAP ../../z_cpp --int-sign-magnitude --int-traps
+-VAR CPP_ONESCOMP_NOTRAP ../../z_cpp --int-ones-complement
+-VAR CPP_ONESCOMP_TRAP ../../z_cpp --int-ones-complement --int-traps
+-VAR CPP_TWOSCOMP_NOTRAP ../../z_cpp --int-twos-complement
+-VAR CPP_TWOSCOMP_TRAP ../../z_cpp --int-twos-complement --int-traps
++VAR CPP ../../bin/z_cpp
++VAR CPP_ISO ../../bin/z_cpp --pedantic
++VAR CPP_SIGNMAG_NOTRAP ../../bin/z_cpp --int-sign-magnitude
++VAR CPP_SIGNMAG_TRAP ../../bin/z_cpp --int-sign-magnitude --int-traps
++VAR CPP_ONESCOMP_NOTRAP ../../bin/z_cpp --int-ones-complement
++VAR CPP_ONESCOMP_TRAP ../../bin/z_cpp --int-ones-complement --int-traps
++VAR CPP_TWOSCOMP_NOTRAP ../../bin/z_cpp --int-twos-complement
++VAR CPP_TWOSCOMP_TRAP ../../bin/z_cpp --int-twos-complement --int-traps
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO Error*
+
+Modified: trunk/tests/cpp.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests_C99.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp.in/run_tests_C99.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,8 +1,8 @@
+ SUFFIXES h
+ DESC runs only C99 regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ PROLOG
+-VAR CPP ../../z_cpp --pedantic
++VAR CPP ../../bin/z_cpp --pedantic
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP Error*
+
+Modified: trunk/tests/zcc/run_tests.bat
+===================================================================
+--- trunk/tests/zcc/run_tests.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,7 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs regression tests for z_cpp.exe
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at REM</A> (C)2009 Kenneth Boyd, license: MIT.txt
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> (C)2009,2011 Kenneth Boyd, license: MIT.txt
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> Note: namespace.CPP, compat subdirectories have no C files
+ 
+ @setlocal
+ @set BAD_PASS=0
+@@ -9,10 +10,10 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP=..\..\zcc
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_ISO=..\..\zcc --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_BACKPORT=..\..\zcc -Wbackport
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP_COMPAT=..\..\zcc -Wc-c++-compat
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP=..\..\bin\zcc
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ISO=..\..\bin\zcc --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_BACKPORT=..\..\bin\zcc -Wbackport
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_COMPAT=..\..\bin\zcc -Wc-c++-compat
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/zcc/run_tests.sh
+===================================================================
+--- trunk/tests/zcc/run_tests.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,7 @@
+ #!/bin/sh
+ # runs regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
++# Note: namespace.CPP, compat subdirectories have no C files
+ 
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+@@ -16,10 +17,10 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP=../../zcc
+-	local CPP_ISO=&quot;../../zcc --pedantic&quot;
+-	local CPP_BACKPORT=&quot;../../zcc -Wbackport&quot;
+-	local CPP_COMPAT=&quot;../../zcc -Wc-c++-compat&quot;
++	local CPP=../../bin/zcc
++	local CPP_ISO=&quot;../../bin/zcc --pedantic&quot;
++	local CPP_BACKPORT=&quot;../../bin/zcc -Wbackport&quot;
++	local CPP_COMPAT=&quot;../../bin/zcc -Wc-c++-compat&quot;
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/zcc/run_tests_C99.bat
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests_C99.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs only C99 regression tests for z_cpp.exe
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at REM</A> (C)2009 Kenneth Boyd, license: MIT.txt
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ @setlocal
+ @set BAD_PASS=0
+ @set BAD_PASS_NAME=LastAccepted:
+@@ -8,7 +8,7 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at set</A> CPP=..\..\zcc --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP=..\..\bin\zcc --pedantic
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/zcc/run_tests_C99.sh
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests_C99.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # runs only C99 regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+ 
+@@ -15,7 +15,7 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP=&quot;../../zcc --pedantic&quot;
++	local CPP=&quot;../../bin/zcc --pedantic&quot;
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/zcc.in/run_tests.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc.in/run_tests.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,12 +1,13 @@
+ SUFFIXES h hpp
+ DESC runs regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
++DESC Note: namespace.CPP, compat subdirectories have no C files
+ 
+ PROLOG
+-VAR CPP ../../zcc
+-VAR CPP_ISO ../../zcc --pedantic
+-VAR CPP_BACKPORT ../../zcc -Wbackport
+-VAR CPP_COMPAT ../../zcc -Wc-c++-compat
++VAR CPP ../../bin/zcc
++VAR CPP_ISO ../../bin/zcc --pedantic
++VAR CPP_BACKPORT ../../bin/zcc -Wbackport
++VAR CPP_COMPAT ../../bin/zcc -Wc-c++-compat
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO decl.C99/Error*
+
+Modified: trunk/tests/zcc.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests_C99.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc.in/run_tests_C99.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,8 +1,8 @@
+ SUFFIXES h
+ DESC runs only C99 regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ PROLOG
+-VAR CPP ../../zcc --pedantic
++VAR CPP ../../bin/zcc --pedantic
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP decl.C99/Error*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000376.html">[Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+	<LI>Next message: <A HREF="000378.html">[Zcplusplus-commits] r611 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#377">[ date ]</a>
+              <a href="thread.html#377">[ thread ]</a>
+              <a href="subject.html#377">[ subject ]</a>
+              <a href="author.html#377">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

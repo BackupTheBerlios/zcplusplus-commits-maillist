@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r662 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r662%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110609031954.69F3D48132C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000428.html">
+   <LINK REL="Next"  HREF="000430.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r662 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r662%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110609031954.69F3D48132C%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r662 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun  9 05:19:54 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000428.html">[Zcplusplus-commits] r661 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000430.html">[Zcplusplus-commits] r663 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-09 05:19:53 +0200 (Thu, 09 Jun 2011)
+New Revision: 662
+
+Modified:
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+rearrange where member functions are for non-weak case
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-09 02:05:32 UTC (rev 661)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-09 03:19:53 UTC (rev 662)
+@@ -101,7 +101,9 @@
+ 	size_t _size;
+ #endif
+ public:
++	ZAIMONI_STL_TYPE_GLUE_ARRAY(T);
+ #ifndef ZAIMONI_FORCE_ISO
++	// core infrastructure
+ 	void NULLPtr() {_ptr = NULL;};
+ 	void de_novo(size_t n) {_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL;};
+ 	void de_novo_nothrow(size_t n) {_ptr = _new_buffer&lt;T&gt;(n);};
+@@ -146,6 +148,24 @@
+ 	// typecasts
+ 	operator T*&amp;() {return _ptr;};
+ 	operator T* const&amp;() const {return _ptr;};
++
++	// generic case is owned-values, so put autovalarray_ptr family implementations here
++#ifndef ZAIMONI_FORCE_ISO
++	bool Resize(size_t n) {return _resize(this-&gt;_ptr,n);};
++	void Shrink(size_t n) {_shrink(this-&gt;_ptr,n);};
++	void FastDeleteIdx(size_t n) {_delete_idx(this-&gt;_ptr,n);};
++	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,n);};
++	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
++	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,indexes,n);};
++#else
++	bool Resize(size_t n) {return _resize(this-&gt;_ptr,this-&gt;_size,n);};
++	void Shrink(size_t n) {_shrink(this-&gt;_ptr,this-&gt;_size,n);};
++	void FastDeleteIdx(size_t n) {_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
++	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
++	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,this-&gt;_size,n,Idx);};
++	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,this-&gt;_size,indexes,n);};
++#endif
++	void resize(size_t n) {if (!this-&gt;Resize(n)) throw std::bad_alloc();};	
+ };
+ 
+ } // namespace zaimoni
+@@ -323,23 +343,10 @@
+ #ifndef ZAIMONI_FORCE_ISO
+ 	void reset(T*&amp; src);
+ 	void MoveInto(_meta_autoarray_ptr&lt;T&gt;&amp; dest) {dest.reset(this-&gt;_ptr);};
+-	bool Resize(size_t n) {return _resize(this-&gt;_ptr,n);};
+-	void Shrink(size_t n) {_shrink(this-&gt;_ptr,n);};
+-	void FastDeleteIdx(size_t n) {_delete_idx(this-&gt;_ptr,n);};
+-	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,n);};
+-	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
+-	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,indexes,n);};
+ #else
+ 	void reset(T*&amp; src,size_t n);
+ 	void MoveInto(_meta_autoarray_ptr&lt;T&gt;&amp; dest) {dest.reset(this-&gt;_ptr,this-&gt;_size);};
+-	bool Resize(size_t n) {return _resize(this-&gt;_ptr,this-&gt;_size,n);};
+-	void Shrink(size_t n) {_shrink(this-&gt;_ptr,this-&gt;_size,n);};
+-	void FastDeleteIdx(size_t n) {_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+-	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+-	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,this-&gt;_size,n,Idx);};
+-	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,this-&gt;_size,indexes,n);};
+ #endif
+-	void resize(size_t n) {if (!Resize(n)) throw std::bad_alloc();};	
+ 
+ 	// Perl grep
+ 	// these two assume T has valid * operator
+@@ -592,7 +599,7 @@
+ _meta_autoarray_ptr&lt;T&gt;::value_copy_of(const U&amp; src)
+ {
+ 	const size_t ub = src.size();
+-	if (!Resize(ub)) return false;
++	if (!this-&gt;Resize(ub)) return false;
+ 	if (0&lt;ub)
+ 		try	{
+ 			_value_copy_buffer(this-&gt;c_array(),src.data(),ub);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000428.html">[Zcplusplus-commits] r661 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000430.html">[Zcplusplus-commits] r663 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#429">[ date ]</a>
+              <a href="thread.html#429">[ thread ]</a>
+              <a href="subject.html#429">[ subject ]</a>
+              <a href="author.html#429">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

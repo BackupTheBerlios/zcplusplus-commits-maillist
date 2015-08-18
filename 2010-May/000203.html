@@ -1,0 +1,630 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r436 - in trunk: . lib lib/zc++-0.0.5	lib/zc++-0.0.5/include
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r436%20-%20in%20trunk%3A%20.%20lib%20lib/zc%2B%2B-0.0.5%0A%09lib/zc%2B%2B-0.0.5/include&In-Reply-To=%3C201005171905.o4HJ5grV004363%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000202.html">
+   <LINK REL="Next"  HREF="000204.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r436 - in trunk: . lib lib/zc++-0.0.5	lib/zc++-0.0.5/include</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r436%20-%20in%20trunk%3A%20.%20lib%20lib/zc%2B%2B-0.0.5%0A%09lib/zc%2B%2B-0.0.5/include&In-Reply-To=%3C201005171905.o4HJ5grV004363%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r436 - in trunk: . lib lib/zc++-0.0.5	lib/zc++-0.0.5/include">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon May 17 21:05:42 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000202.html">[Zcplusplus-commits] r435 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000204.html">[Zcplusplus-commits] r437 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-17 21:05:30 +0200 (Mon, 17 May 2010)
+New Revision: 436
+
+Added:
+   trunk/_CSupport3.hpp
+   trunk/lib/zc++-0.0.5/
+   trunk/lib/zc++-0.0.5/include/
+   trunk/lib/zc++-0.0.5/include/typeinfo
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.hpp
+   trunk/CPreproc_pp.cpp
+   trunk/CPreproc_pp.hpp
+   trunk/CSupport.cpp
+   trunk/POSIX.dep
+   trunk/ZParser.cpp
+   trunk/ZParser.hpp
+   trunk/_version.h
+Log:
+handle the syntax error aspect of typeid support
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/CPreproc.cpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -14,6 +14,7 @@
+ #include &quot;AtomicString.h&quot;
+ #/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
++#include &quot;_CSupport3.hpp&quot;
+ #/*cut-cpp*/
+ #include &quot;CSupport_pp.hpp&quot;
+ #include &quot;C_PPDecimalInteger.hpp&quot;
+@@ -348,9 +349,28 @@
+ 
+ static const POD_pair&lt;const char*,size_t&gt; pragma_ZCC_keywords[]
+ 	=	{	DICT_STRUCT(&quot;lock&quot;),
++			DICT_STRUCT(&quot;enable_typeid&quot;)
+ 		};
+ 
+ #define PRAGMA_ZCC_LOCK 0
++#define PRAGMA_ZCC_ENABLE_TYPEID 1
++#/*cut-cpp*/
++
++const POD_pair&lt;const char*,size_t&gt; pragma_relay_keywords[]
++	=	{	DICT_STRUCT(&quot;_ZCC_FP_CONTRACT_OFF&quot;),
++			DICT_STRUCT(&quot;_ZCC_FP_CONTRACT_DEFAULT&quot;),
++			DICT_STRUCT(&quot;_ZCC_FP_CONTRACT_ON&quot;),
++			DICT_STRUCT(&quot;_ZCC_FENV_ACCESS_OFF&quot;),
++			DICT_STRUCT(&quot;_ZCC_FENV_ACCESS_DEFAULT&quot;),
++			DICT_STRUCT(&quot;_ZCC_FENV_ACCESS_ON&quot;),
++			DICT_STRUCT(&quot;_ZCC_CX_LIMITED_RANGE_OFF&quot;),
++			DICT_STRUCT(&quot;_ZCC_CX_LIMITED_RANGE_DEFAULT&quot;),
++			DICT_STRUCT(&quot;_ZCC_CX_LIMITED_RANGE_ON&quot;),
++			DICT_STRUCT(&quot;_ZCC_enable_typeid&quot;)
++		};
++
++BOOST_STATIC_ASSERT(PRAGMA_RELAY_KEYWORDS_STRICT_UB==STATIC_SIZE(pragma_relay_keywords));		
++#/*cut-cpp*/
+ #undef DICT_STRUCT
+ 
+ static void _init_weak_token(weak_token&amp; dest, const Token&lt;char&gt;&amp; x,const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; pretoken)
+@@ -1402,12 +1422,26 @@
+ 					if (PP::PRAGMA==directive_type)
+ 						{
+ 						const size_t critical_offset = valid_directives[directive_type].second+2;
++#/*cut-cpp*/
++						const unsigned int pragma_code =
++#/*cut-cpp*/
+ 						interpret_pragma(TokenList[i]-&gt;data()+critical_offset,TokenList[i]-&gt;size()-critical_offset,locked_macros);
++#/*cut-cpp*/
++						switch(pragma_code)
++						{
++						default:
++#/*cut-cpp*/
+ 						TokenList.DeleteIdx(i);
+ 						if (0==i) goto Restart;
+ 						--i;
+ 						continue;
++#/*cut-cpp*/
++						case RELAY_ZCC_ENABLE_TYPEID:
++							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code].first,pragma_relay_keywords[pragma_code].second);
++							continue;
+ 						}
++#/*cut-cpp*/
++						}
+ 					}
+ 				}
+ 
+@@ -1652,9 +1686,21 @@
+ 						{	//! \test Pass_pragma_STDC.hpp
+ 						autovalarray_ptr_throws&lt;char&gt; pragma_string(lang.UnescapeStringLength(TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2));
+ 						lang.UnescapeString(pragma_string.c_array(),TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2);
++#/*cut-cpp*/
++						const unsigned int pragma_code =
++#/*cut-cpp*/
+ 						interpret_pragma(pragma_string.data(),pragma_string.size(),locked_macros);
++#/*cut-cpp*/
++						switch(pragma_code)
++						{
++						case RELAY_ZCC_ENABLE_TYPEID:
++							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code].first,pragma_relay_keywords[pragma_code].second);
++							TokenList.DeleteNSlotsAt(3,i+1);
++							continue;
++						}
++#/*cut-cpp*/
+ 						};
+-					TokenList.DeleteNSlotsAt(4,i);						//! \todo fix once we have code-generation affecting pragmas
++					TokenList.DeleteNSlotsAt(4,i);
+ 					if (0==i) goto Restart;
+ 					--i;
+ 					continue;
+@@ -2129,10 +2175,9 @@
+ 	return false;
+ }
+ 
+-void
++unsigned int
+ CPreprocessor::interpret_pragma(const char* const x, size_t x_len, autovalarray_ptr&lt;char*&gt;&amp; locked_macros)
+ {
+-	//! \todo: fix return value situation when enabling code-generation affecting pragmas
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+ 	lang.line_lex(x, x_len, pretokenized);
+ 
+@@ -2141,9 +2186,21 @@
+ 		{
+ 		if (1&lt;pretokenized.size())
+ 			{
++#/*cut-cpp*/
++			BOOST_STATIC_ASSERT(RELAY_ZCC_ENABLE_TYPEID==STATIC_SIZE(pragma_STDC_on_off_switch)*STATIC_SIZE(pragma_STDC_keywords));
++#/*cut-cpp*/
+ 			const errr ZCC_pragma =  linear_find_lencached(x+pretokenized[1].first, pretokenized[1].second, pragma_ZCC_keywords, STATIC_SIZE(pragma_ZCC_keywords));
+ 			switch(ZCC_pragma)
+ 			{
++#/*cut-cpp*/
++			// #pragma ZCC enable_typeid gets rewritten to the 
++			// reserved-to-the-implementation keyword 
++			// _ZCC_pragma_enable_typeid, which in turn turns off the syntax
++			// errors for typeid .  We use this convolution so that we don't
++			// instantly break other compilers inadvertently using our 
++			// #include &lt;typeinfo&gt;
++			case PRAGMA_ZCC_ENABLE_TYPEID: return STATIC_SIZE(pragma_STDC_on_off_switch)*STATIC_SIZE(pragma_STDC_keywords)+1;				
++#/*cut-cpp*/
+ 			case PRAGMA_ZCC_LOCK:
+ 				{	//! \test Error_undef_locked_macro.hpp
+ 				size_t j = pretokenized.size();
+@@ -2161,7 +2218,7 @@
+ 				}
+ 			}
+ 			}
+-		return;
++		return 0;
+ 		}
+ 	else if (PRAGMA_LEADING_STDC==valid_pragma_class)
+ 		{
+@@ -2179,7 +2236,7 @@
+ 					INC_INFORM(&quot;unhandled STDC pragma &quot;);
+ 					INFORM(pragma_STDC_keywords[STDC_pragma].first);
+ 					zcc_errors.inc_error();
+-					return;
++					return 0;
+ 					};
+ #endif
+ 				case PRAGMA_STDC_FP_CONTRACT:
+@@ -2199,13 +2256,15 @@
+ 						INC_INFORM(&quot;invalid STDC pragma &quot;);
+ 						INFORM(x,x_len);
+ 						zcc_errors.inc_error();
+-						return;
++						return 0;
+ 						}
++					// valid STDC pragma: relay encoding out
++					return STATIC_SIZE(pragma_STDC_on_off_switch)*STDC_pragma+on_off_switch+1;
+ 					};
+ 				}
+ 			}
+ 			}
+-		return;
++		return 0;
+ 		}
+ 	else if (PRAGMA_MESSAGE==valid_pragma_class)
+ 		{
+@@ -2218,7 +2277,7 @@
+ 			const bool wide_str = 'L'==x[pretokenized[2].first];
+ 			if (0&lt;std::count(x+pretokenized[2].first,x+pretokenized[2].first+pretokenized[2].second,'\\'))
+ 				{	// no escapes
+-				if (wide_str) return; //! \todo this should do a proper unescape to UNICODE, then use a wrapper library to push the UNICODE to whatever wide-char support there is
++				if (wide_str) return 0; //! \todo this should do a proper unescape to UNICODE, then use a wrapper library to push the UNICODE to whatever wide-char support there is
+ 
+ 				//! \todo change target, this only handles target CHAR_BIT&lt;=host CHAR_BIT
+ 				const size_t tmp_len = lang.UnescapeStringLength(x+pretokenized[2].first,pretokenized[2].second);
+@@ -2228,7 +2287,7 @@
+ 					lang.UnescapeString(tmp,x+pretokenized[2].first,pretokenized[2].second);
+ 					INFORM(tmp,tmp_len);
+ 					_flush(tmp);
+-					return;
++					return 0;
+ 					}
+ 				};
+ 			// no escapes, or formatting failed: do something
+@@ -2237,8 +2296,9 @@
+ 			else
+ 				INFORM(x+pretokenized[2].first+1,pretokenized[2].second-2);
+ 			}
+-		return;
++		return 0;
+ 		}
++	return 0;
+ }
+ 
+ static void _complete_string_character_literal(Token&lt;char&gt;&amp; x,const char delim, const char* const end_error)
+@@ -4239,13 +4299,17 @@
+ bool
+ CPreprocessor::hard_locked_macro(const char* const x,const size_t x_len) const
+ {
+-	assert(!is_empty_string(x));
++	assert(x &amp;&amp; *x);
+ 	assert(0&lt;x_len);
+ // C99: 6.11.9 Predefined macro names
+ // Macro names beginning with __STDC_ are reserved for future standardization.
+ //! \test Error20.hpp : #undef __STDC__
+ //! \bug should have positive test suite for named __STDC_ macros
+ 	if (7&lt;=x_len &amp;&amp; !strncmp(x,&quot;__STDC_&quot;,sizeof(&quot;__STDC_&quot;)-1)) return true;
++#/*cut-cpp*/
++// Lock down our relay identifiers. to be safe
++	if (0&lt;=linear_find_lencached(x,x_len,pragma_relay_keywords,STATIC_SIZE(pragma_relay_keywords))) return true;
++#/*cut-cpp*/
+ // C++0x 17.4.3.2.2 simply prohibits all keywords as macros; prefer this to C++98.  C99/C0X is handled elsewhere, as it isn't so draconian.
+ // follow C++0x when generalizing to non-standard languages, as that's more intuitive.
+ //! \bug should have positive test suite for all supported C++ keywords
+
+Modified: trunk/CPreproc.hpp
+===================================================================
+--- trunk/CPreproc.hpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/CPreproc.hpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -105,7 +105,7 @@
+ 	void function_macro_concatenate_novars(zaimoni::Token&lt;char&gt;&amp; x, const zaimoni::Token&lt;char&gt;&amp; arglist);
+ 
+ 	// pragma support
+-	void interpret_pragma(const char* const x, size_t x_len, zaimoni::autovalarray_ptr&lt;char*&gt;&amp; locked_macros);
++	unsigned int interpret_pragma(const char* const x, size_t x_len, zaimoni::autovalarray_ptr&lt;char*&gt;&amp; locked_macros);
+ };
+ 
+ #endif
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/CPreproc_pp.cpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -342,9 +342,11 @@
+ 
+ static const POD_pair&lt;const char*,size_t&gt; pragma_ZCC_keywords[]
+ 	=	{	DICT_STRUCT(&quot;lock&quot;),
++			DICT_STRUCT(&quot;enable_typeid&quot;)
+ 		};
+ 
+ #define PRAGMA_ZCC_LOCK 0
++#define PRAGMA_ZCC_ENABLE_TYPEID 1
+ #undef DICT_STRUCT
+ 
+ static void _init_weak_token(weak_token&amp; dest, const Token&lt;char&gt;&amp; x,const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; pretoken)
+@@ -1648,7 +1650,7 @@
+ 						lang.UnescapeString(pragma_string.c_array(),TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2);
+ 						interpret_pragma(pragma_string.data(),pragma_string.size(),locked_macros);
+ 						};
+-					TokenList.DeleteNSlotsAt(4,i);						//! \todo fix once we have code-generation affecting pragmas
++					TokenList.DeleteNSlotsAt(4,i);
+ 					if (0==i) goto Restart;
+ 					--i;
+ 					continue;
+@@ -2123,10 +2125,9 @@
+ 	return false;
+ }
+ 
+-void
++unsigned int
+ CPreprocessor::interpret_pragma(const char* const x, size_t x_len, autovalarray_ptr&lt;char*&gt;&amp; locked_macros)
+ {
+-	//! \todo: fix return value situation when enabling code-generation affecting pragmas
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+ 	lang.line_lex(x, x_len, pretokenized);
+ 
+@@ -2155,7 +2156,7 @@
+ 				}
+ 			}
+ 			}
+-		return;
++		return 0;
+ 		}
+ 	else if (PRAGMA_LEADING_STDC==valid_pragma_class)
+ 		{
+@@ -2173,7 +2174,7 @@
+ 					INC_INFORM(&quot;unhandled STDC pragma &quot;);
+ 					INFORM(pragma_STDC_keywords[STDC_pragma].first);
+ 					zcc_errors.inc_error();
+-					return;
++					return 0;
+ 					};
+ #endif
+ 				case PRAGMA_STDC_FP_CONTRACT:
+@@ -2193,13 +2194,15 @@
+ 						INC_INFORM(&quot;invalid STDC pragma &quot;);
+ 						INFORM(x,x_len);
+ 						zcc_errors.inc_error();
+-						return;
++						return 0;
+ 						}
++					// valid STDC pragma: relay encoding out
++					return STATIC_SIZE(pragma_STDC_on_off_switch)*STDC_pragma+on_off_switch+1;
+ 					};
+ 				}
+ 			}
+ 			}
+-		return;
++		return 0;
+ 		}
+ 	else if (PRAGMA_MESSAGE==valid_pragma_class)
+ 		{
+@@ -2212,7 +2215,7 @@
+ 			const bool wide_str = 'L'==x[pretokenized[2].first];
+ 			if (0&lt;std::count(x+pretokenized[2].first,x+pretokenized[2].first+pretokenized[2].second,'\\'))
+ 				{	// no escapes
+-				if (wide_str) return; //! \todo this should do a proper unescape to UNICODE, then use a wrapper library to push the UNICODE to whatever wide-char support there is
++				if (wide_str) return 0; //! \todo this should do a proper unescape to UNICODE, then use a wrapper library to push the UNICODE to whatever wide-char support there is
+ 
+ 				//! \todo change target, this only handles target CHAR_BIT&lt;=host CHAR_BIT
+ 				const size_t tmp_len = lang.UnescapeStringLength(x+pretokenized[2].first,pretokenized[2].second);
+@@ -2222,7 +2225,7 @@
+ 					lang.UnescapeString(tmp,x+pretokenized[2].first,pretokenized[2].second);
+ 					INFORM(tmp,tmp_len);
+ 					_flush(tmp);
+-					return;
++					return 0;
+ 					}
+ 				};
+ 			// no escapes, or formatting failed: do something
+@@ -2231,8 +2234,9 @@
+ 			else
+ 				INFORM(x+pretokenized[2].first+1,pretokenized[2].second-2);
+ 			}
+-		return;
++		return 0;
+ 		}
++	return 0;
+ }
+ 
+ static void _complete_string_character_literal(Token&lt;char&gt;&amp; x,const char delim, const char* const end_error)
+@@ -4233,7 +4237,7 @@
+ bool
+ CPreprocessor::hard_locked_macro(const char* const x,const size_t x_len) const
+ {
+-	assert(!is_empty_string(x));
++	assert(x &amp;&amp; *x);
+ 	assert(0&lt;x_len);
+ // C99: 6.11.9 Predefined macro names
+ // Macro names beginning with __STDC_ are reserved for future standardization.
+
+Modified: trunk/CPreproc_pp.hpp
+===================================================================
+--- trunk/CPreproc_pp.hpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/CPreproc_pp.hpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -105,7 +105,7 @@
+ 	void function_macro_concatenate_novars(zaimoni::Token&lt;char&gt;&amp; x, const zaimoni::Token&lt;char&gt;&amp; arglist);
+ 
+ 	// pragma support
+-	void interpret_pragma(const char* const x, size_t x_len, zaimoni::autovalarray_ptr&lt;char*&gt;&amp; locked_macros);
++	unsigned int interpret_pragma(const char* const x, size_t x_len, zaimoni::autovalarray_ptr&lt;char*&gt;&amp; locked_macros);
+ };
+ 
+ #endif
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/CSupport.cpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -4,6 +4,7 @@
+ 
+ #/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
++#include &quot;_CSupport3.hpp&quot;
+ #/*cut-cpp*/
+ #include &quot;CSupport_pp.hpp&quot;
+ #include &quot;_CSupport1.hpp&quot;
+@@ -10176,11 +10177,37 @@
+ 		};
+ }
+ 
++static void CPP_handle_pragma_relay(parse_tree&amp; src)
++{
++	assert(src.is_raw_list());
++	if (!src.empty&lt;0&gt;())
++		{
++		bool typeid_is_ok = false;	// has to be enabled in #include &lt;typeinfo&gt;
++		size_t i = 0;
++		do	{
++			if (src.data&lt;0&gt;()[i].is_atomic())
++				{
++				const errr Idx = linear_find(src.data&lt;0&gt;()[i].index_tokens[0].token.first, src.data&lt;0&gt;()[i].index_tokens[0].token.second,pragma_relay_keywords,PRAGMA_RELAY_KEYWORDS_STRICT_UB);
++				if (0&lt;=Idx)
++					{	// react to any relay keywords that actually mean anything here
++					if (RELAY_ZCC_ENABLE_TYPEID==Idx) typeid_is_ok = true;
++					src.DeleteIdx&lt;0&gt;(i);
++					}
++				else if (!typeid_is_ok &amp;&amp; token_is_string&lt;7&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;type_id&quot;))
++					//! \bug need test case
++					simple_error(src.c_array&lt;0&gt;()[i],&quot; requires #include &lt;typeinfo&gt; first (C++0X 5.2.8p6)&quot;);
++				}
++			}
++		while(src.size&lt;0&gt;()&gt; ++i);
++		}
++}
++
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc
+ static void CPP_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(src.is_raw_list());
++	CPP_handle_pragma_relay(src);
+ 	_label_literals(src,types);
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),_label_CPP_literal);	// intercepts: true, false, this
+ 	if (!_match_pairs(src)) return;
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/POSIX.dep	2010-05-17 19:05:30 UTC (rev 436)
+@@ -1,8 +1,8 @@
+ OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = load_src.o CSupport_pp.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o ParseTree.o type_spec.o uchar_blob.o CPreproc_autogen_pp.o CPUInfo.o type_system.o unsigned_var_int.o CPreproc_pp.o z_cpp.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_Z_CPP_LINK_PRIORITY = CPreproc_pp.o CSupport_pp.o CPreproc_autogen_pp.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o ParseTree.o type_spec.o uchar_blob.o CPUInfo.o type_system.o unsigned_var_int.o z_cpp.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+ OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = load_src.o end_nl.o CSupport.o end_lc.o Trigraph.o Flat_UNI.o errors.o ZParser.o ParseTree.o type_spec.o uchar_blob.o CPUInfo.o CPreproc_autogen.o type_system.o unsigned_var_int.o zcc.o CPreproc.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_ZCC_LINK_PRIORITY = CPreproc.o CSupport.o ZParser.o CPreproc_autogen.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o ParseTree.o type_spec.o uchar_blob.o CPUInfo.o type_system.o unsigned_var_int.o zcc.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+ # dependencies
+ z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
+@@ -35,7 +35,7 @@
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+-CSupport.o: CSupport.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp un!
+ signed_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+-CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zai!
+ moni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/!
+ operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/l!
+ ogic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/ZParser.cpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -1,8 +1,10 @@
+ // ZParser.cpp
++// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;ZParser.hpp&quot;
+ 
+ #include &quot;CSupport.hpp&quot;
++#include &quot;_CSupport3.hpp&quot;
+ #include &quot;errors.hpp&quot;
+ #include &quot;errcount.hpp&quot;
+ #include &quot;langroute.hpp&quot;
+@@ -10,6 +12,7 @@
+ #include &quot;type_system.hpp&quot;
+ 
+ #include &quot;Zaimoni.STL/AutoPtr.hpp&quot;
++#include &quot;Zaimoni.STL/search.hpp&quot;
+ #include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ #include &quot;Zaimoni.STL/LexParse/Token.hpp&quot;
+ 
+@@ -59,7 +62,28 @@
+ 		assert(TokenList.front());
+ 		Token&lt;char&gt;&amp; tmp_front = *TokenList.front();
+ 		lang.line_lex(tmp_front.data(), tmp_front.size(), pretokenized);
++
++		// handle unused relay keywords here
+ 		if (!pretokenized.empty())
++			{
++			size_t i = pretokenized.size();
++			if (Lang::C==lang_code || Lang::CPlusPlus==lang_code)
++				do	{
++					--i;
++					const errr Idx = linear_find(tmp_front.data()+pretokenized[i].first, pretokenized[i].second,pragma_relay_keywords,PRAGMA_RELAY_KEYWORDS_STRICT_UB);
++					if (0&lt;=Idx)
++						{	// permit any relay keywords that actually mean anything here
++						bool blacklist = true;
++						// allow #include &lt;typeinfo&gt; to turn off context-free syntax errors for typeid
++						if (RELAY_ZCC_ENABLE_TYPEID==Idx &amp;&amp; Lang::CPlusPlus==lang_code) blacklist = false;
++						if (blacklist) pretokenized.DeleteIdx(i);
++						continue;			
++						}
++					}
++				while(0&lt;i);
++			}
++
++		if (!pretokenized.empty())
+ 			{	// ...
+ 			const size_t append_tokens = pretokenized.size();
+ 			const size_t old_parsed_size = ParsedList.empty() ? 0 : ParsedList[0]-&gt;size&lt;0&gt;();
+
+Modified: trunk/ZParser.hpp
+===================================================================
+--- trunk/ZParser.hpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/ZParser.hpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -1,4 +1,5 @@
+ // ZParser.hpp
++// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef ZPARSER_HPP
+ #define ZPARSER_HPP 1
+
+Added: trunk/_CSupport3.hpp
+===================================================================
+--- trunk/_CSupport3.hpp	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/_CSupport3.hpp	2010-05-17 19:05:30 UTC (rev 436)
+@@ -0,0 +1,13 @@
++// _CSupport3.hpp
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace zaimoni {
++template&lt;class A, class B&gt; struct POD_pair;
++}
++
++// defined in CPreproc.cpp
++extern const zaimoni::POD_pair&lt;const char*,size_t&gt; pragma_relay_keywords[];
++
++#define RELAY_ZCC_ENABLE_TYPEID 9
++#define PRAGMA_RELAY_KEYWORDS_STRICT_UB 10
++
+
+Modified: trunk/_version.h
+===================================================================
+--- trunk/_version.h	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/_version.h	2010-05-17 19:05:30 UTC (rev 436)
+@@ -3,9 +3,9 @@
+ /* (C)2010 Kenneth Boyd, license: MIT.txt */
+ 
+ #ifndef ZCC_VERSION
+-#define ZCC_VERSION &quot;0.0.3&quot;
++#define ZCC_VERSION &quot;0.0.5&quot;
+ #define ZCC_VERSION_MAJOR 0
+ #define ZCC_VERSION_MINOR 0
+-#define ZCC_VERSION_PATCH 3
++#define ZCC_VERSION_PATCH 5
+ #endif
+ 
+
+Added: trunk/lib/zc++-0.0.5/include/typeinfo
+===================================================================
+--- trunk/lib/zc++-0.0.5/include/typeinfo	2010-05-16 10:08:21 UTC (rev 435)
++++ trunk/lib/zc++-0.0.5/include/typeinfo	2010-05-17 19:05:30 UTC (rev 436)
+@@ -0,0 +1,9 @@
++// typeinfo
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// C++0X 5.2.8p6 requires using typeid to make the program ill-formed until
++// #include &lt;typeinfo&gt; .  The following pragma tells Z.C++ to turn off the
++// syntax errors.
++#pragma ZCC enable_typeid
++
++//! \todo almost all of this header.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000202.html">[Zcplusplus-commits] r435 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000204.html">[Zcplusplus-commits] r437 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#203">[ date ]</a>
+              <a href="thread.html#203">[ thread ]</a>
+              <a href="subject.html#203">[ subject ]</a>
+              <a href="author.html#203">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

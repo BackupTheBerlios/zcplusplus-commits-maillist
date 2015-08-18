@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r556 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r556%20-%20trunk&In-Reply-To=%3C20110107001739.EF1B7480A18%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000324.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r556 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r556%20-%20trunk&In-Reply-To=%3C20110107001739.EF1B7480A18%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r556 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jan  7 01:17:39 CET 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000324.html">[Zcplusplus-commits] r557 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#323">[ date ]</a>
+              <a href="thread.html#323">[ thread ]</a>
+              <a href="subject.html#323">[ subject ]</a>
+              <a href="author.html#323">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-07 01:17:39 +0100 (Fri, 07 Jan 2011)
+New Revision: 556
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/kleene_star.hpp
+Log:
+reduce RAM thrashing
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-12-22 21:50:38 UTC (rev 555)
++++ trunk/CSupport.cpp	2011-01-07 00:17:39 UTC (rev 556)
+@@ -13059,8 +13059,9 @@
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// C: enums are int (although we'd like to extend this a bit)
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+ 					};
+-				goto rescan;
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
+ 				}
++				break;
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+@@ -13078,7 +13079,8 @@
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+-					goto rescan;
++					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
++					continue;
+ 					}
+ 				// C1X 6.7.2.3p2 states that conflicting union or struct must error
+ 				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union(tmp2.index_tokens[1].token.first))
+@@ -13129,6 +13131,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
+ 				}
+ 				break;
+ 				case ENUM_ANON_DEF:
+@@ -13143,7 +13146,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				goto rescan;
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+@@ -14110,14 +14113,15 @@
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;'enum &quot;);
+-					INC_INFORM(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first,src.data&lt;0&gt;()[i+k].index_tokens[1].token.second);
++					INC_INFORM(tmp2.index_tokens[1].token.first,tmp2.index_tokens[1].token.second);
+ 					INFORM(&quot;' must refer to completely defined enum (C++98/C++0X 3.1p2, C++98 7.1.5.3p2-4/C++0X 7.1.6.3p2)&quot;);
+ 					zcc_errors.inc_error();
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// fail over to int, like C
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+-					}
+-				goto rescan;
++					};
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
+ 				}
++				break;
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+@@ -14135,7 +14139,8 @@
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+-					goto rescan;
++					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
++					continue;
+ 					}
+ 				// One Definition Rule states that conflicting enum, struct, or class must error
+ 				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union_CPP(tmp2.index_tokens[1].token.first,active_namespace))
+@@ -14189,6 +14194,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
+ 				}
+ 				break;
+ 				case ENUM_ANON_DEF:
+@@ -14203,7 +14209,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				goto rescan;
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-12-22 21:50:38 UTC (rev 555)
++++ trunk/CSupport.cpp.in	2011-01-07 00:17:39 UTC (rev 556)
+@@ -13206,8 +13206,9 @@
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// C: enums are int (although we'd like to extend this a bit)
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+ 					};
+-				goto rescan;
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
+ 				}
++				break;
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+@@ -13225,7 +13226,8 @@
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+-					goto rescan;
++					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
++					continue;
+ 					}
+ 				// C1X 6.7.2.3p2 states that conflicting union or struct must error
+ 				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union(tmp2.index_tokens[1].token.first))
+@@ -13276,6 +13278,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
+ 				}
+ 				break;
+ 				case ENUM_ANON_DEF:
+@@ -13290,7 +13293,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				goto rescan;
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+@@ -14260,14 +14263,15 @@
+ 					message_header(tmp2.index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;'enum &quot;);
+-					INC_INFORM(src.data&lt;0&gt;()[i+k].index_tokens[1].token.first,src.data&lt;0&gt;()[i+k].index_tokens[1].token.second);
++					INC_INFORM(tmp2.index_tokens[1].token.first,tmp2.index_tokens[1].token.second);
+ 					INFORM(&quot;' must refer to completely defined enum (C++98/C++0X 3.1p2, C++98 7.1.5.3p2-4/C++0X 7.1.6.3p2)&quot;);
+ 					zcc_errors.inc_error();
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// fail over to int, like C
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+-					}
+-				goto rescan;
++					};
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
+ 				}
++				break;
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+@@ -14285,7 +14289,8 @@
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+-					goto rescan;
++					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
++					continue;
+ 					}
+ 				// One Definition Rule states that conflicting enum, struct, or class must error
+ 				else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union_CPP(tmp2.index_tokens[1].token.first,active_namespace))
+@@ -14339,6 +14344,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
+ 				}
+ 				break;
+ 				case ENUM_ANON_DEF:
+@@ -14353,7 +14359,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				goto rescan;
++				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+
+Modified: trunk/kleene_star.hpp
+===================================================================
+--- trunk/kleene_star.hpp	2010-12-22 21:50:38 UTC (rev 555)
++++ trunk/kleene_star.hpp	2011-01-07 00:17:39 UTC (rev 556)
+@@ -27,6 +27,14 @@
+ 	size_t empty() const {return result_scan.empty();};
+ 	size_t size() const {return result_scan.size();};
+ 	size_t operator[](size_t i) const {assert(size()&gt;i);return result_scan[i];};
++	void reclassify(const size_t i,const size_t new_value)
++		{
++		assert(size()&gt;i);
++		assert(_strict_ub&gt;new_value);
++		if (new_value==result_scan[i]) return;
++		--_detect_count[result_scan[i]];
++		++_detect_count[result_scan[i] = new_value];
++		};
+ 	size_t front() const {return result_scan.front();};
+ 	size_t back() const {return result_scan.back();};
+ 	void clear()
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000324.html">[Zcplusplus-commits] r557 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#323">[ date ]</a>
+              <a href="thread.html#323">[ thread ]</a>
+              <a href="subject.html#323">[ subject ]</a>
+              <a href="author.html#323">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

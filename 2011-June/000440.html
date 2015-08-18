@@ -1,0 +1,1181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r673 - in trunk: . tests/cpp/default/keywords	tests/zcc tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r673%20-%20in%20trunk%3A%20.%20tests/cpp/default/keywords%0A%09tests/zcc%20tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X&In-Reply-To=%3C20110611014141.7B8464803E5%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000439.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r673 - in trunk: . tests/cpp/default/keywords	tests/zcc tests/zcc/default/staticassert tests/zcc/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r673%20-%20in%20trunk%3A%20.%20tests/cpp/default/keywords%0A%09tests/zcc%20tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X&In-Reply-To=%3C20110611014141.7B8464803E5%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r673 - in trunk: . tests/cpp/default/keywords	tests/zcc tests/zcc/default/staticassert tests/zcc/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Jun 11 03:41:41 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000439.html">[Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#440">[ date ]</a>
+              <a href="thread.html#440">[ thread ]</a>
+              <a href="subject.html#440">[ subject ]</a>
+              <a href="author.html#440">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-11 03:41:41 +0200 (Sat, 11 Jun 2011)
+New Revision: 673
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+   trunk/tests/cpp/default/keywords/Error__Thread_Local.h
+   trunk/tests/zcc/Pass_stddef_h.h
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Error_autofail.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg1.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg2.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg3.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg4.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg5.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg6.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg7.h
+   trunk/tests/zcc/staticassert.C1X/Error_scope1.h
+   trunk/tests/zcc/staticassert.C1X/Error_scope2.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+Log:
+C keyword is _Static_assert not _Static_Assert #2/final
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/CSupport.cpp	2011-06-11 01:41:41 UTC (rev 673)
+@@ -414,7 +414,7 @@
+ 
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
+-			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keywords not in C++0X
++			DICT_STRUCT(&quot;_Static_assert&quot;),	// C1X keywords not in C++0X
+ 			DICT_STRUCT(&quot;_Thread_local&quot;),
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+@@ -13322,8 +13322,8 @@
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
+ 		// C static assertion scanner
+-		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_Assert&quot;))
+-			{	// _Static_Assert ( constant-expression , string-literal ) ;
++		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_assert&quot;))
++			{	// _Static_assert ( constant-expression , string-literal ) ;
+ 			C99_CPP_handle_static_assertion(src,*CLexer-&gt;pp_support,i,&quot;control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;,NULL);
+ 			continue;
+ 			};
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/CSupport.cpp.in	2011-06-11 01:41:41 UTC (rev 673)
+@@ -439,7 +439,7 @@
+ 
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
+-			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keywords not in C++0X
++			DICT_STRUCT(&quot;_Static_assert&quot;),	// C1X keywords not in C++0X
+ 			DICT_STRUCT(&quot;_Thread_local&quot;),
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+@@ -13470,8 +13470,8 @@
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
+ 		// C static assertion scanner
+-		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_Assert&quot;))
+-			{	// _Static_Assert ( constant-expression , string-literal ) ;
++		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_assert&quot;))
++			{	// _Static_assert ( constant-expression , string-literal ) ;
+ 			C99_CPP_handle_static_assertion(src,*CLexer-&gt;pp_support,i,&quot;control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;,NULL);
+ 			continue;
+ 			};
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/CSupport_pp.cpp	2011-06-11 01:41:41 UTC (rev 673)
+@@ -407,7 +407,7 @@
+ 
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
+-			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keywords not in C++0X
++			DICT_STRUCT(&quot;_Static_assert&quot;),	// C1X keywords not in C++0X
+ 			DICT_STRUCT(&quot;_Thread_local&quot;),
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+
+Modified: trunk/tests/cpp/default/keywords/Error__Thread_Local.h
+===================================================================
+--- trunk/tests/cpp/default/keywords/Error__Thread_Local.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/cpp/default/keywords/Error__Thread_Local.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // default\keywords\Error__Thread_Local.h
+ // check that #define of _Thread_Local errors
+ // (C)2010 Kenneth Boyd, license: MIT.txt
+-#define _Thread_Local 1
++#define _Thread_local 1
+ #include &lt;stdbool.h&gt;
+
+Modified: trunk/tests/zcc/Pass_stddef_h.h
+===================================================================
+--- trunk/tests/zcc/Pass_stddef_h.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/Pass_stddef_h.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -118,7 +118,7 @@
+ #if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
+ // ZC++ 0.0.9 supports __zcc_linkage
+ // typedefs have no linkage in C
+-_Static_Assert(0==__zcc_linkage(ptrdiff_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
+-_Static_Assert(0==__zcc_linkage(size_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
+-_Static_Assert(0==__zcc_linkage(wchar_t),&quot;wchar_t should be defined with no linkage&quot;);
++_Static_assert(0==__zcc_linkage(ptrdiff_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
++_Static_assert(0==__zcc_linkage(size_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
++_Static_assert(0==__zcc_linkage(wchar_t),&quot;wchar_t should be defined with no linkage&quot;);
+ #endif
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -3,34 +3,34 @@
+ // (C)2010 Kenneth Boyd, license: MIT.txt
+ 
+ // exercise string literal uses in (extended) integer constant expressions
+-_Static_Assert(&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(&quot;A&quot;[0],&quot;automatic success has failed&quot;);
+-_Static_Assert(+&quot;A&quot;[0],&quot;automatic success has failed&quot;);
+-_Static_Assert(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
+-_Static_Assert(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
+-_Static_Assert(*&quot;A&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(!*&quot;&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++_Static_assert(+&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++_Static_assert(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++_Static_assert(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
++_Static_assert(*&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(!*&quot;&quot;,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(&quot;A&quot;+0,&quot;automatic success has failed&quot;);
+-_Static_Assert(0+&quot;A&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(&quot;A&quot;+1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1+&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;+0,&quot;automatic success has failed&quot;);
++_Static_assert(0+&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;+1,&quot;automatic success has failed&quot;);
++_Static_assert(1+&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(&quot;A&quot;-0,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;-0,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(&quot;A&quot;==&quot;A&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(&quot;A&quot;!=&quot;B&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(&quot;A&quot;!=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(0!=&quot;B&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;==&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;!=&quot;B&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(&quot;A&quot;!=0,&quot;automatic success has failed&quot;);
++_Static_assert(0!=&quot;B&quot;,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(1==sizeof &quot;&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof &quot;&quot;==1,&quot;automatic success has failed&quot;);
+-_Static_Assert(2==sizeof &quot;A&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof &quot;A&quot;==2,&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof &quot;&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof &quot;&quot;==1,&quot;automatic success has failed&quot;);
++_Static_assert(2==sizeof &quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof &quot;A&quot;==2,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(1==sizeof *&quot;A&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof *&quot;A&quot;==1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1==sizeof *&quot;&quot;,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof *&quot;&quot;==1,&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof *&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof *&quot;A&quot;==1,&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof *&quot;&quot;,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof *&quot;&quot;==1,&quot;automatic success has failed&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_autofail.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_autofail.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_autofail.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_autofail.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(0,&quot;automatic failure&quot;);
++_Static_assert(0,&quot;automatic failure&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg1.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg1.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg1.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg1.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert();
++_Static_assert();
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg2.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg2.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg2.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg2.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(,);
++_Static_assert(,);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg3.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg3.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg3.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg3.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(,&quot;bad form&quot;);
++_Static_assert(,&quot;bad form&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg4.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg4.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg4.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg4.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(1,&quot;good form&quot;) intercalating junk;
++_Static_assert(1,&quot;good form&quot;) intercalating junk;
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg5.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg5.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg5.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg5.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert;
++_Static_assert;
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg6.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg6.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg6.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg6.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(1()&quot;bad form&quot;);
++_Static_assert(1()&quot;bad form&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_badarg7.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg7.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg7.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_badarg7.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(1,());
++_Static_assert(1,());
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_scope1.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_scope1.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_scope1.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_scope1.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert
++_Static_assert
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Error_scope2.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_scope2.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Error_scope2.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -1,5 +1,5 @@
+ // tests/zcc/staticassert.C99/Error_scope2.h
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-_Static_Assert(1,&quot;bad form&quot;)
++_Static_assert(1,&quot;bad form&quot;)
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -3,247 +3,247 @@
+ 
+ #include &lt;limits.h&gt;
+ 
+-_Static_Assert(1,&quot;automatic success has failed&quot;);
++_Static_assert(1,&quot;automatic success has failed&quot;);
+ 
+ // check unary +
+-_Static_Assert(+1,&quot;automatic success has failed&quot;);
+-_Static_Assert(+'A',&quot;automatic success has failed&quot;);
++_Static_assert(+1,&quot;automatic success has failed&quot;);
++_Static_assert(+'A',&quot;automatic success has failed&quot;);
+ 
+ // check unary -
+-_Static_Assert(-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-'A',&quot;automatic success has failed&quot;);
++_Static_assert(-1,&quot;automatic success has failed&quot;);
++_Static_assert(-'A',&quot;automatic success has failed&quot;);
+ 
+ // check unary !
+-_Static_Assert(!0,&quot;automatic success has failed&quot;);
++_Static_assert(!0,&quot;automatic success has failed&quot;);
+ 
+ // check unary ~ (unsigned only, signed is target-specific testing)
+-_Static_Assert(~0U,&quot;automatic success has failed&quot;);
+-_Static_Assert(~0UL,&quot;automatic success has failed&quot;);
+-_Static_Assert(~0ULL,&quot;automatic success has failed&quot;);
+-_Static_Assert(~1U,&quot;automatic success has failed&quot;);
+-_Static_Assert(~1UL,&quot;automatic success has failed&quot;);
+-_Static_Assert(~1ULL,&quot;automatic success has failed&quot;);
+-_Static_Assert(!~UINT_MAX,&quot;automatic success has failed&quot;);
+-_Static_Assert(!~ULONG_MAX,&quot;automatic success has failed&quot;);
+-_Static_Assert(!~ULLONG_MAX,&quot;automatic success has failed&quot;);
++_Static_assert(~0U,&quot;automatic success has failed&quot;);
++_Static_assert(~0UL,&quot;automatic success has failed&quot;);
++_Static_assert(~0ULL,&quot;automatic success has failed&quot;);
++_Static_assert(~1U,&quot;automatic success has failed&quot;);
++_Static_assert(~1UL,&quot;automatic success has failed&quot;);
++_Static_assert(~1ULL,&quot;automatic success has failed&quot;);
++_Static_assert(!~UINT_MAX,&quot;automatic success has failed&quot;);
++_Static_assert(!~ULONG_MAX,&quot;automatic success has failed&quot;);
++_Static_assert(!~ULLONG_MAX,&quot;automatic success has failed&quot;);
+ 
+ // check %
+-_Static_Assert(1%2,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0%2),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1%1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0%1),&quot;automatic success has failed&quot;);
++_Static_assert(1%2,&quot;automatic success has failed&quot;);
++_Static_assert(!(0%2),&quot;automatic success has failed&quot;);
++_Static_assert(!(1%1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0%1),&quot;automatic success has failed&quot;);
+ 
+ // check /
+-_Static_Assert(2/1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1/1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1/2),&quot;automatic success has failed&quot;);
++_Static_assert(2/1,&quot;automatic success has failed&quot;);
++_Static_assert(1/1,&quot;automatic success has failed&quot;);
++_Static_assert(!(1/2),&quot;automatic success has failed&quot;);
+ 
+ // check *
+-_Static_Assert(!(0*-1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0*1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0*2),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1*0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1*0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(2*0),&quot;automatic success has failed&quot;);
+-_Static_Assert(-1*-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1*1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1*2,&quot;automatic success has failed&quot;);
+-_Static_Assert(1*-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1*1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1*2,&quot;automatic success has failed&quot;);
+-_Static_Assert(2*-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(2*1,&quot;automatic success has failed&quot;);
+-_Static_Assert(2*2,&quot;automatic success has failed&quot;);
++_Static_assert(!(0*-1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0*1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0*2),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1*0),&quot;automatic success has failed&quot;);
++_Static_assert(!(1*0),&quot;automatic success has failed&quot;);
++_Static_assert(!(2*0),&quot;automatic success has failed&quot;);
++_Static_assert(-1*-1,&quot;automatic success has failed&quot;);
++_Static_assert(-1*1,&quot;automatic success has failed&quot;);
++_Static_assert(-1*2,&quot;automatic success has failed&quot;);
++_Static_assert(1*-1,&quot;automatic success has failed&quot;);
++_Static_assert(1*1,&quot;automatic success has failed&quot;);
++_Static_assert(1*2,&quot;automatic success has failed&quot;);
++_Static_assert(2*-1,&quot;automatic success has failed&quot;);
++_Static_assert(2*1,&quot;automatic success has failed&quot;);
++_Static_assert(2*2,&quot;automatic success has failed&quot;);
+ 
+ // check +
+-_Static_Assert(-1+-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1+0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1+1),&quot;automatic success has failed&quot;);
+-_Static_Assert(0+-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0+0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0+1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1+-1),&quot;automatic success has failed&quot;);
+-_Static_Assert(1+0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1+1,&quot;automatic success has failed&quot;);
++_Static_assert(-1+-1,&quot;automatic success has failed&quot;);
++_Static_assert(-1+0,&quot;automatic success has failed&quot;);
++_Static_assert(!(-1+1),&quot;automatic success has failed&quot;);
++_Static_assert(0+-1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0+0),&quot;automatic success has failed&quot;);
++_Static_assert(0+1,&quot;automatic success has failed&quot;);
++_Static_assert(!(1+-1),&quot;automatic success has failed&quot;);
++_Static_assert(1+0,&quot;automatic success has failed&quot;);
++_Static_assert(1+1,&quot;automatic success has failed&quot;);
+ 
+ // check -
+-_Static_Assert(!(-1- -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(-1-0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0- -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0-0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0-1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1- -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1-0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1-1),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1- -1),&quot;automatic success has failed&quot;);
++_Static_assert(-1-0,&quot;automatic success has failed&quot;);
++_Static_assert(-1-1,&quot;automatic success has failed&quot;);
++_Static_assert(0- -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0-0),&quot;automatic success has failed&quot;);
++_Static_assert(0-1,&quot;automatic success has failed&quot;);
++_Static_assert(1- -1,&quot;automatic success has failed&quot;);
++_Static_assert(1-0,&quot;automatic success has failed&quot;);
++_Static_assert(!(1-1),&quot;automatic success has failed&quot;);
+ 
+ // check &lt;&lt;, &gt;&gt;
+-_Static_Assert(!(0&lt;&lt;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&lt;&lt;1),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&lt;&lt;0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1&lt;&lt;1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&lt;&lt;0),&quot;automatic success has failed&quot;);
++_Static_assert(!(0&lt;&lt;1),&quot;automatic success has failed&quot;);
++_Static_assert(1&lt;&lt;0,&quot;automatic success has failed&quot;);
++_Static_assert(1&lt;&lt;1,&quot;automatic success has failed&quot;);
+ 
+ // check &lt;, &lt;=, &gt;=, &gt;
+-_Static_Assert(!(-1&lt; -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(-1&lt;0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1&lt;1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&lt; -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&lt;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0&lt;1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&lt; -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&lt;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&lt;1),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&lt; -1),&quot;automatic success has failed&quot;);
++_Static_assert(-1&lt;0,&quot;automatic success has failed&quot;);
++_Static_assert(-1&lt;1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&lt; -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0&lt;0),&quot;automatic success has failed&quot;);
++_Static_assert(0&lt;1,&quot;automatic success has failed&quot;);
++_Static_assert(!(1&lt; -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(1&lt;0),&quot;automatic success has failed&quot;);
++_Static_assert(!(1&lt;1),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(-1&lt;= -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1&lt;=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1&lt;=1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&lt;= -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(0&lt;=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(0&lt;=1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&lt;= -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&lt;=0),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&lt;=1,&quot;automatic success has failed&quot;);
++_Static_assert(-1&lt;= -1,&quot;automatic success has failed&quot;);
++_Static_assert(-1&lt;=0,&quot;automatic success has failed&quot;);
++_Static_assert(-1&lt;=1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&lt;= -1),&quot;automatic success has failed&quot;);
++_Static_assert(0&lt;=0,&quot;automatic success has failed&quot;);
++_Static_assert(0&lt;=1,&quot;automatic success has failed&quot;);
++_Static_assert(!(1&lt;= -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(1&lt;=0),&quot;automatic success has failed&quot;);
++_Static_assert(1&lt;=1,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(-1&gt;= -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1&gt;=0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1&gt;=1),&quot;automatic success has failed&quot;);
+-_Static_Assert(0&gt;= -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0&gt;=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&gt;=1),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&gt;= -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1&gt;=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1&gt;=1,&quot;automatic success has failed&quot;);
++_Static_assert(-1&gt;= -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&gt;=0),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&gt;=1),&quot;automatic success has failed&quot;);
++_Static_assert(0&gt;= -1,&quot;automatic success has failed&quot;);
++_Static_assert(0&gt;=0,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&gt;=1),&quot;automatic success has failed&quot;);
++_Static_assert(1&gt;= -1,&quot;automatic success has failed&quot;);
++_Static_assert(1&gt;=0,&quot;automatic success has failed&quot;);
++_Static_assert(1&gt;=1,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(-1&gt; -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1&gt;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1&gt;1),&quot;automatic success has failed&quot;);
+-_Static_Assert(0&gt; -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&gt;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&gt;1),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&gt; -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1&gt;0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&gt;1),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&gt; -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&gt;0),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&gt;1),&quot;automatic success has failed&quot;);
++_Static_assert(0&gt; -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&gt;0),&quot;automatic success has failed&quot;);
++_Static_assert(!(0&gt;1),&quot;automatic success has failed&quot;);
++_Static_assert(1&gt; -1,&quot;automatic success has failed&quot;);
++_Static_assert(1&gt;0,&quot;automatic success has failed&quot;);
++_Static_assert(!(1&gt;1),&quot;automatic success has failed&quot;);
+ 
+ // check ==, !=
+-_Static_Assert(-1== -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1==0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1==1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0== -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(0==0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0==1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1== -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1==0),&quot;automatic success has failed&quot;);
+-_Static_Assert(1==1,&quot;automatic success has failed&quot;);
++_Static_assert(-1== -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(-1==0),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1==1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0== -1),&quot;automatic success has failed&quot;);
++_Static_assert(0==0,&quot;automatic success has failed&quot;);
++_Static_assert(!(0==1),&quot;automatic success has failed&quot;);
++_Static_assert(!(1== -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(1==0),&quot;automatic success has failed&quot;);
++_Static_assert(1==1,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(-1!= -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(-1!=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1!=1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0!= -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0!=0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0!=1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1!= -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1!=0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1!=1),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1!= -1),&quot;automatic success has failed&quot;);
++_Static_assert(-1!=0,&quot;automatic success has failed&quot;);
++_Static_assert(-1!=1,&quot;automatic success has failed&quot;);
++_Static_assert(0!= -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0!=0),&quot;automatic success has failed&quot;);
++_Static_assert(0!=1,&quot;automatic success has failed&quot;);
++_Static_assert(1!= -1,&quot;automatic success has failed&quot;);
++_Static_assert(1!=0,&quot;automatic success has failed&quot;);
++_Static_assert(!(1!=1),&quot;automatic success has failed&quot;);
+ 
+ // check &amp; ^ | 
+-_Static_Assert(!(0&amp;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&amp;1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&amp;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&amp;1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&amp;0),&quot;automatic success has failed&quot;);
++_Static_assert(!(0&amp;1),&quot;automatic success has failed&quot;);
++_Static_assert(!(1&amp;0),&quot;automatic success has failed&quot;);
++_Static_assert(1&amp;1,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(0^0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0^1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1^0,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1^1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0^0),&quot;automatic success has failed&quot;);
++_Static_assert(0^1,&quot;automatic success has failed&quot;);
++_Static_assert(1^0,&quot;automatic success has failed&quot;);
++_Static_assert(!(1^1),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(0|0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0|1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1|0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1|1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0|0),&quot;automatic success has failed&quot;);
++_Static_assert(0|1,&quot;automatic success has failed&quot;);
++_Static_assert(1|0,&quot;automatic success has failed&quot;);
++_Static_assert(1|1,&quot;automatic success has failed&quot;);
+ 
+ // check &amp;&amp; ||
+-_Static_Assert(-1&amp;&amp; -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1&amp;&amp;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(-1&amp;&amp;1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&amp;&amp; -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&amp;&amp;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0&amp;&amp;1),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&amp;&amp; -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1&amp;&amp;0),&quot;automatic success has failed&quot;);
+-_Static_Assert(1&amp;&amp;1,&quot;automatic success has failed&quot;);
++_Static_assert(-1&amp;&amp; -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(-1&amp;&amp;0),&quot;automatic success has failed&quot;);
++_Static_assert(-1&amp;&amp;1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0&amp;&amp; -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(0&amp;&amp;0),&quot;automatic success has failed&quot;);
++_Static_assert(!(0&amp;&amp;1),&quot;automatic success has failed&quot;);
++_Static_assert(1&amp;&amp; -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(1&amp;&amp;0),&quot;automatic success has failed&quot;);
++_Static_assert(1&amp;&amp;1,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(-1|| -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1||0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1||1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0|| -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0||0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0||1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1|| -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1||0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1||1,&quot;automatic success has failed&quot;);
++_Static_assert(-1|| -1,&quot;automatic success has failed&quot;);
++_Static_assert(-1||0,&quot;automatic success has failed&quot;);
++_Static_assert(-1||1,&quot;automatic success has failed&quot;);
++_Static_assert(0|| -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0||0),&quot;automatic success has failed&quot;);
++_Static_assert(0||1,&quot;automatic success has failed&quot;);
++_Static_assert(1|| -1,&quot;automatic success has failed&quot;);
++_Static_assert(1||0,&quot;automatic success has failed&quot;);
++_Static_assert(1||1,&quot;automatic success has failed&quot;);
+ 
+ // check ? :
+-_Static_Assert(-1 ? -1 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1 ? -1 : 0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1 ? -1 : 1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1 ? 0 : -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1 ? 0 : 0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(-1 ? 0 : 1),&quot;automatic success has failed&quot;);
+-_Static_Assert(-1 ? 1 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1 ? 1 : 0,&quot;automatic success has failed&quot;);
+-_Static_Assert(-1 ? 1 : 1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0 ? -1 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0 ? -1 : 0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0 ? -1 : 1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0 ? 0 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0 ? 0 : 0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0 ? 0 : 1,&quot;automatic success has failed&quot;);
+-_Static_Assert(0 ? 1 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(0 ? 1 : 0),&quot;automatic success has failed&quot;);
+-_Static_Assert(0 ? 1 : 1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1 ? -1 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1 ? -1 : 0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1 ? -1 : 1,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1 ? 0 : -1),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1 ? 0 : 0),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(1 ? 0 : 1),&quot;automatic success has failed&quot;);
+-_Static_Assert(1 ? 1 : -1,&quot;automatic success has failed&quot;);
+-_Static_Assert(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+-_Static_Assert(1 ? 1 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(-1 ? -1 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(-1 ? -1 : 0,&quot;automatic success has failed&quot;);
++_Static_assert(-1 ? -1 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(!(-1 ? 0 : -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1 ? 0 : 0),&quot;automatic success has failed&quot;);
++_Static_assert(!(-1 ? 0 : 1),&quot;automatic success has failed&quot;);
++_Static_assert(-1 ? 1 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(-1 ? 1 : 0,&quot;automatic success has failed&quot;);
++_Static_assert(-1 ? 1 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(0 ? -1 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0 ? -1 : 0),&quot;automatic success has failed&quot;);
++_Static_assert(0 ? -1 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(0 ? 0 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0 ? 0 : 0),&quot;automatic success has failed&quot;);
++_Static_assert(0 ? 0 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(0 ? 1 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(!(0 ? 1 : 0),&quot;automatic success has failed&quot;);
++_Static_assert(0 ? 1 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(1 ? -1 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(1 ? -1 : 0,&quot;automatic success has failed&quot;);
++_Static_assert(1 ? -1 : 1,&quot;automatic success has failed&quot;);
++_Static_assert(!(1 ? 0 : -1),&quot;automatic success has failed&quot;);
++_Static_assert(!(1 ? 0 : 0),&quot;automatic success has failed&quot;);
++_Static_assert(!(1 ? 0 : 1),&quot;automatic success has failed&quot;);
++_Static_assert(1 ? 1 : -1,&quot;automatic success has failed&quot;);
++_Static_assert(1 ? 1 : 0,&quot;automatic success has failed&quot;);
++_Static_assert(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
+ // check sizeof: sizeof(char)==1 and so on
+-_Static_Assert(1==sizeof 'A',&quot;automatic success has failed&quot;);
+-_Static_Assert(1==sizeof(char),&quot;automatic success has failed&quot;);
+-_Static_Assert(1==sizeof(signed char),&quot;automatic success has failed&quot;);
+-_Static_Assert(1==sizeof(unsigned char),&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof 'A',&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof(char),&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof(signed char),&quot;automatic success has failed&quot;);
++_Static_assert(1==sizeof(unsigned char),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(sizeof 'A'==1,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(char)==1,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof 'A'==1,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(char)==1,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
+ 
+ // other target-independent reality checks on sizeof
+-_Static_Assert(sizeof(short),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed short),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned short),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(short),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed short),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned short),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(sizeof(int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(sizeof(long),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed long),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned long),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(long int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed long int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned long int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(long),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed long),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned long),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(long int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed long int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned long int),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(sizeof(long long),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed long long),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned long long),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(long long int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(signed long long int),&quot;automatic success has failed&quot;);
+-_Static_Assert(sizeof(unsigned long long int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(long long),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed long long),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned long long),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(long long int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(signed long long int),&quot;automatic success has failed&quot;);
++_Static_assert(sizeof(unsigned long long int),&quot;automatic success has failed&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2011-06-11 01:40:33 UTC (rev 672)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2011-06-11 01:41:41 UTC (rev 673)
+@@ -8,201 +8,201 @@
+ 	two
+ };
+ 
+-_Static_Assert(neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one,&quot;automatic success has failed&quot;);
+ 
+ // check unary +
+-_Static_Assert(+neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(+one,&quot;automatic success has failed&quot;);
++_Static_assert(+neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(+one,&quot;automatic success has failed&quot;);
+ 
+ // check unary -
+-_Static_Assert(-neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(-one,&quot;automatic success has failed&quot;);
++_Static_assert(-neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(-one,&quot;automatic success has failed&quot;);
+ 
+ // check unary !
+-_Static_Assert(!zero,&quot;automatic success has failed&quot;);
++_Static_assert(!zero,&quot;automatic success has failed&quot;);
+ 
+ // check %
+-_Static_Assert(one%two,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero%two),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one%one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero%one),&quot;automatic success has failed&quot;);
++_Static_assert(one%two,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero%two),&quot;automatic success has failed&quot;);
++_Static_assert(!(one%one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero%one),&quot;automatic success has failed&quot;);
+ 
+ // check /
+-_Static_Assert(two/one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one/one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one/two),&quot;automatic success has failed&quot;);
++_Static_assert(two/one,&quot;automatic success has failed&quot;);
++_Static_assert(one/one,&quot;automatic success has failed&quot;);
++_Static_assert(!(one/two),&quot;automatic success has failed&quot;);
+ 
+ // check *
+-_Static_Assert(!(zero*neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero*one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero*two),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one*zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one*zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(two*zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one*neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one*one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one*two,&quot;automatic success has failed&quot;);
+-_Static_Assert(one*neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one*one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one*two,&quot;automatic success has failed&quot;);
+-_Static_Assert(two*neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(two*one,&quot;automatic success has failed&quot;);
+-_Static_Assert(two*two,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero*neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero*one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero*two),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one*zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(one*zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(two*zero),&quot;automatic success has failed&quot;);
++_Static_assert(neg_one*neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one*one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one*two,&quot;automatic success has failed&quot;);
++_Static_assert(one*neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one*one,&quot;automatic success has failed&quot;);
++_Static_assert(one*two,&quot;automatic success has failed&quot;);
++_Static_assert(two*neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(two*one,&quot;automatic success has failed&quot;);
++_Static_assert(two*two,&quot;automatic success has failed&quot;);
+ 
+ // check +
+-_Static_Assert(neg_one+neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one+zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one+one),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero+neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero+zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero+one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one+neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(one+zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one+one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one+neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one+zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one+one),&quot;automatic success has failed&quot;);
++_Static_assert(zero+neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero+zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero+one,&quot;automatic success has failed&quot;);
++_Static_assert(!(one+neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(one+zero,&quot;automatic success has failed&quot;);
++_Static_assert(one+one,&quot;automatic success has failed&quot;);
+ 
+ // check -
+-_Static_Assert(!(neg_one-neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one-zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one-one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero-neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero-zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero-one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one-neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one-zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one-one),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one-neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(neg_one-zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one-one,&quot;automatic success has failed&quot;);
++_Static_assert(zero-neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero-zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero-one,&quot;automatic success has failed&quot;);
++_Static_assert(one-neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one-zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(one-one),&quot;automatic success has failed&quot;);
+ 
+ // check &lt;&lt;, &gt;&gt;
+-_Static_Assert(!(zero&lt;&lt;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&lt;&lt;one),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&lt;&lt;zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one&lt;&lt;one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&lt;&lt;zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&lt;&lt;one),&quot;automatic success has failed&quot;);
++_Static_assert(one&lt;&lt;zero,&quot;automatic success has failed&quot;);
++_Static_assert(one&lt;&lt;one,&quot;automatic success has failed&quot;);
+ 
+ // check &lt;, &lt;=, &gt;=, &gt;
+-_Static_Assert(!(neg_one&lt;neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one&lt;zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one&lt;one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&lt;neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&lt;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero&lt;one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&lt;neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&lt;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&lt;one),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&lt;neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&lt;zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&lt;one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&lt;neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&lt;zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero&lt;one,&quot;automatic success has failed&quot;);
++_Static_assert(!(one&lt;neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(one&lt;zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(one&lt;one),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(neg_one&lt;=neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one&lt;=zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one&lt;=one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&lt;=neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero&lt;=zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero&lt;=one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&lt;=neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&lt;=zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&lt;=one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&lt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&lt;=zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&lt;=one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&lt;=neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(zero&lt;=zero,&quot;automatic success has failed&quot;);
++_Static_assert(zero&lt;=one,&quot;automatic success has failed&quot;);
++_Static_assert(!(one&lt;=neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(one&lt;=zero),&quot;automatic success has failed&quot;);
++_Static_assert(one&lt;=one,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(neg_one&gt;=neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one&gt;=zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one&gt;=one),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero&gt;=neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero&gt;=zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&gt;=one),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&gt;=neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one&gt;=zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one&gt;=one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&gt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&gt;=zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&gt;=one),&quot;automatic success has failed&quot;);
++_Static_assert(zero&gt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(zero&gt;=zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&gt;=one),&quot;automatic success has failed&quot;);
++_Static_assert(one&gt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one&gt;=zero,&quot;automatic success has failed&quot;);
++_Static_assert(one&gt;=one,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(neg_one&gt;neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one&gt;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one&gt;one),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero&gt;neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&gt;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&gt;one),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&gt;neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one&gt;zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&gt;one),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&gt;neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&gt;zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&gt;one),&quot;automatic success has failed&quot;);
++_Static_assert(zero&gt;neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&gt;zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&gt;one),&quot;automatic success has failed&quot;);
++_Static_assert(one&gt;neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one&gt;zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(one&gt;one),&quot;automatic success has failed&quot;);
+ 
+ // check ==, !=
+-_Static_Assert(neg_one==neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one==zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one==one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero==neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero==zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero==one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one==neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one==zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(one==one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one==neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one==zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one==one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero==neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(zero==zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero==one),&quot;automatic success has failed&quot;);
++_Static_assert(!(one==neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(one==zero),&quot;automatic success has failed&quot;);
++_Static_assert(one==one,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(neg_one!=neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one!=zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one!=one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero!=neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero!=zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero!=one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one!=neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one!=zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one!=one),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one!=neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(neg_one!=zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one!=one,&quot;automatic success has failed&quot;);
++_Static_assert(zero!=neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero!=zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero!=one,&quot;automatic success has failed&quot;);
++_Static_assert(one!=neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one!=zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(one!=one),&quot;automatic success has failed&quot;);
+ 
+ // check &amp; ^ | 
+-_Static_Assert(!(zero&amp;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&amp;one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&amp;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&amp;one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&amp;zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&amp;one),&quot;automatic success has failed&quot;);
++_Static_assert(!(one&amp;zero),&quot;automatic success has failed&quot;);
++_Static_assert(one&amp;one,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(zero^zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero^one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one^zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one^one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero^zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero^one,&quot;automatic success has failed&quot;);
++_Static_assert(one^zero,&quot;automatic success has failed&quot;);
++_Static_assert(!(one^one),&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(!(zero|zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero|one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one|zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one|one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero|zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero|one,&quot;automatic success has failed&quot;);
++_Static_assert(one|zero,&quot;automatic success has failed&quot;);
++_Static_assert(one|one,&quot;automatic success has failed&quot;);
+ 
+ // check &amp;&amp; ||
+-_Static_Assert(neg_one&amp;&amp;neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one&amp;&amp;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one&amp;&amp;one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&amp;&amp;neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&amp;&amp;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero&amp;&amp;one),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&amp;&amp;neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one&amp;&amp;zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(one&amp;&amp;one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&amp;&amp;neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one&amp;&amp;zero),&quot;automatic success has failed&quot;);
++_Static_assert(neg_one&amp;&amp;one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&amp;&amp;neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&amp;&amp;zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(zero&amp;&amp;one),&quot;automatic success has failed&quot;);
++_Static_assert(one&amp;&amp;neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(one&amp;&amp;zero),&quot;automatic success has failed&quot;);
++_Static_assert(one&amp;&amp;one,&quot;automatic success has failed&quot;);
+ 
+-_Static_Assert(neg_one||neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one||zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one||one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero||neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero||zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero||one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one||neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one||zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one||one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one||neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one||zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one||one,&quot;automatic success has failed&quot;);
++_Static_assert(zero||neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero||zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero||one,&quot;automatic success has failed&quot;);
++_Static_assert(one||neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one||zero,&quot;automatic success has failed&quot;);
++_Static_assert(one||one,&quot;automatic success has failed&quot;);
+ 
+ // check ? :
+-_Static_Assert(neg_one ? neg_one : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one ? neg_one : zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one ? neg_one : one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one ? zero : neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one ? zero : zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(neg_one ? zero : one),&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one ? one : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one ? one : zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(neg_one ? one : one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero ? neg_one : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero ? neg_one : zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero ? neg_one : one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero ? zero : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero ? zero : zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero ? zero : one,&quot;automatic success has failed&quot;);
+-_Static_Assert(zero ? one : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(zero ? one : zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(zero ? one : one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one ? neg_one : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one ? neg_one : zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one ? neg_one : one,&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one ? zero : neg_one),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one ? zero : zero),&quot;automatic success has failed&quot;);
+-_Static_Assert(!(one ? zero : one),&quot;automatic success has failed&quot;);
+-_Static_Assert(one ? one : neg_one,&quot;automatic success has failed&quot;);
+-_Static_Assert(one ? one : zero,&quot;automatic success has failed&quot;);
+-_Static_Assert(one ? one : one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one ? neg_one : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one ? neg_one : zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one ? neg_one : one,&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one ? zero : neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one ? zero : zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(neg_one ? zero : one),&quot;automatic success has failed&quot;);
++_Static_assert(neg_one ? one : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one ? one : zero,&quot;automatic success has failed&quot;);
++_Static_assert(neg_one ? one : one,&quot;automatic success has failed&quot;);
++_Static_assert(zero ? neg_one : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero ? neg_one : zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero ? neg_one : one,&quot;automatic success has failed&quot;);
++_Static_assert(zero ? zero : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero ? zero : zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero ? zero : one,&quot;automatic success has failed&quot;);
++_Static_assert(zero ? one : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(!(zero ? one : zero),&quot;automatic success has failed&quot;);
++_Static_assert(zero ? one : one,&quot;automatic success has failed&quot;);
++_Static_assert(one ? neg_one : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one ? neg_one : zero,&quot;automatic success has failed&quot;);
++_Static_assert(one ? neg_one : one,&quot;automatic success has failed&quot;);
++_Static_assert(!(one ? zero : neg_one),&quot;automatic success has failed&quot;);
++_Static_assert(!(one ? zero : zero),&quot;automatic success has failed&quot;);
++_Static_assert(!(one ? zero : one),&quot;automatic success has failed&quot;);
++_Static_assert(one ? one : neg_one,&quot;automatic success has failed&quot;);
++_Static_assert(one ? one : zero,&quot;automatic success has failed&quot;);
++_Static_assert(one ? one : one,&quot;automatic success has failed&quot;);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000439.html">[Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#440">[ date ]</a>
+              <a href="thread.html#440">[ thread ]</a>
+              <a href="subject.html#440">[ subject ]</a>
+              <a href="author.html#440">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

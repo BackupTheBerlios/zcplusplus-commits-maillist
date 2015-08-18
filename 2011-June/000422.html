@@ -1,0 +1,307 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r655 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r655%20-%20trunk&In-Reply-To=%3C20110608010901.B66AD481127%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000421.html">
+   <LINK REL="Next"  HREF="000423.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r655 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r655%20-%20trunk&In-Reply-To=%3C20110608010901.B66AD481127%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r655 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  8 03:09:01 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000421.html">[Zcplusplus-commits] r654 - trunk/tests/zcc
+</A></li>
+        <LI>Next message: <A HREF="000423.html">[Zcplusplus-commits] r656 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#422">[ date ]</a>
+              <a href="thread.html#422">[ thread ]</a>
+              <a href="subject.html#422">[ subject ]</a>
+              <a href="author.html#422">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-08 03:09:00 +0200 (Wed, 08 Jun 2011)
+New Revision: 655
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+   trunk/type_spec.hpp
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system_pp.cpp
+Log:
+introduce type_spec::is_type for source code reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/CSupport.cpp	2011-06-08 01:09:00 UTC (rev 655)
+@@ -1,6 +1,6 @@
+ // CSupport.cpp
+ // support for C/C++ parsing
+-// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;CSupport.hpp&quot;
+ #include &quot;_CSupport3.hpp&quot;
+@@ -4023,8 +4023,7 @@
+ 			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags)
+-			&amp;&amp;	C_TYPE::TYPEINFO==src.type_code.base_type_index
+-			&amp;&amp;	0==src.type_code.pointer_power
++			&amp;&amp;	src.type_code.is_type(C_TYPE::TYPEINFO)
+ 			&amp;&amp;	(src.type_code.qualifier&lt;0&gt;() &amp; (type_spec::lvalue | type_spec::_const))==(type_spec::lvalue | type_spec::_const);
+ }
+ 
+@@ -6212,7 +6211,7 @@
+ 	if (is_logical_NOT(*src.data&lt;2&gt;()))
+ 		{
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+-			||	(C_TYPE::BOOL==src.data&lt;2&gt;()-&gt;type_code.base_type_index &amp;&amp; 0==src.data&lt;2&gt;()-&gt;type_code.pointer_power))
++			||	src.data&lt;2&gt;()-&gt;type_code.is_type(C_TYPE::BOOL))
+ 			{
+ 			parse_tree tmp;
+ 			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+@@ -7249,9 +7248,8 @@
+ 			if (   is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i-1])
+ 				|| is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i-1]))
+ 				{
+-				if (   C_TYPE::NOT_VOID==src.data&lt;0&gt;()[i-1].type_code.base_type_index
+-					&amp;&amp; 0==src.data&lt;0&gt;()[i-1].type_code.pointer_power)
+-					{	// ,src.data&lt;0&gt;()[i-1].front&lt;2&gt;()
++				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
++					{
+ #ifndef ZAIMONI_FORCE_ISO
+ 					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+ #else
+@@ -7291,9 +7289,8 @@
+ 			if (   is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i-1])
+ 				|| is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i-1]))
+ 				{
+-				if (   C_TYPE::NOT_VOID==src.data&lt;0&gt;()[i-1].type_code.base_type_index
+-					&amp;&amp; 0==src.data&lt;0&gt;()[i-1].type_code.pointer_power)
+-					{	// ,src.data&lt;0&gt;()[i-1].front&lt;2&gt;()
++				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
++					{
+ #ifndef ZAIMONI_FORCE_ISO
+ 					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+ #else
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/CSupport.cpp.in	2011-06-08 01:09:00 UTC (rev 655)
+@@ -5,7 +5,7 @@
+ // CSupport_pp.cpp
+ #/*cut-nocpp*/
+ // support for C/C++ parsing
+-// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
+@@ -4087,8 +4087,7 @@
+ 			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags)
+-			&amp;&amp;	C_TYPE::TYPEINFO==src.type_code.base_type_index
+-			&amp;&amp;	0==src.type_code.pointer_power
++			&amp;&amp;	src.type_code.is_type&lt;C_TYPE::TYPEINFO&gt;()
+ 			&amp;&amp;	(src.type_code.qualifier&lt;0&gt;() &amp; (type_spec::lvalue | type_spec::_const))==(type_spec::lvalue | type_spec::_const);
+ }
+ 
+@@ -6307,7 +6306,7 @@
+ 	if (is_logical_NOT(*src.data&lt;2&gt;()))
+ 		{
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+-			||	(C_TYPE::BOOL==src.data&lt;2&gt;()-&gt;type_code.base_type_index &amp;&amp; 0==src.data&lt;2&gt;()-&gt;type_code.pointer_power))
++			||	src.data&lt;2&gt;()-&gt;type_code.is_type&lt;C_TYPE::BOOL&gt;())
+ 			{
+ 			parse_tree tmp;
+ 			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+@@ -7352,9 +7351,8 @@
+ 			if (   is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i-1])
+ 				|| is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i-1]))
+ 				{
+-				if (   C_TYPE::NOT_VOID==src.data&lt;0&gt;()[i-1].type_code.base_type_index
+-					&amp;&amp; 0==src.data&lt;0&gt;()[i-1].type_code.pointer_power)
+-					{	// ,src.data&lt;0&gt;()[i-1].front&lt;2&gt;()
++				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
++					{
+ #ifndef ZAIMONI_FORCE_ISO
+ 					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+ #else
+@@ -7394,9 +7392,8 @@
+ 			if (   is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i-1])
+ 				|| is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i-1]))
+ 				{
+-				if (   C_TYPE::NOT_VOID==src.data&lt;0&gt;()[i-1].type_code.base_type_index
+-					&amp;&amp; 0==src.data&lt;0&gt;()[i-1].type_code.pointer_power)
+-					{	// ,src.data&lt;0&gt;()[i-1].front&lt;2&gt;()
++				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
++					{
+ #ifndef ZAIMONI_FORCE_ISO
+ 					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+ #else
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/CSupport_pp.cpp	2011-06-08 01:09:00 UTC (rev 655)
+@@ -1,6 +1,6 @@
+ // CSupport_pp.cpp
+ // support for C/C++ parsing
+-// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;CSupport_pp.hpp&quot;
+ #include &quot;_CSupport1.hpp&quot;
+@@ -4706,7 +4706,7 @@
+ 	if (is_logical_NOT(*src.data&lt;2&gt;()))
+ 		{
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+-			||	(C_TYPE::BOOL==src.data&lt;2&gt;()-&gt;type_code.base_type_index &amp;&amp; 0==src.data&lt;2&gt;()-&gt;type_code.pointer_power))
++			||	src.data&lt;2&gt;()-&gt;type_code.is_type(C_TYPE::BOOL))
+ 			{
+ 			parse_tree tmp;
+ 			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+@@ -5357,9 +5357,8 @@
+ 			if (   is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i-1])
+ 				|| is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i-1]))
+ 				{
+-				if (   C_TYPE::NOT_VOID==src.data&lt;0&gt;()[i-1].type_code.base_type_index
+-					&amp;&amp; 0==src.data&lt;0&gt;()[i-1].type_code.pointer_power)
+-					{	// ,src.data&lt;0&gt;()[i-1].front&lt;2&gt;()
++				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
++					{
+ #ifndef ZAIMONI_FORCE_ISO
+ 					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+ #else
+@@ -5399,9 +5398,8 @@
+ 			if (   is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i-1])
+ 				|| is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i-1]))
+ 				{
+-				if (   C_TYPE::NOT_VOID==src.data&lt;0&gt;()[i-1].type_code.base_type_index
+-					&amp;&amp; 0==src.data&lt;0&gt;()[i-1].type_code.pointer_power)
+-					{	// ,src.data&lt;0&gt;()[i-1].front&lt;2&gt;()
++				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
++					{
+ #ifndef ZAIMONI_FORCE_ISO
+ 					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+ #else
+
+Modified: trunk/type_spec.hpp
+===================================================================
+--- trunk/type_spec.hpp	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/type_spec.hpp	2011-06-08 01:09:00 UTC (rev 655)
+@@ -59,6 +59,8 @@
+ 	void clear();	// XXX should be constructor; good way to leak memory in other contexts
+ 	void destroy();	// XXX should be destructor
+ 	void set_type(size_t _base_type_index);
++	template&lt;size_t _base_type_index &gt;bool is_type() const {return _base_type_index==base_type_index &amp;&amp; 0==pointer_power;}
++	bool is_type(const size_t _base_type_index) const {return _base_type_index==base_type_index &amp;&amp; 0==pointer_power;};
+ 	bool operator==(const type_spec&amp; rhs) const;
+ 	bool operator!=(const type_spec&amp; rhs) const {return !(*this==rhs);};
+ 
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/type_system.cpp	2011-06-08 01:09:00 UTC (rev 655)
+@@ -1,5 +1,5 @@
+ // type_system.cpp
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;type_system.hpp&quot;
+ #include &quot;enum_type.hpp&quot;
+@@ -391,7 +391,8 @@
+ 	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* const iter_end = typedef_registry.end();
+ 	while(iter!=iter_end)
+ 		{
+-		if (base_type_index==iter-&gt;second.first.base_type_index &amp;&amp; 0==iter-&gt;second.first.pointer_power) return iter-&gt;first;
++		if (iter-&gt;second.first.is_type(base_type_index))
++			return iter-&gt;first;
+ 		++iter;
+ 		};
+ 	return NULL;
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/type_system.cpp.in	2011-06-08 01:09:00 UTC (rev 655)
+@@ -4,7 +4,7 @@
+ #/*cut-nocpp*/
+ // type_system_pp.cpp
+ #/*cut-nocpp*/
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #/*cut-cpp*/
+ #include &quot;type_system.hpp&quot;
+@@ -406,7 +406,8 @@
+ 	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* const iter_end = typedef_registry.end();
+ 	while(iter!=iter_end)
+ 		{
+-		if (base_type_index==iter-&gt;second.first.base_type_index &amp;&amp; 0==iter-&gt;second.first.pointer_power) return iter-&gt;first;
++		if (iter-&gt;second.first.is_type(base_type_index))
++			return iter-&gt;first;
+ 		++iter;
+ 		};
+ 	return NULL;
+
+Modified: trunk/type_system_pp.cpp
+===================================================================
+--- trunk/type_system_pp.cpp	2011-06-07 17:44:32 UTC (rev 654)
++++ trunk/type_system_pp.cpp	2011-06-08 01:09:00 UTC (rev 655)
+@@ -1,5 +1,5 @@
+ // type_system_pp.cpp
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;type_system_pp.hpp&quot;
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000421.html">[Zcplusplus-commits] r654 - trunk/tests/zcc
+</A></li>
+	<LI>Next message: <A HREF="000423.html">[Zcplusplus-commits] r656 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#422">[ date ]</a>
+              <a href="thread.html#422">[ thread ]</a>
+              <a href="subject.html#422">[ subject ]</a>
+              <a href="author.html#422">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

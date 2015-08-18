@@ -1,0 +1,972 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r514 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r514%20-%20trunk&In-Reply-To=%3C20101029041751.5252E480F4D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000280.html">
+   <LINK REL="Next"  HREF="000282.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r514 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r514%20-%20trunk&In-Reply-To=%3C20101029041751.5252E480F4D%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r514 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 29 06:17:50 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000280.html">[Zcplusplus-commits] r513 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000282.html">[Zcplusplus-commits] r515 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#281">[ date ]</a>
+              <a href="thread.html#281">[ thread ]</a>
+              <a href="subject.html#281">[ subject ]</a>
+              <a href="author.html#281">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-29 06:17:50 +0200 (Fri, 29 Oct 2010)
+New Revision: 514
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+stage 3: line count reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-10-29 02:34:36 UTC (rev 513)
++++ trunk/CSupport.cpp	2010-10-29 04:17:50 UTC (rev 514)
+@@ -4280,9 +4280,9 @@
+ {
+ 	return (	robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;||&quot;)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4294,9 +4294,9 @@
+ {
+ 	return (	(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;||&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;or&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4309,7 +4309,7 @@
+ {
+ 	return		robust_token_is_char&lt;'?'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;':'&gt;(src.index_tokens[1].token)
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_LOGICOR_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CONDITIONAL_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);		
+@@ -4321,7 +4321,7 @@
+ 	return		robust_token_is_char&lt;'?'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;':'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+@@ -4332,11 +4332,10 @@
+ {
+ 	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+@@ -4346,11 +4345,10 @@
+ {
+ 	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	src.empty&lt;2&gt;())
+ 		return true;
+ 	return false;
+@@ -4360,11 +4358,10 @@
+ {
+ 	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+@@ -4374,11 +4371,10 @@
+ {
+ 	if (	NULL!=src.index_tokens[0].token.first
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+@@ -4404,7 +4400,7 @@
+ static void make_target_postfix_arg(parse_tree&amp; src,size_t&amp; offset,const size_t i,const size_t j)
+ {
+ 	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1) :  _new_buffer&lt;parse_tree&gt;(1));
+-	if (NULL==tmp)
++	if (!tmp)
+ 		{	// need that slack space now
+ 		src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ 		offset = 0;
+@@ -4606,7 +4602,7 @@
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+-	assert(NULL!=src.ptr &amp;&amp; 0&lt;src.digit_span);
++	assert(src.ptr &amp;&amp; 0&lt;src.digit_span);
+ 
+ 	const unsigned_var_int alt_radix(src.radix,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int strict_ub(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+@@ -4717,8 +4713,7 @@
+ }
+ 
+ static bool _CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+-{
+-	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
++{	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
+ 	if (!src.is_atomic()) return false;
+ 	// intercept true, false
+ 	if 		(token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;true&quot;))
+@@ -4740,7 +4735,7 @@
+ static POD_pair&lt;const parse_tree*,bool&gt;
+ _find_intlike_literal(const parse_tree* src SIG_CONST_TYPES)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	POD_pair&lt;const parse_tree*,bool&gt; ret = {src,false};
+ 	while(converts_to_integer(ret.first-&gt;type_code ARG_TYPES))
+ 		{
+@@ -4748,12 +4743,12 @@
+ 			{
+ 			ret.second = !ret.second;
+ 			ret.first = ret.first-&gt;data&lt;2&gt;();
+-			assert(NULL!=ret.first);
++			assert(ret.first);
+ 			}
+ 		else if (is_C99_unary_operator_expression&lt;'+'&gt;(*ret.first))
+ 			{
+ 			ret.first = ret.first-&gt;data&lt;2&gt;();
+-			assert(NULL!=ret.first);
++			assert(ret.first);
+ 			}
+ 		else
+ 			break;
+@@ -4856,42 +4851,36 @@
+ 				size_t i = 0;
+ 				do	switch(types.int_priority[i])
+ 					{
+-					case C_TYPE::INT:	{
+-										if (no_signed || C_PPIntCore::L&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::INT;
+-										return;
+-										}
+-					case C_TYPE::UINT:	{
+-										if (no_unsigned || C_PPIntCore::L&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_int&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::UINT;
+-										return;
+-										}
+-					case C_TYPE::LONG:	{
+-										if (no_signed || C_PPIntCore::LL&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::LONG;
+-										return;
+-										}
+-					case C_TYPE::ULONG:	{
+-										if (no_unsigned || C_PPIntCore::LL&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::ULONG;
+-										return;
+-										}
+-					case C_TYPE::LLONG:	{
+-										if (no_signed) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::LLONG;
+-										return;
+-										}
+-					case C_TYPE::ULLONG:{
+-										if (no_unsigned) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::ULLONG;
+-										return;
+-										}
++					case C_TYPE::INT:
++						if (no_signed || C_PPIntCore::L&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::INT;
++						return;
++					case C_TYPE::UINT:
++						if (no_unsigned || C_PPIntCore::L&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_int&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::UINT;
++						return;
++					case C_TYPE::LONG:
++						if (no_signed || C_PPIntCore::LL&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::LONG;
++						return;
++					case C_TYPE::ULONG:
++						if (no_unsigned || C_PPIntCore::LL&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::ULONG;
++						return;
++					case C_TYPE::LLONG:
++						if (no_signed) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::LLONG;
++						return;
++					case C_TYPE::ULLONG:
++						if (no_unsigned) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::ULLONG;
++						return;
+ 					}
+ 				while(types.int_priority_size &gt; ++i);
+ 				};
+@@ -4908,8 +4897,7 @@
+ 			INFORM(&quot; (C99 6.4.4.1p5/C++0x 2.13.1p3)&quot;);
+ 			zcc_errors.inc_error();
+ 			}
+-		else{
+-			//! \todo --do-what-i-mean should check for floating-point numerals that convert exactly to integers
++		else{	//! \todo --do-what-i-mean should check for floating-point numerals that convert exactly to integers
+ 			src.type_code.set_type(	(C_TESTFLAG_L &amp; src.index_tokens[0].flags) ? C_TYPE::LDOUBLE : 
+ 									(C_TESTFLAG_F &amp; src.index_tokens[0].flags) ? C_TYPE::FLOAT : C_TYPE::DOUBLE);
+ 			}
+@@ -4964,8 +4952,7 @@
+ 				str_span.first += 2;
+ 				want_first_slideup = true;
+ 				}
+-			else{
+-				// more than two strings to psuedo-concatenate
++			else{	// more than two strings to psuedo-concatenate
+ 				POD_pair&lt;size_t,size_t&gt; scan = {str_span.first,str_span.first+2};
+ 				while(src.size&lt;0&gt;()&gt;scan.second+1 &amp;&amp; C_TESTFLAG_STRING_LITERAL==src.data&lt;0&gt;()[scan.second+1].index_tokens[0].flags) ++scan.second;
+ 				if (parse_tree::collapse_matched_pair(src,scan))
+@@ -5042,7 +5029,7 @@
+ 
+ 	size_t j = STATIC_SIZE(src.args);
+ 	do	{
+-		if (0== --j &amp;&amp; NULL!=src.index_tokens[0].token.first &amp;&amp; NULL!=src.index_tokens[1].token.first)
++		if (0== --j &amp;&amp; src.index_tokens[0].token.first &amp;&amp; src.index_tokens[1].token.first)
+ 			{
+ 			if (token_is_char&lt;'('&gt;(src.index_tokens[0].token) &amp;&amp; token_is_char&lt;')'&gt;(src.index_tokens[1].token)) break;	// need to parse to rule out constructor memory initializer
+ 			if (token_is_char&lt;'{'&gt;(src.index_tokens[0].token) &amp;&amp; token_is_char&lt;'}'&gt;(src.index_tokens[1].token)) break;	// need to parse to rule out non-static member function
+@@ -5088,7 +5075,7 @@
+ 	size_t i = 0;
+ 	//! \todo optimize this loop
+ 	do	{
+-		if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first) continue;
++		if (src.data&lt;0&gt;()[i].index_tokens[1].token.first) continue;
+ 		if 		(token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			assert(0&lt;paren_idx);
+@@ -5282,8 +5269,7 @@
+ static bool suppress_naked_brackets_and_braces(parse_tree&amp; src,const char* const err_prefix,size_t err_len)
+ {
+ 	if (!(PARSE_OBVIOUS &amp; src.flags) &amp;&amp; src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;())
+-		{
+-		// top-level [ ] dies regardless of contents
++		{	// top-level [ ] dies regardless of contents
+ 		// not testable with preprocessor expression (not sure whether reachable with full source code)
+ 		if 		(robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token))
+ 			{
+@@ -7846,21 +7832,18 @@
+ 						{	// cancellation...safe
+ 						switch(cmp(lhs_test,rhs_test))
+ 						{
+-						case -1:{
+-								result_is_negative = rhs_negative;
+-								rhs_test -= lhs_test;
+-								lhs_test = rhs_test;
+-								break;
+-								}
+-						case 0:	{
+-								lhs_test.clear();
+-								break;
+-								}
+-						case 1:	{
+-								result_is_negative = lhs_negative;
+-								lhs_test -= rhs_test;
+-								break;
+-								}
++						case -1:
++							result_is_negative = rhs_negative;
++							rhs_test -= lhs_test;
++							lhs_test = rhs_test;
++							break;
++						case 0:
++							lhs_test.clear();
++							break;
++						case 1:
++							result_is_negative = lhs_negative;
++							lhs_test -= rhs_test;
++							break;
+ 						};
+ 						}
+ 					else{	// augmentation: bounds-check
+@@ -7880,8 +7863,7 @@
+ 						}
+ 
+ 					if (result_is_negative)
+-						{
+-						// convert to parsed - literal
++						{	// convert to parsed - literal
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+ 
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-10-29 02:34:36 UTC (rev 513)
++++ trunk/CSupport.cpp.in	2010-10-29 04:17:50 UTC (rev 514)
+@@ -4336,9 +4336,9 @@
+ {
+ 	return (	robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;||&quot;)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4350,9 +4350,9 @@
+ {
+ 	return (	(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;||&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;or&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4365,7 +4365,7 @@
+ {
+ 	return		robust_token_is_char&lt;'?'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;':'&gt;(src.index_tokens[1].token)
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_LOGICOR_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CONDITIONAL_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);		
+@@ -4377,7 +4377,7 @@
+ 	return		robust_token_is_char&lt;'?'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;':'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+@@ -4389,11 +4389,10 @@
+ {
+ 	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+@@ -4403,11 +4402,10 @@
+ {
+ 	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	src.empty&lt;2&gt;())
+ 		return true;
+ 	return false;
+@@ -4417,11 +4415,10 @@
+ {
+ 	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+@@ -4431,11 +4428,10 @@
+ {
+ 	if (	NULL!=src.index_tokens[0].token.first
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+@@ -4461,7 +4457,7 @@
+ static void make_target_postfix_arg(parse_tree&amp; src,size_t&amp; offset,const size_t i,const size_t j)
+ {
+ 	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1) :  _new_buffer&lt;parse_tree&gt;(1));
+-	if (NULL==tmp)
++	if (!tmp)
+ 		{	// need that slack space now
+ 		src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ 		offset = 0;
+@@ -4664,7 +4660,7 @@
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+-	assert(NULL!=src.ptr &amp;&amp; 0&lt;src.digit_span);
++	assert(src.ptr &amp;&amp; 0&lt;src.digit_span);
+ 
+ 	const unsigned_var_int alt_radix(src.radix,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int strict_ub(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+@@ -4779,8 +4775,7 @@
+ }
+ 
+ static bool _CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+-{
+-	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
++{	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
+ 	if (!src.is_atomic()) return false;
+ 	// intercept true, false
+ 	if 		(token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;true&quot;))
+@@ -4802,7 +4797,7 @@
+ static POD_pair&lt;const parse_tree*,bool&gt;
+ _find_intlike_literal(const parse_tree* src SIG_CONST_TYPES)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	POD_pair&lt;const parse_tree*,bool&gt; ret = {src,false};
+ 	while(converts_to_integer(ret.first-&gt;type_code ARG_TYPES))
+ 		{
+@@ -4810,12 +4805,12 @@
+ 			{
+ 			ret.second = !ret.second;
+ 			ret.first = ret.first-&gt;data&lt;2&gt;();
+-			assert(NULL!=ret.first);
++			assert(ret.first);
+ 			}
+ 		else if (is_C99_unary_operator_expression&lt;'+'&gt;(*ret.first))
+ 			{
+ 			ret.first = ret.first-&gt;data&lt;2&gt;();
+-			assert(NULL!=ret.first);
++			assert(ret.first);
+ 			}
+ 		else
+ 			break;
+@@ -4918,42 +4913,36 @@
+ 				size_t i = 0;
+ 				do	switch(types.int_priority[i])
+ 					{
+-					case C_TYPE::INT:	{
+-										if (no_signed || C_PPIntCore::L&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::INT;
+-										return;
+-										}
+-					case C_TYPE::UINT:	{
+-										if (no_unsigned || C_PPIntCore::L&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_int&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::UINT;
+-										return;
+-										}
+-					case C_TYPE::LONG:	{
+-										if (no_signed || C_PPIntCore::LL&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::LONG;
+-										return;
+-										}
+-					case C_TYPE::ULONG:	{
+-										if (no_unsigned || C_PPIntCore::LL&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::ULONG;
+-										return;
+-										}
+-					case C_TYPE::LLONG:	{
+-										if (no_signed) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::LLONG;
+-										return;
+-										}
+-					case C_TYPE::ULLONG:{
+-										if (no_unsigned) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::ULLONG;
+-										return;
+-										}
++					case C_TYPE::INT:
++						if (no_signed || C_PPIntCore::L&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::INT;
++						return;
++					case C_TYPE::UINT:
++						if (no_unsigned || C_PPIntCore::L&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_int&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::UINT;
++						return;
++					case C_TYPE::LONG:
++						if (no_signed || C_PPIntCore::LL&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::LONG;
++						return;
++					case C_TYPE::ULONG:
++						if (no_unsigned || C_PPIntCore::LL&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::ULONG;
++						return;
++					case C_TYPE::LLONG:
++						if (no_signed) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::LLONG;
++						return;
++					case C_TYPE::ULLONG:
++						if (no_unsigned) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::ULLONG;
++						return;
+ 					}
+ 				while(types.int_priority_size &gt; ++i);
+ 				};
+@@ -4970,8 +4959,7 @@
+ 			INFORM(&quot; (C99 6.4.4.1p5/C++0x 2.13.1p3)&quot;);
+ 			zcc_errors.inc_error();
+ 			}
+-		else{
+-			//! \todo --do-what-i-mean should check for floating-point numerals that convert exactly to integers
++		else{	//! \todo --do-what-i-mean should check for floating-point numerals that convert exactly to integers
+ 			src.type_code.set_type(	(C_TESTFLAG_L &amp; src.index_tokens[0].flags) ? C_TYPE::LDOUBLE : 
+ 									(C_TESTFLAG_F &amp; src.index_tokens[0].flags) ? C_TYPE::FLOAT : C_TYPE::DOUBLE);
+ 			}
+@@ -5026,8 +5014,7 @@
+ 				str_span.first += 2;
+ 				want_first_slideup = true;
+ 				}
+-			else{
+-				// more than two strings to psuedo-concatenate
++			else{	// more than two strings to psuedo-concatenate
+ 				POD_pair&lt;size_t,size_t&gt; scan = {str_span.first,str_span.first+2};
+ 				while(src.size&lt;0&gt;()&gt;scan.second+1 &amp;&amp; C_TESTFLAG_STRING_LITERAL==src.data&lt;0&gt;()[scan.second+1].index_tokens[0].flags) ++scan.second;
+ 				if (parse_tree::collapse_matched_pair(src,scan))
+@@ -5105,7 +5092,7 @@
+ 
+ 	size_t j = STATIC_SIZE(src.args);
+ 	do	{
+-		if (0== --j &amp;&amp; NULL!=src.index_tokens[0].token.first &amp;&amp; NULL!=src.index_tokens[1].token.first)
++		if (0== --j &amp;&amp; src.index_tokens[0].token.first &amp;&amp; src.index_tokens[1].token.first)
+ 			{
+ 			if (token_is_char&lt;'('&gt;(src.index_tokens[0].token) &amp;&amp; token_is_char&lt;')'&gt;(src.index_tokens[1].token)) break;	// need to parse to rule out constructor memory initializer
+ 			if (token_is_char&lt;'{'&gt;(src.index_tokens[0].token) &amp;&amp; token_is_char&lt;'}'&gt;(src.index_tokens[1].token)) break;	// need to parse to rule out non-static member function
+@@ -5152,7 +5139,7 @@
+ 	size_t i = 0;
+ 	//! \todo optimize this loop
+ 	do	{
+-		if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first) continue;
++		if (src.data&lt;0&gt;()[i].index_tokens[1].token.first) continue;
+ 		if 		(token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			assert(0&lt;paren_idx);
+@@ -5348,8 +5335,7 @@
+ static bool suppress_naked_brackets_and_braces(parse_tree&amp; src,const char* const err_prefix,size_t err_len)
+ {
+ 	if (!(PARSE_OBVIOUS &amp; src.flags) &amp;&amp; src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;())
+-		{
+-		// top-level [ ] dies regardless of contents
++		{	// top-level [ ] dies regardless of contents
+ 		// not testable with preprocessor expression (not sure whether reachable with full source code)
+ 		if 		(robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token))
+ 			{
+@@ -7948,21 +7934,18 @@
+ 						{	// cancellation...safe
+ 						switch(cmp(lhs_test,rhs_test))
+ 						{
+-						case -1:{
+-								result_is_negative = rhs_negative;
+-								rhs_test -= lhs_test;
+-								lhs_test = rhs_test;
+-								break;
+-								}
+-						case 0:	{
+-								lhs_test.clear();
+-								break;
+-								}
+-						case 1:	{
+-								result_is_negative = lhs_negative;
+-								lhs_test -= rhs_test;
+-								break;
+-								}
++						case -1:
++							result_is_negative = rhs_negative;
++							rhs_test -= lhs_test;
++							lhs_test = rhs_test;
++							break;
++						case 0:
++							lhs_test.clear();
++							break;
++						case 1:
++							result_is_negative = lhs_negative;
++							lhs_test -= rhs_test;
++							break;
+ 						};
+ 						}
+ 					else{	// augmentation: bounds-check
+@@ -7982,8 +7965,7 @@
+ 						}
+ 
+ 					if (result_is_negative)
+-						{
+-						// convert to parsed - literal
++						{	// convert to parsed - literal
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+ 
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-10-29 02:34:36 UTC (rev 513)
++++ trunk/CSupport_pp.cpp	2010-10-29 04:17:50 UTC (rev 514)
+@@ -1,4 +1,4 @@
+-// CSupport.cpp
++// CSupport_pp.cpp
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+@@ -3243,9 +3243,9 @@
+ {
+ 	return (	robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;||&quot;)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3257,9 +3257,9 @@
+ {
+ 	return (	(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;||&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;or&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3272,7 +3272,7 @@
+ {
+ 	return		robust_token_is_char&lt;'?'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;':'&gt;(src.index_tokens[1].token)
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_LOGICOR_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CONDITIONAL_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);		
+@@ -3284,7 +3284,7 @@
+ 	return		robust_token_is_char&lt;'?'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;':'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+@@ -3294,7 +3294,7 @@
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+-	assert(NULL!=src.ptr &amp;&amp; 0&lt;src.digit_span);
++	assert(src.ptr &amp;&amp; 0&lt;src.digit_span);
+ 
+ 	const unsigned_var_int alt_radix(src.radix,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int strict_ub(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+@@ -3388,8 +3388,7 @@
+ }
+ 
+ static bool _CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+-{
+-	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
++{	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
+ 	if (!src.is_atomic()) return false;
+ 	// intercept true, false
+ 	if 		(token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;true&quot;))
+@@ -3411,7 +3410,7 @@
+ static POD_pair&lt;const parse_tree*,bool&gt;
+ _find_intlike_literal(const parse_tree* src SIG_CONST_TYPES)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	POD_pair&lt;const parse_tree*,bool&gt; ret = {src,false};
+ 	while(converts_to_integer(ret.first-&gt;type_code ARG_TYPES))
+ 		{
+@@ -3419,12 +3418,12 @@
+ 			{
+ 			ret.second = !ret.second;
+ 			ret.first = ret.first-&gt;data&lt;2&gt;();
+-			assert(NULL!=ret.first);
++			assert(ret.first);
+ 			}
+ 		else if (is_C99_unary_operator_expression&lt;'+'&gt;(*ret.first))
+ 			{
+ 			ret.first = ret.first-&gt;data&lt;2&gt;();
+-			assert(NULL!=ret.first);
++			assert(ret.first);
+ 			}
+ 		else
+ 			break;
+@@ -3527,42 +3526,36 @@
+ 				size_t i = 0;
+ 				do	switch(types.int_priority[i])
+ 					{
+-					case C_TYPE::INT:	{
+-										if (no_signed || C_PPIntCore::L&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::INT;
+-										return;
+-										}
+-					case C_TYPE::UINT:	{
+-										if (no_unsigned || C_PPIntCore::L&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_int&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::UINT;
+-										return;
+-										}
+-					case C_TYPE::LONG:	{
+-										if (no_signed || C_PPIntCore::LL&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::LONG;
+-										return;
+-										}
+-					case C_TYPE::ULONG:	{
+-										if (no_unsigned || C_PPIntCore::LL&lt;=type_hint) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::ULONG;
+-										return;
+-										}
+-					case C_TYPE::LLONG:	{
+-										if (no_signed) continue;
+-										if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::LLONG;
+-										return;
+-										}
+-					case C_TYPE::ULLONG:{
+-										if (no_unsigned) continue;
+-										if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
+-										src.type_code.base_type_index = C_TYPE::ULLONG;
+-										return;
+-										}
++					case C_TYPE::INT:
++						if (no_signed || C_PPIntCore::L&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_int&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::INT;
++						return;
++					case C_TYPE::UINT:
++						if (no_unsigned || C_PPIntCore::L&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_int&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::UINT;
++						return;
++					case C_TYPE::LONG:
++						if (no_signed || C_PPIntCore::LL&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::LONG;
++						return;
++					case C_TYPE::ULONG:
++						if (no_unsigned || C_PPIntCore::LL&lt;=type_hint) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::ULONG;
++						return;
++					case C_TYPE::LLONG:
++						if (no_signed) continue;
++						if (tmp&gt;target_machine-&gt;signed_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::LLONG;
++						return;
++					case C_TYPE::ULLONG:
++						if (no_unsigned) continue;
++						if (tmp&gt;target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()) continue;
++						src.type_code.base_type_index = C_TYPE::ULLONG;
++						return;
+ 					}
+ 				while(types.int_priority_size &gt; ++i);
+ 				};
+@@ -3579,8 +3572,7 @@
+ 			INFORM(&quot; (C99 6.4.4.1p5/C++0x 2.13.1p3)&quot;);
+ 			zcc_errors.inc_error();
+ 			}
+-		else{
+-			//! \todo --do-what-i-mean should check for floating-point numerals that convert exactly to integers
++		else{	//! \todo --do-what-i-mean should check for floating-point numerals that convert exactly to integers
+ 			src.type_code.set_type(	(C_TESTFLAG_L &amp; src.index_tokens[0].flags) ? C_TYPE::LDOUBLE : 
+ 									(C_TESTFLAG_F &amp; src.index_tokens[0].flags) ? C_TYPE::FLOAT : C_TYPE::DOUBLE);
+ 			}
+@@ -3635,8 +3627,7 @@
+ 				str_span.first += 2;
+ 				want_first_slideup = true;
+ 				}
+-			else{
+-				// more than two strings to psuedo-concatenate
++			else{	// more than two strings to psuedo-concatenate
+ 				POD_pair&lt;size_t,size_t&gt; scan = {str_span.first,str_span.first+2};
+ 				while(src.size&lt;0&gt;()&gt;scan.second+1 &amp;&amp; C_TESTFLAG_STRING_LITERAL==src.data&lt;0&gt;()[scan.second+1].index_tokens[0].flags) ++scan.second;
+ 				if (parse_tree::collapse_matched_pair(src,scan))
+@@ -3725,7 +3716,7 @@
+ 	size_t i = 0;
+ 	//! \todo optimize this loop
+ 	do	{
+-		if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first) continue;
++		if (src.data&lt;0&gt;()[i].index_tokens[1].token.first) continue;
+ 		if 		(token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			assert(0&lt;paren_idx);
+@@ -3912,8 +3903,7 @@
+ static bool suppress_naked_brackets_and_braces(parse_tree&amp; src,const char* const err_prefix,size_t err_len)
+ {
+ 	if (!(PARSE_OBVIOUS &amp; src.flags) &amp;&amp; src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;())
+-		{
+-		// top-level [ ] dies regardless of contents
++		{	// top-level [ ] dies regardless of contents
+ 		// not testable with preprocessor expression (not sure whether reachable with full source code)
+ 		if 		(robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token))
+ 			{
+@@ -6021,21 +6011,18 @@
+ 						{	// cancellation...safe
+ 						switch(cmp(lhs_test,rhs_test))
+ 						{
+-						case -1:{
+-								result_is_negative = rhs_negative;
+-								rhs_test -= lhs_test;
+-								lhs_test = rhs_test;
+-								break;
+-								}
+-						case 0:	{
+-								lhs_test.clear();
+-								break;
+-								}
+-						case 1:	{
+-								result_is_negative = lhs_negative;
+-								lhs_test -= rhs_test;
+-								break;
+-								}
++						case -1:
++							result_is_negative = rhs_negative;
++							rhs_test -= lhs_test;
++							lhs_test = rhs_test;
++							break;
++						case 0:
++							lhs_test.clear();
++							break;
++						case 1:
++							result_is_negative = lhs_negative;
++							lhs_test -= rhs_test;
++							break;
+ 						};
+ 						}
+ 					else{	// augmentation: bounds-check
+@@ -6055,8 +6042,7 @@
+ 						}
+ 
+ 					if (result_is_negative)
+-						{
+-						// convert to parsed - literal
++						{	// convert to parsed - literal
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000280.html">[Zcplusplus-commits] r513 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000282.html">[Zcplusplus-commits] r515 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#281">[ date ]</a>
+              <a href="thread.html#281">[ thread ]</a>
+              <a href="subject.html#281">[ subject ]</a>
+              <a href="author.html#281">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

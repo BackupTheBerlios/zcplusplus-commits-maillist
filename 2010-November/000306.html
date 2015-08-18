@@ -1,0 +1,613 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r539 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r539%20-%20trunk&In-Reply-To=%3C20101109052617.CF2F3480B08%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000305.html">
+   <LINK REL="Next"  HREF="000307.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r539 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r539%20-%20trunk&In-Reply-To=%3C20101109052617.CF2F3480B08%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r539 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov  9 06:26:17 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000305.html">[Zcplusplus-commits] r538 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000307.html">[Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#306">[ date ]</a>
+              <a href="thread.html#306">[ thread ]</a>
+              <a href="subject.html#306">[ subject ]</a>
+              <a href="author.html#306">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-09 06:26:17 +0100 (Tue, 09 Nov 2010)
+New Revision: 539
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/struct_type.cpp
+   trunk/struct_type.hpp
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system.hpp
+   trunk/type_system.hpp.in
+Log:
+actually record location information for union/struct/class declarations and forward definitions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/CSupport.cpp	2010-11-09 05:26:17 UTC (rev 539)
+@@ -1162,7 +1162,7 @@
+ }
+ 
+ /* XXX this may belong with C_union_struct_def XXX */
+-static void message_header(const C_union_struct_def&amp; src)
++static void message_header(const union_struct_decl&amp; src)
+ {
+ 	assert(src.filename() &amp;&amp; *src.filename());
+ 	message_header(src.filename(),src.loc().first);
+@@ -12905,9 +12905,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 	assert(parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+@@ -12922,9 +12922,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 	assert(parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+@@ -13136,7 +13136,7 @@
+ 					INC_INFORM(&quot;'union &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -13225,7 +13225,7 @@
+ 					INC_INFORM(&quot;'struct &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -13274,7 +13274,7 @@
+ 			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 
+@@ -13320,7 +13320,7 @@
+ 			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 
+@@ -13777,9 +13777,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+ 	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -13794,9 +13794,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -13811,9 +13811,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -14098,7 +14098,7 @@
+ 					INC_INFORM(&quot;'union &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -14186,7 +14186,7 @@
+ 					INC_INFORM(&quot;'struct &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -14246,7 +14246,7 @@
+ 					INC_INFORM(&quot;'class &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -14295,7 +14295,7 @@
+ 			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 
+ 			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+@@ -14342,7 +14342,7 @@
+ 			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+@@ -14387,7 +14387,7 @@
+ 			case CLASS_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/CSupport.cpp.in	2010-11-09 05:26:17 UTC (rev 539)
+@@ -1216,7 +1216,7 @@
+ }
+ 
+ /* XXX this may belong with C_union_struct_def XXX */
+-static void message_header(const C_union_struct_def&amp; src)
++static void message_header(const union_struct_decl&amp; src)
+ {
+ 	assert(src.filename() &amp;&amp; *src.filename());
+ 	message_header(src.filename(),src.loc().first);
+@@ -13049,9 +13049,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 	assert(parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+@@ -13066,9 +13066,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
+ 	assert(parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+@@ -13280,7 +13280,7 @@
+ 					INC_INFORM(&quot;'union &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -13369,7 +13369,7 @@
+ 					INC_INFORM(&quot;'struct &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -13418,7 +13418,7 @@
+ 			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 
+@@ -13464,7 +13464,7 @@
+ 			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 
+@@ -13921,9 +13921,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+ 	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -13938,9 +13938,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -13955,9 +13955,9 @@
+ {
+ 	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+ #ifdef NDEBUG
+-	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class));
++	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename));
+ #else
+-	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 	assert(tmp2);
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+ 	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -14242,7 +14242,7 @@
+ 					INC_INFORM(&quot;'union &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -14330,7 +14330,7 @@
+ 					INC_INFORM(&quot;'struct &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -14390,7 +14390,7 @@
+ 					INC_INFORM(&quot;'class &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					message_header(*fatal_def);
++					message_header(fatal_def-&gt;_decl);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// reduce to named-specifier
+@@ -14439,7 +14439,7 @@
+ 			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 
+ 			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+@@ -14486,7 +14486,7 @@
+ 			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+@@ -14531,7 +14531,7 @@
+ 			case CLASS_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class);
++			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			assert(tmp2);
+ 			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+
+Modified: trunk/struct_type.cpp
+===================================================================
+--- trunk/struct_type.cpp	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/struct_type.cpp	2010-11-09 05:26:17 UTC (rev 539)
+@@ -5,17 +5,13 @@
+ #include &quot;Zaimoni.STL/Pure.C/auto_int.h&quot;
+ 
+ C_union_struct_def::C_union_struct_def(const union_struct_decl&amp; src,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
+-:	_logical_line(logical_line),
+-	_src_filename(((src_filename &amp;&amp; *src_filename) ? src_filename : NULL)),
+-	_decl(src)
++:	_decl(src,logical_line,src_filename)
+ {
+ 	assert(syntax_ok());
+ }
+ 
+ C_union_struct_def::C_union_struct_def(union_struct_decl::keywords keyword, const char* tag,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line, const char* src_filename)
+-:	_logical_line(logical_line),
+-	_src_filename(((src_filename &amp;&amp; *src_filename) ? src_filename : NULL)),
+-	_decl(keyword,tag)
++:	_decl(keyword,tag,logical_line,src_filename)
+ {
+ 	assert(syntax_ok());
+ }
+@@ -78,8 +74,6 @@
+ 		}
+ 
+ 	_decl = src._decl;
+-	_logical_line = src._logical_line;
+-	_src_filename = src._src_filename;
+ 	assert(syntax_ok());
+ 	return *this;
+ }
+
+Modified: trunk/struct_type.hpp
+===================================================================
+--- trunk/struct_type.hpp	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/struct_type.hpp	2010-11-09 05:26:17 UTC (rev 539)
+@@ -11,6 +11,8 @@
+ private:
+ 	const char* _tag;	// NULL or ends in :: for anonymous
+ 	unsigned char _keyword;
++	zaimoni::POD_pair&lt;size_t,size_t&gt; _logical_line;
++	const char* _src_filename;
+ public:
+ 	enum keywords {
+ 		decl_none = 0,
+@@ -19,7 +21,16 @@
+ 		decl_class = 3		// default private access in C++; entries are in sequence (calculating layout requires target information)
+ 	};
+ 
+-	union_struct_decl(keywords keyword, const char* tag) : _tag((tag &amp;&amp; *tag ? tag : NULL)),_keyword((assert(keyword),keyword)) {};
++	union_struct_decl(keywords keyword, const char* tag,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
++	: _tag((tag &amp;&amp; *tag ? tag : NULL)),
++	  _keyword((assert(keyword),keyword)),
++	  _logical_line(logical_line),
++	  _src_filename(((src_filename &amp;&amp; *src_filename) ? src_filename : NULL)) {};
++	union_struct_decl(const union_struct_decl&amp; src,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
++	: _tag(src._tag),
++	  _keyword(src._keyword),
++	  _logical_line(logical_line),
++	  _src_filename(((src_filename &amp;&amp; *src_filename) ? src_filename : NULL)) {};	  
+ 	// defaults ok for: copy constructor, destructor, assignment operator
+ 
+ 	const char* tag() const {return _tag;};
+@@ -27,13 +38,13 @@
+ 	friend bool operator==(const union_struct_decl&amp; lhs,const union_struct_decl&amp; rhs) {
+ 		return lhs._tag==rhs._tag &amp;&amp; lhs._keyword==rhs._keyword;
+ 	};
++
++	const char* filename() const {return _src_filename;};
++	zaimoni::POD_pair&lt;size_t,size_t&gt; loc() const {return _logical_line;};
+ };
+ 
+ class C_union_struct_def
+ {
+-private:
+-	zaimoni::POD_pair&lt;size_t,size_t&gt; _logical_line;
+-	const char* _src_filename;
+ public:
+ 	union_struct_decl _decl;
+ 	zaimoni::autovalarray_ptr_throws&lt;type_spec&gt; data_field_spec;
+@@ -44,10 +55,6 @@
+ 	C_union_struct_def(const C_union_struct_def&amp; src);
+ 	~C_union_struct_def();
+ 	const C_union_struct_def&amp; operator=(const C_union_struct_def&amp; src);
+-
+-	const char* filename() const {return _src_filename;};
+-	zaimoni::POD_pair&lt;size_t,size_t&gt; loc() const {return _logical_line;};
+-
+ #ifndef NDEBUG
+ 	bool syntax_ok() const;
+ #endif
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/type_system.cpp	2010-11-09 05:26:17 UTC (rev 539)
+@@ -730,7 +730,7 @@
+ 	return register_functype(name,src);
+ }
+ 
+-type_system::type_index type_system::register_structdecl(const char* const alias, int keyword)
++type_system::type_index type_system::register_structdecl(const char* const alias, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	const size_t dynamic_types_size = dynamic_types.size();
+@@ -740,7 +740,7 @@
+ 		FATAL(&quot;Host implementation limit exceeded: cannot record union/struct type used in program&quot;);
+ 
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
+-	tmp.third.first.second = new union_struct_decl((union_struct_decl::keywords)keyword,alias);
++	tmp.third.first.second = new union_struct_decl((union_struct_decl::keywords)keyword,alias,logical_line,src_filename);
+ 
+ 	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp))
+ 		{
+@@ -750,7 +750,7 @@
+ 	return dynamic_types_size+1+core_types_size;
+ }
+ 
+-type_system::type_index type_system::register_structdecl_CPP(const char* name, const char* const active_namespace, int keyword)
++type_system::type_index type_system::register_structdecl_CPP(const char* name, const char* const active_namespace, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
+ {
+ 	assert(name &amp;&amp; *name);
+ 
+@@ -758,7 +758,7 @@
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return register_structdecl(name,keyword);
++	return register_structdecl(name,keyword,logical_line,src_filename);
+ }
+ 
+ type_system::type_index type_system::register_C_structdef(const char* const alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* const src_filename, int keyword)
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/type_system.cpp.in	2010-11-09 05:26:17 UTC (rev 539)
+@@ -745,7 +745,7 @@
+ 	return register_functype(name,src);
+ }
+ 
+-type_system::type_index type_system::register_structdecl(const char* const alias, int keyword)
++type_system::type_index type_system::register_structdecl(const char* const alias, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	const size_t dynamic_types_size = dynamic_types.size();
+@@ -755,7 +755,7 @@
+ 		FATAL(&quot;Host implementation limit exceeded: cannot record union/struct type used in program&quot;);
+ 
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
+-	tmp.third.first.second = new union_struct_decl((union_struct_decl::keywords)keyword,alias);
++	tmp.third.first.second = new union_struct_decl((union_struct_decl::keywords)keyword,alias,logical_line,src_filename);
+ 
+ 	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp))
+ 		{
+@@ -765,7 +765,7 @@
+ 	return dynamic_types_size+1+core_types_size;
+ }
+ 
+-type_system::type_index type_system::register_structdecl_CPP(const char* name, const char* const active_namespace, int keyword)
++type_system::type_index type_system::register_structdecl_CPP(const char* name, const char* const active_namespace, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename)
+ {
+ 	assert(name &amp;&amp; *name);
+ 
+@@ -773,7 +773,7 @@
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return register_structdecl(name,keyword);
++	return register_structdecl(name,keyword,logical_line,src_filename);
+ }
+ 
+ type_system::type_index type_system::register_C_structdef(const char* const alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* const src_filename, int keyword)
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/type_system.hpp	2010-11-09 05:26:17 UTC (rev 539)
+@@ -114,8 +114,8 @@
+ 	type_index register_functype(const char* const alias, function_type*&amp; src);
+ 	type_index register_functype_CPP(const char* name, const char* active_namespace, function_type*&amp; src);
+ //	keyword actually should be type union_struct_decl::keywords, but that increases coupling unacceptably
+-	type_index register_structdecl(const char* alias, int keyword);
+-	type_index register_structdecl_CPP(const char* name, const char* active_namespace, int keyword);
++	type_index register_structdecl(const char* alias, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename);
++	type_index register_structdecl_CPP(const char* name, const char* active_namespace, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename);
+ 	type_index register_C_structdef(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
+ 	type_index register_C_structdef_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
+ 	type_index register_enum_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
+
+Modified: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	2010-11-09 04:33:00 UTC (rev 538)
++++ trunk/type_system.hpp.in	2010-11-09 05:26:17 UTC (rev 539)
+@@ -136,8 +136,8 @@
+ 	type_index register_functype(const char* const alias, function_type*&amp; src);
+ 	type_index register_functype_CPP(const char* name, const char* active_namespace, function_type*&amp; src);
+ //	keyword actually should be type union_struct_decl::keywords, but that increases coupling unacceptably
+-	type_index register_structdecl(const char* alias, int keyword);
+-	type_index register_structdecl_CPP(const char* name, const char* active_namespace, int keyword);
++	type_index register_structdecl(const char* alias, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename);
++	type_index register_structdecl_CPP(const char* name, const char* active_namespace, int keyword,const zaimoni::POD_pair&lt;size_t,size_t&gt;&amp; logical_line,const char* src_filename);
+ 	type_index register_C_structdef(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
+ 	type_index register_C_structdef_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
+ 	type_index register_enum_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000305.html">[Zcplusplus-commits] r538 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000307.html">[Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#306">[ date ]</a>
+              <a href="thread.html#306">[ thread ]</a>
+              <a href="subject.html#306">[ subject ]</a>
+              <a href="author.html#306">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

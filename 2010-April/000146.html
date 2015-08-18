@@ -1,0 +1,226 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r379 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r379%20-%20trunk&In-Reply-To=%3C201004120402.o3C42vr7006725%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000145.html">
+   <LINK REL="Next"  HREF="000147.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r379 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r379%20-%20trunk&In-Reply-To=%3C201004120402.o3C42vr7006725%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r379 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 12 06:02:57 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000145.html">[Zcplusplus-commits] r378 - in trunk: . tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000147.html">[Zcplusplus-commits] r380 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#146">[ date ]</a>
+              <a href="thread.html#146">[ thread ]</a>
+              <a href="subject.html#146">[ subject ]</a>
+              <a href="author.html#146">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-12 06:02:52 +0200 (Mon, 12 Apr 2010)
+New Revision: 379
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+minor improvements to vi readability; adjust in-source documentation of test cases
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-12 02:45:25 UTC (rev 378)
++++ trunk/CSupport.cpp	2010-04-12 04:02:52 UTC (rev 379)
+@@ -7950,7 +7950,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_shift_expression(src,i)) C_shift_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_shift_expression(src,i))
++		C_shift_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -8156,7 +8157,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_relation_expression(src,i)) C_relation_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_relation_expression(src,i))
++		C_relation_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -8395,7 +8397,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_C99_equality_expression(src,i)) C_equality_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_C99_equality_expression(src,i))
++		C_equality_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -8592,7 +8595,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_C99_bitwise_AND(src,i)) C_bitwise_AND_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_C99_bitwise_AND(src,i))
++		C_bitwise_AND_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -11661,11 +11665,12 @@
+ 				}
+ 			if (out_of_range)
+ 				{	//! \test decl.C99/Error_enum_overflow2.h
+-					//! \bug need -Wc-c++-compat to go off here
+ 				message_header(src.data&lt;0&gt;()[origin-2].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;initializer of enumerator not representable as signed int (C99 6.7.2.2p3)&quot;);
+ 				zcc_errors.inc_error();
++				if (bool_options[boolopt::warn_crosslang_compatibility])
++					INFORM(&quot;(this may be valid C++, if the value is representable as either uintmax_t or intmax_t)&quot;);
+ 				return false;
+ 				}
+ 			if (is_negative)
+@@ -12084,7 +12089,7 @@
+ 									zcc_errors.inc_error();
+ 								}
+ 							else{	// error if there is a prior, inconsistent definition
+-									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
++									//! \test zcc/decl.C99/Error_redeclare_typedef.h
+ 								message_header(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+ 								INC_INFORM(&quot;redeclaring typedef &quot;);
+@@ -12100,10 +12105,9 @@
+ 						else{	// prepare to register this with types object
+ 							const type_system::enumerator_info* tmp2 = types.get_enumerator(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first);
+ 							if (tmp2)
+-								{	//! \bug needs test case
++								{	//! \test zcc/decl.C99/Error_typedef_enum.h
+ 								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+-//								INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3/C++98 3.2)&quot;);
+ 								INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)&quot;);
+ 								INC_INFORM(tmp2-&gt;second.second.first);
+ 								INC_INFORM(&quot;:&quot;);
+@@ -12849,7 +12853,8 @@
+ 							free(namespace_name);
+ 							const type_system::enumerator_info* tmp2 = types.get_enumerator_CPP(src.data&lt;0&gt;()[initdecl_identifier_idx].index_tokens[0].token.first,active_namespace);
+ 							if (tmp2)
+-								{	//! \bug needs test case
++								{	//! \test zcc/decl.C99/Error_typedef_enum.hpp
++									//! \test zcc/decl.C99/Error_typedef_enum2.hpp
+ 								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+ 								INFORM(&quot;enumerator is already defined, conflicts with typedef (C++98 3.2)&quot;);
+@@ -12968,8 +12973,7 @@
+ }
+ #endif
+ 
+-void
+-InitializeCLexerDefs(const virtual_machine::CPUInfo&amp; target)
++void InitializeCLexerDefs(const virtual_machine::CPUInfo&amp; target)
+ {
+ 	// main code
+ 	target_machine = &target;
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-04-12 02:45:25 UTC (rev 378)
++++ trunk/CSupport_pp.cpp	2010-04-12 04:02:52 UTC (rev 379)
+@@ -7138,7 +7138,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_shift_expression(src,i)) C_shift_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_shift_expression(src,i))
++		C_shift_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -7344,7 +7345,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_relation_expression(src,i)) C_relation_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_relation_expression(src,i))
++		C_relation_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -7583,7 +7585,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_C99_equality_expression(src,i)) C_equality_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_C99_equality_expression(src,i))
++		C_equality_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -7760,7 +7763,8 @@
+ 		|| !src.data&lt;0&gt;()[i].is_atomic())
+ 		return;
+ 
+-	if (terse_locate_C99_bitwise_AND(src,i)) C_bitwise_AND_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
++	if (terse_locate_C99_bitwise_AND(src,i))
++		C_bitwise_AND_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
+ /*
+@@ -9616,8 +9620,7 @@
+ }
+ #endif
+ 
+-void
+-InitializeCLexerDefs(const virtual_machine::CPUInfo&amp; target)
++void InitializeCLexerDefs(const virtual_machine::CPUInfo&amp; target)
+ {
+ 	// main code
+ 	target_machine = &target;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000145.html">[Zcplusplus-commits] r378 - in trunk: . tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000147.html">[Zcplusplus-commits] r380 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#146">[ date ]</a>
+              <a href="thread.html#146">[ thread ]</a>
+              <a href="subject.html#146">[ subject ]</a>
+              <a href="author.html#146">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

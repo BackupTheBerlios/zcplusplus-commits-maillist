@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r425 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r425%20-%20trunk&In-Reply-To=%3C201005130412.o4D4C4Jt010811%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000191.html">
+   <LINK REL="Next"  HREF="000193.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r425 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r425%20-%20trunk&In-Reply-To=%3C201005130412.o4D4C4Jt010811%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r425 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu May 13 06:12:04 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000191.html">[Zcplusplus-commits] r424 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000193.html">[Zcplusplus-commits] r426 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#192">[ date ]</a>
+              <a href="thread.html#192">[ thread ]</a>
+              <a href="subject.html#192">[ subject ]</a>
+              <a href="author.html#192">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-13 06:12:01 +0200 (Thu, 13 May 2010)
+New Revision: 425
+
+Modified:
+   trunk/POSIX.dep
+   trunk/load_src.cpp
+Log:
+complete code cleanup of load_src.cpp
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-05-10 00:44:07 UTC (rev 424)
++++ trunk/POSIX.dep	2010-05-13 04:12:01 UTC (rev 425)
+@@ -31,7 +31,7 @@
+ Flat_UNI.o: Flat_UNI.hpp lex_core.h Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_lc.o: end_lc.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_nl.o: end_nl.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+-load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
++load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+
+Modified: trunk/load_src.cpp
+===================================================================
+--- trunk/load_src.cpp	2010-05-10 00:44:07 UTC (rev 424)
++++ trunk/load_src.cpp	2010-05-13 04:12:01 UTC (rev 425)
+@@ -7,6 +7,7 @@
+ #include &quot;AtomicString.h&quot;
+ #include &quot;errors.hpp&quot;
+ #include &quot;errcount.hpp&quot;
++#include &quot;end_nl.hpp&quot;
+ 
+ using namespace zaimoni;
+ 
+@@ -43,7 +44,7 @@
+ 	if (want_to_zap_line) clean_whitespace(TokenList,v_idx,lang);
+ }
+ 
+-// can throw std::bad_alloc.
++//! \throw std::bad_alloc
+ bool
+ load_sourcefile(autovalarray_ptr&lt;Token&lt;char&gt;* &gt;&amp; TokenList, const char* const filename, LangConf&amp; lang)
+ {
+@@ -144,7 +145,7 @@
+ 	return true;
+ }
+ 
+-// can throw std::bad_alloc.
++//! \throw std::bad_alloc
+ bool load_raw_sourcefile(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList, const char* const filename)
+ {
+ 	char* Buffer = NULL;
+@@ -167,26 +168,12 @@
+ 
+ 	// if target language needs a warning for not ending in \n, emit one here
+ 	// but we normalize to that
+-	{
+-	size_t newline_count = 0;
+-	const size_t BufferSizeSub1 = Buffer_size-1;
+-	while(newline_count&lt;BufferSizeSub1 &amp;&amp; '\n'==Buffer[BufferSizeSub1-newline_count]) ++newline_count;
+-	if (0&lt;newline_count)
+-		{
+-		if (Buffer_size&lt;=newline_count) return free(Buffer),true;
+ #ifndef ZAIMONI_FORCE_ISO
+-		Buffer = REALLOC(Buffer,(ArraySize(Buffer)-newline_count));
++	TrimMandatoryTerminalNewline(Buffer,filename);
+ #else
+-		Buffer = REALLOC(Buffer,(Buffer_size -= newline_count));
++	TrimMandatoryTerminalNewline(Buffer,Buffer_size,filename);
+ #endif
+-		}
+-	else{	// works for C/C++
+-		INC_INFORM(filename);
+-		INFORM(&quot;: warning: did not end in \\n, undefined behavior.  Proceeding as if it was there.&quot;);
+-		if (bool_options[boolopt::warnings_are_errors]) zcc_errors.inc_error();
+-		}
+-	}
+-
++	
+ 	SUCCEED_OR_DIE(TokenList.InsertNSlotsAt(1,0));
+ #ifndef ZAIMONI_FORCE_ISO
+ 	TokenList[0] = new(std::nothrow) Token&lt;char&gt;(Buffer,filename);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000191.html">[Zcplusplus-commits] r424 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000193.html">[Zcplusplus-commits] r426 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#192">[ date ]</a>
+              <a href="thread.html#192">[ thread ]</a>
+              <a href="subject.html#192">[ subject ]</a>
+              <a href="author.html#192">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

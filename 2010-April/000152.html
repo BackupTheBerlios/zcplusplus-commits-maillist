@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r385 - in trunk/Zaimoni.STL: . Pure.C	Pure.C/compile.test
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r385%20-%20in%20trunk/Zaimoni.STL%3A%20.%20Pure.C%0A%09Pure.C/compile.test&In-Reply-To=%3C201004202004.o3KK4h6t017145%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000151.html">
+   <LINK REL="Next"  HREF="000153.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r385 - in trunk/Zaimoni.STL: . Pure.C	Pure.C/compile.test</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r385%20-%20in%20trunk/Zaimoni.STL%3A%20.%20Pure.C%0A%09Pure.C/compile.test&In-Reply-To=%3C201004202004.o3KK4h6t017145%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r385 - in trunk/Zaimoni.STL: . Pure.C	Pure.C/compile.test">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Apr 20 22:04:43 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000151.html">[Zcplusplus-commits] r384 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000153.html">[Zcplusplus-commits] r386 - in trunk/Zaimoni.STL: . LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#152">[ date ]</a>
+              <a href="thread.html#152">[ thread ]</a>
+              <a href="subject.html#152">[ subject ]</a>
+              <a href="author.html#152">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-20 22:04:37 +0200 (Tue, 20 Apr 2010)
+New Revision: 385
+
+Added:
+   trunk/Zaimoni.STL/Pure.C/compile.test/realloc_0.c
+Modified:
+   trunk/Zaimoni.STL/Pure.C/GNUmakefile
+   trunk/Zaimoni.STL/Pure.C/NMakefile
+   trunk/Zaimoni.STL/Pure.C/comptest.in
+   trunk/Zaimoni.STL/z_memory.h
+Log:
+add behavior test for realloc(x,0)
+
+Modified: trunk/Zaimoni.STL/Pure.C/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/GNUmakefile	2010-04-20 19:30:40 UTC (rev 384)
++++ trunk/Zaimoni.STL/Pure.C/GNUmakefile	2010-04-20 20:04:37 UTC (rev 385)
+@@ -34,6 +34,9 @@
+ 	-$(CC) -oexists_MS_io_h.exe $(CFLAGS) -mconsole $(ARCH_FLAGS) compile.test/exists_MS_io_h.c
+ 	-./exists_MS_io_h.exe &gt;&gt; comptest.h
+ 	-rm exists_MS_io_h.exe
++	-$(CC) -orealloc_0.exe $(CFLAGS) -mconsole $(ARCH_FLAGS) compile.test/realloc_0.c
++	-./realloc_0.exe &gt;&gt; comptest.h
++	-rm realloc_0.exe
+ 
+ .c.o:
+ 	$(CC) -c $&lt; $(CFLAGS) $(ARCH_FLAGS) -o $*.o
+
+Modified: trunk/Zaimoni.STL/Pure.C/NMakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/NMakefile	2010-04-20 19:30:40 UTC (rev 384)
++++ trunk/Zaimoni.STL/Pure.C/NMakefile	2010-04-20 20:04:37 UTC (rev 385)
+@@ -37,6 +37,10 @@
+ 	.\exists_MS_io_h.exe &gt;&gt; comptest.h
+ 	del exists_MS_io_h.exe.manifest
+ 	del exists_MS_io_h.exe
++	$(CC) /OUT:realloc_0.exe $(CFLAGS) compile.test/realloc_0.c
++	.\realloc_0.exe &gt;&gt; comptest.h
++	del realloc_0.exe.manifest
++	del realloc_0.exe
+ 
+ # defaulting .c.obj
+ z_format_util.lib: format_util.obj
+
+Added: trunk/Zaimoni.STL/Pure.C/compile.test/realloc_0.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/compile.test/realloc_0.c	2010-04-20 19:30:40 UTC (rev 384)
++++ trunk/Zaimoni.STL/Pure.C/compile.test/realloc_0.c	2010-04-20 20:04:37 UTC (rev 385)
+@@ -0,0 +1,18 @@
++/* realloc_0.c */
++/* tests for whether realloc(...,0) returns NULL */
++/* (C)2010 Kenneth Boyd, license: MIT.txt */
++
++#define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
++
++#include &lt;stdlib.h&gt;
++#include &lt;stdio.h&gt;
++
++int main()
++{
++	char* test = (char*)(malloc(3));
++	if (!test) return 0;
++	char* test2 = (char*)(realloc(test,0));
++	if (!test2) STRING_LITERAL_TO_STDOUT(&quot;#define ZAIMONI_REALLOC_TO_ZERO_IS_NULL 1\n&quot;);
++	return 0;
++}
++
+
+Modified: trunk/Zaimoni.STL/Pure.C/comptest.in
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/comptest.in	2010-04-20 19:30:40 UTC (rev 384)
++++ trunk/Zaimoni.STL/Pure.C/comptest.in	2010-04-20 20:04:37 UTC (rev 385)
+@@ -1,6 +1,10 @@
+ /* comptest.h */
+ /* compile test summary */
+-/* (C)2009 Kenneth Boyd, license: MIT.txt */
++/* (C)2009,2010 Kenneth Boyd, license: MIT.txt */
+ 
+-/* HAVE_MICROSOFT_IO_H: #include &lt;io.h&gt; works and allows compiling Microsoft-specific idioms */
++/* ZAIMONI_HAVE_MICROSOFT_IO_H: #include &lt;io.h&gt; works and allows compiling 
++   Microsoft-specific idioms */
++/* ZAIMONI_REALLOC_TO_ZERO_IS_NULL: realloc(x,0) is NULL.  Prohibited by C99,
++   but allowed as an implementation-specific decision by C90 and very useful
++   for optimization purposes. */
+ 
+
+Modified: trunk/Zaimoni.STL/z_memory.h
+===================================================================
+--- trunk/Zaimoni.STL/z_memory.h	2010-04-20 19:30:40 UTC (rev 384)
++++ trunk/Zaimoni.STL/z_memory.h	2010-04-20 20:04:37 UTC (rev 385)
+@@ -21,6 +21,11 @@
+ #define ZAIMONI_LEN_WITH_NULL(A) (A)
+ #define ZAIMONI_NULL_TERMINATE(A)
+ 
++/*
++ * our realloc implements realloc(x,0) is NULL
++ */
++#undef ZAIMONI_REALLOC_TO_ZERO_IS_NULL
++#define ZAIMONI_REALLOC_TO_ZERO_IS_NULL 1
+ 
+ /*
+  * defined in memory.cpp: controls Microsoft bypass for realloc.
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000151.html">[Zcplusplus-commits] r384 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000153.html">[Zcplusplus-commits] r386 - in trunk/Zaimoni.STL: . LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#152">[ date ]</a>
+              <a href="thread.html#152">[ thread ]</a>
+              <a href="subject.html#152">[ subject ]</a>
+              <a href="author.html#152">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

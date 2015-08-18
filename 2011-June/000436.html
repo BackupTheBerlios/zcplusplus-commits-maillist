@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r669 - trunk/tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r669%20-%20trunk/tests/zcc.in/decl.C99&In-Reply-To=%3C20110610174601.CE06E4801AA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000435.html">
+   <LINK REL="Next"  HREF="000437.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r669 - trunk/tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r669%20-%20trunk/tests/zcc.in/decl.C99&In-Reply-To=%3C20110610174601.CE06E4801AA%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r669 - trunk/tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 10 19:46:01 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000435.html">[Zcplusplus-commits] r668 - trunk/tools
+</A></li>
+        <LI>Next message: <A HREF="000437.html">[Zcplusplus-commits] r670 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#436">[ date ]</a>
+              <a href="thread.html#436">[ thread ]</a>
+              <a href="subject.html#436">[ subject ]</a>
+              <a href="author.html#436">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-10 19:46:01 +0200 (Fri, 10 Jun 2011)
+New Revision: 669
+
+Modified:
+   trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_enum_def_decl.in
+   trunk/tests/zcc.in/decl.C99/Pass_struct_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_struct_def_decl.in
+   trunk/tests/zcc.in/decl.C99/Pass_union_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_union_def_decl.in
+Log:
+C keyword is _Thread_local, not _Thread_Local #2
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // declaration with too many storage qualifiers
+ // (C)2011 Kenneth Boyd, license: MIT.txt
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // declaration with too many storage qualifiers
+ // (C)2011 Kenneth Boyd, license: MIT.txt
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // declaration with too many storage qualifiers
+ // (C)2011 Kenneth Boyd, license: MIT.txt
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // declaration with too many storage qualifiers
+ // (C)2011 Kenneth Boyd, license: MIT.txt
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined enum
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_enum_def_decl.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_def_decl.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_def_decl.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined enum
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_struct_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_struct_def.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Pass_struct_def.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined struct
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_struct_def_decl.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_struct_def_decl.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Pass_struct_def_decl.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined struct
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_union_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_union_def.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Pass_union_def.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined union
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_union_def_decl.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_union_def_decl.in	2011-06-10 17:45:20 UTC (rev 668)
++++ trunk/tests/zcc.in/decl.C99/Pass_union_def_decl.in	2011-06-10 17:46:01 UTC (rev 669)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_local thread_local
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined union
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000435.html">[Zcplusplus-commits] r668 - trunk/tools
+</A></li>
+	<LI>Next message: <A HREF="000437.html">[Zcplusplus-commits] r670 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#436">[ date ]</a>
+              <a href="thread.html#436">[ thread ]</a>
+              <a href="subject.html#436">[ subject ]</a>
+              <a href="author.html#436">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

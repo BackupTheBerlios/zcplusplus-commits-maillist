@@ -1,0 +1,228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r435 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r435%20-%20trunk&In-Reply-To=%3C201005161008.o4GA8Our019163%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000201.html">
+   <LINK REL="Next"  HREF="000203.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r435 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r435%20-%20trunk&In-Reply-To=%3C201005161008.o4GA8Our019163%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r435 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun May 16 12:08:24 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000201.html">[Zcplusplus-commits] r434 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000203.html">[Zcplusplus-commits] r436 - in trunk: . lib lib/zc++-0.0.5	lib/zc++-0.0.5/include
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#202">[ date ]</a>
+              <a href="thread.html#202">[ thread ]</a>
+              <a href="subject.html#202">[ subject ]</a>
+              <a href="author.html#202">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-16 12:08:21 +0200 (Sun, 16 May 2010)
+New Revision: 435
+
+Modified:
+   trunk/ZParser.cpp
+Log:
+object file size reduction
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2010-05-16 09:02:40 UTC (rev 434)
++++ trunk/ZParser.cpp	2010-05-16 10:08:21 UTC (rev 435)
+@@ -26,13 +26,39 @@
+ {
+ }
+ 
++/**
++ * As the memory management situation varies when 
++ * dest.index_tokens[0].token.first is to be owned...
++ *
++ * \return false iff caller needs to handle memory management for an owned token 
++ */
++static bool init_parse_tree_from_token(parse_tree&amp; dest, const Token&lt;char&gt;&amp; tmp_front, const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; src2, const zaimoni::LangConf&amp; lang)
++{
++	dest.index_tokens[0].token.second = src2.second;
++	dest.index_tokens[0].logical_line.first = tmp_front.original_line.first;
++	dest.index_tokens[0].logical_line.second = tmp_front.original_line.second;
++	dest.index_tokens[0].flags = src2.third;
++	dest.index_tokens[0].src_filename = tmp_front.src_filename;
++	const char* const tmp = C_TESTFLAG_IDENTIFIER==src2.third ? lang.pp_support-&gt;EchoReservedKeyword(tmp_front.data(),src2.second) 
++						: C_TESTFLAG_PP_OP_PUNC &amp; src2.third ? lang.pp_support-&gt;EchoReservedSymbol(tmp_front.data(),src2.second) : NULL;
++	if (tmp)
++		{
++		dest.index_tokens[0].token.first = tmp;
++		dest.control_index_token&lt;0&gt;(false);
++		}
++	return tmp;
++}
++
+ bool ZParser::parse(autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; TokenList,autovalarray_ptr&lt;parse_tree*&gt;&amp; ParsedList)
+ {
+ 	// first stage: rearrange to be suitable for LangConf
+ 	if (TokenList.empty()) return false;	// no-op, nothing to export to object file
++	{
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+ 	do	{
+-		lang.line_lex(TokenList.front()-&gt;data(), TokenList.front()-&gt;size(), pretokenized);
++		assert(TokenList.front());
++		Token&lt;char&gt;&amp; tmp_front = *TokenList.front();
++		lang.line_lex(tmp_front.data(), tmp_front.size(), pretokenized);
+ 		if (!pretokenized.empty())
+ 			{	// ...
+ 			const size_t append_tokens = pretokenized.size();
+@@ -55,18 +81,18 @@
+ 				// disable pedantic warnings to avoid fake warnings about string literals
+ 				const bool pedantic_backup = bool_options[boolopt::pedantic];
+ 				bool_options[boolopt::pedantic] = false;
+-				lang.pp_support-&gt;AddPostLexFlags(TokenList.front()-&gt;data()+pretokenized[i].first, pretokenized[i].second, pretokenized[i].third, TokenList.front()-&gt;src_filename, TokenList.front()-&gt;original_line.first);
++				lang.pp_support-&gt;AddPostLexFlags(tmp_front.data()+pretokenized[i].first, pretokenized[i].second, pretokenized[i].third, tmp_front.src_filename, tmp_front.original_line.first);
+ 				bool_options[boolopt::pedantic] = pedantic_backup;
+ 				if (	(C_TESTFLAG_PP_OP_PUNC &amp; pretokenized[i].third)
+ 					&amp;&amp; 	(C_DISALLOW_POSTPROCESSED_SOURCE &amp; lang.pp_support-&gt;GetPPOpPuncFlags(C_PP_DECODE(pretokenized[i].third))))
+ 					{
+-					INC_INFORM(TokenList.front()-&gt;src_filename);
++					INC_INFORM(tmp_front.src_filename);
+ 					INC_INFORM(':');
+-					INC_INFORM(TokenList.front()-&gt;original_line.first);
++					INC_INFORM(tmp_front.original_line.first);
+ 					INC_INFORM(&quot;: &quot;);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;Forbidden token &quot;);
+-					INC_INFORM(TokenList.front()-&gt;data()+pretokenized[i].first, pretokenized[i].second);
++					INC_INFORM(tmp_front.data()+pretokenized[i].first, pretokenized[i].second);
+ 					INFORM(&quot; in postprocessed source.&quot;);
+ 					zcc_errors.inc_error();
+ 					};
+@@ -75,64 +101,29 @@
+ 
+ 			if (1==append_tokens)
+ 				{	// only one token: grab the memory from Token and just do it
+-				TokenList.front()-&gt;ltrim(pretokenized[0].first);
+-				TokenList.front()-&gt;lslice(pretokenized[0].second);
+-				ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].token.second = pretokenized[0].second;
+-				ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].logical_line.first = TokenList.front()-&gt;original_line.first;
+-				ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].logical_line.second = TokenList.front()-&gt;original_line.second;
+-				ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].flags = pretokenized[0].third;
+-				ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].src_filename = TokenList.front()-&gt;src_filename;
+-				const char* tmp = (C_TESTFLAG_IDENTIFIER==pretokenized[0].third ? lang.pp_support-&gt;EchoReservedKeyword(TokenList.front()-&gt;data(),pretokenized[0].second) : NULL);
+-				if (tmp)
++				tmp_front.ltrim(pretokenized[0].first);
++				tmp_front.lslice(pretokenized[0].second);
++				parse_tree&amp; tmp = ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size];
++				if (!init_parse_tree_from_token(tmp,tmp_front,pretokenized[0],lang))
+ 					{
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].token.first = tmp;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].control_index_token&lt;0&gt;(false);
++					char* tmp2 = NULL; //! \bug adjust API, should be able to add qualifications safely
++					tmp_front.TransferOutAndNULL(tmp2);
++					tmp.index_tokens[0].token.first = tmp2;
++					tmp.control_index_token&lt;0&gt;(true);
+ 					}
+-				else{
+-					tmp = (C_TESTFLAG_PP_OP_PUNC &amp; pretokenized[0].third ? lang.pp_support-&gt;EchoReservedSymbol(TokenList.front()-&gt;data(),pretokenized[0].second) : NULL);
+-					if (tmp)
+-						{
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].token.first = tmp;
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].control_index_token&lt;0&gt;(false);
+-						}
+-					else{
+-						char* tmp2 = NULL; //! \bug adjust API, should be able to add qualifications safely
+-						TokenList.front()-&gt;TransferOutAndNULL(tmp2);
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].token.first = tmp2;
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].control_index_token&lt;0&gt;(true);
+-						}
+-					}
+ 				}
+ 			else{
+ 				i = append_tokens;
+ 				do	{	// copy it
+-					--i;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].token.second = pretokenized[i].second;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].logical_line.first = TokenList.front()-&gt;original_line.first;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].logical_line.second = TokenList.front()-&gt;original_line.second;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].logical_line.second += pretokenized[i].first;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].flags = pretokenized[i].third;
+-					ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].src_filename = TokenList.front()-&gt;src_filename;
+-					const char* tmp = (C_TESTFLAG_IDENTIFIER==pretokenized[0].third ? lang.pp_support-&gt;EchoReservedKeyword(TokenList.front()-&gt;data()+pretokenized[i].first,pretokenized[0].second) : NULL);
+-					if (tmp)
+-						{
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].token.first = tmp;
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].control_index_token&lt;0&gt;(false);
++					parse_tree&amp; tmp = ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+ --i];
++					POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; tmp3 = pretokenized[i];
++					if (!init_parse_tree_from_token(tmp,tmp_front,tmp3,lang))
++					    {
++						char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(tmp3.second));
++						memmove(tmp2,tmp_front.data()+tmp3.first,tmp3.second);
++						tmp.index_tokens[0].token.first = tmp2;
++						tmp.control_index_token&lt;0&gt;(true);
+ 						}
+-					else{
+-						tmp = (C_TESTFLAG_PP_OP_PUNC &amp; pretokenized[0].third ? lang.pp_support-&gt;EchoReservedSymbol(TokenList.front()-&gt;data()+pretokenized[i].first,pretokenized[0].second) : NULL);
+-						if (tmp)
+-							{
+-							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].token.first = tmp;
+-							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].control_index_token&lt;0&gt;(false);
+-							}
+-						else{
+-							char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[i].second));
+-							memmove(tmp2,TokenList.front()-&gt;data()+pretokenized[i].first,pretokenized[i].second);
+-							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].token.first = tmp2;
+-							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].control_index_token&lt;0&gt;(true);
+-							}
+-						}
+ 					}
+ 				while(0&lt;i);
+ 				}
+@@ -141,6 +132,7 @@
+ 		TokenList.DeleteIdx(0);
+ 		}
+ 	while(!TokenList.empty());
++	}
+ 	die_on_parse_errors();
+ 	if (ParsedList.empty()) return false;	// no-op, nothing to export to object file
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000201.html">[Zcplusplus-commits] r434 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000203.html">[Zcplusplus-commits] r436 - in trunk: . lib lib/zc++-0.0.5	lib/zc++-0.0.5/include
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#202">[ date ]</a>
+              <a href="thread.html#202">[ thread ]</a>
+              <a href="subject.html#202">[ subject ]</a>
+              <a href="author.html#202">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

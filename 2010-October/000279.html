@@ -1,0 +1,941 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r512 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r512%20-%20trunk&In-Reply-To=%3C20101029003711.AD53E480C84%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000278.html">
+   <LINK REL="Next"  HREF="000280.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r512 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r512%20-%20trunk&In-Reply-To=%3C20101029003711.AD53E480C84%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r512 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 29 02:37:11 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000278.html">[Zcplusplus-commits] r511 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000280.html">[Zcplusplus-commits] r513 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#279">[ date ]</a>
+              <a href="thread.html#279">[ thread ]</a>
+              <a href="subject.html#279">[ subject ]</a>
+              <a href="author.html#279">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-29 02:37:11 +0200 (Fri, 29 Oct 2010)
+New Revision: 512
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+stage 3: line count reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-10-28 23:00:29 UTC (rev 511)
++++ trunk/CSupport.cpp	2010-10-29 00:37:11 UTC (rev 512)
+@@ -2618,11 +2618,11 @@
+ 
+ static uintmax_t _eval_character(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	if (1==src_len) return (unsigned char)(*src);
+ 	const char* tmp_escape = strchr(C_OCTAL_DIGITS,src[1]);
+-	if (NULL!=tmp_escape)
++	if (tmp_escape)
+ 		{
+ 		const size_t oct_len = octal_escape_length(src+1,(3U&gt;src_len-1U) ? 3U : src_len-1U);
+ 		assert(0&lt;oct_len);
+@@ -2643,7 +2643,7 @@
+ 
+ static void UnescapeCString(char* dest, const char* src, size_t src_len)
+ {	//! \todo cross-compiler augmentation target, dest needs to be able represent target strings
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	assert(CHAR_BIT&gt;=target_machine-&gt;C_char_bit());
+ 
+@@ -2659,7 +2659,7 @@
+ 
+ static void UnescapeCWideString(my_UNICODE* dest, const char* src, size_t src_len)
+ {	//! \todo cross-compiler change target, dest needs to be able represent target strings
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	assert(C_UNICODE_MAX&gt;=target_machine-&gt;unsigned_max(target_machine-&gt;UNICODE_wchar_t()));
+ 
+@@ -2675,7 +2675,7 @@
+ 
+ bool IsLegalCString(const char* x, size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	if ('&quot;' != x[x_len-1]) return false;
+ 	if (0 == --x_len) return false;
+@@ -2702,7 +2702,7 @@
+ 
+ bool IsLegalCCharacterLiteral(const char* x, size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	if ('\'' != x[x_len-1]) return false;
+ 	if (0 == --x_len) return false;
+@@ -2729,7 +2729,7 @@
+ 
+ static size_t LengthOfCStringLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	const bool wide_str = ('L'==src[0]);
+ 	if (wide_str)
+@@ -2745,7 +2745,7 @@
+ 
+ static size_t LengthOfCCharLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	const bool wide_char = ('L'==src[0]);
+ 	if (wide_char)
+@@ -2772,7 +2772,7 @@
+  */
+ bool LocateCCharacterLiteralAt(const char* const src, size_t src_len, size_t target_idx, size_t&amp; char_offset, size_t&amp; char_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	assert(IsLegalCString(src,src_len));
+ 	const char* src2 = src;
+@@ -2809,9 +2809,9 @@
+ 
+ void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*&amp; tmp)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+-	assert(NULL==tmp);
++	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len&gt;target_idx);
+@@ -2876,13 +2876,13 @@
+  */
+ static int ConcatenateCStringLiterals(const char* src, size_t src_len, const char* src2, size_t src2_len, char*&amp; target)
+ {
+-	assert(NULL!=src);
+-	assert(NULL!=src2);
++	assert(src);
++	assert(src2);
+ 	assert(2&lt;=src_len);
+ 	assert(2&lt;=src2_len);
+ 	assert(IsLegalCString(src,src_len));
+ 	assert(IsLegalCString(src2,src2_len));
+-	assert(NULL==target);
++	assert(!target);
+ 
+ 	const char* str1 = src;
+ 	const char* str2 = src2;
+@@ -2949,7 +2949,7 @@
+ 		const size_t new_start = (str_target_wide) ? 2 : 1;
+ 		const size_t new_width = str1_len+str2_len+new_start+1U;
+ 		target = reinterpret_cast&lt;char*&gt;(calloc(new_width,1));
+-		if (NULL==target) return -5;
++		if (!target) return -5;
+ 		target[new_width-1] = '&quot;';
+ 		target[new_start-1] = '&quot;';
+ 		if (str_target_wide) target[0] = 'L';
+@@ -2966,17 +2966,13 @@
+ 	if (str_target_wide)
+ 		{
+ 		buf.second = zaimoni::_new_buffer&lt;my_UNICODE&gt;(buf_len);
+-		if (NULL==buf.second) return -5;
++		if (!buf.second) return -5;
+ 		UnescapeCWideString(buf.second,str1,str1_len);
+ 		UnescapeCWideString(buf.second+str1_un_len,str2,str2_len);
+ 		//! \todo C vs C++
+ 		const size_t target_len = LengthOfEscapedCString(buf.second,buf_len);
+ 		target = zaimoni::_new_buffer&lt;char&gt;(target_len);
+-		if (NULL==target)
+-			{
+-			free(buf.second);
+-			return -5;
+-			}
++		if (!target) return free(buf.second),-5; 
+ 		EscapeCString(target,buf.second,buf_len);
+ 		free(buf.second);
+ 		assert(IsLegalCString(target,target_len));
+@@ -2984,16 +2980,12 @@
+ 		}
+ 	else{
+ 		buf.first = zaimoni::_new_buffer&lt;char&gt;(buf_len);
+-		if (NULL==buf.first) return -5;
++		if (!buf.first) return -5;
+ 		UnescapeCString(buf.first,str1,str1_len);
+ 		UnescapeCString(buf.first+str1_un_len,str2,str2_len);
+ 		const size_t target_len = LengthOfEscapedCString(buf.first,buf_len);
+ 		target = zaimoni::_new_buffer&lt;char&gt;(target_len);
+-		if (NULL==target)
+-			{
+-			free(buf.first);
+-			return -5;
+-			}
++		if (!target) return free(buf.first),-5;
+ 		EscapeCString(target,buf.first,buf_len);
+ 		free(buf.first);
+ 		assert(IsLegalCString(target,target_len));
+@@ -3004,7 +2996,7 @@
+ 
+ static uintmax_t EvalCharacterLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(3&lt;=src_len);
+ 	assert(IsLegalCCharacterLiteral(src,src_len));
+ 	const bool is_wide = 'L'== *src;
+@@ -3034,7 +3026,7 @@
+ 
+ bool CCharLiteralIsFalse(const char* x,size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	assert(IsLegalCCharacterLiteral(x,x_len));
+ 	const uintmax_t result = EvalCharacterLiteral(x,x_len);
+@@ -3460,25 +3452,19 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_SHORT_IDX,C99_CPP_LONG_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::UINT-C_TYPE::INT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::INT+(2==tmp));
+ 						break;
+-						}
+ 					case 1:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::USHRT-C_TYPE::SHRT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::SHRT+(2==tmp));
+ 						break;
+-						}
+ 					default:
+-						{
+ 						BOOST_STATIC_ASSERT(3==C_TYPE::ULLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(2==C_TYPE::LLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::ULONG-C_TYPE::LONG);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::LONG+(2==tmp)+2*optional_keyword(src,i,invariant_decl_scanner,C99_CPP_LONG_IDX));
+ //						break;
+-						}
+ 					}
+ 					}
+ 					break;
+@@ -3547,7 +3533,6 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_FLOAT_IDX,C99_CPP_DOUBLE_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						if (!have_warned_about_Complex)
+ 							{
+ 							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -3559,7 +3544,6 @@
+ 						// remove the unusable token
+ 						src.DeleteIdx&lt;0&gt;(i--);
+ 						break;
+-						}
+ 					case 1:
+ 						src.c_array&lt;0&gt;()[i].flags |= PARSE_PRIMARY_TYPE;
+ 						set_C_canonical_type_representation(src,i,C_TYPE::FLOAT__COMPLEX);
+@@ -3783,25 +3767,19 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_SHORT_IDX,C99_CPP_LONG_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::UINT-C_TYPE::INT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::INT+(2==tmp));
+ 						break;
+-						}
+ 					case 1:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::USHRT-C_TYPE::SHRT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::SHRT+(2==tmp));
+ 						break;
+-						}
+ 					default:
+-						{
+ 						BOOST_STATIC_ASSERT(3==C_TYPE::ULLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(2==C_TYPE::LLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::ULONG-C_TYPE::LONG);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::LONG+(2==tmp)+2*optional_keyword(src,i,invariant_decl_scanner,C99_CPP_LONG_IDX));
+ //						break;
+-						}
+ 					}
+ 					}
+ 					break;
+@@ -3870,7 +3848,6 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_FLOAT_IDX,C99_CPP_DOUBLE_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						if (!have_warned_about_Complex)
+ 							{
+ 							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -3882,7 +3859,6 @@
+ 						// remove the unusable token
+ 						src.DeleteIdx&lt;0&gt;(i--);
+ 						break;
+-						}
+ 					case 1:
+ 						src.c_array&lt;0&gt;()[i].flags |= PARSE_PRIMARY_TYPE;
+ 						set_C_canonical_type_representation(src,i,C_TYPE::FLOAT__COMPLEX);
+@@ -3910,8 +3886,8 @@
+ static size_t _count_identifiers(const parse_tree&amp; src)
+ {
+ 	size_t count_id = 0;
+-	if (NULL!=src.index_tokens[0].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[0].flags) ++count_id;
+-	if (NULL!=src.index_tokens[1].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags) ++count_id;
++	if (src.index_tokens[0].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[0].flags) ++count_id;
++	if (src.index_tokens[1].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags) ++count_id;
+ 	size_t i = src.size&lt;0&gt;();
+ 	while(0&lt;i) count_id += _count_identifiers(src.data&lt;0&gt;()[--i]);
+ 	i = src.size&lt;1&gt;();
+@@ -3926,7 +3902,7 @@
+ 	return		robust_token_is_char&lt;'('&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;')'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -3936,7 +3912,7 @@
+ 	return		robust_token_is_char&lt;'{'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -3946,7 +3922,7 @@
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -3954,8 +3930,7 @@
+ static bool is_nonempty_naked_pair(const parse_tree&amp; src)
+ {
+ 	return !src.empty&lt;0&gt;()  &amp;&amp; (is_naked_parentheses_pair(src) 
+-		|| is_naked_brace_pair(src)
+-		|| is_naked_bracket_pair(src));
++		|| is_naked_brace_pair(src) || is_naked_bracket_pair(src));
+ }
+ 
+ #ifndef NDEBUG
+@@ -3963,7 +3938,7 @@
+ {
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)			// content of [ ]
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_POSTFIX_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)	// prefix arg of [ ]
+ 			&amp;&amp;	src.empty&lt;2&gt;();
+@@ -3975,7 +3950,7 @@
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)			// content of [ ]
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)	// prefix arg of [ ]
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-10-28 23:00:29 UTC (rev 511)
++++ trunk/CSupport.cpp.in	2010-10-29 00:37:11 UTC (rev 512)
+@@ -2668,11 +2668,11 @@
+ 
+ static uintmax_t _eval_character(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	if (1==src_len) return (unsigned char)(*src);
+ 	const char* tmp_escape = strchr(C_OCTAL_DIGITS,src[1]);
+-	if (NULL!=tmp_escape)
++	if (tmp_escape)
+ 		{
+ 		const size_t oct_len = octal_escape_length(src+1,(3U&gt;src_len-1U) ? 3U : src_len-1U);
+ 		assert(0&lt;oct_len);
+@@ -2693,7 +2693,7 @@
+ 
+ static void UnescapeCString(char* dest, const char* src, size_t src_len)
+ {	//! \todo cross-compiler augmentation target, dest needs to be able represent target strings
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	assert(CHAR_BIT&gt;=target_machine-&gt;C_char_bit());
+ 
+@@ -2709,7 +2709,7 @@
+ 
+ static void UnescapeCWideString(my_UNICODE* dest, const char* src, size_t src_len)
+ {	//! \todo cross-compiler change target, dest needs to be able represent target strings
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	assert(C_UNICODE_MAX&gt;=target_machine-&gt;unsigned_max(target_machine-&gt;UNICODE_wchar_t()));
+ 
+@@ -2725,7 +2725,7 @@
+ 
+ bool IsLegalCString(const char* x, size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	if ('&quot;' != x[x_len-1]) return false;
+ 	if (0 == --x_len) return false;
+@@ -2752,7 +2752,7 @@
+ 
+ bool IsLegalCCharacterLiteral(const char* x, size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	if ('\'' != x[x_len-1]) return false;
+ 	if (0 == --x_len) return false;
+@@ -2779,7 +2779,7 @@
+ 
+ static size_t LengthOfCStringLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	const bool wide_str = ('L'==src[0]);
+ 	if (wide_str)
+@@ -2795,7 +2795,7 @@
+ 
+ static size_t LengthOfCCharLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	const bool wide_char = ('L'==src[0]);
+ 	if (wide_char)
+@@ -2822,7 +2822,7 @@
+  */
+ bool LocateCCharacterLiteralAt(const char* const src, size_t src_len, size_t target_idx, size_t&amp; char_offset, size_t&amp; char_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	assert(IsLegalCString(src,src_len));
+ 	const char* src2 = src;
+@@ -2859,9 +2859,9 @@
+ 
+ void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*&amp; tmp)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+-	assert(NULL==tmp);
++	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len&gt;target_idx);
+@@ -2926,13 +2926,13 @@
+  */
+ static int ConcatenateCStringLiterals(const char* src, size_t src_len, const char* src2, size_t src2_len, char*&amp; target)
+ {
+-	assert(NULL!=src);
+-	assert(NULL!=src2);
++	assert(src);
++	assert(src2);
+ 	assert(2&lt;=src_len);
+ 	assert(2&lt;=src2_len);
+ 	assert(IsLegalCString(src,src_len));
+ 	assert(IsLegalCString(src2,src2_len));
+-	assert(NULL==target);
++	assert(!target);
+ 
+ 	const char* str1 = src;
+ 	const char* str2 = src2;
+@@ -2999,7 +2999,7 @@
+ 		const size_t new_start = (str_target_wide) ? 2 : 1;
+ 		const size_t new_width = str1_len+str2_len+new_start+1U;
+ 		target = reinterpret_cast&lt;char*&gt;(calloc(new_width,1));
+-		if (NULL==target) return -5;
++		if (!target) return -5;
+ 		target[new_width-1] = '&quot;';
+ 		target[new_start-1] = '&quot;';
+ 		if (str_target_wide) target[0] = 'L';
+@@ -3016,17 +3016,13 @@
+ 	if (str_target_wide)
+ 		{
+ 		buf.second = zaimoni::_new_buffer&lt;my_UNICODE&gt;(buf_len);
+-		if (NULL==buf.second) return -5;
++		if (!buf.second) return -5;
+ 		UnescapeCWideString(buf.second,str1,str1_len);
+ 		UnescapeCWideString(buf.second+str1_un_len,str2,str2_len);
+ 		//! \todo C vs C++
+ 		const size_t target_len = LengthOfEscapedCString(buf.second,buf_len);
+ 		target = zaimoni::_new_buffer&lt;char&gt;(target_len);
+-		if (NULL==target)
+-			{
+-			free(buf.second);
+-			return -5;
+-			}
++		if (!target) return free(buf.second),-5; 
+ 		EscapeCString(target,buf.second,buf_len);
+ 		free(buf.second);
+ 		assert(IsLegalCString(target,target_len));
+@@ -3034,16 +3030,12 @@
+ 		}
+ 	else{
+ 		buf.first = zaimoni::_new_buffer&lt;char&gt;(buf_len);
+-		if (NULL==buf.first) return -5;
++		if (!buf.first) return -5;
+ 		UnescapeCString(buf.first,str1,str1_len);
+ 		UnescapeCString(buf.first+str1_un_len,str2,str2_len);
+ 		const size_t target_len = LengthOfEscapedCString(buf.first,buf_len);
+ 		target = zaimoni::_new_buffer&lt;char&gt;(target_len);
+-		if (NULL==target)
+-			{
+-			free(buf.first);
+-			return -5;
+-			}
++		if (!target) return free(buf.first),-5;
+ 		EscapeCString(target,buf.first,buf_len);
+ 		free(buf.first);
+ 		assert(IsLegalCString(target,target_len));
+@@ -3054,7 +3046,7 @@
+ 
+ static uintmax_t EvalCharacterLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(3&lt;=src_len);
+ 	assert(IsLegalCCharacterLiteral(src,src_len));
+ 	const bool is_wide = 'L'== *src;
+@@ -3084,7 +3076,7 @@
+ 
+ bool CCharLiteralIsFalse(const char* x,size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	assert(IsLegalCCharacterLiteral(x,x_len));
+ 	const uintmax_t result = EvalCharacterLiteral(x,x_len);
+@@ -3511,25 +3503,19 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_SHORT_IDX,C99_CPP_LONG_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::UINT-C_TYPE::INT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::INT+(2==tmp));
+ 						break;
+-						}
+ 					case 1:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::USHRT-C_TYPE::SHRT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::SHRT+(2==tmp));
+ 						break;
+-						}
+ 					default:
+-						{
+ 						BOOST_STATIC_ASSERT(3==C_TYPE::ULLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(2==C_TYPE::LLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::ULONG-C_TYPE::LONG);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::LONG+(2==tmp)+2*optional_keyword(src,i,invariant_decl_scanner,C99_CPP_LONG_IDX));
+ //						break;
+-						}
+ 					}
+ 					}
+ 					break;
+@@ -3598,7 +3584,6 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_FLOAT_IDX,C99_CPP_DOUBLE_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						if (!have_warned_about_Complex)
+ 							{
+ 							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -3610,7 +3595,6 @@
+ 						// remove the unusable token
+ 						src.DeleteIdx&lt;0&gt;(i--);
+ 						break;
+-						}
+ 					case 1:
+ 						src.c_array&lt;0&gt;()[i].flags |= PARSE_PRIMARY_TYPE;
+ 						set_C_canonical_type_representation(src,i,C_TYPE::FLOAT__COMPLEX);
+@@ -3834,25 +3818,19 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_SHORT_IDX,C99_CPP_LONG_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::UINT-C_TYPE::INT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::INT+(2==tmp));
+ 						break;
+-						}
+ 					case 1:
+-						{
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::USHRT-C_TYPE::SHRT);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::SHRT+(2==tmp));
+ 						break;
+-						}
+ 					default:
+-						{
+ 						BOOST_STATIC_ASSERT(3==C_TYPE::ULLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(2==C_TYPE::LLONG-C_TYPE::LONG);
+ 						BOOST_STATIC_ASSERT(1==C_TYPE::ULONG-C_TYPE::LONG);
+ 						set_C_canonical_type_representation(src,i,C_TYPE::LONG+(2==tmp)+2*optional_keyword(src,i,invariant_decl_scanner,C99_CPP_LONG_IDX));
+ //						break;
+-						}
+ 					}
+ 					}
+ 					break;
+@@ -3921,7 +3899,6 @@
+ 					switch(optional_keyword_choice(src,i,invariant_decl_scanner,C99_CPP_FLOAT_IDX,C99_CPP_DOUBLE_IDX))
+ 					{
+ 					case 0:
+-						{
+ 						if (!have_warned_about_Complex)
+ 							{
+ 							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -3933,7 +3910,6 @@
+ 						// remove the unusable token
+ 						src.DeleteIdx&lt;0&gt;(i--);
+ 						break;
+-						}
+ 					case 1:
+ 						src.c_array&lt;0&gt;()[i].flags |= PARSE_PRIMARY_TYPE;
+ 						set_C_canonical_type_representation(src,i,C_TYPE::FLOAT__COMPLEX);
+@@ -3962,8 +3938,8 @@
+ static size_t _count_identifiers(const parse_tree&amp; src)
+ {
+ 	size_t count_id = 0;
+-	if (NULL!=src.index_tokens[0].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[0].flags) ++count_id;
+-	if (NULL!=src.index_tokens[1].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags) ++count_id;
++	if (src.index_tokens[0].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[0].flags) ++count_id;
++	if (src.index_tokens[1].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags) ++count_id;
+ 	size_t i = src.size&lt;0&gt;();
+ 	while(0&lt;i) count_id += _count_identifiers(src.data&lt;0&gt;()[--i]);
+ 	i = src.size&lt;1&gt;();
+@@ -3978,7 +3954,7 @@
+ 	return		robust_token_is_char&lt;'('&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;')'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -3989,7 +3965,7 @@
+ 	return		robust_token_is_char&lt;'{'&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -3999,7 +3975,7 @@
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -4007,8 +3983,7 @@
+ static bool is_nonempty_naked_pair(const parse_tree&amp; src)
+ {
+ 	return !src.empty&lt;0&gt;()  &amp;&amp; (is_naked_parentheses_pair(src) 
+-		|| is_naked_brace_pair(src)
+-		|| is_naked_bracket_pair(src));
++		|| is_naked_brace_pair(src) || is_naked_bracket_pair(src));
+ }
+ #/*cut-cpp*/
+ 
+@@ -4017,7 +3992,7 @@
+ {
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)			// content of [ ]
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_POSTFIX_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)	// prefix arg of [ ]
+ 			&amp;&amp;	src.empty&lt;2&gt;();
+@@ -4029,7 +4004,7 @@
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)			// content of [ ]
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)	// prefix arg of [ ]
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-10-28 23:00:29 UTC (rev 511)
++++ trunk/CSupport_pp.cpp	2010-10-29 00:37:11 UTC (rev 512)
+@@ -2397,11 +2397,11 @@
+ 
+ static uintmax_t _eval_character(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	if (1==src_len) return (unsigned char)(*src);
+ 	const char* tmp_escape = strchr(C_OCTAL_DIGITS,src[1]);
+-	if (NULL!=tmp_escape)
++	if (tmp_escape)
+ 		{
+ 		const size_t oct_len = octal_escape_length(src+1,(3U&gt;src_len-1U) ? 3U : src_len-1U);
+ 		assert(0&lt;oct_len);
+@@ -2422,7 +2422,7 @@
+ 
+ static void UnescapeCString(char* dest, const char* src, size_t src_len)
+ {	//! \todo cross-compiler augmentation target, dest needs to be able represent target strings
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	assert(CHAR_BIT&gt;=target_machine-&gt;C_char_bit());
+ 
+@@ -2438,7 +2438,7 @@
+ 
+ static void UnescapeCWideString(my_UNICODE* dest, const char* src, size_t src_len)
+ {	//! \todo cross-compiler change target, dest needs to be able represent target strings
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(0&lt;src_len);
+ 	assert(C_UNICODE_MAX&gt;=target_machine-&gt;unsigned_max(target_machine-&gt;UNICODE_wchar_t()));
+ 
+@@ -2454,7 +2454,7 @@
+ 
+ bool IsLegalCString(const char* x, size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	if ('&quot;' != x[x_len-1]) return false;
+ 	if (0 == --x_len) return false;
+@@ -2481,7 +2481,7 @@
+ 
+ bool IsLegalCCharacterLiteral(const char* x, size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	if ('\'' != x[x_len-1]) return false;
+ 	if (0 == --x_len) return false;
+@@ -2508,7 +2508,7 @@
+ 
+ static size_t LengthOfCStringLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	const bool wide_str = ('L'==src[0]);
+ 	if (wide_str)
+@@ -2524,7 +2524,7 @@
+ 
+ static size_t LengthOfCCharLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	const bool wide_char = ('L'==src[0]);
+ 	if (wide_char)
+@@ -2551,7 +2551,7 @@
+  */
+ bool LocateCCharacterLiteralAt(const char* const src, size_t src_len, size_t target_idx, size_t&amp; char_offset, size_t&amp; char_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+ 	assert(IsLegalCString(src,src_len));
+ 	const char* src2 = src;
+@@ -2588,9 +2588,9 @@
+ 
+ void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*&amp; tmp)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(2&lt;=src_len);
+-	assert(NULL==tmp);
++	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len&gt;target_idx);
+@@ -2655,13 +2655,13 @@
+  */
+ static int ConcatenateCStringLiterals(const char* src, size_t src_len, const char* src2, size_t src2_len, char*&amp; target)
+ {
+-	assert(NULL!=src);
+-	assert(NULL!=src2);
++	assert(src);
++	assert(src2);
+ 	assert(2&lt;=src_len);
+ 	assert(2&lt;=src2_len);
+ 	assert(IsLegalCString(src,src_len));
+ 	assert(IsLegalCString(src2,src2_len));
+-	assert(NULL==target);
++	assert(!target);
+ 
+ 	const char* str1 = src;
+ 	const char* str2 = src2;
+@@ -2728,7 +2728,7 @@
+ 		const size_t new_start = (str_target_wide) ? 2 : 1;
+ 		const size_t new_width = str1_len+str2_len+new_start+1U;
+ 		target = reinterpret_cast&lt;char*&gt;(calloc(new_width,1));
+-		if (NULL==target) return -5;
++		if (!target) return -5;
+ 		target[new_width-1] = '&quot;';
+ 		target[new_start-1] = '&quot;';
+ 		if (str_target_wide) target[0] = 'L';
+@@ -2745,17 +2745,13 @@
+ 	if (str_target_wide)
+ 		{
+ 		buf.second = zaimoni::_new_buffer&lt;my_UNICODE&gt;(buf_len);
+-		if (NULL==buf.second) return -5;
++		if (!buf.second) return -5;
+ 		UnescapeCWideString(buf.second,str1,str1_len);
+ 		UnescapeCWideString(buf.second+str1_un_len,str2,str2_len);
+ 		//! \todo C vs C++
+ 		const size_t target_len = LengthOfEscapedCString(buf.second,buf_len);
+ 		target = zaimoni::_new_buffer&lt;char&gt;(target_len);
+-		if (NULL==target)
+-			{
+-			free(buf.second);
+-			return -5;
+-			}
++		if (!target) return free(buf.second),-5; 
+ 		EscapeCString(target,buf.second,buf_len);
+ 		free(buf.second);
+ 		assert(IsLegalCString(target,target_len));
+@@ -2763,16 +2759,12 @@
+ 		}
+ 	else{
+ 		buf.first = zaimoni::_new_buffer&lt;char&gt;(buf_len);
+-		if (NULL==buf.first) return -5;
++		if (!buf.first) return -5;
+ 		UnescapeCString(buf.first,str1,str1_len);
+ 		UnescapeCString(buf.first+str1_un_len,str2,str2_len);
+ 		const size_t target_len = LengthOfEscapedCString(buf.first,buf_len);
+ 		target = zaimoni::_new_buffer&lt;char&gt;(target_len);
+-		if (NULL==target)
+-			{
+-			free(buf.first);
+-			return -5;
+-			}
++		if (!target) return free(buf.first),-5;
+ 		EscapeCString(target,buf.first,buf_len);
+ 		free(buf.first);
+ 		assert(IsLegalCString(target,target_len));
+@@ -2783,7 +2775,7 @@
+ 
+ static uintmax_t EvalCharacterLiteral(const char* src, size_t src_len)
+ {
+-	assert(NULL!=src);
++	assert(src);
+ 	assert(3&lt;=src_len);
+ 	assert(IsLegalCCharacterLiteral(src,src_len));
+ 	const bool is_wide = 'L'== *src;
+@@ -2813,7 +2805,7 @@
+ 
+ bool CCharLiteralIsFalse(const char* x,size_t x_len)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+ 	assert(IsLegalCCharacterLiteral(x,x_len));
+ 	const uintmax_t result = EvalCharacterLiteral(x,x_len);
+@@ -2911,8 +2903,8 @@
+ static size_t _count_identifiers(const parse_tree&amp; src)
+ {
+ 	size_t count_id = 0;
+-	if (NULL!=src.index_tokens[0].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[0].flags) ++count_id;
+-	if (NULL!=src.index_tokens[1].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags) ++count_id;
++	if (src.index_tokens[0].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[0].flags) ++count_id;
++	if (src.index_tokens[1].token.first &amp;&amp; C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags) ++count_id;
+ 	size_t i = src.size&lt;0&gt;();
+ 	while(0&lt;i) count_id += _count_identifiers(src.data&lt;0&gt;()[--i]);
+ 	i = src.size&lt;1&gt;();
+@@ -2927,7 +2919,7 @@
+ 	return		robust_token_is_char&lt;'('&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;')'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+@@ -2937,7 +2929,7 @@
+ {
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)			// content of [ ]
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_POSTFIX_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)	// prefix arg of [ ]
+ 			&amp;&amp;	src.empty&lt;2&gt;();
+@@ -2949,7 +2941,7 @@
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+ 			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename &amp;&amp; src.index_tokens[1].src_filename
+ #endif
+ 			&amp;&amp;	1==src.size&lt;0&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)			// content of [ ]
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)	// prefix arg of [ ]
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000278.html">[Zcplusplus-commits] r511 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000280.html">[Zcplusplus-commits] r513 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#279">[ date ]</a>
+              <a href="thread.html#279">[ thread ]</a>
+              <a href="subject.html#279">[ subject ]</a>
+              <a href="author.html#279">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,679 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r676 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r676%20-%20trunk&In-Reply-To=%3C20110725223933.BE5E4480EDF%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000442.html">
+   <LINK REL="Next"  HREF="000444.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r676 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r676%20-%20trunk&In-Reply-To=%3C20110725223933.BE5E4480EDF%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r676 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Jul 26 00:39:33 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000442.html">[Zcplusplus-commits] r675 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000444.html">[Zcplusplus-commits] r677 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#443">[ date ]</a>
+              <a href="thread.html#443">[ thread ]</a>
+              <a href="subject.html#443">[ subject ]</a>
+              <a href="author.html#443">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-07-26 00:39:32 +0200 (Tue, 26 Jul 2011)
+New Revision: 676
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+stop earlier for things like extern static int x; reduce indentation as side effect
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-07-25 14:32:24 UTC (rev 675)
++++ trunk/CSupport.cpp	2011-07-25 22:39:32 UTC (rev 676)
+@@ -14034,6 +14034,15 @@
+ 				};
+ 			declFind.fixup_type();	// apply const, volatile
+ 
++			// at this point we don't have a recovery path for things like extern static int x;
++			// this will have already errored, so stop
++			if (!coherent_storage_specifiers)
++				{
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INFORM(&quot;cannot resolve linkage for incoherent storage specifiers: stopping to prevent spurious errors&quot;);
++				return;
++				}
++			
+ 			size_t decl_offset = 0;
+ 			bool have_we_parsed_yet = false;
+ 			do	{
+@@ -14081,70 +14090,67 @@
+ 					break;
+ 					};
+ 				//! \todo analyze decl_specifiers for errors (now have full target type)
+-				// something is being declared
++				// something is being declared; storage specifiers reasonable
+ 				have_we_parsed_yet = true;
+-				if (coherent_storage_specifiers)
+-					{
+-					if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
+-						{	// typedef
+-						register_token&lt;0&gt;(*initdecl_identifier);
+-						// verify that there is no prior definition
+-						const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(initdecl_identifier-&gt;index_tokens[0].token.first);
+-						if (tmp)
+-							{
+-							if (bootstrap==tmp-&gt;first)
+-								{	// warn if there is a prior, consistent definition
+-									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
+-									//! \todo control this warning with an option --no-OAOO or --no-DRY
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(WARN_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
+-								if (bool_options[boolopt::warnings_are_errors])
+-									zcc_errors.inc_error();
+-								}
+-							else{	// error if there is a prior, inconsistent definition
+-									//! \test zcc/decl.C99/Error_redeclare_typedef.h
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
++				if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
++					{	// typedef
++					register_token&lt;0&gt;(*initdecl_identifier);
++					// verify that there is no prior definition
++					const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(initdecl_identifier-&gt;index_tokens[0].token.first);
++					if (tmp)
++						{
++						if (bootstrap==tmp-&gt;first)
++							{	// warn if there is a prior, consistent definition
++								//! \test zcc/decl.C99/Warn_redeclare_typedef.h
++								//! \todo control this warning with an option --no-OAOO or --no-DRY
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							if (bool_options[boolopt::warnings_are_errors])
+ 								zcc_errors.inc_error();
+-								}	
+-							// do not re-register if there is a prior definition
+ 							}
+-						else{	// prepare to register this with types object
+-							const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator(initdecl_identifier-&gt;index_tokens[0].token.first);
+-							if (tmp2)
+-								{	//! \test zcc/decl.C99/Error_typedef_enum.h
+-								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.first);
+-								INC_INFORM(&quot;:&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.second.first);
+-								INFORM(&quot;: enumerator definition here&quot;);
+-								zcc_errors.inc_error();
+-								return;
+-								}
+-							parse_tree::types-&gt;set_typedef(initdecl_identifier-&gt;index_tokens[0].token.first,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
++						else{	// error if there is a prior, inconsistent definition
++								//! \test zcc/decl.C99/Error_redeclare_typedef.h
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							zcc_errors.inc_error();
++							}	
++						// do not re-register if there is a prior definition
++						}
++					else{	// prepare to register this with types object
++						const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator(initdecl_identifier-&gt;index_tokens[0].token.first);
++						if (tmp2)
++							{	//! \test zcc/decl.C99/Error_typedef_enum.h
++							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)&quot;);
++							INC_INFORM(tmp2-&gt;second.second.first);
++							INC_INFORM(&quot;:&quot;);
++							INC_INFORM(tmp2-&gt;second.second.second.first);
++							INFORM(&quot;: enumerator definition here&quot;);
++							zcc_errors.inc_error();
++							return;
+ 							}
++						parse_tree::types-&gt;set_typedef(initdecl_identifier-&gt;index_tokens[0].token.first,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
+ 						}
+-					// for routing purposes, we care about: extern, static, _Thread_local
+-					// function definitions also care about inline
++					}
++				// for routing purposes, we care about: extern, static, _Thread_local
++				// function definitions also care about inline
+ #if 0
+-					else{	// something else
+-						};
++				else{	// something else
++					};
+ #endif
+-					}
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+ 					{	// unterminated declaration: error
+@@ -15547,6 +15553,15 @@
+ 				};
+ 			declFind.fixup_type();	// apply const, volatile
+ 
++			// at this point we don't have a recovery path for things like extern static int x;
++			// this will have already errored, so stop
++			if (!coherent_storage_specifiers)
++				{
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INFORM(&quot;cannot resolve linkage for incoherent storage specifiers: stopping to prevent spurious errors&quot;);
++				return;
++				}
++			
+ 			size_t decl_offset = 0;
+ 			bool have_we_parsed_yet = false;
+ 			do	{
+@@ -15596,80 +15611,74 @@
+ 				//! \todo analyze decl_specifiers for errors (now have full target type)
+ 				// something is being declared
+ 				have_we_parsed_yet = true;
+-				if (coherent_storage_specifiers)
+-					{
+-					if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
+-						{	// typedef
+-						register_token&lt;0&gt;(*initdecl_identifier);
+-						char* namespace_name = active_namespace ? type_system::namespace_concatenate(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
+-						const char* fullname = namespace_name ? namespace_name : initdecl_identifier-&gt;index_tokens[0].token.first;
+-						// We could run an is_string_registered check to try to conserve RAM, but in this case conserving RAM 
+-						// doesn't actually reduce maximum RAM loading before the types.set_typedef_CPP call.
++				if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
++					{	// typedef
++					register_token&lt;0&gt;(*initdecl_identifier);
++					char* namespace_name = active_namespace ? type_system::namespace_concatenate(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
++					const char* fullname = namespace_name ? namespace_name : initdecl_identifier-&gt;index_tokens[0].token.first;
++					// We could run an is_string_registered check to try to conserve RAM, but in this case conserving RAM 
++					// doesn't actually reduce maximum RAM loading before the types.set_typedef_CPP call.
+ 
+-						// verify that there is no prior definition
+-						// we're fine redeclaring at a different level, so do not use full C++ typedef lookup
+-						const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(fullname);					
+-						if (tmp)
+-							{
+-							if (bootstrap==tmp-&gt;first)
+-								{	// warn if there is a prior, consistent definition
+-									//! \test zcc/decl.C99/Warn_redeclare_typedef.hpp
+-									//! \todo control this warning with an option --no-OAOO or --no-DRY
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(WARN_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(fullname);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
+-								if (bool_options[boolopt::warnings_are_errors])
+-									zcc_errors.inc_error();
+-								}
+-							else{	// error if there is a prior, inconsistent definition
+-									//! \test zcc/decl.C99/Error_redeclare_typedef.hpp
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(fullname);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
++					// verify that there is no prior definition
++					// we're fine redeclaring at a different level, so do not use full C++ typedef lookup
++					const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(fullname);					
++					if (tmp)
++						{
++						if (bootstrap==tmp-&gt;first)
++							{	// warn if there is a prior, consistent definition
++								//! \test zcc/decl.C99/Warn_redeclare_typedef.hpp
++								//! \todo control this warning with an option --no-OAOO or --no-DRY
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(fullname);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							if (bool_options[boolopt::warnings_are_errors])
+ 								zcc_errors.inc_error();
+-								}
+-							// do not re-register if there is a prior definition
+-							free(namespace_name);
+ 							}
+-						else{	// register this with types object
+-							free(namespace_name);
+-							const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace);
+-							if (tmp2)
+-								{	//! \test zcc/decl.C99/Error_typedef_enum.hpp
+-									//! \test zcc/decl.C99/Error_typedef_enum2.hpp
+-								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INFORM(&quot;enumerator is already defined, conflicts with typedef (C++98 3.2)&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.first);
+-								INC_INFORM(&quot;:&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.second.first);
+-								INFORM(&quot;: enumerator definition here&quot;);
+-								zcc_errors.inc_error();
+-								return;
+-								}							
+-							parse_tree::types-&gt;set_typedef_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
++						else{	// error if there is a prior, inconsistent definition
++								//! \test zcc/decl.C99/Error_redeclare_typedef.hpp
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(fullname);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							zcc_errors.inc_error();
+ 							}
++						// do not re-register if there is a prior definition
++						free(namespace_name);
+ 						}
+-					// for routing purposes, we care about: extern, static, thread_local
+-					// function definitions also care about inline
++					else{	// register this with types object
++						free(namespace_name);
++						const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace);
++						if (tmp2)
++							{	//! \test zcc/decl.C99/Error_typedef_enum.hpp
++								//! \test zcc/decl.C99/Error_typedef_enum2.hpp
++							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INFORM(&quot;enumerator is already defined, conflicts with typedef (C++98 3.2)&quot;);
++							INC_INFORM(tmp2-&gt;second.second.first);
++							INC_INFORM(&quot;:&quot;);
++							INC_INFORM(tmp2-&gt;second.second.second.first);
++							INFORM(&quot;: enumerator definition here&quot;);
++							zcc_errors.inc_error();
++							return;
++							}							
++						parse_tree::types-&gt;set_typedef_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
++						}
++					}
++				// for routing purposes, we care about: extern, static, thread_local
++				// function definitions also care about inline
+ #if 0
+-					else if (() &amp; declFind.get_flags())
+-						{
+-						}
+-					else{	// something else
+-						};
++				else{	// something else
++					};
+ #endif
+-					};
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+ 					{	// unterminated declaration: error
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-07-25 14:32:24 UTC (rev 675)
++++ trunk/CSupport.cpp.in	2011-07-25 22:39:32 UTC (rev 676)
+@@ -14182,6 +14182,15 @@
+ 				};
+ 			declFind.fixup_type();	// apply const, volatile
+ 
++			// at this point we don't have a recovery path for things like extern static int x;
++			// this will have already errored, so stop
++			if (!coherent_storage_specifiers)
++				{
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INFORM(&quot;cannot resolve linkage for incoherent storage specifiers: stopping to prevent spurious errors&quot;);
++				return;
++				}
++			
+ 			size_t decl_offset = 0;
+ 			bool have_we_parsed_yet = false;
+ 			do	{
+@@ -14229,70 +14238,67 @@
+ 					break;
+ 					};
+ 				//! \todo analyze decl_specifiers for errors (now have full target type)
+-				// something is being declared
++				// something is being declared; storage specifiers reasonable
+ 				have_we_parsed_yet = true;
+-				if (coherent_storage_specifiers)
+-					{
+-					if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
+-						{	// typedef
+-						register_token&lt;0&gt;(*initdecl_identifier);
+-						// verify that there is no prior definition
+-						const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(initdecl_identifier-&gt;index_tokens[0].token.first);
+-						if (tmp)
+-							{
+-							if (bootstrap==tmp-&gt;first)
+-								{	// warn if there is a prior, consistent definition
+-									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
+-									//! \todo control this warning with an option --no-OAOO or --no-DRY
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(WARN_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
+-								if (bool_options[boolopt::warnings_are_errors])
+-									zcc_errors.inc_error();
+-								}
+-							else{	// error if there is a prior, inconsistent definition
+-									//! \test zcc/decl.C99/Error_redeclare_typedef.h
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
++				if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
++					{	// typedef
++					register_token&lt;0&gt;(*initdecl_identifier);
++					// verify that there is no prior definition
++					const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(initdecl_identifier-&gt;index_tokens[0].token.first);
++					if (tmp)
++						{
++						if (bootstrap==tmp-&gt;first)
++							{	// warn if there is a prior, consistent definition
++								//! \test zcc/decl.C99/Warn_redeclare_typedef.h
++								//! \todo control this warning with an option --no-OAOO or --no-DRY
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							if (bool_options[boolopt::warnings_are_errors])
+ 								zcc_errors.inc_error();
+-								}	
+-							// do not re-register if there is a prior definition
+ 							}
+-						else{	// prepare to register this with types object
+-							const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator(initdecl_identifier-&gt;index_tokens[0].token.first);
+-							if (tmp2)
+-								{	//! \test zcc/decl.C99/Error_typedef_enum.h
+-								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.first);
+-								INC_INFORM(&quot;:&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.second.first);
+-								INFORM(&quot;: enumerator definition here&quot;);
+-								zcc_errors.inc_error();
+-								return;
+-								}
+-							parse_tree::types-&gt;set_typedef(initdecl_identifier-&gt;index_tokens[0].token.first,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
++						else{	// error if there is a prior, inconsistent definition
++								//! \test zcc/decl.C99/Error_redeclare_typedef.h
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(initdecl_identifier-&gt;index_tokens[0].token.first);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							zcc_errors.inc_error();
++							}	
++						// do not re-register if there is a prior definition
++						}
++					else{	// prepare to register this with types object
++						const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator(initdecl_identifier-&gt;index_tokens[0].token.first);
++						if (tmp2)
++							{	//! \test zcc/decl.C99/Error_typedef_enum.h
++							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INFORM(&quot;enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)&quot;);
++							INC_INFORM(tmp2-&gt;second.second.first);
++							INC_INFORM(&quot;:&quot;);
++							INC_INFORM(tmp2-&gt;second.second.second.first);
++							INFORM(&quot;: enumerator definition here&quot;);
++							zcc_errors.inc_error();
++							return;
+ 							}
++						parse_tree::types-&gt;set_typedef(initdecl_identifier-&gt;index_tokens[0].token.first,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
+ 						}
+-					// for routing purposes, we care about: extern, static, _Thread_local
+-					// function definitions also care about inline
++					}
++				// for routing purposes, we care about: extern, static, _Thread_local
++				// function definitions also care about inline
+ #if 0
+-					else{	// something else
+-						};
++				else{	// something else
++					};
+ #endif
+-					}
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+ 					{	// unterminated declaration: error
+@@ -15695,6 +15701,15 @@
+ 				};
+ 			declFind.fixup_type();	// apply const, volatile
+ 
++			// at this point we don't have a recovery path for things like extern static int x;
++			// this will have already errored, so stop
++			if (!coherent_storage_specifiers)
++				{
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INFORM(&quot;cannot resolve linkage for incoherent storage specifiers: stopping to prevent spurious errors&quot;);
++				return;
++				}
++			
+ 			size_t decl_offset = 0;
+ 			bool have_we_parsed_yet = false;
+ 			do	{
+@@ -15744,80 +15759,74 @@
+ 				//! \todo analyze decl_specifiers for errors (now have full target type)
+ 				// something is being declared
+ 				have_we_parsed_yet = true;
+-				if (coherent_storage_specifiers)
+-					{
+-					if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
+-						{	// typedef
+-						register_token&lt;0&gt;(*initdecl_identifier);
+-						char* namespace_name = active_namespace ? type_system::namespace_concatenate(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
+-						const char* fullname = namespace_name ? namespace_name : initdecl_identifier-&gt;index_tokens[0].token.first;
+-						// We could run an is_string_registered check to try to conserve RAM, but in this case conserving RAM 
+-						// doesn't actually reduce maximum RAM loading before the types.set_typedef_CPP call.
++				if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; declFind.get_flags())
++					{	// typedef
++					register_token&lt;0&gt;(*initdecl_identifier);
++					char* namespace_name = active_namespace ? type_system::namespace_concatenate(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
++					const char* fullname = namespace_name ? namespace_name : initdecl_identifier-&gt;index_tokens[0].token.first;
++					// We could run an is_string_registered check to try to conserve RAM, but in this case conserving RAM 
++					// doesn't actually reduce maximum RAM loading before the types.set_typedef_CPP call.
+ 
+-						// verify that there is no prior definition
+-						// we're fine redeclaring at a different level, so do not use full C++ typedef lookup
+-						const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(fullname);					
+-						if (tmp)
+-							{
+-							if (bootstrap==tmp-&gt;first)
+-								{	// warn if there is a prior, consistent definition
+-									//! \test zcc/decl.C99/Warn_redeclare_typedef.hpp
+-									//! \todo control this warning with an option --no-OAOO or --no-DRY
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(WARN_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(fullname);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
+-								if (bool_options[boolopt::warnings_are_errors])
+-									zcc_errors.inc_error();
+-								}
+-							else{	// error if there is a prior, inconsistent definition
+-									//! \test zcc/decl.C99/Error_redeclare_typedef.hpp
+-								message_header(initdecl_identifier-&gt;index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INC_INFORM(&quot;redeclaring typedef &quot;);
+-								INFORM(fullname);
+-								INC_INFORM(tmp-&gt;second);
+-								INC_INFORM(':');
+-								INC_INFORM(tmp-&gt;third);
+-								INFORM(&quot;: prior typedef&quot;);
++					// verify that there is no prior definition
++					// we're fine redeclaring at a different level, so do not use full C++ typedef lookup
++					const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = parse_tree::types-&gt;get_typedef(fullname);					
++					if (tmp)
++						{
++						if (bootstrap==tmp-&gt;first)
++							{	// warn if there is a prior, consistent definition
++								//! \test zcc/decl.C99/Warn_redeclare_typedef.hpp
++								//! \todo control this warning with an option --no-OAOO or --no-DRY
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(fullname);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							if (bool_options[boolopt::warnings_are_errors])
+ 								zcc_errors.inc_error();
+-								}
+-							// do not re-register if there is a prior definition
+-							free(namespace_name);
+ 							}
+-						else{	// register this with types object
+-							free(namespace_name);
+-							const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace);
+-							if (tmp2)
+-								{	//! \test zcc/decl.C99/Error_typedef_enum.hpp
+-									//! \test zcc/decl.C99/Error_typedef_enum2.hpp
+-								message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-								INC_INFORM(ERR_STR);
+-								INFORM(&quot;enumerator is already defined, conflicts with typedef (C++98 3.2)&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.first);
+-								INC_INFORM(&quot;:&quot;);
+-								INC_INFORM(tmp2-&gt;second.second.second.first);
+-								INFORM(&quot;: enumerator definition here&quot;);
+-								zcc_errors.inc_error();
+-								return;
+-								}							
+-							parse_tree::types-&gt;set_typedef_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
++						else{	// error if there is a prior, inconsistent definition
++								//! \test zcc/decl.C99/Error_redeclare_typedef.hpp
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INC_INFORM(&quot;redeclaring typedef &quot;);
++							INFORM(fullname);
++							INC_INFORM(tmp-&gt;second);
++							INC_INFORM(':');
++							INC_INFORM(tmp-&gt;third);
++							INFORM(&quot;: prior typedef&quot;);
++							zcc_errors.inc_error();
+ 							}
++						// do not re-register if there is a prior definition
++						free(namespace_name);
+ 						}
+-					// for routing purposes, we care about: extern, static, thread_local
+-					// function definitions also care about inline
++					else{	// register this with types object
++						free(namespace_name);
++						const type_system::enumerator_info* tmp2 = parse_tree::types-&gt;get_enumerator_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace);
++						if (tmp2)
++							{	//! \test zcc/decl.C99/Error_typedef_enum.hpp
++								//! \test zcc/decl.C99/Error_typedef_enum2.hpp
++							message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++							INC_INFORM(ERR_STR);
++							INFORM(&quot;enumerator is already defined, conflicts with typedef (C++98 3.2)&quot;);
++							INC_INFORM(tmp2-&gt;second.second.first);
++							INC_INFORM(&quot;:&quot;);
++							INC_INFORM(tmp2-&gt;second.second.second.first);
++							INFORM(&quot;: enumerator definition here&quot;);
++							zcc_errors.inc_error();
++							return;
++							}							
++						parse_tree::types-&gt;set_typedef_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
++						}
++					}
++				// for routing purposes, we care about: extern, static, thread_local
++				// function definitions also care about inline
+ #if 0
+-					else if (() &amp; declFind.get_flags())
+-						{
+-						}
+-					else{	// something else
+-						};
++				else{	// something else
++					};
+ #endif
+-					};
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+ 					{	// unterminated declaration: error
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000442.html">[Zcplusplus-commits] r675 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000444.html">[Zcplusplus-commits] r677 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#443">[ date ]</a>
+              <a href="thread.html#443">[ thread ]</a>
+              <a href="subject.html#443">[ subject ]</a>
+              <a href="author.html#443">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

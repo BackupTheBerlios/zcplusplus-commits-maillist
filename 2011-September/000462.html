@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r695 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r695%20-%20trunk&In-Reply-To=%3C20110928033438.8A6C84813F0%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000461.html">
+   <LINK REL="Next"  HREF="000463.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r695 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r695%20-%20trunk&In-Reply-To=%3C20110928033438.8A6C84813F0%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r695 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 28 05:34:29 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000461.html">[Zcplusplus-commits] r694 - trunk/tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000463.html">[Zcplusplus-commits] r696 - in trunk: tests/zcc/decl.C99 tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#462">[ date ]</a>
+              <a href="thread.html#462">[ thread ]</a>
+              <a href="subject.html#462">[ subject ]</a>
+              <a href="author.html#462">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-09-28 05:34:26 +0200 (Wed, 28 Sep 2011)
+New Revision: 695
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+fix dereference-before-array when interpreting explicit global namespaced identifiers
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-09-03 22:59:46 UTC (rev 694)
++++ trunk/CSupport.cpp	2011-09-28 03:34:26 UTC (rev 695)
+@@ -10979,7 +10979,7 @@
+ 		{
+ 		if (robust_token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i],&quot;::&quot;))
+ 			{
+-			const bool is_global = (0&lt;i) &amp;&amp; !CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i-1]);
++			const bool is_global = 0==i || !CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i-1]);
+ 			size_t resize_to = src.data&lt;0&gt;()[i].index_tokens[0].token.second;
+ 			size_t forward_span = 0;
+ 			bool last_scope = true;
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-09-03 22:59:46 UTC (rev 694)
++++ trunk/CSupport.cpp.in	2011-09-28 03:34:26 UTC (rev 695)
+@@ -11119,7 +11119,7 @@
+ 		{
+ 		if (robust_token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i],&quot;::&quot;))
+ 			{
+-			const bool is_global = (0&lt;i) &amp;&amp; !CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i-1]);
++			const bool is_global = 0==i || !CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i-1]);
+ 			size_t resize_to = src.data&lt;0&gt;()[i].index_tokens[0].token.second;
+ 			size_t forward_span = 0;
+ 			bool last_scope = true;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000461.html">[Zcplusplus-commits] r694 - trunk/tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000463.html">[Zcplusplus-commits] r696 - in trunk: tests/zcc/decl.C99 tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#462">[ date ]</a>
+              <a href="thread.html#462">[ thread ]</a>
+              <a href="subject.html#462">[ subject ]</a>
+              <a href="author.html#462">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

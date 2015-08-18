@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r389%20-%20in%20trunk%3A%20.%20Zaimoni.STL/Pure.C&In-Reply-To=%3C201004220707.o3M773sF023360%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000155.html">
+   <LINK REL="Next"  HREF="000157.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r389%20-%20in%20trunk%3A%20.%20Zaimoni.STL/Pure.C&In-Reply-To=%3C201004220707.o3M773sF023360%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 22 09:07:03 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000155.html">[Zcplusplus-commits] r388 - in trunk: Zaimoni.STL	Zaimoni.STL/LexParse Zaimoni.STL/OS Zaimoni.STL/OS/Win32	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log	Zaimoni.STL/core.RAM lib
+</A></li>
+        <LI>Next message: <A HREF="000157.html">[Zcplusplus-commits] r390 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#156">[ date ]</a>
+              <a href="thread.html#156">[ thread ]</a>
+              <a href="subject.html#156">[ subject ]</a>
+              <a href="author.html#156">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-22 09:06:59 +0200 (Thu, 22 Apr 2010)
+New Revision: 389
+
+Modified:
+   trunk/Makefile
+   trunk/POSIX.inc
+   trunk/README.txt
+   trunk/Zaimoni.STL/Pure.C/GNUmakefile
+Log:
+adjust GNUMakefile to use the lib/host.zcc subdirectory for stage1 build of bootstrap
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2010-04-22 06:32:06 UTC (rev 388)
++++ trunk/Makefile	2010-04-22 07:06:59 UTC (rev 389)
+@@ -9,16 +9,20 @@
+ all: z_cpp.exe zcc.exe
+ 
+ clean:
+-	rm -f *.o *.exe
++	rm -f *.o *.exe lib/host.zcc/*.a
++	cd Zaimoni.STL; make clean
+ 
+ # dependencies
+ include POSIX.dep
+ 
+-z_cpp.exe : $(OBJECTS_Z_CPP_LINK_PRIORITY)
++make_Zaimoni_STL:
++	cd Zaimoni.STL; make host_install
++
++z_cpp.exe : make_Zaimoni_STL $(OBJECTS_Z_CPP_LINK_PRIORITY)
+ 	g++ $(LINK_FLAGS) -oz_cpp.exe $(OBJECTS_Z_CPP) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
+ 	strip --preserve-dates --strip-unneeded z_cpp.exe
+ 
+-zcc.exe : $(OBJECTS_ZCC_LINK_PRIORITY)
++zcc.exe : make_Zaimoni_STL $(OBJECTS_ZCC_LINK_PRIORITY)
+ 	g++ $(LINK_FLAGS) -ozcc.exe $(OBJECTS_ZCC) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
+ 	strip --preserve-dates --strip-unneeded zcc.exe
+ 
+
+Modified: trunk/POSIX.inc
+===================================================================
+--- trunk/POSIX.inc	2010-04-22 06:32:06 UTC (rev 388)
++++ trunk/POSIX.inc	2010-04-22 07:06:59 UTC (rev 389)
+@@ -16,7 +16,7 @@
+ CFLAGS = -fargument-alias -finline -Os -Wall -Wno-long-long --pedantic
+ CXXFLAGS =
+ ARCH_FLAGS = -mconsole -mno-cygwin -march=pentium -mtune=pentium3
+-LINK_FLAGS = 
++LINK_FLAGS = -Llib/host.zcc
+ 
+ OTHER_INCLUDEDIR =
+ C_MACROS = 
+
+Modified: trunk/README.txt
+===================================================================
+--- trunk/README.txt	2010-04-22 06:32:06 UTC (rev 388)
++++ trunk/README.txt	2010-04-22 07:06:59 UTC (rev 389)
+@@ -1,11 +1,7 @@
+ Installation instructions with GNU make for MingW32 (Official 3.4.5, official 4.2.1, or TDM 4.3.3)
+--1) Install the Boost libraries ( <A HREF="http://www.boost.org/">http://www.boost.org/</A> ) first.
+-0) Install the Zaimoni.STL directory second.
+-0.1) Adjust POSIX.inc to have the correct values for your system.
+-0.2) make
+-0.3) make install if there were no errors
++0) Install the Boost libraries ( <A HREF="http://www.boost.org/">http://www.boost.org/</A> ) first.
+ 
+-1) Adjust POSIX.inc to have the correct values for your system.  Also adjust 
++1) Adjust POSIX.inc and Zaimoni.STL to have the correct values for your system.  Also adjust 
+    the INSTALL_TO macro in CPreproc.cpp to point to the root build directory.
+ 2) make
+ 3) using a Bourne shell in the tests/cpp subdirectory:
+
+Modified: trunk/Zaimoni.STL/Pure.C/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
++++ trunk/Zaimoni.STL/Pure.C/GNUmakefile	2010-04-22 07:06:59 UTC (rev 389)
+@@ -17,7 +17,7 @@
+ 	rm -f *.a *.o auto_int.h comptest.h
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
+-host_install: $(addprefix ../../$(host_libdir)/, $(LIBS))
++host_install: auto_int.h comptest.h $(addprefix ../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(libdir)/libz_format_util.a
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000155.html">[Zcplusplus-commits] r388 - in trunk: Zaimoni.STL	Zaimoni.STL/LexParse Zaimoni.STL/OS Zaimoni.STL/OS/Win32	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log	Zaimoni.STL/core.RAM lib
+</A></li>
+	<LI>Next message: <A HREF="000157.html">[Zcplusplus-commits] r390 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#156">[ date ]</a>
+              <a href="thread.html#156">[ thread ]</a>
+              <a href="subject.html#156">[ subject ]</a>
+              <a href="author.html#156">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

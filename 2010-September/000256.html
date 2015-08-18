@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r489 - in trunk: . tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r489%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20100912045714.A364E480F4F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000255.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r489 - in trunk: . tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r489%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20100912045714.A364E480F4F%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r489 - in trunk: . tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 12 06:57:14 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000255.html">[Zcplusplus-commits] r488 - trunk/tests/zcc/decl.C99
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#256">[ date ]</a>
+              <a href="thread.html#256">[ thread ]</a>
+              <a href="subject.html#256">[ subject ]</a>
+              <a href="author.html#256">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-09-12 06:57:14 +0200 (Sun, 12 Sep 2010)
+New Revision: 489
+
+Added:
+   trunk/tests/zcc/decl.C99/Pass_class_anon_def_decl.hpp
+   trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.h
+   trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.hpp
+   trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.h
+   trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+minimal check of accepting C/C++ anonymous class/struct/union object declarations
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-09-08 03:17:14 UTC (rev 488)
++++ trunk/CSupport.cpp	2010-09-12 04:57:14 UTC (rev 489)
+@@ -4583,6 +4583,13 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
++				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
++				size_t j = i;
++				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
++					{
++					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
++					--j;
++					};
+ 				continue;
+ 				};
+ 			if (!C99_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+@@ -4671,6 +4678,13 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
++				// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
++				size_t j = i;
++				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
++					{
++					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
++					--j;
++					};
+ 				continue;
+ 				};
+ 			if (!CPP_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+
+Added: trunk/tests/zcc/decl.C99/Pass_class_anon_def_decl.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_class_anon_def_decl.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Pass_class_anon_def_decl.hpp	2010-09-12 04:57:14 UTC (rev 489)
+@@ -0,0 +1,16 @@
++// decl.C99\Pass_class_anon_def_decl.hpp
++// using singly defined struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise some declarations
++class {int x_factor;} x1;
++const class {int x_factor;} c1;
++class {int x_factor;} const c2;
++volatile class {int x_factor;} v1;
++class {int x_factor;} volatile v2;
++const volatile class {int x_factor;} cv1;
++volatile const class {int x_factor;} cv2;
++const class {int x_factor;} volatile cv3;
++volatile class {int x_factor;} const cv4;
++class {int x_factor;} const volatile cv5;
++class {int x_factor;} volatile const cv6;
+
+Added: trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.h	2010-09-12 04:57:14 UTC (rev 489)
+@@ -0,0 +1,16 @@
++// decl.C99\Pass_struct_anon_def_decl.h
++// using singly defined struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise some declarations
++struct {int x_factor;} x1;
++const struct {int x_factor;} c1;
++struct {int x_factor;} const c2;
++volatile struct {int x_factor;} v1;
++struct {int x_factor;} volatile v2;
++const volatile struct {int x_factor;} cv1;
++volatile const struct {int x_factor;} cv2;
++const struct {int x_factor;} volatile cv3;
++volatile struct {int x_factor;} const cv4;
++struct {int x_factor;} const volatile cv5;
++struct {int x_factor;} volatile const cv6;
+
+Added: trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Pass_struct_anon_def_decl.hpp	2010-09-12 04:57:14 UTC (rev 489)
+@@ -0,0 +1,16 @@
++// decl.C99\Pass_struct_anon_def_decl.hpp
++// using singly defined struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise some declarations
++struct {int x_factor;} x1;
++const struct {int x_factor;} c1;
++struct {int x_factor;} const c2;
++volatile struct {int x_factor;} v1;
++struct {int x_factor;} volatile v2;
++const volatile struct {int x_factor;} cv1;
++volatile const struct {int x_factor;} cv2;
++const struct {int x_factor;} volatile cv3;
++volatile struct {int x_factor;} const cv4;
++struct {int x_factor;} const volatile cv5;
++struct {int x_factor;} volatile const cv6;
+
+Added: trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.h	2010-09-12 04:57:14 UTC (rev 489)
+@@ -0,0 +1,16 @@
++// decl.C99\Pass_union_anon_def_decl.h
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise some declarations
++union {int x_factor;} x1;
++const union {int x_factor;} c1;
++union {int x_factor;} const c2;
++volatile union {int x_factor;} v1;
++union {int x_factor;} volatile v2;
++const volatile union {int x_factor;} cv1;
++volatile const union {int x_factor;} cv2;
++const union {int x_factor;} volatile cv3;
++volatile union {int x_factor;} const cv4;
++union {int x_factor;} const volatile cv5;
++union {int x_factor;} volatile const cv6;
+
+Added: trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Pass_union_anon_def_decl.hpp	2010-09-12 04:57:14 UTC (rev 489)
+@@ -0,0 +1,17 @@
++// decl.C99\Pass_union_anon_def_decl.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// exercise some declarations
++union {int x_factor;} x1;
++const union {int x_factor;} c1;
++union {int x_factor;} const c2;
++volatile union {int x_factor;} v1;
++union {int x_factor;} volatile v2;
++const volatile union {int x_factor;} cv1;
++volatile const union {int x_factor;} cv2;
++const union {int x_factor;} volatile cv3;
++volatile union {int x_factor;} const cv4;
++union {int x_factor;} const volatile cv5;
++union {int x_factor;} volatile const cv6;
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000255.html">[Zcplusplus-commits] r488 - trunk/tests/zcc/decl.C99
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#256">[ date ]</a>
+              <a href="thread.html#256">[ thread ]</a>
+              <a href="subject.html#256">[ subject ]</a>
+              <a href="author.html#256">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r671 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r671%20-%20trunk&In-Reply-To=%3C20110610175333.CC1D74801AA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000437.html">
+   <LINK REL="Next"  HREF="000439.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r671 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r671%20-%20trunk&In-Reply-To=%3C20110610175333.CC1D74801AA%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r671 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 10 19:53:33 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000437.html">[Zcplusplus-commits] r670 - trunk/tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000439.html">[Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#438">[ date ]</a>
+              <a href="thread.html#438">[ thread ]</a>
+              <a href="subject.html#438">[ subject ]</a>
+              <a href="author.html#438">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-10 19:53:33 +0200 (Fri, 10 Jun 2011)
+New Revision: 671
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+C keyword is _Thread_local, not _Thread_Local #4/final
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-06-10 17:47:21 UTC (rev 670)
++++ trunk/CSupport.cpp	2011-06-10 17:53:33 UTC (rev 671)
+@@ -415,7 +415,7 @@
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
+ 			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keywords not in C++0X
+-			DICT_STRUCT(&quot;_Thread_Local&quot;),
++			DICT_STRUCT(&quot;_Thread_local&quot;),
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+ 			DICT_STRUCT(&quot;_Complex&quot;),
+@@ -912,7 +912,7 @@
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+ 		DICT_STRUCT(&quot;auto&quot;),
+-		DICT_STRUCT(&quot;_Thread_Local&quot;)	// C1X, but in reserved class of identifiers
++		DICT_STRUCT(&quot;_Thread_local&quot;)	// C1X, but in reserved class of identifiers
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -974,7 +974,7 @@
+ 		DICT_STRUCT(&quot;unsigned&quot;),
+ 		DICT_STRUCT(&quot;_Complex&quot;),
+ 		DICT_STRUCT(&quot;_Bool&quot;),
+-		DICT_STRUCT(&quot;_Thread_Local&quot;),	// C1X, actually
++		DICT_STRUCT(&quot;_Thread_local&quot;),	// C1X, actually
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -10642,7 +10642,7 @@
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+ 		DICT_STRUCT(&quot;auto&quot;),
+-		DICT_STRUCT(&quot;_Thread_Local&quot;),	// C1X, actually
++		DICT_STRUCT(&quot;_Thread_local&quot;),	// C1X, actually
+ 	};
+ 
+ static const POD_pair&lt;const char*,size_t&gt; CPP0X_nontype_decl_specifier_list[] =
+@@ -11879,7 +11879,7 @@
+ 				specs[storage_count++] = &quot;extern&quot;;
+ 			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
+ 				{
+-				specs[storage_count++] = &quot;_Thread_Local&quot;;
++				specs[storage_count++] = &quot;_Thread_local&quot;;
+ 				thread_local_compat = ((C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN) &amp; flags);
+ 				}
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+@@ -15912,7 +15912,7 @@
+ 	assert(C99_CPP_COMPLEX_IDX==linear_find(&quot;_Complex&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(C99_CPP_COMPLEX_IDX==linear_find(&quot;_Complex&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_COMPLEX_IDX==linear_find(&quot;_Complex&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+-	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;_Thread_Local&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
++	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;_Thread_local&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;thread_local&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(CPP_MUTABLE_IDX==linear_find(&quot;mutable&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-06-10 17:47:21 UTC (rev 670)
++++ trunk/CSupport.cpp.in	2011-06-10 17:53:33 UTC (rev 671)
+@@ -440,7 +440,7 @@
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
+ 			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keywords not in C++0X
+-			DICT_STRUCT(&quot;_Thread_Local&quot;),
++			DICT_STRUCT(&quot;_Thread_local&quot;),
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+ 			DICT_STRUCT(&quot;_Complex&quot;),
+@@ -966,7 +966,7 @@
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+ 		DICT_STRUCT(&quot;auto&quot;),
+-		DICT_STRUCT(&quot;_Thread_Local&quot;)	// C1X, but in reserved class of identifiers
++		DICT_STRUCT(&quot;_Thread_local&quot;)	// C1X, but in reserved class of identifiers
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -1028,7 +1028,7 @@
+ 		DICT_STRUCT(&quot;unsigned&quot;),
+ 		DICT_STRUCT(&quot;_Complex&quot;),
+ 		DICT_STRUCT(&quot;_Bool&quot;),
+-		DICT_STRUCT(&quot;_Thread_Local&quot;),	// C1X, actually
++		DICT_STRUCT(&quot;_Thread_local&quot;),	// C1X, actually
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -10782,7 +10782,7 @@
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+ 		DICT_STRUCT(&quot;auto&quot;),
+-		DICT_STRUCT(&quot;_Thread_Local&quot;),	// C1X, actually
++		DICT_STRUCT(&quot;_Thread_local&quot;),	// C1X, actually
+ 	};
+ 
+ static const POD_pair&lt;const char*,size_t&gt; CPP0X_nontype_decl_specifier_list[] =
+@@ -12027,7 +12027,7 @@
+ 				specs[storage_count++] = &quot;extern&quot;;
+ 			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
+ 				{
+-				specs[storage_count++] = &quot;_Thread_Local&quot;;
++				specs[storage_count++] = &quot;_Thread_local&quot;;
+ 				thread_local_compat = ((C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN) &amp; flags);
+ 				}
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+@@ -16066,7 +16066,7 @@
+ 	assert(C99_CPP_COMPLEX_IDX==linear_find(&quot;_Complex&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(C99_CPP_COMPLEX_IDX==linear_find(&quot;_Complex&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_COMPLEX_IDX==linear_find(&quot;_Complex&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+-	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;_Thread_Local&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
++	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;_Thread_local&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;thread_local&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(CPP_MUTABLE_IDX==linear_find(&quot;mutable&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ #/*cut-cpp*/
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-06-10 17:47:21 UTC (rev 670)
++++ trunk/CSupport_pp.cpp	2011-06-10 17:53:33 UTC (rev 671)
+@@ -408,7 +408,7 @@
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
+ 			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keywords not in C++0X
+-			DICT_STRUCT(&quot;_Thread_Local&quot;),
++			DICT_STRUCT(&quot;_Thread_local&quot;),
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+ 			DICT_STRUCT(&quot;_Complex&quot;),
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000437.html">[Zcplusplus-commits] r670 - trunk/tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000439.html">[Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#438">[ date ]</a>
+              <a href="thread.html#438">[ thread ]</a>
+              <a href="subject.html#438">[ subject ]</a>
+              <a href="author.html#438">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

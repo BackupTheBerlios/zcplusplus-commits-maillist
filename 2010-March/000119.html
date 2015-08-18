@@ -1,0 +1,503 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r352 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r352%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/default/staticassert%20tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201003180559.o2I5x5xU013814%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000118.html">
+   <LINK REL="Next"  HREF="000120.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r352 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r352%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/default/staticassert%20tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201003180559.o2I5x5xU013814%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r352 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Mar 18 06:59:05 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000118.html">[Zcplusplus-commits] r351 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000120.html">[Zcplusplus-commits] r353 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#119">[ date ]</a>
+              <a href="thread.html#119">[ thread ]</a>
+              <a href="subject.html#119">[ subject ]</a>
+              <a href="author.html#119">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-18 06:58:50 +0100 (Thu, 18 Mar 2010)
+New Revision: 352
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+Log:
+enumerator support for !
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/CSupport.cpp	2010-03-18 05:58:50 UTC (rev 352)
+@@ -630,17 +630,30 @@
+ 
+ static bool converts_to_integerlike(size_t base_type_index)
+ {	//! \todo handle cast operator overloading
+-	//! \todo handle enum types
+ 	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index;
+ }
+ 
+ static bool converts_to_integerlike(const type_spec&amp; type_code)
+ {	//! \todo handle cast operator overloading
+-	//! \todo handle enum types
+ 	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers
+-	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=type_code.base_type_index;
++	return converts_to_integerlike(type_code.base_type_index);
+ }
++#/*cut-cpp*/
+ 
++static bool converts_to_integerlike(size_t base_type_index,const type_system&amp; types)
++{
++	if (converts_to_integerlike(base_type_index)) return true;
++	return types.get_enum_def(base_type_index);
++}
++
++static bool converts_to_integerlike(const type_spec&amp; type_code,const type_system&amp; types)
++{
++	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers
++	if (converts_to_integerlike(type_code.base_type_index)) return true;
++	return types.get_enum_def(type_code.base_type_index);
++}
++#/*cut-cpp*/
++
+ static bool converts_to_integer(const type_spec&amp; type_code)
+ {	//! \todo handle cast operator overloading
+ 	//! \todo handle enum types
+@@ -664,9 +677,26 @@
+ {	//! \todo handle cast operator overloading
+ 	//! \todo handle enum types
+ 	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers/floats/complex
+-	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=type_code.base_type_index;
++	return converts_to_arithmeticlike(type_code.base_type_index);
+ }
++#/*cut-cpp*/
+ 
++static bool converts_to_arithmeticlike(size_t base_type_index,const type_system&amp; types)
++{	//! \todo handle cast operator overloading
++	//! \todo handle enum types
++	if (converts_to_arithmeticlike(base_type_index)) return true;
++	return types.get_enum_def(base_type_index);
++}
++
++static bool converts_to_arithmeticlike(const type_spec&amp; type_code,const type_system&amp; types)
++{	//! \todo handle cast operator overloading
++	//! \todo handle enum types
++	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers/floats/complex
++	if (converts_to_arithmeticlike(type_code.base_type_index)) return true;
++	return types.get_enum_def(type_code.base_type_index);
++}
++#/*cut-cpp*/
++
+ static bool converts_to_bool(const type_spec&amp; type_code)
+ {
+ 	if (0&lt;type_code.pointer_power_after_array_decay()) return true;	// pointers are comparable to NULL
+@@ -674,7 +704,18 @@
+ 	// C++: run through type conversion weirdness
+ 	return false;
+ }
++#/*cut-cpp*/
+ 
++static bool converts_to_bool(const type_spec&amp; type_code,const type_system&amp; types)
++{
++	if (0&lt;type_code.pointer_power_after_array_decay()) return true;	// pointers are comparable to NULL
++	if (converts_to_arithmeticlike(type_code.base_type_index)) return true;	// arithmetic types are comparable to zero, and include bool
++	if (types.get_enum_def(type_code.base_type_index)) return true;	// (unscoped) enumerators convert to integers
++	// C++: run through type conversion weirdness
++	return false;
++}
++#/*cut-cpp*/
++
+ // the integer promotions rely on low-level weirdness, so test that here
+ static size_t arithmetic_reconcile(size_t base_type_index1, size_t base_type_index2)
+ {
+@@ -4298,7 +4339,7 @@
+  *         pointer constant
+  */
+ int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-{
++{	//! \bug doesn't recognize enumerators with value zero
+ 	if (!converts_to_integerlike(src.type_code)) return 0;
+ 	umaxint tmp;
+ 	if (intlike_literal_to_VM(tmp,src)) return tmp==0;
+@@ -4630,12 +4671,12 @@
+ 			}
+ 		else if (token_is_char&lt;'['&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+-			assert(bracket_stack.size()&gt;paren_idx);
++			assert(bracket_stack.size()&gt;bracket_idx);
+ 			bracket_stack[bracket_idx++] = i;
+ 			}
+ 		else if (token_is_char&lt;'{'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+-			assert(brace_stack.size()&gt;paren_idx);
++			assert(brace_stack.size()&gt;brace_idx);
+ 			brace_stack[brace_idx++] = i;
+ 			}
+ 		// introduces sequence points; this causes errors if caught in brackets or parentheses
+@@ -4881,7 +4922,11 @@
+ 			simple_error(src,&quot;array dereference of pointer by pointer (C99 6.5.2.1p1; C++98 5.2.1p1,13.3.1.2p1)&quot;);
+ 			return;
+ 			}
+-		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index))
++		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 			{
+ 			value_copy(src.type_code,src.data&lt;1&gt;()-&gt;type_code);
+ 			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+@@ -4899,7 +4944,11 @@
+ 		}
+ 	else if (0&lt;effective_pointer_power_infix)
+ 		{
+-		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index))
++		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 			{
+ 			value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+@@ -5637,6 +5686,12 @@
+ static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
+ {
+ 	assert(is_logical_NOT(src));
++#/*cut-cpp*/
++	// unscoped enumerators use their integer representation
++	if (   is_noticed_enumerator(*src.data&lt;2&gt;(),types)
++		&amp;&amp; !enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types))
++		return false;
++#/*cut-cpp*/
+ 	{	// deal with literals that convert to bool here
+ 	bool is_true = false;
+ 	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
+@@ -5671,8 +5726,12 @@
+ 	src.type_code.set_type(C_TYPE::BOOL);	// technically wrong for C, but the range is restricted to _Bool's range
+ 	if (eval_logical_NOT(src,types,is_C99_unary_operator_expression&lt;'!'&gt;,C99_literal_converts_to_bool)) return;
+ 
+-	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code))
+-		{	// can't test this from preprocessor
++	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
++		{	// can't test this from preprocessor or static assertion
+ 		simple_error(src,&quot; applies ! to a nonscalar type (C99 6.5.3.3p1)&quot;);
+ 		return;
+ 		}
+@@ -5684,8 +5743,12 @@
+ 	src.type_code.set_type(C_TYPE::BOOL);	// technically wrong for C, but the range is restricted to _Bool's range
+ 	if (eval_logical_NOT(src,types,is_CPP_logical_NOT_expression,CPP_literal_converts_to_bool)) return;
+ 
+-	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code))
+-		{	// can't test this from preprocessor
++	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
++		{	// can't test this from preprocessor or static assertion
+ 		simple_error(src,&quot; applies ! to a type not convertible to bool (C++98 5.3.1p8)&quot;);
+ 		return;
+ 		}
+@@ -10912,22 +10975,21 @@
+ 		// * invoke -Wc-c++-compat if not within INT_MIN..INT_MAX
+ 		// in any case, do not react if the default-init isn't used
+ 		value_copy(prior_value,latest_value);
+-		bool value_is_nonnegative_or_twos_complement = true;
+-		if (virtual_machine::twos_complement!=target_machine-&gt;C_signed_int_representation())
++		{
++		bool value_is_nonnegative = true;
++		const promote_aux test(current_enumerator_type);
++		if (test.is_signed &amp;&amp; latest_value.test(test.bitcount-1))
+ 			{
+-			const promote_aux test(current_enumerator_type);
+-			if (test.is_signed &amp;&amp; latest_value.test(test.bitcount-1))
++			target_machine-&gt;signed_additive_inverse(latest_value,test.machine_type);
++			if (0&lt;latest_value)
+ 				{
+-				target_machine-&gt;signed_additive_inverse(latest_value,test.machine_type);
+-				if (0&lt;latest_value)
+-					{
+-					latest_value -= 1;
+-					if (0&lt;latest_value) target_machine-&gt;signed_additive_inverse(latest_value,test.machine_type);
+-					value_is_nonnegative_or_twos_complement = false;
+-					}
++				latest_value -= 1;
++				if (0&lt;latest_value) target_machine-&gt;signed_additive_inverse(latest_value,test.machine_type);
++				value_is_nonnegative = false;
+ 				}
+ 			}
+-		if (value_is_nonnegative_or_twos_complement) latest_value += 1;
++		if (value_is_nonnegative) latest_value += 1;
++		}
+ 
+ 		if (1&gt;=src.size&lt;0&gt;()-i)
+ 			{	// default-update
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/CSupport_pp.cpp	2010-03-18 05:58:50 UTC (rev 352)
+@@ -577,15 +577,13 @@
+ 
+ static bool converts_to_integerlike(size_t base_type_index)
+ {	//! \todo handle cast operator overloading
+-	//! \todo handle enum types
+ 	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index;
+ }
+ 
+ static bool converts_to_integerlike(const type_spec&amp; type_code)
+ {	//! \todo handle cast operator overloading
+-	//! \todo handle enum types
+ 	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers
+-	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=type_code.base_type_index;
++	return converts_to_integerlike(type_code.base_type_index);
+ }
+ 
+ static bool converts_to_integer(const type_spec&amp; type_code)
+@@ -611,7 +609,7 @@
+ {	//! \todo handle cast operator overloading
+ 	//! \todo handle enum types
+ 	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers/floats/complex
+-	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=type_code.base_type_index;
++	return converts_to_arithmeticlike(type_code.base_type_index);
+ }
+ 
+ static bool converts_to_bool(const type_spec&amp; type_code)
+@@ -3945,7 +3943,7 @@
+  *         pointer constant
+  */
+ int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-{
++{	//! \bug doesn't recognize enumerators with value zero
+ 	if (!converts_to_integerlike(src.type_code)) return 0;
+ 	umaxint tmp;
+ 	if (intlike_literal_to_VM(tmp,src)) return tmp==0;
+@@ -4241,12 +4239,12 @@
+ 			}
+ 		else if (token_is_char&lt;'['&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+-			assert(bracket_stack.size()&gt;paren_idx);
++			assert(bracket_stack.size()&gt;bracket_idx);
+ 			bracket_stack[bracket_idx++] = i;
+ 			}
+ 		else if (token_is_char&lt;'{'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+-			assert(brace_stack.size()&gt;paren_idx);
++			assert(brace_stack.size()&gt;brace_idx);
+ 			brace_stack[brace_idx++] = i;
+ 			}
+ 		// introduces sequence points; this causes errors if caught in brackets or parentheses
+@@ -4492,7 +4490,8 @@
+ 			simple_error(src,&quot;array dereference of pointer by pointer (C99 6.5.2.1p1; C++98 5.2.1p1,13.3.1.2p1)&quot;);
+ 			return;
+ 			}
+-		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index))
++		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index
++			))
+ 			{
+ 			value_copy(src.type_code,src.data&lt;1&gt;()-&gt;type_code);
+ 			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+@@ -4510,7 +4509,8 @@
+ 		}
+ 	else if (0&lt;effective_pointer_power_infix)
+ 		{
+-		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index))
++		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index
++			))
+ 			{
+ 			value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+@@ -5200,8 +5200,9 @@
+ 	src.type_code.set_type(C_TYPE::BOOL);	// technically wrong for C, but the range is restricted to _Bool's range
+ 	if (eval_logical_NOT(src,types,is_C99_unary_operator_expression&lt;'!'&gt;,C99_literal_converts_to_bool)) return;
+ 
+-	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code))
+-		{	// can't test this from preprocessor
++	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code
++		))
++		{	// can't test this from preprocessor or static assertion
+ 		simple_error(src,&quot; applies ! to a nonscalar type (C99 6.5.3.3p1)&quot;);
+ 		return;
+ 		}
+@@ -5213,8 +5214,9 @@
+ 	src.type_code.set_type(C_TYPE::BOOL);	// technically wrong for C, but the range is restricted to _Bool's range
+ 	if (eval_logical_NOT(src,types,is_CPP_logical_NOT_expression,CPP_literal_converts_to_bool)) return;
+ 
+-	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code))
+-		{	// can't test this from preprocessor
++	if (!converts_to_bool(src.data&lt;2&gt;()-&gt;type_code
++		))
++		{	// can't test this from preprocessor or static assertion
+ 		simple_error(src,&quot; applies ! to a type not convertible to bool (C++98 5.3.1p8)&quot;);
+ 		return;
+ 		}
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-03-18 05:58:50 UTC (rev 352)
+@@ -5,3 +5,8 @@
+ // exercise string literal uses in (extended) integer constant expressions
+ _Static_Assert(&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
++_Static_Assert(&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++_Static_Assert(+&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++_Static_Assert(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++_Static_Assert(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-03-18 05:58:50 UTC (rev 352)
+@@ -5,3 +5,8 @@
+ // exercise string literal uses in (extended) integer constant expressions
+ static_assert(&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
++static_assert(&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++static_assert(+&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++static_assert(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++static_assert(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-18 05:58:50 UTC (rev 352)
+@@ -11,3 +11,6 @@
+ _Static_Assert(-1,&quot;automatic success has failed&quot;);
+ _Static_Assert(-'A',&quot;automatic success has failed&quot;);
+ 
++// check unary !
++_Static_Assert(!0,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-18 05:58:50 UTC (rev 352)
+@@ -11,3 +11,6 @@
+ static_assert(-1,&quot;automatic success has failed&quot;);
+ static_assert(-'A',&quot;automatic success has failed&quot;);
+ 
++// check unary !
++static_assert(!0,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-18 05:58:50 UTC (rev 352)
+@@ -18,3 +18,5 @@
+ _Static_Assert(-neg_one,&quot;automatic success has failed&quot;);
+ _Static_Assert(-one,&quot;automatic success has failed&quot;);
+ 
++// check unary !
++_Static_Assert(!zero,&quot;automatic success has failed&quot;);
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-18 05:58:50 UTC (rev 352)
+@@ -18,3 +18,5 @@
+ static_assert(-neg_one,&quot;automatic success has failed&quot;);
+ static_assert(-one,&quot;automatic success has failed&quot;);
+ 
++// check unary !
++static_assert(!zero,&quot;automatic success has failed&quot;);
+
+Modified: trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-03-18 05:58:50 UTC (rev 352)
+@@ -6,3 +6,8 @@
+ // exercise string literal uses in (extended) integer constant expressions
+ STATIC_ASSERT(&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
++STATIC_ASSERT(&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++STATIC_ASSERT(+&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-18 05:58:50 UTC (rev 352)
+@@ -12,3 +12,6 @@
+ STATIC_ASSERT(-1,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(-'A',&quot;automatic success has failed&quot;);
+ 
++// check unary !
++STATIC_ASSERT(!0,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-03-12 00:52:02 UTC (rev 351)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-03-18 05:58:50 UTC (rev 352)
+@@ -19,3 +19,5 @@
+ STATIC_ASSERT(-neg_one,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(-one,&quot;automatic success has failed&quot;);
+ 
++// check unary !
++STATIC_ASSERT(!zero,&quot;automatic success has failed&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000118.html">[Zcplusplus-commits] r351 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000120.html">[Zcplusplus-commits] r353 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#119">[ date ]</a>
+              <a href="thread.html#119">[ thread ]</a>
+              <a href="subject.html#119">[ subject ]</a>
+              <a href="author.html#119">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

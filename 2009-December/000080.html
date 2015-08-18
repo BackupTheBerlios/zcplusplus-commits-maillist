@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r313 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r313%20-%20trunk&In-Reply-To=%3C200912202208.nBKM8F0i008340%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000079.html">
+   <LINK REL="Next"  HREF="000081.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r313 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r313%20-%20trunk&In-Reply-To=%3C200912202208.nBKM8F0i008340%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r313 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 20 23:08:15 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000079.html">[Zcplusplus-commits] r312 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000081.html">[Zcplusplus-commits] r314 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#80">[ date ]</a>
+              <a href="thread.html#80">[ thread ]</a>
+              <a href="subject.html#80">[ subject ]</a>
+              <a href="author.html#80">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-20 23:08:12 +0100 (Sun, 20 Dec 2009)
+New Revision: 313
+
+Modified:
+   trunk/CPreproc.cpp
+Log:
+object file size reduction
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-12-20 21:18:33 UTC (rev 312)
++++ trunk/CPreproc.cpp	2009-12-20 22:08:12 UTC (rev 313)
+@@ -1654,8 +1654,7 @@
+ 							TokenList[i+2]-&gt;ltrim(1);
+ 						if (2&lt;TokenList[i+2]-&gt;size())
+ 							{	//! \test Pass_pragma_STDC.hpp
+-							autovalarray_ptr&lt;char&gt; pragma_string(lang.UnescapeStringLength(TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2));
+-							if (pragma_string.empty()) throw std::bad_alloc();
++							autovalarray_ptr_throws&lt;char&gt; pragma_string(lang.UnescapeStringLength(TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2));
+ 							lang.UnescapeString(pragma_string.c_array(),TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2);
+ 							interpret_pragma(pragma_string.data(),pragma_string.size(),locked_macros);
+ 							};
+@@ -3663,8 +3662,7 @@
+ static bool _concatenate_single(Token&lt;char&gt;&amp; x,const POD_triple&lt;size_t,size_t,lex_flags&gt;* pretokenized, LangConf&amp; lang)
+ {
+ 	assert(NULL!=pretokenized);
+-	autovalarray_ptr&lt;char&gt; new_token(pretokenized[0].second+pretokenized[2].second);
+-	if (new_token.empty()) throw std::bad_alloc();
++	autovalarray_ptr_throws&lt;char&gt; new_token(pretokenized[0].second+pretokenized[2].second);
+ 	strncpy(new_token.c_array(),x.data()+pretokenized[0].first,pretokenized[0].second);
+ 	strncpy(new_token.c_array()+pretokenized[0].second,x.data()+pretokenized[2].first,pretokenized[2].second);
+ 	lex_flags scratch_flags;
+@@ -4210,10 +4208,13 @@
+ 		const size_t escape_length = lang.UnescapeStringLength(TokenList[i]-&gt;data()+critical_offset+1,second_token_len-2);
+ 		if (escape_length&lt;second_token_len-2)
+ 			{
+-			autovalarray_ptr&lt;char&gt; tmp(escape_length);
+-			if (tmp.empty() &amp;&amp; 0&lt;escape_length) throw std::bad_alloc();
+-			if (0&lt;escape_length) lang.UnescapeString(tmp.c_array(),TokenList[i]-&gt;data()+critical_offset+1,second_token_len-2);
+-			new_FILE = register_string(tmp.empty() ? &quot;&quot; : tmp.data());
++			if (0==escape_length)
++				new_FILE = &quot;&quot;;
++			else{
++				autovalarray_ptr_throws&lt;char&gt; tmp(escape_length);
++				lang.UnescapeString(tmp.c_array(),TokenList[i]-&gt;data()+critical_offset+1,second_token_len-2);
++				new_FILE = register_string(tmp.data());
++				}
+ 			}
+ 		else
+ 			new_FILE = register_substring(TokenList[i]-&gt;data()+critical_offset+1,second_token_len-2);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000079.html">[Zcplusplus-commits] r312 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000081.html">[Zcplusplus-commits] r314 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#80">[ date ]</a>
+              <a href="thread.html#80">[ thread ]</a>
+              <a href="subject.html#80">[ subject ]</a>
+              <a href="author.html#80">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r608 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r608%20-%20trunk&In-Reply-To=%3C20110204091358.D689A481353%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000376.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r608 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r608%20-%20trunk&In-Reply-To=%3C20110204091358.D689A481353%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r608 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Feb  4 10:13:58 CET 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000376.html">[Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#375">[ date ]</a>
+              <a href="thread.html#375">[ thread ]</a>
+              <a href="subject.html#375">[ subject ]</a>
+              <a href="author.html#375">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-04 10:13:58 +0100 (Fri, 04 Feb 2011)
+New Revision: 608
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+GetCCharacterLiteralAt interface cleanup
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-29 05:04:25 UTC (rev 607)
++++ trunk/CSupport.cpp	2011-02-04 09:13:58 UTC (rev 608)
+@@ -2813,12 +2813,12 @@
+ 	return false;
+ }
+ 
+-void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*&amp; tmp)
++static char* GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx)
+ {
+ 	assert(src);
+ 	assert(2&lt;=src_len);
+-	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
++	char* tmp = NULL;
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len&gt;target_idx);
+ 	const bool wide_str = ('L'==src[0]);
+@@ -2836,7 +2836,7 @@
+ 		tmp = tmp2;
+ 		if (wide_str) *(tmp2++) = 'L';
+ 		strcpy(tmp2,&quot;'\\0'&quot;);
+-		return;
++		return tmp;
+ 		};
+ 
+ 	size_t i = 0;
+@@ -2851,12 +2851,13 @@
+ 			*(tmp2++) = '\'';
+ 			strncpy(tmp2,src+i,step);
+ 			*(tmp2 += step) = '\'';
+-			return;
++			return tmp;
+ 			}
+ 		i += step;
+ 		++j;
+ 		}
+ 	while(src_len &gt; i);
++	return tmp;
+ }
+ 
+ /*! 
+@@ -7687,10 +7688,8 @@
+ 		size_t i = 0;
+ 		while(i&lt;lhs_len-1)
+ 			{
+-			char* lhs_lit = NULL;
+-			char* rhs_lit = NULL;
+-			GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i,lhs_lit);
+-			GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i,rhs_lit);
++			char* const lhs_lit = GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i);
++			char* const rhs_lit = GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i);
+ 			const uintmax_t lhs_val = EvalCharacterLiteral(lhs_lit,strlen(lhs_lit));
+ 			const uintmax_t rhs_val = EvalCharacterLiteral(rhs_lit,strlen(rhs_lit));
+ 			free(lhs_lit);
+@@ -10971,9 +10970,8 @@
+ 			}
+ 		return;
+ 		};
+-	char* tmp2 = NULL;
+ 	assert(tmp.representable_as_uint());
+-	GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint(),tmp2);
++	char* tmp2 = GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint());
+ 	assert(tmp2);
+ 	src.destroy();	// str_lit goes invalid here, don't use again
+ 	src.grab_index_token_from&lt;0&gt;(tmp2,C_TESTFLAG_CHAR_LITERAL);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-29 05:04:25 UTC (rev 607)
++++ trunk/CSupport.cpp.in	2011-02-04 09:13:58 UTC (rev 608)
+@@ -2868,12 +2868,12 @@
+ 	return false;
+ }
+ 
+-void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*&amp; tmp)
++static char* GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx)
+ {
+ 	assert(src);
+ 	assert(2&lt;=src_len);
+-	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
++	char* tmp = NULL;
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len&gt;target_idx);
+ 	const bool wide_str = ('L'==src[0]);
+@@ -2891,7 +2891,7 @@
+ 		tmp = tmp2;
+ 		if (wide_str) *(tmp2++) = 'L';
+ 		strcpy(tmp2,&quot;'\\0'&quot;);
+-		return;
++		return tmp;
+ 		};
+ 
+ 	size_t i = 0;
+@@ -2906,12 +2906,13 @@
+ 			*(tmp2++) = '\'';
+ 			strncpy(tmp2,src+i,step);
+ 			*(tmp2 += step) = '\'';
+-			return;
++			return tmp;
+ 			}
+ 		i += step;
+ 		++j;
+ 		}
+ 	while(src_len &gt; i);
++	return tmp;
+ }
+ 
+ /*! 
+@@ -7794,10 +7795,8 @@
+ 		size_t i = 0;
+ 		while(i&lt;lhs_len-1)
+ 			{
+-			char* lhs_lit = NULL;
+-			char* rhs_lit = NULL;
+-			GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i,lhs_lit);
+-			GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i,rhs_lit);
++			char* const lhs_lit = GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i);
++			char* const rhs_lit = GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i);
+ 			const uintmax_t lhs_val = EvalCharacterLiteral(lhs_lit,strlen(lhs_lit));
+ 			const uintmax_t rhs_val = EvalCharacterLiteral(rhs_lit,strlen(rhs_lit));
+ 			free(lhs_lit);
+@@ -11108,9 +11107,8 @@
+ 			}
+ 		return;
+ 		};
+-	char* tmp2 = NULL;
+ 	assert(tmp.representable_as_uint());
+-	GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint(),tmp2);
++	char* tmp2 = GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint());
+ 	assert(tmp2);
+ 	src.destroy();	// str_lit goes invalid here, don't use again
+ 	src.grab_index_token_from&lt;0&gt;(tmp2,C_TESTFLAG_CHAR_LITERAL);
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-01-29 05:04:25 UTC (rev 607)
++++ trunk/CSupport_pp.cpp	2011-02-04 09:13:58 UTC (rev 608)
+@@ -2586,12 +2586,12 @@
+ 	return false;
+ }
+ 
+-void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*&amp; tmp)
++static char* GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx)
+ {
+ 	assert(src);
+ 	assert(2&lt;=src_len);
+-	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
++	char* tmp = NULL;
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len&gt;target_idx);
+ 	const bool wide_str = ('L'==src[0]);
+@@ -2609,7 +2609,7 @@
+ 		tmp = tmp2;
+ 		if (wide_str) *(tmp2++) = 'L';
+ 		strcpy(tmp2,&quot;'\\0'&quot;);
+-		return;
++		return tmp;
+ 		};
+ 
+ 	size_t i = 0;
+@@ -2624,12 +2624,13 @@
+ 			*(tmp2++) = '\'';
+ 			strncpy(tmp2,src+i,step);
+ 			*(tmp2 += step) = '\'';
+-			return;
++			return tmp;
+ 			}
+ 		i += step;
+ 		++j;
+ 		}
+ 	while(src_len &gt; i);
++	return tmp;
+ }
+ 
+ /*! 
+@@ -5860,10 +5861,8 @@
+ 		size_t i = 0;
+ 		while(i&lt;lhs_len-1)
+ 			{
+-			char* lhs_lit = NULL;
+-			char* rhs_lit = NULL;
+-			GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i,lhs_lit);
+-			GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i,rhs_lit);
++			char* const lhs_lit = GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i);
++			char* const rhs_lit = GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i);
+ 			const uintmax_t lhs_val = EvalCharacterLiteral(lhs_lit,strlen(lhs_lit));
+ 			const uintmax_t rhs_val = EvalCharacterLiteral(rhs_lit,strlen(rhs_lit));
+ 			free(lhs_lit);
+@@ -8616,9 +8615,8 @@
+ 			}
+ 		return;
+ 		};
+-	char* tmp2 = NULL;
+ 	assert(tmp.representable_as_uint());
+-	GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint(),tmp2);
++	char* tmp2 = GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint());
+ 	assert(tmp2);
+ 	src.destroy();	// str_lit goes invalid here, don't use again
+ 	src.grab_index_token_from&lt;0&gt;(tmp2,C_TESTFLAG_CHAR_LITERAL);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000376.html">[Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#375">[ date ]</a>
+              <a href="thread.html#375">[ thread ]</a>
+              <a href="subject.html#375">[ subject ]</a>
+              <a href="author.html#375">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

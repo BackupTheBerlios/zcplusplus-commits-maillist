@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r346 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r346%20-%20trunk&In-Reply-To=%3C201003081913.o28JDRg4027493%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000112.html">
+   <LINK REL="Next"  HREF="000114.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r346 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r346%20-%20trunk&In-Reply-To=%3C201003081913.o28JDRg4027493%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r346 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  8 20:13:27 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000112.html">[Zcplusplus-commits] r345 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000114.html">[Zcplusplus-commits] r347 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#113">[ date ]</a>
+              <a href="thread.html#113">[ thread ]</a>
+              <a href="subject.html#113">[ subject ]</a>
+              <a href="author.html#113">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-08 20:13:22 +0100 (Mon, 08 Mar 2010)
+New Revision: 346
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/ParseTree.hpp
+Log:
+checkpoint introducing enum support to expressions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-07 21:17:24 UTC (rev 345)
++++ trunk/CSupport.cpp	2010-03-08 19:13:22 UTC (rev 346)
+@@ -5231,12 +5231,23 @@
+ 	_label_one_literal(dest,types);
+ 	return dest;
+ }
++#/*cut-cpp*/
+ 
++static const enum_def* is_noticed_enumerator(const parse_tree&amp; x,const type_system&amp; types)
++{
++	const enum_def* tmp = NULL;
++	if (x.is_atomic() &amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags))
++		tmp = types.get_enum_def(x.type_code.base_type_index);
++	return tmp;
++}
++#/*cut-cpp*/
++
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+ 	if (0&lt;src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay())
+ 		{	// assume C++98 interpretation, as this is illegal in C99
++		//! \test cpp/default/Pass_if_control27.hpp
+ 		if (!(parse_tree::INVALID &amp; src.flags))
+ 			{
+ 			assert(src.type_code==src.data&lt;2&gt;()-&gt;type_code);
+@@ -5245,7 +5256,26 @@
+ 			}
+ 		return false;
+ 		}
+-	// handle integer-like literals like a real integer literal
++#/*cut-cpp*/
++#if 0-0
++	else if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
++		{
++		parse_tree tmp3;
++		const promote_aux dest_type(src.type_code.base_type_index);
++		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.data&lt;2&gt;()-&gt;index_tokens[0].token.first);
++		assert(tmp2);
++		{
++		umaxint res_int;
++		const bool tmp_negative = target_machine-&gt;C_promote_integer(res_int,umaxint(tmp2-&gt;second.first.third),dest_type);
++		if (!VM_to_signed_literal(tmp3,tmp_negative,res_int,*src.data&lt;2&gt;(),types) return false;
++		}
++		src.destroy();
++		src = tmp3;
++		return true;
++		}
++#endif
++#/*cut-cpp*/
++ 	// handle integer-like literals like a real integer literal
+ 	else if (converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags))
+ 		{
+ 		const type_spec old_type = src.type_code;
+@@ -5312,7 +5342,16 @@
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+-
++#/*cut-cpp*/
++	// can type if an (C++0X unscoped) enumerator
++	else if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
++		{
++		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.data&lt;2&gt;()-&gt;index_tokens[0].token.first);
++		assert(tmp2);
++		src.type_code.set_type(tmp2-&gt;second.first.first);
++		}
++#/*cut-cpp*/
++	
+ 	const size_t arg_unary_subtype 	= (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_NEG
+ 									: (is_C99_unary_operator_expression&lt;'+'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_PLUS : 0;
+ 	if (!arg_unary_subtype) return;
+@@ -5342,6 +5381,15 @@
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
++#/*cut-cpp*/
++	// can type if an (C++0X unscoped) enumerator
++	else if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
++		{
++		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.data&lt;2&gt;()-&gt;index_tokens[0].token.first);
++		assert(tmp2);
++		src.type_code.set_type(tmp2-&gt;second.first.first);
++		}
++#/*cut-cpp*/
+ 
+ 	// two deep:
+ 	// 1) if inner +/- is applied to an arithmetic literal, try to crunch it (but leave - signed alone)
+@@ -5769,8 +5817,10 @@
+ 		if (negative_signed_int)
+ 			// convert to parsed - literal
+ 			force_unary_negative_literal(src,tmp);
+-		else	// convert to positive literal
++		else{	// convert to positive literal
++			src.destroy();
+ 			src = tmp;
++			}
+ 		src.type_code = old_type;
+ 		return true;
+ 		};
+@@ -10401,8 +10451,22 @@
+ }
+ #endif
+ 
+-static void C99_CPP_handle_static_assertion(parse_tree&amp; src,type_system&amp; types,PP_auxfunc&amp; langinfo,const size_t i,const char* const err)
++static void notice_enumerator_CPP(parse_tree&amp; x,const type_system&amp; types,const char* const active_namespace)
+ {
++	if (x.is_atomic() &amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags))
++		{
++		const type_system::enumerator_info* const tmp = types.get_enumerator_CPP(x.index_tokens[0].token.first,active_namespace);
++		if (tmp)
++			{
++			x.set_index_token_from_str_literal&lt;0&gt;(tmp-&gt;first);
++			x.type_code.set_type(tmp-&gt;second.first.first);
++			// XXX would be handy to keep the tmp around, consider as time optimization XXX
++			}
++		}
++}
++
++static void C99_CPP_handle_static_assertion(parse_tree&amp; src,type_system&amp; types,PP_auxfunc&amp; langinfo,const size_t i,const char* const err,const char* const active_namespace)
++{
+ 	assert(err &amp;&amp; *err);
+ 	// find the next ';'
+ 	const size_t j = i+span_to_semicolon(src.data&lt;0&gt;()+i,src.end&lt;0&gt;());
+@@ -10454,6 +10518,10 @@
+ 		_fatal(&quot;insufficient RAM to parse static assertion&quot;);
+ 		};
+ 	zaimoni::autotransform_n&lt;void (*)(parse_tree&amp;,const parse_tree&amp;)&gt;(parsetree.c_array&lt;0&gt;(),src.data&lt;0&gt;()[i+1].data&lt;0&gt;(),k,value_copy);
++	// type all enumerators now to make life reasonable later on for the expression-parser
++	size_t enum_scan = k;
++	do	notice_enumerator_CPP(parsetree.c_array&lt;0&gt;()[--enum_scan],types,active_namespace);
++	while(0&lt;enum_scan);
+ 	}
+ 	// init above correctly
+ 	// snip from Condense
+@@ -10959,7 +11027,7 @@
+ 		// C static assertion scanner
+ 		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_Assert&quot;))
+ 			{	// _Static_Assert ( constant-expression , string-literal ) ;
+-			C99_CPP_handle_static_assertion(src,types,*CLexer-&gt;pp_support,i,&quot; : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;);
++			C99_CPP_handle_static_assertion(src,types,*CLexer-&gt;pp_support,i,&quot; : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;,NULL);
+ 			continue;
+ 			};
+ 		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+@@ -11448,7 +11516,7 @@
+ 		// C++ static assertion scanner
+ 		if (robust_token_is_string&lt;13&gt;(src.data&lt;0&gt;()[i],&quot;static_assert&quot;))
+ 			{	// static_assert ( constant-expression , string-literal ) ;
+-			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer-&gt;pp_support,i,&quot; : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)&quot;);
++			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer-&gt;pp_support,i,&quot; : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)&quot;,active_namespace);
+ 			continue;
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-07 21:17:24 UTC (rev 345)
++++ trunk/CSupport_pp.cpp	2010-03-08 19:13:22 UTC (rev 346)
+@@ -5156,6 +5156,7 @@
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+ 	if (0&lt;src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay())
+ 		{	// assume C++98 interpretation, as this is illegal in C99
++		//! \test cpp/default/Pass_if_control27.hpp
+ 		if (!(parse_tree::INVALID &amp; src.flags))
+ 			{
+ 			assert(src.type_code==src.data&lt;2&gt;()-&gt;type_code);
+@@ -5164,7 +5165,7 @@
+ 			}
+ 		return false;
+ 		}
+-	// handle integer-like literals like a real integer literal
++ 	// handle integer-like literals like a real integer literal
+ 	else if (converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags))
+ 		{
+ 		const type_spec old_type = src.type_code;
+@@ -5231,7 +5232,7 @@
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+-
++	
+ 	const size_t arg_unary_subtype 	= (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_NEG
+ 									: (is_C99_unary_operator_expression&lt;'+'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_PLUS : 0;
+ 	if (!arg_unary_subtype) return;
+@@ -5688,8 +5689,10 @@
+ 		if (negative_signed_int)
+ 			// convert to parsed - literal
+ 			force_unary_negative_literal(src,tmp);
+-		else	// convert to positive literal
++		else{	// convert to positive literal
++			src.destroy();
+ 			src = tmp;
++			}
+ 		src.type_code = old_type;
+ 		return true;
+ 		};
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-03-07 21:17:24 UTC (rev 345)
++++ trunk/ParseTree.hpp	2010-03-08 19:13:22 UTC (rev 346)
+@@ -341,6 +341,15 @@
+ 		index_tokens[dest_idx].flags = src_flags;
+ 		control_index_token&lt;dest_idx&gt;(false);
+ 		}
++	template&lt;size_t dest_idx&gt; void set_index_token_from_str_literal(const char* const src)
++		{
++		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)&gt;dest_idx);
++		assert(NULL!=src);
++		if (own_index_token&lt;dest_idx&gt;()) { free(const_cast&lt;char*&gt;(index_tokens[dest_idx].token.first)); };
++		index_tokens[dest_idx].token.first = src;
++		index_tokens[dest_idx].token.second = strlen(src);
++		control_index_token&lt;dest_idx&gt;(false);
++		}
+ 
+ 	template&lt;size_t src_idx,class scanner&gt; size_t get_span(size_t i,scanner&amp; x) const
+ 		{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000112.html">[Zcplusplus-commits] r345 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000114.html">[Zcplusplus-commits] r347 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#113">[ date ]</a>
+              <a href="thread.html#113">[ thread ]</a>
+              <a href="subject.html#113">[ subject ]</a>
+              <a href="author.html#113">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

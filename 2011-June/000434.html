@@ -1,0 +1,801 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r667 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r667%20-%20trunk&In-Reply-To=%3C20110610044818.01DEC48135E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000433.html">
+   <LINK REL="Next"  HREF="000435.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r667 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r667%20-%20trunk&In-Reply-To=%3C20110610044818.01DEC48135E%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r667 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 10 06:48:17 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000433.html">[Zcplusplus-commits] r666 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000435.html">[Zcplusplus-commits] r668 - trunk/tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#434">[ date ]</a>
+              <a href="thread.html#434">[ thread ]</a>
+              <a href="subject.html#434">[ subject ]</a>
+              <a href="author.html#434">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-10 06:48:17 +0200 (Fri, 10 Jun 2011)
+New Revision: 667
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+use POD_autoarray_ptr in parse_tree
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-06-10 03:13:08 UTC (rev 666)
++++ trunk/CSupport.cpp	2011-06-10 04:48:17 UTC (rev 667)
+@@ -4023,7 +4023,7 @@
+ 			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags)
+-			&amp;&amp;	src.type_code.is_type(C_TYPE::TYPEINFO)
++			&amp;&amp;	src.type_code.is_type&lt;C_TYPE::TYPEINFO&gt;()
+ 			&amp;&amp;	(src.type_code.qualifier&lt;0&gt;() &amp; (type_spec::lvalue | type_spec::_const))==(type_spec::lvalue | type_spec::_const);
+ }
+ 
+@@ -5009,7 +5009,7 @@
+ 		zcc_errors.inc_error();
+ 		};
+ 
+-	size_t j = STATIC_SIZE(src.args);
++	size_t j = STATIC_SIZE(src._args);
+ 	do	{
+ 		if (0== --j &amp;&amp; src.index_tokens[0].token.first &amp;&amp; src.index_tokens[1].token.first)
+ 			{
+@@ -5163,15 +5163,11 @@
+ {
+ 	if (1==src.size&lt;0&gt;() &amp;&amp; is_naked_parentheses_pair(*src.data&lt;0&gt;()))
+ 		{
+-		parse_tree::arglist_array tmp = src.c_array&lt;0&gt;()-&gt;args[0];
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.c_array&lt;0&gt;()-&gt;args[0].first = NULL;				 
+-#else
+-		src.c_array&lt;0&gt;()-&gt;args[0] = NULL;
+-#endif
++		zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; tmp = src.c_array&lt;0&gt;()-&gt;_args[0];
++		src.c_array&lt;0&gt;()-&gt;_args[0].NULLPtr();
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		parse_tree* const tmp2 = src.c_array&lt;0&gt;();
+-		src.args[0] = tmp;
++		src._args[0] = tmp;
+ 		return tmp2;
+ 		};
+ 	return _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);
+@@ -5181,15 +5177,11 @@
+ {
+ 	while(1==src.size&lt;0&gt;() &amp;&amp; is_naked_parentheses_pair(*src.data&lt;0&gt;()))
+ 		{
+-		parse_tree::arglist_array tmp = src.c_array&lt;0&gt;()-&gt;args[0];
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.c_array&lt;0&gt;()-&gt;args[0].first = NULL;				 
+-#else
+-		src.c_array&lt;0&gt;()-&gt;args[0] = NULL;
+-#endif
++		zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; tmp = src.c_array&lt;0&gt;()-&gt;_args[0];
++		src.c_array&lt;0&gt;()-&gt;_args[0].NULLPtr();
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		free(src.c_array&lt;0&gt;());
+-		src.args[0] = tmp;
++		src._args[0] = tmp;
+ 		}
+ }
+ 
+@@ -6211,7 +6203,7 @@
+ 	if (is_logical_NOT(*src.data&lt;2&gt;()))
+ 		{
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+-			||	src.data&lt;2&gt;()-&gt;type_code.is_type(C_TYPE::BOOL))
++			||	src.data&lt;2&gt;()-&gt;type_code.is_type&lt;C_TYPE::BOOL&gt;())
+ 			{
+ 			parse_tree tmp;
+ 			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+@@ -7250,11 +7242,7 @@
+ 				{
+ 				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
+ 					{
+-#ifndef ZAIMONI_FORCE_ISO
+-					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+-#else
+-					if (!_insert_n_slots_at(src.args[0].first,src.args[0].second,1,i)) throw std::bad_alloc();
+-#endif
++					src._args[0].insertNSlotsAt(1,i);
+ 					src.c_array&lt;0&gt;()[i].clear();
+ 					src.c_array&lt;0&gt;()[i-1].front&lt;2&gt;().MoveInto(src.c_array&lt;0&gt;()[i]);
+ 					src.c_array&lt;0&gt;()[i-1].DeleteIdx&lt;2&gt;(0);
+@@ -7291,11 +7279,7 @@
+ 				{
+ 				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
+ 					{
+-#ifndef ZAIMONI_FORCE_ISO
+-					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+-#else
+-					if (!_insert_n_slots_at(src.args[0].first,src.args[0].second,1,i)) throw std::bad_alloc();
+-#endif
++					src._args[0].insertNSlotsAt(1,i);
+ 					src.c_array&lt;0&gt;()[i].clear();
+ 					src.c_array&lt;0&gt;()[i-1].front&lt;2&gt;().MoveInto(src.c_array&lt;0&gt;()[i]);
+ 					src.c_array&lt;0&gt;()[i-1].DeleteIdx&lt;2&gt;(0);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-06-10 03:13:08 UTC (rev 666)
++++ trunk/CSupport.cpp.in	2011-06-10 04:48:17 UTC (rev 667)
+@@ -5081,7 +5081,7 @@
+ 		zcc_errors.inc_error();
+ 		};
+ 
+-	size_t j = STATIC_SIZE(src.args);
++	size_t j = STATIC_SIZE(src._args);
+ 	do	{
+ 		if (0== --j &amp;&amp; src.index_tokens[0].token.first &amp;&amp; src.index_tokens[1].token.first)
+ 			{
+@@ -5236,15 +5236,11 @@
+ {
+ 	if (1==src.size&lt;0&gt;() &amp;&amp; is_naked_parentheses_pair(*src.data&lt;0&gt;()))
+ 		{
+-		parse_tree::arglist_array tmp = src.c_array&lt;0&gt;()-&gt;args[0];
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.c_array&lt;0&gt;()-&gt;args[0].first = NULL;				 
+-#else
+-		src.c_array&lt;0&gt;()-&gt;args[0] = NULL;
+-#endif
++		zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; tmp = src.c_array&lt;0&gt;()-&gt;_args[0];
++		src.c_array&lt;0&gt;()-&gt;_args[0].NULLPtr();
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		parse_tree* const tmp2 = src.c_array&lt;0&gt;();
+-		src.args[0] = tmp;
++		src._args[0] = tmp;
+ 		return tmp2;
+ 		};
+ 	return _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);
+@@ -5254,15 +5250,11 @@
+ {
+ 	while(1==src.size&lt;0&gt;() &amp;&amp; is_naked_parentheses_pair(*src.data&lt;0&gt;()))
+ 		{
+-		parse_tree::arglist_array tmp = src.c_array&lt;0&gt;()-&gt;args[0];
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.c_array&lt;0&gt;()-&gt;args[0].first = NULL;				 
+-#else
+-		src.c_array&lt;0&gt;()-&gt;args[0] = NULL;
+-#endif
++		zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; tmp = src.c_array&lt;0&gt;()-&gt;_args[0];
++		src.c_array&lt;0&gt;()-&gt;_args[0].NULLPtr();
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		free(src.c_array&lt;0&gt;());
+-		src.args[0] = tmp;
++		src._args[0] = tmp;
+ 		}
+ }
+ 
+@@ -7353,11 +7345,7 @@
+ 				{
+ 				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
+ 					{
+-#ifndef ZAIMONI_FORCE_ISO
+-					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+-#else
+-					if (!_insert_n_slots_at(src.args[0].first,src.args[0].second,1,i)) throw std::bad_alloc();
+-#endif
++					src._args[0].insertNSlotsAt(1,i);
+ 					src.c_array&lt;0&gt;()[i].clear();
+ 					src.c_array&lt;0&gt;()[i-1].front&lt;2&gt;().MoveInto(src.c_array&lt;0&gt;()[i]);
+ 					src.c_array&lt;0&gt;()[i-1].DeleteIdx&lt;2&gt;(0);
+@@ -7394,11 +7382,7 @@
+ 				{
+ 				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
+ 					{
+-#ifndef ZAIMONI_FORCE_ISO
+-					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+-#else
+-					if (!_insert_n_slots_at(src.args[0].first,src.args[0].second,1,i)) throw std::bad_alloc();
+-#endif
++					src._args[0].insertNSlotsAt(1,i);
+ 					src.c_array&lt;0&gt;()[i].clear();
+ 					src.c_array&lt;0&gt;()[i-1].front&lt;2&gt;().MoveInto(src.c_array&lt;0&gt;()[i]);
+ 					src.c_array&lt;0&gt;()[i-1].DeleteIdx&lt;2&gt;(0);
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-06-10 03:13:08 UTC (rev 666)
++++ trunk/CSupport_pp.cpp	2011-06-10 04:48:17 UTC (rev 667)
+@@ -3823,15 +3823,11 @@
+ {
+ 	if (1==src.size&lt;0&gt;() &amp;&amp; is_naked_parentheses_pair(*src.data&lt;0&gt;()))
+ 		{
+-		parse_tree::arglist_array tmp = src.c_array&lt;0&gt;()-&gt;args[0];
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.c_array&lt;0&gt;()-&gt;args[0].first = NULL;				 
+-#else
+-		src.c_array&lt;0&gt;()-&gt;args[0] = NULL;
+-#endif
++		zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; tmp = src.c_array&lt;0&gt;()-&gt;_args[0];
++		src.c_array&lt;0&gt;()-&gt;_args[0].NULLPtr();
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		parse_tree* const tmp2 = src.c_array&lt;0&gt;();
+-		src.args[0] = tmp;
++		src._args[0] = tmp;
+ 		return tmp2;
+ 		};
+ 	return _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);
+@@ -3841,15 +3837,11 @@
+ {
+ 	while(1==src.size&lt;0&gt;() &amp;&amp; is_naked_parentheses_pair(*src.data&lt;0&gt;()))
+ 		{
+-		parse_tree::arglist_array tmp = src.c_array&lt;0&gt;()-&gt;args[0];
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.c_array&lt;0&gt;()-&gt;args[0].first = NULL;				 
+-#else
+-		src.c_array&lt;0&gt;()-&gt;args[0] = NULL;
+-#endif
++		zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; tmp = src.c_array&lt;0&gt;()-&gt;_args[0];
++		src.c_array&lt;0&gt;()-&gt;_args[0].NULLPtr();
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		free(src.c_array&lt;0&gt;());
+-		src.args[0] = tmp;
++		src._args[0] = tmp;
+ 		}
+ }
+ 
+@@ -4706,7 +4698,7 @@
+ 	if (is_logical_NOT(*src.data&lt;2&gt;()))
+ 		{
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+-			||	src.data&lt;2&gt;()-&gt;type_code.is_type(C_TYPE::BOOL))
++			||	src.data&lt;2&gt;()-&gt;type_code.is_type&lt;C_TYPE::BOOL&gt;())
+ 			{
+ 			parse_tree tmp;
+ 			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+@@ -5359,11 +5351,7 @@
+ 				{
+ 				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
+ 					{
+-#ifndef ZAIMONI_FORCE_ISO
+-					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+-#else
+-					if (!_insert_n_slots_at(src.args[0].first,src.args[0].second,1,i)) throw std::bad_alloc();
+-#endif
++					src._args[0].insertNSlotsAt(1,i);
+ 					src.c_array&lt;0&gt;()[i].clear();
+ 					src.c_array&lt;0&gt;()[i-1].front&lt;2&gt;().MoveInto(src.c_array&lt;0&gt;()[i]);
+ 					src.c_array&lt;0&gt;()[i-1].DeleteIdx&lt;2&gt;(0);
+@@ -5400,11 +5388,7 @@
+ 				{
+ 				if (src.data&lt;0&gt;()[i-1].type_code.is_type&lt;C_TYPE::NOT_VOID&gt;())
+ 					{
+-#ifndef ZAIMONI_FORCE_ISO
+-					if (!_insert_n_slots_at(src.args[0],1,i)) throw std::bad_alloc();
+-#else
+-					if (!_insert_n_slots_at(src.args[0].first,src.args[0].second,1,i)) throw std::bad_alloc();
+-#endif
++					src._args[0].insertNSlotsAt(1,i);
+ 					src.c_array&lt;0&gt;()[i].clear();
+ 					src.c_array&lt;0&gt;()[i-1].front&lt;2&gt;().MoveInto(src.c_array&lt;0&gt;()[i]);
+ 					src.c_array&lt;0&gt;()[i-1].DeleteIdx&lt;2&gt;(0);
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-06-10 03:13:08 UTC (rev 666)
++++ trunk/ParseTree.cpp	2011-06-10 04:48:17 UTC (rev 667)
+@@ -16,32 +16,14 @@
+ 
+ bool parse_tree::is_atomic() const
+ {
+-	return (	NULL!=index_tokens[0].token.first
+-			&amp;&amp;	NULL==index_tokens[1].token.first
+-#ifdef ZAIMONI_FORCE_ISO
+-			&amp;&amp;	NULL==args[0].first
+-			&amp;&amp;	NULL==args[1].first
+-			&amp;&amp;	NULL==args[2].first);
+-#else
+-			&amp;&amp;	NULL==args[0]
+-			&amp;&amp;	NULL==args[1]
+-			&amp;&amp;	NULL==args[2]);
+-#endif
++	return index_tokens[0].token.first &amp;&amp; !index_tokens[1].token.first
++		&amp;&amp; _args[0].empty() &amp;&amp; _args[1].empty() &amp;&amp; _args[2].empty();
+ }
+ 
+ bool parse_tree::is_raw_list() const
+ {
+-	return (	NULL==index_tokens[0].token.first
+-			&amp;&amp;	NULL==index_tokens[1].token.first
+-#ifdef ZAIMONI_FORCE_ISO
+-			&amp;&amp;	NULL!=args[0].first
+-			&amp;&amp;	NULL==args[1].first
+-			&amp;&amp;	NULL==args[2].first);
+-#else
+-			&amp;&amp;	NULL!=args[0]
+-			&amp;&amp;	NULL==args[1]
+-			&amp;&amp;	NULL==args[2]);
+-#endif
++	return !index_tokens[0].token.first &amp;&amp;	!index_tokens[1].token.first
++		&amp;&amp; !_args[0].empty() &amp;&amp; _args[1].empty() &amp;&amp; _args[2].empty();
+ }
+ 
+ #ifndef ZAIMONI_FORCE_ISO
+@@ -168,52 +150,30 @@
+ {
+ 	index_tokens[0].clear();
+ 	index_tokens[1].clear();
+-#ifdef ZAIMONI_FORCE_ISO
+-	args[0].first = NULL;
+-	args[0].second = 0;
+-	args[1].first = NULL;
+-	args[1].second = 0;
+-	args[2].first = NULL;
+-	args[2].second = 0;
+-#else
+-	args[0] = NULL;
+-	args[1] = NULL;
+-	args[2] = NULL;
+-#endif
++	_args[0].NULLPtr();
++	_args[1].NULLPtr();
++	_args[2].NULLPtr();
+ 	flags = 0;
+ 	subtype = 0;
+ 	type_code.clear();
+ }
+ 
+-#ifdef ZAIMONI_FORCE_ISO
+-static void _destroy(zaimoni::POD_pair&lt;parse_tree*,size_t&gt;&amp; target)
++static void _destroy(zaimoni::POD_autoarray_ptr&lt;parse_tree&gt;&amp; target)
+ {
+-	if (NULL!=target.first)
++	if (!target.empty())
+ 		{
+-		size_t i = target.second;
+-		do	target.first[--i].destroy();
++		size_t i = target.size();
++		do	target.c_array()[--i].destroy();
+ 		while(0&lt;i);
+-		FREE_AND_NULL(target.first);
++		free(target.release());
+ 		}
+ }
+-#else
+-static void _destroy(parse_tree*&amp; target)
+-{
+-	if (NULL!=target)
+-		{
+-		size_t i = ArraySize(target);
+-		do	target[--i].destroy();
+-		while(0&lt;i);
+-		FREE_AND_NULL(target);
+-		}
+-}
+-#endif
+ 
+ void parse_tree::destroy()
+ {
+-	_destroy(args[2]);
+-	_destroy(args[1]);
+-	_destroy(args[0]);
++	_destroy(_args[2]);
++	_destroy(_args[1]);
++	_destroy(_args[0]);
+ 	if (own_index_token&lt;1&gt;()) free(const_cast&lt;char*&gt;(index_tokens[1].token.first));
+ 	if (own_index_token&lt;0&gt;()) free(const_cast&lt;char*&gt;(index_tokens[0].token.first));
+ 	index_tokens[1].token.first = NULL;
+@@ -369,16 +329,10 @@
+ //! the new slots have no content, OverwriteInto won't leak memory
+ bool parse_tree::_resize(const size_t arg_idx,size_t n)
+ {
+-	assert(STATIC_SIZE(args)&gt;arg_idx);
+-#ifdef ZAIMONI_FORCE_ISO
+-	const size_t old_size = args[arg_idx].second;
+-	if (!zaimoni::_resize(args[arg_idx].first,args[arg_idx].second,n)) return false;
+-	while(old_size&lt;n) args[arg_idx].first[--n].clear();
+-#else
+-	const size_t old_size = SafeArraySize(args[arg_idx]);
+-	if (!zaimoni::_resize(args[arg_idx],n)) return false;
+-	while(old_size&lt;n) args[arg_idx][--n].clear();
+-#endif
++	assert(STATIC_SIZE(_args)&gt;arg_idx);
++	const size_t old_size = size(arg_idx);
++	if (!_args[arg_idx].Resize(n)) return false;
++	while(old_size&lt;n) c_array(arg_idx)[--n].clear();
+ 	return true;
+ }
+ 
+@@ -458,7 +412,7 @@
+ // slicing copy constructor
+ parse_tree_class::parse_tree_class(const parse_tree&amp; src,size_t begin,size_t end,size_t dest_idx)
+ {
+-	assert(STATIC_SIZE(args)&gt;dest_idx);
++	assert(STATIC_SIZE(_args)&gt;dest_idx);
+ 	assert(begin&lt;src.size(dest_idx));
+ 	assert(end&lt;=src.size(dest_idx));
+ 	this-&gt;clear();
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2011-06-10 03:13:08 UTC (rev 666)
++++ trunk/ParseTree.hpp	2011-06-10 04:48:17 UTC (rev 667)
+@@ -6,7 +6,7 @@
+ 
+ #include &quot;type_spec.hpp&quot;
+ 
+-#include &quot;Zaimoni.STL/MetaRAM2.hpp&quot;
++#include &quot;Zaimoni.STL/POD_autoarray.hpp&quot;
+ #include &quot;weak_token.hpp&quot;
+ 
+ // KBB: this really should be a class rather than a struct; it would benefit from having a proper destructor.
+@@ -28,12 +28,6 @@
+ //! required to be POD to allow C memory management
+ struct parse_tree
+ {
+-#ifdef ZAIMONI_FORCE_ISO
+-	typedef zaimoni::POD_pair&lt;parse_tree*,size_t&gt; arglist_array;
+-#else
+-	typedef parse_tree* arglist_array;
+-#endif
+-
+ 	enum core_flags {	// standardize bitflag use
+ 		INVALID = (1&lt;&lt;2),	// invalid node
+ 		CONSTANT_EXPRESSION = (1&lt;&lt;3),	// compile-time constant expression
+@@ -43,7 +37,7 @@
+ 	};
+ 
+ 	weak_token index_tokens[2];	//!&lt; 0: left, 1: right
+-	arglist_array args[3];		//!&lt; 0: infix, 1: prefix, 2: postfix
++	zaimoni::POD_autoarray_ptr&lt;parse_tree&gt; _args[3];		//!&lt; 0: infix, 1: prefix, 2: postfix
+ 	zaimoni::lex_flags flags;	// mostly opaque flag suite (parse_tree reserves the lowest 3 bits)
+ 	size_t subtype;				// opaque assistant to parser
+ 
+@@ -60,151 +54,133 @@
+ 	void MoveInto(parse_tree&amp; dest);
+ 	void OverwriteInto(parse_tree&amp; dest);
+ 
+-#ifdef ZAIMONI_FORCE_ISO
+-#define	ZCC_PARSETREE_CARRAY(I) args[I].first
+-#define	ZCC_PARSETREE_END(I) (args[I].first ? args[I].first+args[I].second : NULL)
+-#define ZCC_PARSETREE_BACK(I) (*(args[I].first+args[I].second-1))
+-#else
+-#define	ZCC_PARSETREE_CARRAY(I) args[I]
+-#define	ZCC_PARSETREE_END(I) (args[I] ? args[I]+zaimoni::ArraySize(args[I]) : NULL)
+-#define ZCC_PARSETREE_BACK(I) (*(args[I]+zaimoni::ArraySize(args[I])-1))
+-#endif
+-
+ 	parse_tree* c_array(size_t arg_idx)
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].c_array();
+ 		};
+ 	template&lt;size_t arg_idx&gt; parse_tree* c_array()
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].c_array();
+ 		}
+ 	const parse_tree* data(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].data();
+ 		}
+ 	template&lt;size_t arg_idx&gt; const parse_tree* data() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].data();
+ 		}
+ 	size_t size(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-#ifdef ZAIMONI_FORCE_ISO
+-		return (NULL==args[arg_idx].first) ? 0 : args[arg_idx].second;
+-#else
+-		return zaimoni::SafeArraySize(args[arg_idx]);
+-#endif
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].size();
+ 		}
+ 	template&lt;size_t arg_idx&gt; size_t size() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-#ifdef ZAIMONI_FORCE_ISO
+-		return (NULL==args[arg_idx].first) ? 0 : args[arg_idx].second;
+-#else
+-		return zaimoni::SafeArraySize(args[arg_idx]);
+-#endif
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].size();
+ 		}
+ 	parse_tree* begin(size_t arg_idx)
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].begin();
+ 		};
+ 	template&lt;size_t arg_idx&gt; parse_tree* begin()
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].begin();
+ 		}
+ 	const parse_tree* begin(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].begin();
+ 		}
+ 	template&lt;size_t arg_idx&gt; const parse_tree* begin() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].begin();
+ 		}
+ 	parse_tree* end(size_t arg_idx)
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_END(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].end();
+ 		};
+ 	template&lt;size_t arg_idx&gt; parse_tree* end()
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_END(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].end();
+ 		}
+ 	const parse_tree* end(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_END(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].end();
+ 		}
+ 	template&lt;size_t arg_idx&gt; const parse_tree* end() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return ZCC_PARSETREE_END(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].end();
+ 		}
+ 	parse_tree&amp; front(size_t arg_idx)
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return *ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty(arg_idx));
++		return _args[arg_idx].front();
+ 		};
+ 	template&lt;size_t arg_idx&gt; parse_tree&amp; front()
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return *ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty&lt;arg_idx&gt;());
++		return _args[arg_idx].front();
+ 		}
+ 	const parse_tree&amp; front(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return *ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty(arg_idx));
++		return _args[arg_idx].front();
+ 		}
+ 	template&lt;size_t arg_idx&gt; const parse_tree&amp; front() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return *ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty&lt;arg_idx&gt;());
++		return _args[arg_idx].front();
+ 		}
+ 	parse_tree&amp; back(size_t arg_idx)
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return ZCC_PARSETREE_BACK(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty(arg_idx));
++		return _args[arg_idx].back();
+ 		};
+ 	template&lt;size_t arg_idx&gt; parse_tree&amp; back()
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return ZCC_PARSETREE_BACK(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty&lt;arg_idx&gt;());
++		return _args[arg_idx].back();
+ 		}
+ 	const parse_tree&amp; back(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return ZCC_PARSETREE_BACK(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty(arg_idx));
++		return _args[arg_idx].back();
+ 		}
+ 	template&lt;size_t arg_idx&gt; const parse_tree&amp; back() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		assert(ZCC_PARSETREE_CARRAY(arg_idx));
+-		return ZCC_PARSETREE_BACK(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		assert(!empty&lt;arg_idx&gt;());
++		return _args[arg_idx].back();
+ 		}
+ 	bool empty(size_t arg_idx) const
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
+-		return !ZCC_PARSETREE_CARRAY(arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].empty();
+ 		}
+ 	template&lt;size_t arg_idx&gt; bool empty() const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+-		return !ZCC_PARSETREE_CARRAY(arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
++		return _args[arg_idx].empty();
+ 		}
+ 	template&lt;size_t i&gt; bool own_index_token() const
+ 		{
+@@ -218,49 +194,41 @@
+ 		}
+ 	bool resize(size_t arg_idx,size_t n)
+ 		{
+-		assert(STATIC_SIZE(args)&gt;arg_idx);
++		assert(STATIC_SIZE(_args)&gt;arg_idx);
+ 		return _resize(arg_idx,n);
+ 		}
+ 	template&lt;size_t arg_idx&gt; bool resize(size_t n)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
+ 		return _resize(arg_idx,n);
+ 		}
+ 	template&lt;size_t arg_idx&gt; void eval_to_arg(size_t i)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
+ 		assert(size&lt;arg_idx&gt;()&gt;i);
+ 		_eval_to_arg(arg_idx,i);
+ 		}
+ 	template&lt;size_t arg_idx&gt; void DeleteNSlotsAt(size_t n,size_t i)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
+ 		assert(size&lt;arg_idx&gt;()&gt;i);
+ 		assert(size&lt;arg_idx&gt;()-i&gt;=n);
+ 		assert(0&lt;n);
+ 		size_t idx = n;
+ 		do	c_array&lt;arg_idx&gt;()[i+ --idx].destroy();
+ 		while(0&lt;idx);
+-#ifdef ZAIMONI_FORCE_ISO
+-		zaimoni::_delete_n_slots_at(args[arg_idx].first,args[arg_idx].second,n,i);
+-#else
+-		zaimoni::_delete_n_slots_at(args[arg_idx],n,i);
+-#endif
++		_args[arg_idx].DeleteNSlotsAt(n,i);
+ 		}
+ 	template&lt;size_t arg_idx&gt; void DeleteIdx(size_t i)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;arg_idx);
+ 		assert(size&lt;arg_idx&gt;()&gt;i);
+ 		c_array&lt;arg_idx&gt;()[i].destroy();
+-#ifdef ZAIMONI_FORCE_ISO
+-		zaimoni::_delete_idx(args[arg_idx].first,args[arg_idx].second,i);
+-#else
+-		zaimoni::_delete_idx(args[arg_idx],i);
+-#endif
++		_args[arg_idx].DeleteIdx(i);
+ 		}
+ 	template&lt;size_t dest_idx&gt; void DestroyNAtAndRotateTo(size_t n,size_t i,const size_t actual_size)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;dest_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;dest_idx);
+ 		assert(size&lt;dest_idx&gt;()&gt;=actual_size);
+ 		assert(actual_size&gt;i);
+ 		assert(actual_size-i&gt;=n);
+@@ -290,12 +258,13 @@
+ 
+ 	template&lt;size_t dest_idx&gt; void fast_set_arg(parse_tree* src)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;dest_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;dest_idx);
+ 		assert(src);
+-		assert(NULL==ZCC_PARSETREE_CARRAY(dest_idx));
+-		ZCC_PARSETREE_CARRAY(dest_idx) = src;
+-#ifdef ZAIMONI_FORCE_ISO
+-		args[dest_idx].second = 1;
++		assert(empty&lt;dest_idx&gt;());
++#ifndef ZAIMONI_FORCE_ISO
++		_args[dest_idx].Overwrite(src);
++#else
++		_args[dest_idx].Overwrite(src,1);
+ #endif
+ 		}
+ 
+@@ -366,7 +335,7 @@
+ 
+ 	template&lt;size_t src_idx,class scanner&gt; size_t get_span(size_t i,scanner&amp; x) const
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;src_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;src_idx);
+ 		assert(size&lt;src_idx&gt;()&gt;i);
+ 		size_t found = 0;
+ 		while(x(data&lt;src_idx&gt;()[i]) &amp;&amp; (++found,size&lt;src_idx&gt;()&gt; ++i));
+@@ -374,7 +343,7 @@
+ 		}
+ 	template&lt;size_t src_idx,class scanner&gt; size_t destructive_get_span(size_t i,scanner&amp; x)
+ 		{
+-		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;src_idx);
++		BOOST_STATIC_ASSERT(STATIC_SIZE(_args)&gt;src_idx);
+ 		assert(size&lt;src_idx&gt;()&gt;i);
+ 		size_t found = 0;
+ 		while(x(*this,i) &amp;&amp; (++found,size&lt;src_idx&gt;()&gt; ++i));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000433.html">[Zcplusplus-commits] r666 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000435.html">[Zcplusplus-commits] r668 - trunk/tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#434">[ date ]</a>
+              <a href="thread.html#434">[ thread ]</a>
+              <a href="subject.html#434">[ subject ]</a>
+              <a href="author.html#434">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

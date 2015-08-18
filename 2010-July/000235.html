@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r468 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r468%20-%20trunk&In-Reply-To=%3C20100728050512.DDECE48054C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000234.html">
+   <LINK REL="Next"  HREF="000236.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r468 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r468%20-%20trunk&In-Reply-To=%3C20100728050512.DDECE48054C%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r468 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 28 07:05:12 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000234.html">[Zcplusplus-commits] r467 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000236.html">[Zcplusplus-commits] r469 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#235">[ date ]</a>
+              <a href="thread.html#235">[ thread ]</a>
+              <a href="subject.html#235">[ subject ]</a>
+              <a href="author.html#235">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-28 07:05:12 +0200 (Wed, 28 Jul 2010)
+New Revision: 468
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+formal bugfix
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 04:58:14 UTC (rev 467)
++++ trunk/CSupport.cpp	2010-07-28 05:05:12 UTC (rev 468)
+@@ -10759,12 +10759,12 @@
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+ 		case C99_CPP_CONST_IDX:
+-			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
++			record_qualifier_or_warn(src,type_spec::_const,i,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
+-			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
++			record_qualifier_or_warn(src,type_spec::_volatile,i,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+@@ -10773,7 +10773,7 @@
+ 				{
+ 				if (!have_warned_too_many_types)
+ 					{
+-					message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
++					message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
+ 					zcc_errors.inc_error();
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000234.html">[Zcplusplus-commits] r467 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000236.html">[Zcplusplus-commits] r469 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#235">[ date ]</a>
+              <a href="thread.html#235">[ thread ]</a>
+              <a href="subject.html#235">[ subject ]</a>
+              <a href="author.html#235">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,1065 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r496 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r496%20-%20trunk&In-Reply-To=%3C20101020184009.45FD7480819%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000262.html">
+   <LINK REL="Next"  HREF="000265.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r496 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r496%20-%20trunk&In-Reply-To=%3C20101020184009.45FD7480819%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r496 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Oct 20 20:40:08 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000262.html">[Zcplusplus-commits] r495 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000265.html">[Zcplusplus-commits] r497 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#263">[ date ]</a>
+              <a href="thread.html#263">[ thread ]</a>
+              <a href="subject.html#263">[ subject ]</a>
+              <a href="author.html#263">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-20 20:40:08 +0200 (Wed, 20 Oct 2010)
+New Revision: 496
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/POSIX.dep
+Log:
+build system tweak #1
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-10-20 17:54:21 UTC (rev 495)
++++ trunk/CSupport.cpp	2010-10-20 18:40:08 UTC (rev 496)
+@@ -2,12 +2,9 @@
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+-#/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
+ #include &quot;_CSupport3.hpp&quot;
+ #include &quot;_CSupport4.hpp&quot;
+-#/*cut-cpp*/
+-#include &quot;CSupport_pp.hpp&quot;
+ #include &quot;_CSupport1.hpp&quot;
+ #include &quot;_CSupport2.hpp&quot;
+ 
+@@ -34,20 +31,12 @@
+ #include &quot;C_PPOctalInteger.hpp&quot;
+ #include &quot;C_PPDecimalFloat.hpp&quot;
+ #include &quot;C_PPHexFloat.hpp&quot;
+-#/*cut-cpp*/
+ #include &quot;enum_type.hpp&quot;
+ #include &quot;struct_type.hpp&quot;
+ #include &quot;kleene_star.hpp&quot;
+ #include &quot;cond_act.hpp&quot;
+-#/*cut-cpp*/
+ #include &quot;CheckReturn.hpp&quot;
+ 
+-#ifdef ZCC_NOT_BUILDING_CPP
+-#error internal macro ZCC_NOT_BUILDING_CPP already defined 
+-#endif
+-#/*cut-cpp*/
+-#define ZCC_NOT_BUILDING_CPP 1
+-#/*cut-cpp*/
+ // handle function signature differences between z_cpp and other users
+ #ifdef SIG_CONST_TYPES
+ #error internal macro SIG_CONST_TYPES already defined 
+@@ -55,13 +44,8 @@
+ #ifdef ARG_TYPES
+ #error internal macro ARG_TYPES already defined 
+ #endif
+-#ifdef ZCC_NOT_BUILDING_CPP
+ #define SIG_CONST_TYPES ,const type_system&amp; types 
+ #define ARG_TYPES ,types 
+-#else
+-#define SIG_CONST_TYPES 
+-#define ARG_TYPES 
+-#endif
+ 
+ using namespace zaimoni;
+ using virtual_machine::umaxint;
+@@ -541,7 +525,6 @@
+ 
+ BOOST_STATIC_ASSERT(C_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+ BOOST_STATIC_ASSERT(CPP_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+-#/*cut-cpp*/
+ 
+ static const char* C99_echo_reserved_keyword(const char* x,size_t x_len)
+ {
+@@ -586,7 +569,6 @@
+ 	while(0&lt;i);
+ 	return NULL;
+ }
+-#/*cut-cpp*/
+ 
+ namespace C_TYPE {
+ 
+@@ -623,13 +605,11 @@
+ 	assert(C_TYPE::INT&lt;=base_type_index &amp;&amp; C_TYPE::ULLONG&gt;=base_type_index);
+ 	return (virtual_machine::std_int_enum)((base_type_index-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ }
+-#/*cut-cpp*/
+ 
+ static inline size_t unsigned_type_from_machine_type(virtual_machine::std_int_enum x)
+ {
+ 	return C_TYPE::SCHAR+2*(x-virtual_machine::std_int_char)+1;
+ }
+-#/*cut-cpp*/
+ 
+ #if 0
+ static bool is_innate_type(size_t base_type_index)
+@@ -660,12 +640,8 @@
+ 
+ static bool converts_to_integerlike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-#ifdef ZCC_NOT_BUILDING_CPP
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
+-#else
+-	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_integerlike(const type_spec&amp; type_code SIG_CONST_TYPES)
+@@ -677,32 +653,20 @@
+ static bool converts_to_integer(const type_spec&amp; type_code SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+ 	if (0&lt;type_code.pointer_power) return false;	// pointers do not have a standard conversion to integers
+-#ifdef ZCC_NOT_BUILDING_CPP
+ 	if (C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index) return true;
+ 	return types.get_enum_def(type_code.base_type_index);
+-#else
+-	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_reallike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-#ifdef ZCC_NOT_BUILDING_CPP
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
+-#else
+-	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_arithmeticlike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-#ifdef ZCC_NOT_BUILDING_CPP
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
+-#else
+-	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_arithmeticlike(const type_spec&amp; type_code SIG_CONST_TYPES)
+@@ -722,14 +686,12 @@
+ // the integer promotions rely on low-level weirdness, so test that here
+ static size_t arithmetic_reconcile(size_t base_type_index1, size_t base_type_index2 SIG_CONST_TYPES)
+ {
+-#/*cut-cpp*/
+ 	{
+ 	const enum_def* tmp = types.get_enum_def(base_type_index1);
+ 	if (tmp) base_type_index1 = tmp-&gt;represent_as;
+ 	tmp = types.get_enum_def(base_type_index2);
+ 	if (tmp) base_type_index2 = tmp-&gt;represent_as;	
+ 	}
+-#/*cut-cpp*/
+ 	assert(is_innate_definite_type(base_type_index1));
+ 	assert(is_innate_definite_type(base_type_index2));
+ 	// identity, do not do anything
+@@ -843,12 +805,10 @@
+ 
+ static size_t default_promote_type(size_t i SIG_CONST_TYPES)
+ {
+-#/*cut-cpp*/
+ 	{
+ 	const enum_def* tmp = types.get_enum_def(i);
+ 	if (tmp) i = tmp-&gt;represent_as;
+ 	}
+-#/*cut-cpp*/
+ 	switch(i)
+ 	{
+ 	case C_TYPE::BOOL: return C_TYPE::INT;
+@@ -987,7 +947,6 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+ BOOST_STATIC_ASSERT(STATIC_SIZE(CPP_atomic_types)==CPP_TYPE_MAX);
+-#/*cut-cpp*/
+ 
+ static const POD_pair&lt;const char*,size_t&gt; C99_decl_specifiers[] =
+ 	{	DICT_STRUCT(&quot;typedef&quot;),
+@@ -1127,7 +1086,6 @@
+ 	if (STATIC_SIZE(CPP0X_decl_specifier_list)&gt;i) return i;
+ 	return SIZE_MAX;
+ }	
+-#/*cut-cpp*/
+ 
+ const size_t C_int_priority[]
+ 	=	{
+@@ -1243,7 +1201,6 @@
+ 	message_header(src.src_filename,src.logical_line.first);
+ }
+ 
+-#/*cut-cpp*/
+ /* XXX this may belong with enum_type XXX */
+ static void message_header(const enum_def&amp; src)
+ {
+@@ -1257,7 +1214,6 @@
+ 	assert(src.filename() &amp;&amp; *src.filename());
+ 	message_header(src.filename(),src.loc().first);
+ }
+-#/*cut-cpp*/
+ 
+ // balanced character count
+ static POD_pair&lt;size_t,size_t&gt;
+@@ -3226,7 +3182,6 @@
+ 		zcc_errors.inc_error();
+ 		};
+ }
+-#/*cut-cpp*/
+ 
+ /* deal with following type catalog
+ atomic:
+@@ -4005,7 +3960,6 @@
+ 		}
+ 	while(src.size&lt;0&gt;()&gt; ++i);
+ }
+-#/*cut-cpp*/
+ 
+ //! \todo generalize -- function pointer parameter target, functor target
+ static size_t _count_identifiers(const parse_tree&amp; src)
+@@ -4031,7 +3985,6 @@
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+-#/*cut-cpp*/
+ 
+ static bool is_naked_brace_pair(const parse_tree&amp; src)
+ {
+@@ -4059,7 +4012,6 @@
+ 		|| is_naked_brace_pair(src)
+ 		|| is_naked_bracket_pair(src));
+ }
+-#/*cut-cpp*/
+ 
+ #ifndef NDEBUG
+ static bool is_array_deref_strict(const parse_tree&amp; src)
+@@ -4131,7 +4083,6 @@
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+-#/*cut-cpp*/
+ 
+ static bool is_CPP0X_typeid_expression(const parse_tree&amp; src)
+ {
+@@ -4162,7 +4113,6 @@
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+ #endif
+-#/*cut-cpp*/
+ 
+ #define C99_MULT_SUBTYPE_DIV 1
+ #define C99_MULT_SUBTYPE_MOD 2
+@@ -4462,7 +4412,6 @@
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+-#/*cut-cpp*/
+ 
+ static bool is_C99_anonymous_specifier(const parse_tree&amp; src,const char* const spec_name)
+ {
+@@ -4738,7 +4687,6 @@
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),conditional_action&lt;bool (*)(const parse_tree&amp;),void (*)(parse_tree&amp;)&gt;(is_nonempty_naked_pair,CPP_notice_class_struct_union_enum));
+ }
+-#/*cut-cpp*/
+ 
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+@@ -4775,7 +4723,6 @@
+ 		};
+ 	return true;
+ }
+-#/*cut-cpp*/
+ 
+ static const enum_def* is_noticed_enumerator(const parse_tree&amp; x,const type_system&amp; types)
+ {
+@@ -4784,7 +4731,6 @@
+ 		tmp = types.get_enum_def(x.type_code.base_type_index);
+ 	return tmp;
+ }
+-#/*cut-cpp*/
+ 
+ // forward-declare to handle recursion
+ static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src SIG_CONST_TYPES);
+@@ -4838,7 +4784,6 @@
+ 		dest.set_bitcount(VM_MAX_BIT_PLATFORM);
+ 		return true;
+ 		}	
+-#/*cut-cpp*/
+ 
+ 	// creative interpretation: enumerators as integer-like literals
+ 	if (is_noticed_enumerator(src,types))
+@@ -4848,7 +4793,6 @@
+ 		dest = tmp2-&gt;second.first.third;
+ 		return true;
+ 		}
+-#/*cut-cpp*/
+ 		
+ 	if (!(C_TESTFLAG_INTEGER &amp; src.index_tokens[0].flags)) return false;
+ 	C_PPIntCore tmp;
+@@ -5169,7 +5113,6 @@
+ 		}
+ }
+ 
+-#/*cut-cpp*/
+ // returns true if and only if no errors
+ static bool _this_vaguely_where_it_could_be_cplusplus(const parse_tree&amp; src)
+ {
+@@ -5204,7 +5147,6 @@
+ 	while(0&lt;j);
+ 	return starting_errors==zcc_errors.err_count();
+ }
+-#/*cut-cpp*/
+ 
+ // this handles: ( ), [ ], { }
+ // the content of ( ), [ ], { } fills the zeroth argument array
+@@ -5410,7 +5352,6 @@
+ 				src.flags |= (PARSE_PAREN_PRIMARY_PASSTHROUGH &amp; src.data&lt;0&gt;()-&gt;flags);
+ 				return true;
+ 				}
+-#/*cut-cpp*/
+ 			else if (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags)
+ 				{	// abuse: handle parenthesized type-specifiers here
+ 				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+@@ -5418,7 +5359,6 @@
+ 				src.flags |= (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags);
+ 				return false;	// not an expression 
+ 				}
+-#/*cut-cpp*/
+ 			};
+ 		}
+ 	return false;
+@@ -5671,7 +5611,6 @@
+ 		}
+ }
+ 
+-#/*cut-cpp*/
+ 
+ // if #include &lt;typeinfo&gt; hasn't happened, context-free error stops this
+ //! \throw std::bad_alloc
+@@ -5722,7 +5661,6 @@
+ 		return true;
+ 	return false;
+ }
+-#/*cut-cpp*/
+ /*postfixexpression:
+ 	primaryexpression
+ 	postfixexpression [ expression ]
+@@ -5764,13 +5702,11 @@
+ 				{
+ 				}
+ 			}
+-#/*cut-cpp*/
+ #endif
+ 		}
+ 	else{	// if (NULL==src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		if (locate_CPP0X_typeid(src,i,types)) return;
+ #if 0
+-#/*cut-cpp*/
+ 		if (token_is_char&lt;'.'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			if (1&lt;=i &amp;&amp; 1&lt;src.size&lt;0&gt;()-i)
+@@ -5836,7 +5772,6 @@
+ 		is_true = !CCharLiteralIsFalse(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+ 		return true;
+ 		};
+-#/*cut-cpp*/
+ 	if (is_noticed_enumerator(src,types))
+ 		{	// misintepret enumerators as literals (avoid dynamic memory thrashing)
+ 		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.index_tokens[0].token.first);
+@@ -5845,7 +5780,6 @@
+ 		is_true = !target_machine-&gt;is_zero(tmp2-&gt;second.first.third.data(),tmp2-&gt;second.first.third.size(),dest_type);
+ 		return true;
+ 		}
+-#/*cut-cpp*/
+ 	if (!(C_TESTFLAG_PP_NUMERAL &amp; src.index_tokens[0].flags)) return false;
+ 	C_REALITY_CHECK_PP_NUMERAL_FLAGS(src.index_tokens[0].flags);
+ 	if (C_TESTFLAG_FLOAT &amp; src.index_tokens[0].flags) return false;	//! \todo handle floats as well (underflow to zero is target-sensitive)
+@@ -5929,7 +5863,6 @@
+ 	_label_one_literal(dest,types);
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
+-#/*cut-cpp*/
+ 
+ // can't do much syntax-checking or immediate-evaluation here because of binary +/-
+ // unary +/- syntax checking out out of place as it's needed by all of the unary operators
+@@ -5962,7 +5895,6 @@
+ 	_label_one_literal(dest,types);
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
+-#/*cut-cpp*/
+ 
+ static void force_decimal_literal(parse_tree&amp; dest,const char* src,const type_system&amp; types)
+ {
+@@ -6046,7 +5978,6 @@
+ 		}
+ 	else VM_to_literal(x,src_int,src,types);
+ }
+-#/*cut-cpp*/
+ 
+ //! \throw std::bad_alloc()
+ static void enumerator_to_integer_representation(parse_tree&amp; x,const type_system&amp; types)
+@@ -6074,16 +6005,13 @@
+ 	}
+ 	tmp3.MoveInto(x);
+ }
+-#/*cut-cpp*/
+ 
+ static bool is_integerlike_literal(const parse_tree&amp; x SIG_CONST_TYPES)
+ {
+ 	return converts_to_integerlike(x.type_code ARG_TYPES) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; x.flags);
+ }
+ 
+-#/*cut-cpp*/
+ //! \throw std::bad_alloc()
+-#/*cut-cpp*/
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+@@ -6098,7 +6026,6 @@
+ 			}
+ 		return false;
+ 		};
+-#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+@@ -6108,7 +6035,6 @@
+ 			return true;
+ 			}
+ 		}
+-#/*cut-cpp*/
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+@@ -6133,7 +6059,6 @@
+ 		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+-#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+@@ -6144,7 +6069,6 @@
+ 			}
+ 		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 		}
+-#/*cut-cpp*/
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES) &amp;&amp; 1==(src.type_code.base_type_index-C_TYPE::INT)%2)
+ 		{	// unsigned...we're fine
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+@@ -6184,7 +6108,6 @@
+ 		simple_error(src,(C99_UNARY_SUBTYPE_PLUS==src.subtype) ? &quot; applies unary + to a pointer (C99 6.5.3.3p1)&quot; : &quot; applies unary - to a pointer (C99 6.5.3.3p1)&quot;);
+ 		return;
+ 		}
+-#/*cut-cpp*/
+ 	// can type if an (C++0X unscoped) enumerator
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+@@ -6193,7 +6116,6 @@
+ 		src.type_code.set_type(tmp2-&gt;second.first.first);
+ 		}
+ 	else
+-#/*cut-cpp*/
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES));
+@@ -6226,7 +6148,6 @@
+ 	assert((C99_UNARY_SUBTYPE_PLUS==src.subtype) ? is_C99_unary_operator_expression&lt;'+'&gt;(src) : is_C99_unary_operator_expression&lt;'-'&gt;(src));
+ 	
+ 	// can type if result is a primitive arithmetic type
+-#/*cut-cpp*/
+ 	// can type if an (C++0X unscoped) enumerator
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+@@ -6235,7 +6156,6 @@
+ 		src.type_code.set_type(tmp2-&gt;second.first.first);
+ 		}
+ 	else
+-#/*cut-cpp*/
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES));
+ 
+@@ -6615,13 +6535,11 @@
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+-#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+ 		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 		}
+-#/*cut-cpp*/
+ 	umaxint res_int;
+ 	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;() ARG_TYPES)) 
+ 		{
+@@ -6814,7 +6732,6 @@
+ 
+ 	return terse_locate_CPP_unary_plusminus(src,i,types);
+ }
+-#/*cut-cpp*/
+ 
+ // handle C++0X sizeof... elsewhere (context-free syntax checks should be fixed first, possibly consider sizeof... a psuedo-identifier)
+ //! \throw std::bad_alloc
+@@ -7078,7 +6995,6 @@
+ 		}
+ 	return false;
+ }
+-#/*cut-cpp*/
+ 
+ /* Scan for unary operators and cast expressions
+ unary-expression:
+@@ -7110,9 +7026,7 @@
+ 	if (locate_C99_logical_NOT(src,i,types)) return;
+ 	if (locate_C99_bitwise_complement(src,i,types)) return;
+ 	if (locate_C99_unary_plusminus(src,i,types)) return;
+-#/*cut-cpp*/
+ 	if (locate_C99_sizeof(src,i,types)) return;
+-#/*cut-cpp*/
+ 
+ #if 0
+ 	if (terse_locate_unary_operator(src,i))
+@@ -7190,9 +7104,7 @@
+ 	if (locate_CPP_logical_NOT(src,i,types)) return;
+ 	if (locate_CPP_bitwise_complement(src,i,types)) return;
+ 	if (locate_CPP_unary_plusminus(src,i,types)) return;
+-#/*cut-cpp*/
+ 	if (locate_CPP_sizeof(src,i,types)) return;
+-#/*cut-cpp*/
+ 
+ #if 0
+ 	if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;++&quot;))
+@@ -7675,9 +7587,7 @@
+ BOOST_STATIC_ASSERT(1==C99_MULT_SUBTYPE_MOD-C99_MULT_SUBTYPE_DIV);
+ BOOST_STATIC_ASSERT(1==C99_MULT_SUBTYPE_MULT-C99_MULT_SUBTYPE_MOD);
+ 
+-#/*cut-cpp*/
+ //! \throw std::bad_alloc
+-#/*cut-cpp*/
+ static bool _mod_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_MOD==src.subtype &amp;&amp; is_C99_mult_operator_expression&lt;'%'&gt;(src));
+@@ -7694,7 +7604,6 @@
+ 		simple_error(src,&quot; has nonintegral RHS (C99 6.5.5p2, C++98 5.6p2)&quot;);
+ 		return false;
+ 		};
+-#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+@@ -7707,14 +7616,11 @@
+ 		rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 		assert(rhs.second);
+ 		}
+-#/*cut-cpp*/
+ 	src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 	return true;
+ }
+ 
+-#/*cut-cpp*/
+ //! \throw std::bad_alloc
+-#/*cut-cpp*/
+ static bool _mult_div_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV==src.subtype || C99_MULT_SUBTYPE_MULT==src.subtype);
+@@ -7736,7 +7642,6 @@
+ 		return false;
+ 		};
+ 
+-#/*cut-cpp*/
+ 	// arithmeticlike subsumes integerlike so this is fine
+ 	if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 		{
+@@ -7750,7 +7655,6 @@
+ 		rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 		assert(rhs.second);
+ 		}
+-#/*cut-cpp*/
+ 	src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 	return true;
+ }
+@@ -8305,7 +8209,6 @@
+ 				return;
+ 				}
+ 
+-#/*cut-cpp*/
+ 			// arithmeticlike subsumes integerlike so this is fine
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				{
+@@ -8319,7 +8222,6 @@
+ 				rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 				assert(rhs.second);
+ 				}
+-#/*cut-cpp*/
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+@@ -8368,7 +8270,6 @@
+ 				return;
+ 				}
+ 
+-#/*cut-cpp*/
+ 			// arithmeticlike subsumes integerlike so this is fine
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				{
+@@ -8382,7 +8283,6 @@
+ 				rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 				assert(rhs.second);
+ 				}
+-#/*cut-cpp*/
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+@@ -8570,11 +8470,9 @@
+ 		{
+ 		if (!is_true)
+ 			{	// __ &lt;&lt; 0 or __ &gt;&gt; 0: lift
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+-#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			return true;
+@@ -8975,7 +8873,6 @@
+ 	return false;
+ }
+ 
+-#/*cut-cpp*/
+ static bool typeid_equal_content(const parse_tree&amp; lhs, const parse_tree&amp; rhs,bool&amp; is_equal)
+ {
+ 	if (   is_CPP0X_typeid_expression(lhs) &amp;&amp; is_CPP0X_typeid_expression(rhs)
+@@ -8988,7 +8885,6 @@
+ 	return false;
+ }
+ 
+-#/*cut-cpp*/
+ static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {	
+ 	BOOST_STATIC_ASSERT(1==C99_EQUALITY_SUBTYPE_NEQ-C99_EQUALITY_SUBTYPE_EQ);
+@@ -9006,9 +8902,7 @@
+ 				//! \test default/Pass_if_zero.hpp, default/Pass_if_zero.h, 
+ 			bool is_equal = false;
+ 			if (   C_string_literal_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
+-#/*cut-cpp*/
+ 				|| typeid_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
+-#/*cut-cpp*/
+ 				)
+ 				{
+ 				force_decimal_literal(src,is_equal_op==is_equal ? &quot;1&quot; : &quot;0&quot;,types);
+@@ -9271,22 +9165,18 @@
+ 		if 		(res_int==lhs_int)
+ 			// lhs &amp; rhs = lhs; conserve type
+ 			{
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+-#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			}
+ 		else if (res_int==rhs_int)
+ 			// lhs &amp; rhs = rhs; conserve type
+ 			{
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+-#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			}
+@@ -9439,11 +9329,9 @@
+ 		{
+ 		if (!is_true)
+ 			{	// 0 ^ __
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+-#/*cut-cpp*/
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9453,11 +9341,9 @@
+ 		{
+ 		if (!is_true)
+ 			{	// __ ^ 0
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+-#/*cut-cpp*/
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9621,11 +9507,9 @@
+ 		{
+ 		if (!is_true)
+ 			{	// 0 | __
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+-#/*cut-cpp*/
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9635,11 +9519,9 @@
+ 		{
+ 		if (!is_true)
+ 			{	// __ | 0
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+-#/*cut-cpp*/
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9657,22 +9539,18 @@
+ 		if 		(res_int==lhs_int)
+ 			// lhs | rhs = lhs; conserve type
+ 			{
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+-#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			}
+ 		else if (res_int==rhs_int)
+ 			// lhs | rhs = rhs; conserve type
+ 			{
+-#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+-#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			}
+@@ -10652,10 +10530,8 @@
+ 	_label_literals(src,types);
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),_label_CPP_literal);	// intercepts: true, false, this
+ 	if (!_match_pairs(src)) return false;
+-#/*cut-cpp*/
+ 	// check that this is at least within a brace pair or a parentheses pair (it is actually required to be in a non-static member function, or constructor mem-initializer
+ 	if (!_this_vaguely_where_it_could_be_cplusplus(src)) return false;
+-#/*cut-cpp*/	
+ 	try {
+ 		CPP_locate_expressions(src,SIZE_MAX,types);
+ 		}
+@@ -10669,7 +10545,6 @@
+ 	return true;
+ }
+ 
+-#/*cut-cpp*/
+ static const POD_pair&lt;const char*,size_t&gt; C99_nontype_decl_specifier_list[] =
+ 	{	DICT_STRUCT(&quot;typedef&quot;),
+ 		DICT_STRUCT(&quot;const&quot;),
+@@ -11025,7 +10900,6 @@
+ 	// class/struct/union/enum specifiers can occur in all sorts of strange places
+ 	CPP_notice_class_struct_union_enum(src);
+ }
+-#/*cut-cpp*/
+ 
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+ bool C99_integer_literal_is_zero(const char* const x,const size_t x_len,const lex_flags flags)
+@@ -11586,14 +11460,12 @@
+ 				}
+ 			}
+ 		}
+-#/*cut-cpp*/
+ 	if (src.type_code.decays_to_nonnull_pointer())
+ 		{
+ 		force_decimal_literal(src,&quot;1&quot;,types);
+ 		src.type_code.set_type(C_TYPE::INT);
+ 		return;
+ 		}
+-#/*cut-cpp*/
+ }
+ 
+ //! \throw std::bad_alloc
+@@ -11663,17 +11535,14 @@
+ 				}
+ 			}
+ 		}
+-#/*cut-cpp*/
+ 	if (src.type_code.decays_to_nonnull_pointer())
+ 		{
+ 		force_decimal_literal(src,&quot;1&quot;,types);
+ 		src.type_code.set_type(C_TYPE::INT);
+ 		return;
+ 		}
+-#/*cut-cpp*/
+ }
+ 
+-#/*cut-cpp*/
+ static void conserve_tokens(parse_tree&amp; x)
+ {
+ 	if (x.own_index_token&lt;0&gt;())
+@@ -11699,7 +11568,6 @@
+ 			}
+ 		}
+ }
+-#/*cut-cpp*/
+ 
+ //! \todo really should be somewhere in natural-language output
+ void INFORM_separated_list(const char* const* x,size_t x_len, const char* const sep)
+@@ -11716,7 +11584,6 @@
+ 			}
+ 		};
+ }
+-#/*cut-cpp*/
+ 
+ //! \todo should this be a type_system member?
+ //! \throw std::bad_alloc
+@@ -14796,7 +14663,6 @@
+ {
+ 	CPP_ParseNamespace(src,types,NULL);
+ }
+-#/*cut-cpp*/
+ 
+ PP_auxfunc C99_aux
+  = 	{
+@@ -14810,14 +14676,12 @@
+ 	C99_PPHackTree,
+ 	ConcatenateCStringLiterals,
+ 	C99_bad_syntax_tokenized,
+-#/*cut-cpp*/
+ 	C99_echo_reserved_keyword,
+ 	C99_echo_reserved_symbol,
+ 	C99_ContextFreeParse,
+ 	C99_ContextParse,
+ 	C99_locate_expressions,
+ 	C99_literal_converts_to_bool
+-#/*cut-cpp*/
+ 	};
+ 
+ PP_auxfunc CPlusPlus_aux
+@@ -14832,14 +14696,12 @@
+ 	CPP_PPHackTree,
+ 	ConcatenateCStringLiterals,
+ 	CPP_bad_syntax_tokenized,
+-#/*cut-cpp*/
+ 	CPP_echo_reserved_keyword,
+ 	CPP_echo_reserved_symbol,
+ 	CPP_ContextFreeParse,
+ 	CPP_ContextParse,
+ 	CPP_locate_expressions,
+ 	CPP_literal_converts_to_bool
+-#/*cut-cpp*/
+ 	};
+ 
+ #if 0
+@@ -14964,7 +14826,6 @@
+ 	assert(C_TYPE::DOUBLE__COMPLEX==linear_find(&quot;double _Complex&quot;,CPP_atomic_types,CPP_TYPE_MAX)+1);
+ 	assert(C_TYPE::LDOUBLE__COMPLEX==linear_find(&quot;long double _Complex&quot;,CPP_atomic_types,CPP_TYPE_MAX)+1);
+ 	assert(C_TYPE::WCHAR_T==linear_find(&quot;wchar_t&quot;,CPP_atomic_types,CPP_TYPE_MAX)+1);
+-#/*cut-cpp*/
+ 
+ 	assert(C99_CPP_TYPEDEF_IDX==linear_find(&quot;typedef&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_TYPEDEF_IDX==linear_find(&quot;typedef&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+@@ -15008,7 +14869,6 @@
+ 	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;_Thread_Local&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;thread_local&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(CPP_MUTABLE_IDX==linear_find(&quot;mutable&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+-#/*cut-cpp*/
+ 
+ 	/* does bool converts_to_integerlike(size_t base_type_index) work */
+ 	BOOST_STATIC_ASSERT(!(C_TYPE::BOOL&lt;=C_TYPE::NOT_VOID &amp;&amp; C_TYPE::NOT_VOID&lt;=C_TYPE::INTEGERLIKE));
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-10-20 17:54:21 UTC (rev 495)
++++ trunk/CSupport_pp.cpp	2010-10-20 18:40:08 UTC (rev 496)
+@@ -21,7 +21,7 @@
+ #include &quot;errcount.hpp&quot;
+ #include &quot;CPUInfo.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
+-#include &quot;type_system.hpp&quot;
++#include &quot;type_system_pp.hpp&quot;
+ #include &quot;type_algebra.hpp&quot;
+ #include &quot;weak_token.hpp&quot;
+ #include &quot;C_PPDecimalInteger.hpp&quot;
+@@ -31,9 +31,6 @@
+ #include &quot;C_PPHexFloat.hpp&quot;
+ #include &quot;CheckReturn.hpp&quot;
+ 
+-#ifdef ZCC_NOT_BUILDING_CPP
+-#error internal macro ZCC_NOT_BUILDING_CPP already defined 
+-#endif
+ // handle function signature differences between z_cpp and other users
+ #ifdef SIG_CONST_TYPES
+ #error internal macro SIG_CONST_TYPES already defined 
+@@ -41,13 +38,8 @@
+ #ifdef ARG_TYPES
+ #error internal macro ARG_TYPES already defined 
+ #endif
+-#ifdef ZCC_NOT_BUILDING_CPP
+-#define SIG_CONST_TYPES ,const type_system&amp; types 
+-#define ARG_TYPES ,types 
+-#else
+ #define SIG_CONST_TYPES 
+ #define ARG_TYPES 
+-#endif
+ 
+ using namespace zaimoni;
+ using virtual_machine::umaxint;
+@@ -593,12 +585,7 @@
+ 
+ static bool converts_to_integerlike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-#ifdef ZCC_NOT_BUILDING_CPP
+-	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index) return true;
+-	return types.get_enum_def(base_type_index);
+-#else
+ 	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_integerlike(const type_spec&amp; type_code SIG_CONST_TYPES)
+@@ -610,32 +597,17 @@
+ static bool converts_to_integer(const type_spec&amp; type_code SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+ 	if (0&lt;type_code.pointer_power) return false;	// pointers do not have a standard conversion to integers
+-#ifdef ZCC_NOT_BUILDING_CPP
+-	if (C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index) return true;
+-	return types.get_enum_def(type_code.base_type_index);
+-#else
+ 	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_reallike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-#ifdef ZCC_NOT_BUILDING_CPP
+-	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index) return true;
+-	return types.get_enum_def(base_type_index);
+-#else
+ 	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_arithmeticlike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-#ifdef ZCC_NOT_BUILDING_CPP
+-	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=base_type_index) return true;
+-	return types.get_enum_def(base_type_index);
+-#else
+ 	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=base_type_index;
+-#endif
+ }
+ 
+ static bool converts_to_arithmeticlike(const type_spec&amp; type_code SIG_CONST_TYPES)
+@@ -2943,6 +2915,7 @@
+ /* strict type categories of parsing */
+ #define PARSE_PRIMARY_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-19))
+ #define PARSE_UNION_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-20))
++#define PARSE_CLASS_STRUCT_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-21))
+ 
+ // check for collision with lowest three bits
+ BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=20);
+@@ -2967,7 +2940,7 @@
+ #define PARSE_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION | PARSE_STRICT_UNARY_EXPRESSION | PARSE_STRICT_CAST_EXPRESSION | PARSE_STRICT_PM_EXPRESSION | PARSE_STRICT_MULT_EXPRESSION | PARSE_STRICT_ADD_EXPRESSION | PARSE_STRICT_SHIFT_EXPRESSION | PARSE_STRICT_RELATIONAL_EXPRESSION | PARSE_STRICT_EQUALITY_EXPRESSION | PARSE_STRICT_BITAND_EXPRESSION | PARSE_STRICT_BITXOR_EXPRESSION | PARSE_STRICT_BITOR_EXPRESSION | PARSE_STRICT_LOGICAND_EXPRESSION | PARSE_STRICT_LOGICOR_EXPRESSION | PARSE_STRICT_CONDITIONAL_EXPRESSION | PARSE_STRICT_ASSIGNMENT_EXPRESSION | PARSE_STRICT_COMMA_EXPRESSION)
+ 
+ /* nonstrict type categories */
+-#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE)
++#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE | PARSE_CLASS_STRUCT_TYPE)
+ 
+ /* already-parsed */
+ #define PARSE_OBVIOUS (PARSE_EXPRESSION | PARSE_TYPE | parse_tree::INVALID)
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-10-20 17:54:21 UTC (rev 495)
++++ trunk/POSIX.dep	2010-10-20 18:40:08 UTC (rev 496)
+@@ -19,7 +19,7 @@
+ type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ type_spec.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar
+ _blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPDecimalInteger.o: C_PPDecimalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPOctalInteger.o: C_PPOctalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -35,8 +35,8 @@
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operat
+ or.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+-type_system.o: type_system.hpp type_system_pp.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+-CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zai
+ moni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++type_system.o: type_system.hpp type_system_pp.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/lo
+ gic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000262.html">[Zcplusplus-commits] r495 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000265.html">[Zcplusplus-commits] r497 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#263">[ date ]</a>
+              <a href="thread.html#263">[ thread ]</a>
+              <a href="subject.html#263">[ subject ]</a>
+              <a href="author.html#263">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

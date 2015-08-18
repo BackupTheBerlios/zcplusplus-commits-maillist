@@ -1,0 +1,2564 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r354 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r354%20-%20trunk&In-Reply-To=%3C201003211924.o2LJOVaA030339%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000120.html">
+   <LINK REL="Next"  HREF="000122.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r354 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r354%20-%20trunk&In-Reply-To=%3C201003211924.o2LJOVaA030339%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r354 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar 21 20:24:31 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000120.html">[Zcplusplus-commits] r353 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000122.html">[Zcplusplus-commits] r355 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#121">[ date ]</a>
+              <a href="thread.html#121">[ thread ]</a>
+              <a href="subject.html#121">[ subject ]</a>
+              <a href="author.html#121">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-21 20:24:26 +0100 (Sun, 21 Mar 2010)
+New Revision: 354
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.hpp
+   trunk/CSupport_pp.cpp
+Log:
+misinterpret enumerators as integer-like literals to avoid dynamic memory churning
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-21 19:23:33 UTC (rev 353)
++++ trunk/CSupport.cpp	2010-03-21 19:24:26 UTC (rev 354)
+@@ -660,7 +660,17 @@
+ 	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers
+ 	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index;
+ }
++#/*cut-cpp*/
+ 
++static bool converts_to_integer(const type_spec&amp; type_code,const type_system&amp; types)
++{	//! \todo handle cast operator overloading
++	//! \todo handle enum types
++	if (0&lt;type_code.pointer_power_after_array_decay()) return false;	// pointers do not have a standard conversion to integers
++	if (C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index) return true;
++	return types.get_enum_def(type_code.base_type_index);
++}
++#/*cut-cpp*/
++
+ static bool converts_to_reallike(size_t base_type_index)
+ {	//! \todo handle cast operator overloading
+ 	//! \todo handle enum types
+@@ -4185,11 +4195,29 @@
+ 		};
+ 	return true;
+ }
++#/*cut-cpp*/
+ 
++static const enum_def* is_noticed_enumerator(const parse_tree&amp; x,const type_system&amp; types)
++{
++	const enum_def* tmp = NULL;
++	if (x.is_atomic() &amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags))
++		tmp = types.get_enum_def(x.type_code.base_type_index);
++	return tmp;
++}
++#/*cut-cpp*/
++
+ // forward-declare to handle recursion
+-static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src);
++static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/
++	);
+ 
+-static bool _C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
++static bool _C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/
++	)
+ {
+ 	assert(C_TYPE::INTEGERLIKE!=src.type_code.base_type_index);
+ 
+@@ -4206,8 +4234,16 @@
+ 				{
+ 				umaxint lhs_int;
+ 				umaxint rhs_int;
+-				if (	C99_intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;())
+-					&amp;&amp;	C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++				if (	C99_intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++					,types
++#/*cut-cpp*/
++					)
++					&amp;&amp;	C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++						,types
++#/*cut-cpp*/
++					))
+ 					{
+ 					const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index);
+ 					assert(old.bitcount&gt;=rhs.bitcount);
+@@ -4238,7 +4274,18 @@
+ 		dest.set_bitcount(VM_MAX_BIT_PLATFORM);
+ 		return true;
+ 		}	
++#/*cut-cpp*/
+ 
++	// creative interpretation: enumerators as integer-like literals
++	if (is_noticed_enumerator(src,types))
++		{
++		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.index_tokens[0].token.first);
++		assert(tmp2);
++		dest = tmp2-&gt;second.first.third;
++		return true;
++		}
++#/*cut-cpp*/
++		
+ 	if (!(C_TESTFLAG_INTEGER &amp; src.index_tokens[0].flags)) return false;
+ 	C_PPIntCore tmp;
+ 	ZAIMONI_PASSTHROUGH_ASSERT(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,tmp));
+@@ -4268,11 +4315,19 @@
+ 
+ // return value: literal to parse, whether additive inverse applies
+ static POD_pair&lt;const parse_tree*,bool&gt;
+-_find_intlike_literal(const parse_tree* src)
++_find_intlike_literal(const parse_tree* src
++#/*cut-cpp*/
++	,const type_system&amp; types
++#/*cut-cpp*/	
++	)
+ {
+ 	assert(NULL!=src);
+ 	POD_pair&lt;const parse_tree*,bool&gt; ret = {src,false};
+-	while(converts_to_integer(ret.first-&gt;type_code))
++	while(converts_to_integer(ret.first-&gt;type_code
++#/*cut-cpp*/
++	, types
++#/*cut-cpp*/			
++		))
+ 		{
+ 		if 		(is_C99_unary_operator_expression&lt;'-'&gt;(*ret.first))
+ 			{
+@@ -4291,14 +4346,33 @@
+ 	return ret;
+ }
+ 
+-static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
++// use this typedef to cope with signature varying by build
++typedef bool (intlike_literal_to_VM_func)(umaxint&amp; dest, const parse_tree&amp; src
++#/*cut-cpp*/
++	,const type_system&amp; types
++#/*cut-cpp*/	
++	);
++
++static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++#/*cut-cpp*/
++	,const type_system&amp; types
++#/*cut-cpp*/	
++	)
+ {
+-	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src);
++	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src
++#/*cut-cpp*/
++	, types
++#/*cut-cpp*/					
++		);
+ 
+ 	if (C_TYPE::INTEGERLIKE==actual.first-&gt;type_code.base_type_index)
+ 		return false;	
+ 
+-	if (!_C99_intlike_literal_to_VM(dest,*actual.first)) return false;
++	if (!_C99_intlike_literal_to_VM(dest,*actual.first
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/					
++		)) return false;
+ 	if (actual.second)
+ 		{
+ 		const promote_aux old(src.type_code.base_type_index);
+@@ -4310,16 +4384,28 @@
+ 	return true;
+ }
+ 
+-static bool CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
++static bool CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/	
++	)
+ {
+-	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src);
++	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src
++#/*cut-cpp*/
++	, types
++#/*cut-cpp*/					
++		);
+ 
+ 	if (!_CPP_intlike_literal_to_VM(dest,*actual.first))
+ 		{
+ 		if (C_TYPE::INTEGERLIKE==actual.first-&gt;type_code.base_type_index)
+ 			return false;	
+ 
+-		if (!_C99_intlike_literal_to_VM(dest,*actual.first)) return false;
++		if (!_C99_intlike_literal_to_VM(dest,*actual.first
++#/*cut-cpp*/
++			, types
++#/*cut-cpp*/					
++			)) return false;
+ 		};
+ 	if (actual.second)
+ 		{
+@@ -4338,11 +4424,19 @@
+  * \return -1 : can't decide quickly whether this is a null 
+  *         pointer constant
+  */
+-int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static int is_null_pointer_constant(const parse_tree&amp; src,intlike_literal_to_VM_func&amp; intlike_literal_to_VM
++#/*cut-cpp*/
++	,const type_system&amp; types
++#/*cut-cpp*/
++	)
+ {	//! \bug doesn't recognize enumerators with value zero
+ 	if (!converts_to_integerlike(src.type_code)) return 0;
+ 	umaxint tmp;
+-	if (intlike_literal_to_VM(tmp,src)) return tmp==0;
++	if (intlike_literal_to_VM(tmp,src
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		)) return tmp==0;
+ 	return -1;
+ }
+ 
+@@ -5146,8 +5240,19 @@
+ 		}
+ }
+ 
++// typedef to simplify compatibility changes
++typedef bool literal_converts_to_bool_func(const parse_tree&amp; src, bool&amp; is_true
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/
++	);
++
+ // Closely related to if_elif_control_is_zero/CPreproc.cpp
+-static bool _C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true)
++static bool _C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/
++	)
+ {
+ 	assert(src.is_atomic());
+ 	// string literals always test true (decay to non-NULL pointer)
+@@ -5161,6 +5266,16 @@
+ 		is_true = !CCharLiteralIsFalse(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+ 		return true;
+ 		};
++#/*cut-cpp*/
++	if (is_noticed_enumerator(src,types))
++		{	// misintepret enumerators as literals (avoid dynamic memory thrashing)
++		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.index_tokens[0].token.first);
++		assert(tmp2);
++		const promote_aux dest_type(tmp2-&gt;second.first.second);
++		is_true = !target_machine-&gt;is_zero(tmp2-&gt;second.first.third.data(),tmp2-&gt;second.first.third.size(),dest_type);
++		return true;
++		}
++#/*cut-cpp*/
+ 	if (!(C_TESTFLAG_PP_NUMERAL &amp; src.index_tokens[0].flags)) return false;
+ 	C_REALITY_CHECK_PP_NUMERAL_FLAGS(src.index_tokens[0].flags);
+ 	if (C_TESTFLAG_FLOAT &amp; src.index_tokens[0].flags) return false;	//! \todo handle floats as well (underflow to zero is target-sensitive)
+@@ -5169,21 +5284,45 @@
+ 	return true;
+ }
+ 
+-static bool C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true)
++static bool C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/
++	)
+ {	// deal with -1 et. al.
+-	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return _C99_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true);
++	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return _C99_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		);
+ 
+ 	if (!src.is_atomic()) return false;
+-	return _C99_literal_converts_to_bool(src,is_true);
++	return _C99_literal_converts_to_bool(src,is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		);
+ }
+ 
+-static bool CPP_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true)
++static bool CPP_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true
++#/*cut-cpp*/
++	, const type_system&amp; types
++#/*cut-cpp*/
++	)
+ {
+ 	// deal with -1 et. al.
+-	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return CPP_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true);
++	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return CPP_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		);
+ 
+ 	if (!src.is_atomic()) return false;
+-	if (_C99_literal_converts_to_bool(src,is_true)) return true;
++	if (_C99_literal_converts_to_bool(src,is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		)) return true;
+ 	// deal with: this, true, false
+ 	if (token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;false&quot;))
+ 		{
+@@ -5340,14 +5479,6 @@
+ }
+ #/*cut-cpp*/
+ 
+-static const enum_def* is_noticed_enumerator(const parse_tree&amp; x,const type_system&amp; types)
+-{
+-	const enum_def* tmp = NULL;
+-	if (x.is_atomic() &amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags))
+-		tmp = types.get_enum_def(x.type_code.base_type_index);
+-	return tmp;
+-}
+-
+ static bool enumerator_to_integer_representation(parse_tree&amp; x,const type_system&amp; types)
+ {
+ 	parse_tree tmp3;
+@@ -5418,11 +5549,15 @@
+ 	return false;
+ }
+ 
+-static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(src));
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true &amp;&amp; (1==(src.type_code.base_type_index-C_TYPE::INT)%2 || virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() || bool_options[boolopt::int_traps]))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		) &amp;&amp; !is_true &amp;&amp; (1==(src.type_code.base_type_index-C_TYPE::INT)%2 || virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() || bool_options[boolopt::int_traps]))
+ 		{	// -0==0
+ 			// deal with unary - not being allowed to actually return -0 on these machines later
+ 		const type_spec old_type = src.type_code;
+@@ -5450,7 +5585,11 @@
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		const type_spec old_type = src.type_code;
+ 		umaxint res_int;
+-		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;());
++		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			);
+ 		target_machine-&gt;unsigned_additive_inverse(res_int,machine_type);
+ 
+ 		//! \todo flag failures to reduce as RAM-stalled
+@@ -5683,7 +5822,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT, literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	assert(is_logical_NOT(src));
+ #/*cut-cpp*/
+@@ -5694,7 +5833,11 @@
+ #/*cut-cpp*/
+ 	{	// deal with literals that convert to bool here
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		src.destroy();
+ 		src.index_tokens[0].token.first = (is_true) ? &quot;0&quot; : &quot;1&quot;;
+@@ -5915,12 +6058,16 @@
+ 	return true;
+ }
+ 
+-static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+ 	umaxint res_int;
+-	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;())) 
++	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		)) 
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
+@@ -6346,7 +6493,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+@@ -6354,8 +6501,16 @@
+ 	bool is_true = false;
+ 
+ 	// do this first to avoid unnecessary dynamic memory allocation
+-	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)	// 0 * __
+-		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true))	// __ * 0
++	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++			) &amp;&amp; !is_true)	// 0 * __
++		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			) &amp;&amp; !is_true))	// __ * 0
+ 		{
+ 		// construct +0 to defuse 1-0*6
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -6375,8 +6530,16 @@
+ 
+ 	umaxint res_int;
+ 	umaxint rhs_int;
+-	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/
++		);
+ 	if (lhs_converted &amp;&amp; 1==res_int)
+ 		{
+ 		src.eval_to_arg&lt;2&gt;(0);
+@@ -6456,7 +6619,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+@@ -6464,7 +6627,11 @@
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code))
+ 		{
+-		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+ 			if (hard_error)
+ 				//! \test default/Error_if_control30.hpp, default/Error_if_control30.h
+@@ -6472,7 +6639,11 @@
+ 			return false;
+ 			}
+ 		/*! \todo would like a simple comparison of absolute values to auto-detect zero, possibly after mainline code */
+-		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 			{
+ 			// construct +0 to defuse 1-0/6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -6494,8 +6665,16 @@
+ 
+ 	umaxint res_int;
+ 	umaxint rhs_int;
+-	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/
++		);
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __/1 |-&gt; __
+ 		src.eval_to_arg&lt;1&gt;(0);
+@@ -6583,7 +6762,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+@@ -6591,7 +6770,11 @@
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code))
+ 		{
+-		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+ 			if (hard_error)
+ 				//! \test default/Error_if_control31.hpp, Error_if_control31.h
+@@ -6599,7 +6782,11 @@
+ 			return false;
+ 			}
+ 		/*! \todo would like a simple comparison of absolute values to auto-detect zero, possibly after mainline code */
+-		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 			{
+ 			// construct +0 to defuse 1-0%6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -6621,8 +6808,16 @@
+ 
+ 	umaxint res_int;
+ 	umaxint rhs_int;
+-	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		, types
++#/*cut-cpp*/
++		);
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __%1 |-&gt; +0
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -6940,7 +7135,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+ 
+@@ -6960,13 +7155,21 @@
+ 			assert(converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index));
+ 			assert(converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++					,types
++#/*cut-cpp*/
++					) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+ 				src.eval_to_arg&lt;2&gt;(0);
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+-			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++					,types
++#/*cut-cpp*/
++					) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -6979,8 +7182,16 @@
+ 			assert(old.bitcount&gt;=lhs.bitcount);
+ 			const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index);
+ 			assert(old.bitcount&gt;=rhs.bitcount);
+-			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++				, types
++#/*cut-cpp*/					
++				);
++			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++				, types
++#/*cut-cpp*/					
++				);
+ 			const bool lhs_negative = lhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(res_int,lhs,old);
+ 			const bool rhs_negative = rhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+@@ -7060,7 +7271,11 @@
+ 	case 1:	{
+ 			assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -7071,7 +7286,11 @@
+ 	case 2:	{
+ 			assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++			if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+ 				src.eval_to_arg&lt;2&gt;(0);
+ 				src.type_code = old_type;
+@@ -7086,7 +7305,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+ 
+@@ -7106,7 +7325,11 @@
+ 			assert(converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index));
+ 			assert(converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++					,types
++#/*cut-cpp*/
++					) &amp;&amp; !is_true)
+ 				{	// 0 - __ |-&gt; - __
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				src.core_flag_update();
+@@ -7116,7 +7339,11 @@
+ 				src.type_code = old_type;				
+ 				return true;
+ 				}
+-			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++					) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -7124,8 +7351,16 @@
+ 				}
+ 			umaxint res_int;
+ 			umaxint rhs_int;
+-			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++				, types
++#/*cut-cpp*/					
++				);
++			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++				, types
++#/*cut-cpp*/					
++				);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+ 				{	//! \todo deal with signed integer arithmetic
+ 				const promote_aux old(old_type.base_type_index);
+@@ -7212,7 +7447,11 @@
+ 	case 1:	{
+ 			assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -7240,7 +7479,7 @@
+ 
+ // +: either both are arithmetic, or one is raw pointer and one is integer
+ // -: either both are arithmetic, or both are compatible raw pointer, or left is raw pointer and right is integer
+-static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert((C99_ADD_SUBTYPE_PLUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'+'&gt;(src)) || (C99_ADD_SUBTYPE_MINUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'-'&gt;(src)));
+ 	BOOST_STATIC_ASSERT(1==C99_ADD_SUBTYPE_MINUS-C99_ADD_SUBTYPE_PLUS);
+@@ -7485,7 +7724,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -7500,7 +7739,11 @@
+ 	// error if RHS is literal &quot;out of bounds&quot;
+ 	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		) &amp;&amp; !is_true)
+ 		{
+ 		if (!is_true)
+ 			{	// __ &lt;&lt; 0 or __ &gt;&gt; 0: lift
+@@ -7511,7 +7754,11 @@
+ 		};
+ 
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
+ 		const bool undefined_behavior = target_machine-&gt;C_bit(machine_type)&lt;=rhs_int;
+@@ -7520,7 +7767,11 @@
+ 		if (undefined_behavior)
+ 			simple_error(src,&quot; : RHS is at least as large as bits of LHS; undefined behavior (C99 6.5.7p3/C++98 5.8p1)&quot;);
+ 
+-		if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++		if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 			{
+ 			if (!is_true)
+ 				{	// 0 &lt;&lt; __ or 0 &gt;&gt; __: zero out (note that we can do this even if we invoked undefined behavior)
+@@ -7532,7 +7783,11 @@
+ 		if (undefined_behavior) return false;
+ 
+ 		umaxint res_int;
+-		if (intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()))
++		if (intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 			{
+ 			// note that incoming negative signed integers are not handled by this code path
+ 			if (C99_SHIFT_SUBTYPE_LEFT==src.subtype)
+@@ -7656,7 +7911,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_GT-C99_RELATION_SUBTYPE_LT);
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_LTE-C99_RELATION_SUBTYPE_GT);
+@@ -7665,8 +7920,16 @@
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+ 
+-	const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		);
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+ 		const char* result 	= NULL;
+@@ -7845,7 +8108,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {	
+ 	BOOST_STATIC_ASSERT(1==C99_EQUALITY_SUBTYPE_NEQ-C99_EQUALITY_SUBTYPE_EQ);
+ 	assert(C99_EQUALITY_SUBTYPE_EQ&lt;=src.subtype &amp;&amp; C99_EQUALITY_SUBTYPE_NEQ&gt;=src.subtype);
+@@ -7869,7 +8132,11 @@
+ 			break;
+ 			}
+ 	case 1:	{
+-			if (0&lt;src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;1&gt;(),is_true)) 
++			if (0&lt;src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				)) 
+ 				{
+ 				if (!is_true)
+ 					{	
+@@ -7890,7 +8157,11 @@
+ 			break;
+ 			}
+ 	case 2:	{
+-			if (0&lt;src.data&lt;1&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;2&gt;(),is_true)) 
++			if (0&lt;src.data&lt;1&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				)) 
+ 				{
+ 				if (!is_true)
+ 					{
+@@ -7916,8 +8187,16 @@
+ 			const promote_aux old(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			assert(old.bitcount&gt;=lhs.bitcount);
+ 			assert(old.bitcount&gt;=rhs.bitcount);
+-			const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				);
++			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				);
+ 			// general case here in case we try to do with converted/not converted mixed cases
+ //			if (lhs_converted) target_machine-&gt;C_promote_integer(lhs_int,lhs,old);
+ //			if (rhs_converted) target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+@@ -8073,7 +8352,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -8084,8 +8363,16 @@
+ 	// unary - gives us problems (result is target-specific, could generate a trap representation)
+ 	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+-	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)	// 0 &amp; __
+-		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true))	// __ &amp; 0
++	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			) &amp;&amp; !is_true)	// 0 &amp; __
++		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			) &amp;&amp; !is_true))	// __ &amp; 0
+ 		{
+ 		if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
+ 			{
+@@ -8104,7 +8391,15 @@
+ 
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 		{
+ 		const promote_aux old(old_type.base_type_index);
+ 		umaxint res_int(lhs_int);
+@@ -8248,7 +8543,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -8258,7 +8553,11 @@
+ 	// __ ^ 0 |-&gt; __
+ 	// also handle double-literal case
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// 0 ^ __
+@@ -8267,7 +8566,11 @@
+ 			return true;
+ 			}
+ 		};
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// __ ^ 0
+@@ -8279,7 +8582,15 @@
+ 
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		const promote_aux old(old_type.base_type_index);
+@@ -8416,7 +8727,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -8426,7 +8737,11 @@
+ 	// int-literal | int-literal |-&gt; int-literal *if* both fit
+ 	// unary - gives us problems (result is target-specific, could generate a trap representation)
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// 0 | __
+@@ -8435,7 +8750,11 @@
+ 			return true;
+ 			}
+ 		};
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// __ | 0
+@@ -8447,7 +8766,15 @@
+ 
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		umaxint res_int(lhs_int);
+@@ -8609,7 +8936,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_logical_AND(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_logical_AND(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	// deal with literals here.  &amp;&amp; short-circuit evaluates.
+ 	// 1 &amp;&amp; __ |-&gt; 0!=__
+@@ -8619,7 +8946,11 @@
+ 	// (__ &amp;&amp; 1) &amp;&amp; __ |-&gt; __ &amp;&amp; 1
+ 
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{	// one of 0 &amp;&amp; __ or 1 &amp;&amp; __
+ 		if (!is_true)
+ 			{	// 0 &amp;&amp; __
+@@ -8633,7 +8964,11 @@
+ 			force_decimal_literal(src,&quot;0&quot;,types);
+ 			return true;
+ 			}
+-		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 			{	// 1 &amp;&amp; 1 or 1 &amp;&amp; 0
+ 			force_decimal_literal(src,is_true ? &quot;1&quot; : &quot;0&quot;,types);
+ 			return true;
+@@ -8752,7 +9087,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_logical_OR(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_logical_OR(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	// deal with literals here.  || short-circuit evaluates.
+ 	// 0 || __ |-&gt; 0!=__
+@@ -8762,7 +9097,11 @@
+ 	// (__ || 1) || __ |-&gt; __ || 1
+ 
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{	// one of 0 || __ or 1 || __
+ 		if (is_true)
+ 			{	// 1 || __
+@@ -8776,7 +9115,11 @@
+ 			force_decimal_literal(src,&quot;1&quot;,types);
+ 			return true;
+ 			}
+-		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++#/*cut-cpp*/
++			,types
++#/*cut-cpp*/
++			))
+ 			{	// 0 || 1 or 0 || 0
+ 			force_decimal_literal(src,is_true ? &quot;1&quot; : &quot;0&quot;,types);
+ 			return true;
+@@ -8897,10 +9240,18 @@
+ 	return false;
+ }
+ 
+-static bool eval_conditional_op(parse_tree&amp; src, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_conditional_op(parse_tree&amp; src, literal_converts_to_bool_func&amp; literal_converts_to_bool
++#/*cut-cpp*/
++		, const type_system&amp; types
++#/*cut-cpp*/
++	)
+ {
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.c_array&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.c_array&lt;1&gt;(),is_true
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		))
+ 		{
+ 		const bool was_invalid = src.flags &amp; parse_tree::INVALID;
+ 		const type_spec old_type = src.type_code;
+@@ -8937,7 +9288,11 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;0&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),C99_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),C99_intlike_literal_to_VM
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				))
+ 				// (...) ? string : 0 -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -8956,7 +9311,11 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),C99_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),C99_intlike_literal_to_VM
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				))
+ 				// (...) ? 0 : string -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -9006,7 +9365,11 @@
+ 		}
+ 	// 3) RAM conservation: if we have a suitable literal Do It Now
+ 	// \todo disable this at O0?
+-	if (eval_conditional_op(src,C99_literal_converts_to_bool)) return;
++	if (eval_conditional_op(src,C99_literal_converts_to_bool
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		)) return;
+ }
+ 
+ static void CPP_conditional_op_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+@@ -9027,7 +9390,11 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;0&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),CPP_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),CPP_intlike_literal_to_VM
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				))
+ 				// (...) ? string : 0 -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -9046,7 +9413,11 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),CPP_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),CPP_intlike_literal_to_VM
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				))
+ 				// (...) ? 0 : string -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -9095,7 +9466,11 @@
+ 		}
+ 	// 3) RAM conservation: if we have a suitable literal Do It Now
+ 	// \todo disable this at O0?
+-	if (eval_conditional_op(src,CPP_literal_converts_to_bool)) return;
++	if (eval_conditional_op(src,CPP_literal_converts_to_bool
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++		)) return;
+ }
+ 
+ static void locate_C99_conditional_op(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+@@ -9601,7 +9976,7 @@
+ eval_array_deref(parse_tree&amp; src,const type_system&amp; types,
+ 				 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 				 func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type literal_converts_to_integer,
+-				 func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++				 intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (!is_array_deref(src)) return false;
+ 	// crunch __[...]
+@@ -9615,7 +9990,11 @@
+ 		if (UINT_MAX&gt;str_index)
+ 			{
+ 			umaxint tmp; 
+-			if (!intlike_literal_to_VM(tmp,*src.data(1-str_index))) return false;
++			if (!intlike_literal_to_VM(tmp,*src.data(1-str_index)
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				)) return false;
+ 			const size_t promoted_type = default_promote_type(src.type_code.base_type_index);
+ 			const virtual_machine::std_int_enum machine_type = (virtual_machine::std_int_enum)((promoted_type-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ 			eval_string_literal_deref(src,types,src.data(str_index)-&gt;index_tokens[0].token,tmp,tmp.test(target_machine-&gt;C_bit(machine_type)-1),C_TESTFLAG_CHAR_LITERAL==src.data(1-str_index)-&gt;index_tokens[0].flags);
+@@ -9649,7 +10028,7 @@
+ static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types,
+ 							 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							 func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT_expression,
+-							 func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++							 literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_logical_NOT_expression(src))
+ 		{
+@@ -9662,7 +10041,7 @@
+ static bool eval_bitwise_compl(	parse_tree&amp; src, const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 								func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_complement_expression(src))
+ 		{
+@@ -9685,8 +10064,8 @@
+ 
+ static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,
+ 							 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							 func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							 func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							 literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							 intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_unary_operator_expression&lt;'-'&gt;(src))
+ 		{
+@@ -9698,8 +10077,8 @@
+ 
+ static bool eval_mult_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								literal_converts_to_bool_func&amp; literal_converts_to_bool,
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'*'&gt;(src))
+ 		{
+@@ -9712,8 +10091,8 @@
+ 
+ static bool eval_div_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								literal_converts_to_bool_func&amp; literal_converts_to_bool,
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'/'&gt;(src))
+ 		{
+@@ -9726,8 +10105,8 @@
+ 
+ static bool eval_mod_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								literal_converts_to_bool_func&amp; literal_converts_to_bool,
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'%'&gt;(src))
+ 		{
+@@ -9741,8 +10120,8 @@
+ 
+ static bool eval_add_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_add_operator_expression&lt;'+'&gt;(src))
+ 		{
+@@ -9755,8 +10134,8 @@
+ 
+ static bool eval_sub_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_add_operator_expression&lt;'-'&gt;(src))
+ 		{
+@@ -9769,8 +10148,8 @@
+ 
+ static bool eval_shift(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_shift_expression(src))
+ 		{
+@@ -9783,7 +10162,7 @@
+ 
+ static bool eval_relation_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_relation_expression(src))
+ 		{
+@@ -9797,8 +10176,8 @@
+ static bool eval_equality_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_equality_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_equality_expression(src))
+ 		{
+@@ -9812,8 +10191,8 @@
+ static bool eval_bitwise_AND(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_AND_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_AND_expression(src))
+ 		{
+@@ -9827,8 +10206,8 @@
+ static bool eval_bitwise_XOR(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_XOR_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_XOR_expression(src))
+ 		{
+@@ -9842,8 +10221,8 @@
+ static bool eval_bitwise_OR(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_OR_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_OR_expression(src))
+ 		{
+@@ -9857,7 +10236,7 @@
+ static bool eval_logical_AND(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_AND_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_logical_AND_expression(src))
+ 		{
+@@ -9871,7 +10250,7 @@
+ static bool eval_logical_OR(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_OR_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_logical_OR_expression(src))
+ 		{
+@@ -9884,12 +10263,16 @@
+ 
+ static bool eval_conditional_operator(parse_tree&amp; src,const type_system&amp; types,
+ 									  func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-									  func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++									  literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_C99_conditional_operator_expression(src))
+ 		{	// prefix operator is boolean
+ 		EvalParseTree(*src.c_array&lt;1&gt;(),types);
+-		if (eval_conditional_op(src,literal_converts_to_bool)) return true;
++		if (eval_conditional_op(src,literal_converts_to_bool
++#/*cut-cpp*/
++		,types
++#/*cut-cpp*/
++			)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10005,8 +10388,16 @@
+ 			{
+ 			umaxint res_int;
+ 			umaxint rhs_int;
+-			const bool lhs_converted = C99_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = C99_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				);
++			const bool rhs_converted = C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+ 				{	//! \todo deal with signed integer arithmetic
+ 				const promote_aux old(old_type.base_type_index);
+@@ -10073,8 +10464,16 @@
+ 			{
+ 			umaxint res_int;
+ 			umaxint rhs_int;
+-			const bool lhs_converted = CPP_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = CPP_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = CPP_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				);
++			const bool rhs_converted = CPP_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++#/*cut-cpp*/
++				,types
++#/*cut-cpp*/
++				);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+ 				{	//! \todo deal with signed integer arithmetic
+ 				const promote_aux old(old_type.base_type_index);
+@@ -10661,7 +11060,7 @@
+ 			if (!enumerator_to_integer_representation(parsetree,types)) throw std::bad_alloc();
+ 
+ 		bool is_true = false;
+-		if (!(langinfo.LiteralConvertsToBool)(parsetree,is_true))
++		if (!(langinfo.LiteralConvertsToBool)(parsetree,is_true,types))
+ 			{	//! \bug need test cases
+ 			parsetree.destroy();	// efficiency
+ 			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -10752,7 +11151,7 @@
+ 	return true;
+ }
+ 
+-static bool record_enum_values(parse_tree&amp; src, type_system&amp; types, const type_system::type_index enum_type_index, const char* const active_namespace,bool allow_empty,func_traits&lt;const char* (*)(const char*, size_t)&gt;::function_ref_type echo_reserved_keyword, func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM, func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type CondenseParseTree, func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree)
++static bool record_enum_values(parse_tree&amp; src, type_system&amp; types, const type_system::type_index enum_type_index, const char* const active_namespace,bool allow_empty,func_traits&lt;const char* (*)(const char*, size_t)&gt;::function_ref_type echo_reserved_keyword, intlike_literal_to_VM_func&amp; intlike_literal_to_VM, func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type CondenseParseTree, func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree)
+ {
+ 	assert(enum_type_index);
+ 	assert(!active_namespace || *active_namespace);
+@@ -11041,7 +11440,7 @@
+ 		parse_tree_class tmp(src,origin,i-comma_overextended,0);
+ 		if (tmp.is_raw_list() &amp;&amp; !CondenseParseTree(tmp,types)) return false;
+ 		if (!EvalParseTree(tmp,types)) return false;
+-		if (!intlike_literal_to_VM(latest_value,tmp))
++		if (!intlike_literal_to_VM(latest_value,tmp,types))
+ 			{	//! \bug need test case
+ 			message_header(src.data&lt;0&gt;()[origin-2].index_tokens[0]);
+ 			INC_INFORM(ERR_STR);
+
+Modified: trunk/CSupport.hpp
+===================================================================
+--- trunk/CSupport.hpp	2010-03-21 19:23:33 UTC (rev 353)
++++ trunk/CSupport.hpp	2010-03-21 19:24:26 UTC (rev 354)
+@@ -122,7 +122,7 @@
+ 	func_traits&lt;void (*)(parse_tree&amp;,type_system&amp;)&gt;::function_ref_type ContextParse;		// return true iff no errors
+ 	// zcc 0.0.3
+ 	func_traits&lt;void (*)(parse_tree&amp;,const size_t,const type_system&amp;)&gt;::function_ref_type LocateExpression;
+-	func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type LiteralConvertsToBool;
++	func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;,const type_system&amp;)&gt;::function_ref_type LiteralConvertsToBool;
+ #/*cut-cpp*/
+ };
+ 
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-21 19:23:33 UTC (rev 353)
++++ trunk/CSupport_pp.cpp	2010-03-21 19:24:26 UTC (rev 354)
+@@ -3791,9 +3791,11 @@
+ }
+ 
+ // forward-declare to handle recursion
+-static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src);
++static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++	);
+ 
+-static bool _C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
++static bool _C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++	)
+ {
+ 	assert(C_TYPE::INTEGERLIKE!=src.type_code.base_type_index);
+ 
+@@ -3810,8 +3812,10 @@
+ 				{
+ 				umaxint lhs_int;
+ 				umaxint rhs_int;
+-				if (	C99_intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;())
+-					&amp;&amp;	C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++				if (	C99_intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++					)
++					&amp;&amp;	C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++					))
+ 					{
+ 					const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index);
+ 					assert(old.bitcount&gt;=rhs.bitcount);
+@@ -3842,7 +3846,7 @@
+ 		dest.set_bitcount(VM_MAX_BIT_PLATFORM);
+ 		return true;
+ 		}	
+-
++		
+ 	if (!(C_TESTFLAG_INTEGER &amp; src.index_tokens[0].flags)) return false;
+ 	C_PPIntCore tmp;
+ 	ZAIMONI_PASSTHROUGH_ASSERT(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,tmp));
+@@ -3872,11 +3876,13 @@
+ 
+ // return value: literal to parse, whether additive inverse applies
+ static POD_pair&lt;const parse_tree*,bool&gt;
+-_find_intlike_literal(const parse_tree* src)
++_find_intlike_literal(const parse_tree* src
++	)
+ {
+ 	assert(NULL!=src);
+ 	POD_pair&lt;const parse_tree*,bool&gt; ret = {src,false};
+-	while(converts_to_integer(ret.first-&gt;type_code))
++	while(converts_to_integer(ret.first-&gt;type_code
++		))
+ 		{
+ 		if 		(is_C99_unary_operator_expression&lt;'-'&gt;(*ret.first))
+ 			{
+@@ -3895,14 +3901,21 @@
+ 	return ret;
+ }
+ 
+-static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
++// use this typedef to cope with signature varying by build
++typedef bool (intlike_literal_to_VM_func)(umaxint&amp; dest, const parse_tree&amp; src
++	);
++
++static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++	)
+ {
+-	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src);
++	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src
++		);
+ 
+ 	if (C_TYPE::INTEGERLIKE==actual.first-&gt;type_code.base_type_index)
+ 		return false;	
+ 
+-	if (!_C99_intlike_literal_to_VM(dest,*actual.first)) return false;
++	if (!_C99_intlike_literal_to_VM(dest,*actual.first
++		)) return false;
+ 	if (actual.second)
+ 		{
+ 		const promote_aux old(src.type_code.base_type_index);
+@@ -3914,16 +3927,19 @@
+ 	return true;
+ }
+ 
+-static bool CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
++static bool CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src
++	)
+ {
+-	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src);
++	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src
++		);
+ 
+ 	if (!_CPP_intlike_literal_to_VM(dest,*actual.first))
+ 		{
+ 		if (C_TYPE::INTEGERLIKE==actual.first-&gt;type_code.base_type_index)
+ 			return false;	
+ 
+-		if (!_C99_intlike_literal_to_VM(dest,*actual.first)) return false;
++		if (!_C99_intlike_literal_to_VM(dest,*actual.first
++			)) return false;
+ 		};
+ 	if (actual.second)
+ 		{
+@@ -3942,11 +3958,13 @@
+  * \return -1 : can't decide quickly whether this is a null 
+  *         pointer constant
+  */
+-int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static int is_null_pointer_constant(const parse_tree&amp; src,intlike_literal_to_VM_func&amp; intlike_literal_to_VM
++	)
+ {	//! \bug doesn't recognize enumerators with value zero
+ 	if (!converts_to_integerlike(src.type_code)) return 0;
+ 	umaxint tmp;
+-	if (intlike_literal_to_VM(tmp,src)) return tmp==0;
++	if (intlike_literal_to_VM(tmp,src
++		)) return tmp==0;
+ 	return -1;
+ }
+ 
+@@ -4708,8 +4726,13 @@
+ 		}
+ }
+ 
++// typedef to simplify compatibility changes
++typedef bool literal_converts_to_bool_func(const parse_tree&amp; src, bool&amp; is_true
++	);
++
+ // Closely related to if_elif_control_is_zero/CPreproc.cpp
+-static bool _C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true)
++static bool _C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true
++	)
+ {
+ 	assert(src.is_atomic());
+ 	// string literals always test true (decay to non-NULL pointer)
+@@ -4731,21 +4754,27 @@
+ 	return true;
+ }
+ 
+-static bool C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true)
++static bool C99_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true
++	)
+ {	// deal with -1 et. al.
+-	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return _C99_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true);
++	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return _C99_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		);
+ 
+ 	if (!src.is_atomic()) return false;
+-	return _C99_literal_converts_to_bool(src,is_true);
++	return _C99_literal_converts_to_bool(src,is_true
++		);
+ }
+ 
+-static bool CPP_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true)
++static bool CPP_literal_converts_to_bool(const parse_tree&amp; src, bool&amp; is_true
++	)
+ {
+ 	// deal with -1 et. al.
+-	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return CPP_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true);
++	if (is_C99_unary_operator_expression&lt;'-'&gt;(src) &amp;&amp; src.data&lt;2&gt;()-&gt;is_atomic()) return CPP_literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		);
+ 
+ 	if (!src.is_atomic()) return false;
+-	if (_C99_literal_converts_to_bool(src,is_true)) return true;
++	if (_C99_literal_converts_to_bool(src,is_true
++		)) return true;
+ 	// deal with: this, true, false
+ 	if (token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;false&quot;))
+ 		{
+@@ -4931,11 +4960,12 @@
+ 	return false;
+ }
+ 
+-static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(src));
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true &amp;&amp; (1==(src.type_code.base_type_index-C_TYPE::INT)%2 || virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() || bool_options[boolopt::int_traps]))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		) &amp;&amp; !is_true &amp;&amp; (1==(src.type_code.base_type_index-C_TYPE::INT)%2 || virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() || bool_options[boolopt::int_traps]))
+ 		{	// -0==0
+ 			// deal with unary - not being allowed to actually return -0 on these machines later
+ 		const type_spec old_type = src.type_code;
+@@ -4948,7 +4978,8 @@
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		const type_spec old_type = src.type_code;
+ 		umaxint res_int;
+-		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;());
++		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;()
++			);
+ 		target_machine-&gt;unsigned_additive_inverse(res_int,machine_type);
+ 
+ 		//! \todo flag failures to reduce as RAM-stalled
+@@ -5163,12 +5194,13 @@
+ 	return false;
+ }
+ 
+-static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT, literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	assert(is_logical_NOT(src));
+ 	{	// deal with literals that convert to bool here
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		))
+ 		{
+ 		src.destroy();
+ 		src.index_tokens[0].token.first = (is_true) ? &quot;0&quot; : &quot;1&quot;;
+@@ -5383,12 +5415,13 @@
+ 	return true;
+ }
+ 
+-static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+ 	umaxint res_int;
+-	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;())) 
++	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;()
++		)) 
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
+@@ -5814,7 +5847,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+@@ -5822,8 +5855,10 @@
+ 	bool is_true = false;
+ 
+ 	// do this first to avoid unnecessary dynamic memory allocation
+-	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)	// 0 * __
+-		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true))	// __ * 0
++	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++			) &amp;&amp; !is_true)	// 0 * __
++		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++			) &amp;&amp; !is_true))	// __ * 0
+ 		{
+ 		// construct +0 to defuse 1-0*6
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -5843,8 +5878,10 @@
+ 
+ 	umaxint res_int;
+ 	umaxint rhs_int;
+-	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		);
+ 	if (lhs_converted &amp;&amp; 1==res_int)
+ 		{
+ 		src.eval_to_arg&lt;2&gt;(0);
+@@ -5924,7 +5961,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+@@ -5932,7 +5969,8 @@
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code))
+ 		{
+-		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+ 			if (hard_error)
+ 				//! \test default/Error_if_control30.hpp, default/Error_if_control30.h
+@@ -5940,7 +5978,8 @@
+ 			return false;
+ 			}
+ 		/*! \todo would like a simple comparison of absolute values to auto-detect zero, possibly after mainline code */
+-		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 			{
+ 			// construct +0 to defuse 1-0/6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -5962,8 +6001,10 @@
+ 
+ 	umaxint res_int;
+ 	umaxint rhs_int;
+-	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		);
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __/1 |-&gt; __
+ 		src.eval_to_arg&lt;1&gt;(0);
+@@ -6051,7 +6092,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+@@ -6059,7 +6100,8 @@
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code))
+ 		{
+-		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+ 			if (hard_error)
+ 				//! \test default/Error_if_control31.hpp, Error_if_control31.h
+@@ -6067,7 +6109,8 @@
+ 			return false;
+ 			}
+ 		/*! \todo would like a simple comparison of absolute values to auto-detect zero, possibly after mainline code */
+-		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++		else if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 			{
+ 			// construct +0 to defuse 1-0%6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -6089,8 +6132,10 @@
+ 
+ 	umaxint res_int;
+ 	umaxint rhs_int;
+-	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		);
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __%1 |-&gt; +0
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+@@ -6408,7 +6453,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+ 
+@@ -6428,13 +6473,15 @@
+ 			assert(converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index));
+ 			assert(converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++					) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+ 				src.eval_to_arg&lt;2&gt;(0);
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+-			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++					) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -6447,8 +6494,10 @@
+ 			assert(old.bitcount&gt;=lhs.bitcount);
+ 			const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index);
+ 			assert(old.bitcount&gt;=rhs.bitcount);
+-			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++				);
++			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++				);
+ 			const bool lhs_negative = lhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(res_int,lhs,old);
+ 			const bool rhs_negative = rhs_converted &amp;&amp; target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+@@ -6528,7 +6577,8 @@
+ 	case 1:	{
+ 			assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -6539,7 +6589,8 @@
+ 	case 2:	{
+ 			assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++			if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+ 				src.eval_to_arg&lt;2&gt;(0);
+ 				src.type_code = old_type;
+@@ -6554,7 +6605,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+ 
+@@ -6574,7 +6625,8 @@
+ 			assert(converts_to_arithmeticlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index));
+ 			assert(converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)
++			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++					) &amp;&amp; !is_true)
+ 				{	// 0 - __ |-&gt; - __
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				src.core_flag_update();
+@@ -6584,7 +6636,8 @@
+ 				src.type_code = old_type;				
+ 				return true;
+ 				}
+-			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++					) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -6592,8 +6645,10 @@
+ 				}
+ 			umaxint res_int;
+ 			umaxint rhs_int;
+-			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++				);
++			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++				);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+ 				{	//! \todo deal with signed integer arithmetic
+ 				const promote_aux old(old_type.base_type_index);
+@@ -6680,7 +6735,8 @@
+ 	case 1:	{
+ 			assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			bool is_true = false;
+-			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++				) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+ 				src.eval_to_arg&lt;1&gt;(0);
+ 				src.type_code = old_type;
+@@ -6708,7 +6764,7 @@
+ 
+ // +: either both are arithmetic, or one is raw pointer and one is integer
+ // -: either both are arithmetic, or both are compatible raw pointer, or left is raw pointer and right is integer
+-static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert((C99_ADD_SUBTYPE_PLUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'+'&gt;(src)) || (C99_ADD_SUBTYPE_MINUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'-'&gt;(src)));
+ 	BOOST_STATIC_ASSERT(1==C99_ADD_SUBTYPE_MINUS-C99_ADD_SUBTYPE_PLUS);
+@@ -6953,7 +7009,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -6968,7 +7024,8 @@
+ 	// error if RHS is literal &quot;out of bounds&quot;
+ 	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true)
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		) &amp;&amp; !is_true)
+ 		{
+ 		if (!is_true)
+ 			{	// __ &lt;&lt; 0 or __ &gt;&gt; 0: lift
+@@ -6979,7 +7036,8 @@
+ 		};
+ 
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		))
+ 		{
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
+ 		const bool undefined_behavior = target_machine-&gt;C_bit(machine_type)&lt;=rhs_int;
+@@ -6988,7 +7046,8 @@
+ 		if (undefined_behavior)
+ 			simple_error(src,&quot; : RHS is at least as large as bits of LHS; undefined behavior (C99 6.5.7p3/C++98 5.8p1)&quot;);
+ 
+-		if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++		if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++			))
+ 			{
+ 			if (!is_true)
+ 				{	// 0 &lt;&lt; __ or 0 &gt;&gt; __: zero out (note that we can do this even if we invoked undefined behavior)
+@@ -7000,7 +7059,8 @@
+ 		if (undefined_behavior) return false;
+ 
+ 		umaxint res_int;
+-		if (intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()))
++		if (intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++			))
+ 			{
+ 			// note that incoming negative signed integers are not handled by this code path
+ 			if (C99_SHIFT_SUBTYPE_LEFT==src.subtype)
+@@ -7124,7 +7184,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_GT-C99_RELATION_SUBTYPE_LT);
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_LTE-C99_RELATION_SUBTYPE_GT);
+@@ -7133,8 +7193,10 @@
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+ 
+-	const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;());
+-	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++	const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++		);
++	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		);
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+ 		const char* result 	= NULL;
+@@ -7313,7 +7375,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {	
+ 	BOOST_STATIC_ASSERT(1==C99_EQUALITY_SUBTYPE_NEQ-C99_EQUALITY_SUBTYPE_EQ);
+ 	assert(C99_EQUALITY_SUBTYPE_EQ&lt;=src.subtype &amp;&amp; C99_EQUALITY_SUBTYPE_NEQ&gt;=src.subtype);
+@@ -7337,7 +7399,8 @@
+ 			break;
+ 			}
+ 	case 1:	{
+-			if (0&lt;src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;1&gt;(),is_true)) 
++			if (0&lt;src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++				)) 
+ 				{
+ 				if (!is_true)
+ 					{	
+@@ -7358,7 +7421,8 @@
+ 			break;
+ 			}
+ 	case 2:	{
+-			if (0&lt;src.data&lt;1&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;2&gt;(),is_true)) 
++			if (0&lt;src.data&lt;1&gt;()-&gt;type_code.pointer_power_after_array_decay() &amp;&amp; literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++				)) 
+ 				{
+ 				if (!is_true)
+ 					{
+@@ -7384,8 +7448,10 @@
+ 			const promote_aux old(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index));
+ 			assert(old.bitcount&gt;=lhs.bitcount);
+ 			assert(old.bitcount&gt;=rhs.bitcount);
+-			const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++				);
++			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++				);
+ 			// general case here in case we try to do with converted/not converted mixed cases
+ //			if (lhs_converted) target_machine-&gt;C_promote_integer(lhs_int,lhs,old);
+ //			if (rhs_converted) target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+@@ -7541,7 +7607,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -7552,8 +7618,10 @@
+ 	// unary - gives us problems (result is target-specific, could generate a trap representation)
+ 	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+-	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true) &amp;&amp; !is_true)	// 0 &amp; __
+-		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true) &amp;&amp; !is_true))	// __ &amp; 0
++	if (	(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++			) &amp;&amp; !is_true)	// 0 &amp; __
++		||	(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++			) &amp;&amp; !is_true))	// __ &amp; 0
+ 		{
+ 		if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
+ 			{
+@@ -7572,7 +7640,9 @@
+ 
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++		) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++			))
+ 		{
+ 		const promote_aux old(old_type.base_type_index);
+ 		umaxint res_int(lhs_int);
+@@ -7716,7 +7786,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -7726,7 +7796,8 @@
+ 	// __ ^ 0 |-&gt; __
+ 	// also handle double-literal case
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// 0 ^ __
+@@ -7735,7 +7806,8 @@
+ 			return true;
+ 			}
+ 		};
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// __ ^ 0
+@@ -7747,7 +7819,9 @@
+ 
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++		) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		))
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		const promote_aux old(old_type.base_type_index);
+@@ -7884,7 +7958,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -7894,7 +7968,8 @@
+ 	// int-literal | int-literal |-&gt; int-literal *if* both fit
+ 	// unary - gives us problems (result is target-specific, could generate a trap representation)
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// 0 | __
+@@ -7903,7 +7978,8 @@
+ 			return true;
+ 			}
+ 		};
+-	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++		))
+ 		{
+ 		if (!is_true)
+ 			{	// __ | 0
+@@ -7915,7 +7991,9 @@
+ 
+ 	umaxint lhs_int;
+ 	umaxint rhs_int;
+-	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
++	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()
++		) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++		))
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		umaxint res_int(lhs_int);
+@@ -8077,7 +8155,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_logical_AND(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_logical_AND(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	// deal with literals here.  &amp;&amp; short-circuit evaluates.
+ 	// 1 &amp;&amp; __ |-&gt; 0!=__
+@@ -8087,7 +8165,8 @@
+ 	// (__ &amp;&amp; 1) &amp;&amp; __ |-&gt; __ &amp;&amp; 1
+ 
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++		))
+ 		{	// one of 0 &amp;&amp; __ or 1 &amp;&amp; __
+ 		if (!is_true)
+ 			{	// 0 &amp;&amp; __
+@@ -8101,7 +8180,8 @@
+ 			force_decimal_literal(src,&quot;0&quot;,types);
+ 			return true;
+ 			}
+-		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++			))
+ 			{	// 1 &amp;&amp; 1 or 1 &amp;&amp; 0
+ 			force_decimal_literal(src,is_true ? &quot;1&quot; : &quot;0&quot;,types);
+ 			return true;
+@@ -8220,7 +8300,7 @@
+ 	return false;
+ }
+ 
+-static bool eval_logical_OR(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_logical_OR(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	// deal with literals here.  || short-circuit evaluates.
+ 	// 0 || __ |-&gt; 0!=__
+@@ -8230,7 +8310,8 @@
+ 	// (__ || 1) || __ |-&gt; __ || 1
+ 
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true
++		))
+ 		{	// one of 0 || __ or 1 || __
+ 		if (is_true)
+ 			{	// 1 || __
+@@ -8244,7 +8325,8 @@
+ 			force_decimal_literal(src,&quot;1&quot;,types);
+ 			return true;
+ 			}
+-		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true))
++		else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true
++			))
+ 			{	// 0 || 1 or 0 || 0
+ 			force_decimal_literal(src,is_true ? &quot;1&quot; : &quot;0&quot;,types);
+ 			return true;
+@@ -8365,10 +8447,12 @@
+ 	return false;
+ }
+ 
+-static bool eval_conditional_op(parse_tree&amp; src, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++static bool eval_conditional_op(parse_tree&amp; src, literal_converts_to_bool_func&amp; literal_converts_to_bool
++	)
+ {
+ 	bool is_true = false;
+-	if (literal_converts_to_bool(*src.c_array&lt;1&gt;(),is_true))
++	if (literal_converts_to_bool(*src.c_array&lt;1&gt;(),is_true
++		))
+ 		{
+ 		const bool was_invalid = src.flags &amp; parse_tree::INVALID;
+ 		const type_spec old_type = src.type_code;
+@@ -8405,7 +8489,8 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;0&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),C99_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),C99_intlike_literal_to_VM
++				))
+ 				// (...) ? string : 0 -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -8424,7 +8509,8 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),C99_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),C99_intlike_literal_to_VM
++				))
+ 				// (...) ? 0 : string -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -8474,7 +8560,8 @@
+ 		}
+ 	// 3) RAM conservation: if we have a suitable literal Do It Now
+ 	// \todo disable this at O0?
+-	if (eval_conditional_op(src,C99_literal_converts_to_bool)) return;
++	if (eval_conditional_op(src,C99_literal_converts_to_bool
++		)) return;
+ }
+ 
+ static void CPP_conditional_op_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+@@ -8495,7 +8582,8 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;0&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),CPP_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;2&gt;(),CPP_intlike_literal_to_VM
++				))
+ 				// (...) ? string : 0 -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -8514,7 +8602,8 @@
+ 				src.type_code.set_type(C_TYPE::NOT_VOID);
+ 				src.type_code.set_pointer_power(src.data&lt;2&gt;()-&gt;type_code.pointer_power_after_array_decay());
+ 				}
+-			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),CPP_intlike_literal_to_VM))
++			else if (is_null_pointer_constant(*src.data&lt;0&gt;(),CPP_intlike_literal_to_VM
++				))
+ 				// (...) ? 0 : string -- do *not* error (null pointer); check true/false status
+ 				//! \test default/Pass_if_zero.h, default/Pass_if_zero.hpp 
+ 				// actually, could be either 1 (positively is null pointer constant) or -1 (could be).  We do the same thing in either case.
+@@ -8563,7 +8652,8 @@
+ 		}
+ 	// 3) RAM conservation: if we have a suitable literal Do It Now
+ 	// \todo disable this at O0?
+-	if (eval_conditional_op(src,CPP_literal_converts_to_bool)) return;
++	if (eval_conditional_op(src,CPP_literal_converts_to_bool
++		)) return;
+ }
+ 
+ static void locate_C99_conditional_op(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+@@ -8911,7 +9001,7 @@
+ eval_array_deref(parse_tree&amp; src,const type_system&amp; types,
+ 				 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 				 func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type literal_converts_to_integer,
+-				 func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++				 intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (!is_array_deref(src)) return false;
+ 	// crunch __[...]
+@@ -8925,7 +9015,8 @@
+ 		if (UINT_MAX&gt;str_index)
+ 			{
+ 			umaxint tmp; 
+-			if (!intlike_literal_to_VM(tmp,*src.data(1-str_index))) return false;
++			if (!intlike_literal_to_VM(tmp,*src.data(1-str_index)
++				)) return false;
+ 			const size_t promoted_type = default_promote_type(src.type_code.base_type_index);
+ 			const virtual_machine::std_int_enum machine_type = (virtual_machine::std_int_enum)((promoted_type-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ 			eval_string_literal_deref(src,types,src.data(str_index)-&gt;index_tokens[0].token,tmp,tmp.test(target_machine-&gt;C_bit(machine_type)-1),C_TESTFLAG_CHAR_LITERAL==src.data(1-str_index)-&gt;index_tokens[0].flags);
+@@ -8959,7 +9050,7 @@
+ static bool eval_logical_NOT(parse_tree&amp; src, const type_system&amp; types,
+ 							 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							 func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_NOT_expression,
+-							 func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++							 literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_logical_NOT_expression(src))
+ 		{
+@@ -8972,7 +9063,7 @@
+ static bool eval_bitwise_compl(	parse_tree&amp; src, const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 								func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_complement_expression(src))
+ 		{
+@@ -8995,8 +9086,8 @@
+ 
+ static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,
+ 							 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							 func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							 func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							 literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							 intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_unary_operator_expression&lt;'-'&gt;(src))
+ 		{
+@@ -9008,8 +9099,8 @@
+ 
+ static bool eval_mult_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								literal_converts_to_bool_func&amp; literal_converts_to_bool,
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'*'&gt;(src))
+ 		{
+@@ -9022,8 +9113,8 @@
+ 
+ static bool eval_div_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								literal_converts_to_bool_func&amp; literal_converts_to_bool,
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'/'&gt;(src))
+ 		{
+@@ -9036,8 +9127,8 @@
+ 
+ static bool eval_mod_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++								literal_converts_to_bool_func&amp; literal_converts_to_bool,
++								intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'%'&gt;(src))
+ 		{
+@@ -9051,8 +9142,8 @@
+ 
+ static bool eval_add_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_add_operator_expression&lt;'+'&gt;(src))
+ 		{
+@@ -9065,8 +9156,8 @@
+ 
+ static bool eval_sub_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_add_operator_expression&lt;'-'&gt;(src))
+ 		{
+@@ -9079,8 +9170,8 @@
+ 
+ static bool eval_shift(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_shift_expression(src))
+ 		{
+@@ -9093,7 +9184,7 @@
+ 
+ static bool eval_relation_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_C99_relation_expression(src))
+ 		{
+@@ -9107,8 +9198,8 @@
+ static bool eval_equality_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_equality_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_equality_expression(src))
+ 		{
+@@ -9122,8 +9213,8 @@
+ static bool eval_bitwise_AND(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_AND_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_AND_expression(src))
+ 		{
+@@ -9137,8 +9228,8 @@
+ static bool eval_bitwise_XOR(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_XOR_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_XOR_expression(src))
+ 		{
+@@ -9152,8 +9243,8 @@
+ static bool eval_bitwise_OR(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_OR_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool,
++							intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_OR_expression(src))
+ 		{
+@@ -9167,7 +9258,7 @@
+ static bool eval_logical_AND(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_AND_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_logical_AND_expression(src))
+ 		{
+@@ -9181,7 +9272,7 @@
+ static bool eval_logical_OR(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_logical_OR_expression,
+-							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++							literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_logical_OR_expression(src))
+ 		{
+@@ -9194,12 +9285,13 @@
+ 
+ static bool eval_conditional_operator(parse_tree&amp; src,const type_system&amp; types,
+ 									  func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-									  func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool)
++									  literal_converts_to_bool_func&amp; literal_converts_to_bool)
+ {
+ 	if (is_C99_conditional_operator_expression(src))
+ 		{	// prefix operator is boolean
+ 		EvalParseTree(*src.c_array&lt;1&gt;(),types);
+-		if (eval_conditional_op(src,literal_converts_to_bool)) return true;
++		if (eval_conditional_op(src,literal_converts_to_bool
++			)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9315,8 +9407,10 @@
+ 			{
+ 			umaxint res_int;
+ 			umaxint rhs_int;
+-			const bool lhs_converted = C99_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = C99_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++				);
++			const bool rhs_converted = C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++				);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+ 				{	//! \todo deal with signed integer arithmetic
+ 				const promote_aux old(old_type.base_type_index);
+@@ -9383,8 +9477,10 @@
+ 			{
+ 			umaxint res_int;
+ 			umaxint rhs_int;
+-			const bool lhs_converted = CPP_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+-			const bool rhs_converted = CPP_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
++			const bool lhs_converted = CPP_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()
++				);
++			const bool rhs_converted = CPP_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()
++				);
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+ 				{	//! \todo deal with signed integer arithmetic
+ 				const promote_aux old(old_type.base_type_index);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000120.html">[Zcplusplus-commits] r353 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000122.html">[Zcplusplus-commits] r355 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#121">[ date ]</a>
+              <a href="thread.html#121">[ thread ]</a>
+              <a href="subject.html#121">[ subject ]</a>
+              <a href="author.html#121">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

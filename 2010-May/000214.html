@@ -1,0 +1,225 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r447 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r447%20-%20trunk&In-Reply-To=%3C201005310628.o4V6Sh8s000995%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000213.html">
+   <LINK REL="Next"  HREF="000215.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r447 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r447%20-%20trunk&In-Reply-To=%3C201005310628.o4V6Sh8s000995%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r447 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon May 31 08:28:43 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000213.html">[Zcplusplus-commits] r446 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000215.html">[Zcplusplus-commits] r448 - trunk/tests/zcc/default/staticassert
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#214">[ date ]</a>
+              <a href="thread.html#214">[ thread ]</a>
+              <a href="subject.html#214">[ subject ]</a>
+              <a href="author.html#214">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-31 08:28:39 +0200 (Mon, 31 May 2010)
+New Revision: 447
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+object file size reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-31 04:27:28 UTC (rev 446)
++++ trunk/CSupport.cpp	2010-05-31 06:28:39 UTC (rev 447)
+@@ -3310,10 +3310,11 @@
+ 	| (1ULL&lt;&lt;C_TYPE::FLOAT) \
+ 	| (1ULL&lt;&lt;C_TYPE::DOUBLE))
+ 
+-	src.c_array&lt;0&gt;()[i].type_code.set_type(target_type);
++	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++	tmp.type_code.set_type(target_type);
+ 	//! \todo should use something informative in place of 0; identifier not fine
+-	src.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(C_atomic_types[target_type-1].first,C_ATOMIC_TYPE_IDENTIFIER_BITFLAG &amp; (1ULL&lt;&lt;target_type) ? C_TESTFLAG_IDENTIFIER : 0);
+-	src.c_array&lt;0&gt;()[i].flags |= PARSE_PRIMARY_TYPE;
++	tmp.grab_index_token_from_str_literal&lt;0&gt;(C_atomic_types[target_type-1].first,C_ATOMIC_TYPE_IDENTIFIER_BITFLAG &amp; (1ULL&lt;&lt;target_type) ? C_TESTFLAG_IDENTIFIER : 0);
++	tmp.flags |= PARSE_PRIMARY_TYPE;
+ #undef C_ATOMIC_TYPE_IDENTIFIER_BITFLAG
+ }
+ 
+@@ -3435,7 +3436,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_STATIC_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_STATIC_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_static)
+ 						{
+@@ -3449,7 +3450,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_extern)
+ 						{
+@@ -3463,7 +3464,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_thread_local)
+ 						{
+@@ -3477,7 +3478,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_AUTO_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_AUTO_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_auto)
+ 						{
+@@ -3491,7 +3492,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_typedef)
+ 						{
+@@ -3506,7 +3507,7 @@
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				// C1X 6.7.3p3: duplicate type-qualifiers should be cleaned (warn unless -Wno-OAOO or -Wno-DRY)
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_CONST_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_CONST_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_const)
+ 						{
+@@ -3520,7 +3521,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_VOLATILE_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_VOLATILE_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_volatile)
+ 						{
+@@ -3534,7 +3535,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_RESTRICT_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_RESTRICT_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_restrict)
+ 						{
+@@ -3751,7 +3752,7 @@
+ 			if (C99_CPP_EXTERN_IDX==invariant_decl_scanner[0] &amp;&amp; 1&lt;src.size&lt;0&gt;()-i &amp;&amp; (C_TESTFLAG_STRING_LITERAL &amp; src.data&lt;0&gt;()[i+1].flags))
+ 				{	//! \todo should accept escape codes here as well
+ 				if (strcmp(src.data&lt;0&gt;()[i+1].index_tokens[0].token.first,&quot;\&quot;C\&quot;&quot;) &amp;&amp; strcmp(src.data&lt;0&gt;()[i+1].index_tokens[0].token.first,&quot;\&quot;C++\&quot;&quot;))
+-					{
++					{	//! \bug need test case
+ 					message_header(src.data&lt;0&gt;()[i+1].index_tokens[0]);
+ 					INC_INFORM(WARN_STR);
+ 					INFORM(&quot;discarding unrecognized linkage (only C, C++ required: C++0X 7.5p2)&quot;);
+@@ -3793,7 +3794,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_extern)
+ 						{
+@@ -3807,7 +3808,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_thread_local)
+ 						{
+@@ -3821,7 +3822,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(CPP_MUTABLE_IDX))
++				else if (1&lt;invariant_decl_scanner.count(CPP_MUTABLE_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_mutable)
+ 						{
+@@ -3835,7 +3836,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_typedef)
+ 						{
+@@ -3850,7 +3851,7 @@
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				// C++0X 7.1.6.1: duplicate cv-qualifiers should be cleaned (warn unless -Wno-OAOO or -Wno-DRY)
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_CONST_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_CONST_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_const)
+ 						{
+@@ -3864,7 +3865,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+-				if (1&lt;invariant_decl_scanner.count(C99_CPP_VOLATILE_IDX))
++				else if (1&lt;invariant_decl_scanner.count(C99_CPP_VOLATILE_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_volatile)
+ 						{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000213.html">[Zcplusplus-commits] r446 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000215.html">[Zcplusplus-commits] r448 - trunk/tests/zcc/default/staticassert
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#214">[ date ]</a>
+              <a href="thread.html#214">[ thread ]</a>
+              <a href="subject.html#214">[ subject ]</a>
+              <a href="author.html#214">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r253 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r253%20-%20trunk&In-Reply-To=%3C200909221809.n8MI9ofb009295%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000019.html">
+   <LINK REL="Next"  HREF="000021.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r253 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r253%20-%20trunk&In-Reply-To=%3C200909221809.n8MI9ofb009295%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r253 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Sep 22 20:09:50 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000019.html">[Zcplusplus-commits] r252 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000021.html">[Zcplusplus-commits] r254 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#20">[ date ]</a>
+              <a href="thread.html#20">[ thread ]</a>
+              <a href="subject.html#20">[ subject ]</a>
+              <a href="author.html#20">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-22 20:09:46 +0200 (Tue, 22 Sep 2009)
+New Revision: 253
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.hpp
+Log:
+extension macros: __COUNTER__, __INCLUDE_DEPTH__, __TIMESTAMP__
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-09-20 05:13:04 UTC (rev 252)
++++ trunk/CPreproc.cpp	2009-09-22 18:09:46 UTC (rev 253)
+@@ -24,6 +24,7 @@
+ #include &quot;Zaimoni.STL/LexParse/Token.hpp&quot;
+ #include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
++#include &quot;Zaimoni.STL/Pure.C/format_util.h&quot;
+ 
+ #include &quot;DebugCSupport.h&quot;
+ 
+@@ -34,10 +35,10 @@
+ #define WARN_STR &quot;warning: &quot;
+ 
+ #define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
+-#define ZCC_VERSION &quot;0.0.1&quot;
++#define ZCC_VERSION &quot;0.0.3&quot;
+ #define ZCC_VERSION_MAJOR 0
+ #define ZCC_VERSION_MINOR 0
+-#define ZCC_VERSION_PATCH 1
++#define ZCC_VERSION_PATCH 3
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
+@@ -214,6 +215,9 @@
+ 		DICT_STRUCT(&quot;__cplusplus&quot;),				// undefined/C99, define to 1 for C++0x
+ 		DICT_STRUCT(&quot;defined&quot;),					// must be undefined or else undefined behavior, even not considering C99 6.10.8 p4
+ 		DICT_STRUCT(&quot;_Pragma&quot;),					// considering the syntactical role of the _Pragma operator, lock it even though the standards don't require us to. 
++		DICT_STRUCT(&quot;__TIMESTAMP__&quot;),			// lock down our extension macros
++		DICT_STRUCT(&quot;__COUNTER__&quot;),				// lock down our extension macros
++		DICT_STRUCT(&quot;__INCLUDE_LEVEL__&quot;),		// lock down our extension macros
+ 		DICT_STRUCT(&quot;__ZCC__&quot;),					// lock down our identity
+ 		DICT_STRUCT(&quot;__ZCC_MINOR__&quot;),			// lock down our identity
+ 		DICT_STRUCT(&quot;__ZCC_PATCHLEVEL__&quot;)		// lock down our identity
+@@ -226,14 +230,20 @@
+ 		{&quot;__LINE__&quot;, NULL},
+ 		{&quot;__STDC__&quot;, &quot;1&quot;},
+ 		{&quot;__STDC_HOSTED__&quot;, &quot;1&quot;},
+-		{&quot;__STDC_VERSION__&quot;, &quot;1&quot;},	// end standard-mandated macros
+-		{&quot;__ZCC__&quot;, STRINGIZE(ZCC_VERSION_MAJOR)},				// identity : major version
+-		{&quot;__ZCC_MINOR__&quot;, STRINGIZE(ZCC_VERSION_MINOR)},		// minor version
+-		{&quot;__ZCC_PATCHLEVEL__&quot;, STRINGIZE(ZCC_VERSION_PATCH)}	// patchlevel
++		{&quot;__STDC_VERSION__&quot;, &quot;1&quot;},		// end standard-mandated macros
++		{&quot;__TIMESTAMP__&quot;, NULL},		// extension: GCC, CLang, MSVC
++		{&quot;__COUNTER__&quot;, NULL},			// extension: GCC, CLang, MSVC
++		{&quot;__INCLUDE_LEVEL__&quot;, NULL},	// extension: GCC, CLang
++		{&quot;__ZCC__&quot;, DEEP_STRINGIZE(ZCC_VERSION_MAJOR)},				// identity : major version
++		{&quot;__ZCC_MINOR__&quot;, DEEP_STRINGIZE(ZCC_VERSION_MINOR)},		// minor version
++		{&quot;__ZCC_PATCHLEVEL__&quot;, DEEP_STRINGIZE(ZCC_VERSION_PATCH)}	// patchlevel
+ 	};
+ 
+ static const POD_pair&lt;const char*,const char*&gt; CPP0x_macro_identifier_default[]
+- =	{	{&quot;__DATE__&quot;, NULL},			// start standard-mandated macros
++ =	{	{&quot;__TIMESTAMP__&quot;, NULL},		// extension: GCC, CLang, MSVC
++		{&quot;__COUNTER__&quot;, NULL},			// extension: GCC, CLang, MSVC
++		{&quot;__INCLUDE_LEVEL__&quot;, NULL},	// extension: GCC, CLang
++		{&quot;__DATE__&quot;, NULL},			// start standard-mandated macros
+ 		{&quot;__TIME__&quot;, NULL},
+ 		{&quot;__FILE__&quot;, NULL},
+ 		{&quot;__LINE__&quot;, NULL},
+@@ -241,13 +251,15 @@
+ 		{&quot;__STDC_HOSTED__&quot;, &quot;1&quot;},
+ 		{&quot;__STDC_VERSION__&quot;, &quot;1&quot;},
+ 		{&quot;__cplusplus&quot;, &quot;1&quot;},		// end standard-mandated macros
+-		{&quot;__ZCC__&quot;, &quot;0&quot;},			// identity : major version
+-		{&quot;__ZCC_MINOR__&quot;, &quot;0&quot;},		// minor version
+-		{&quot;__ZCC_PATCHLEVEL__&quot;, &quot;0&quot;}	// patchlevel
++		{&quot;__ZCC__&quot;, DEEP_STRINGIZE(ZCC_VERSION_MAJOR)},				// identity : major version
++		{&quot;__ZCC_MINOR__&quot;, DEEP_STRINGIZE(ZCC_VERSION_MINOR)},		// minor version
++		{&quot;__ZCC_PATCHLEVEL__&quot;, DEEP_STRINGIZE(ZCC_VERSION_PATCH)}	// patchlevel
+ 	};
+ 
+ CPreprocessor::CPreprocessor(const virtual_machine::CPUInfo&amp; _target_machine, const char* const _lang)
+-:	lang_code(lang_index(_lang)),
++:	counter_macro(0),
++	include_level(0),
++	lang_code(lang_index(_lang)),
+ 	lang(lexer_from_lang(lang_code)),
+ 	target_machine(_target_machine),
+ 	macro_identifier_default(NULL),
+@@ -668,16 +680,19 @@
+ 	// this is subject to the Y10K bug, per standard.
+ 	// construct __DATE__, __TIME__ macro targets
+ 	{
+-	char time_date_buffer[26];	// C99 requires length 26
++	time_date_buffer[0] = '&quot;';
++	time_buffer[0]='&quot;';
++	date_buffer[0]='&quot;';
+ 	time_t start_time = time(NULL);
+-	strcpy(time_date_buffer,ctime(&amp;start_time));
++	strcpy(time_date_buffer+1,ctime(&amp;start_time));
++	strcpy(time_date_buffer+1+24,&quot;\&quot;&quot;);
+ 	// have base buffer, construct time
+-	strncpy(time_buffer+1,time_date_buffer+11,8);
++	strncpy(time_buffer+1,time_date_buffer+12,8);
+ 	time_buffer[0]='&quot;';
+ 	strcpy(time_buffer+9,&quot;\&quot;&quot;);
+ 	// construct date
+-	strncpy(date_buffer+1,time_date_buffer+4,7);
+-	strncpy(date_buffer+8,time_date_buffer+20,4);
++	strncpy(date_buffer+1,time_date_buffer+5,7);
++	strncpy(date_buffer+8,time_date_buffer+21,4);
+ 	date_buffer[0]='&quot;';
+ 	strcpy(date_buffer+12,&quot;\&quot;&quot;);
+ 	}
+@@ -2056,7 +2071,9 @@
+ 				// this implies:
+ 				// * conditional-compilation directives must be balanced for each file
+ 				// * #line directives never escape files anyway
++			++include_level;
+ 			_preprocess(IncludeTokenList, locked_macros, macros_object, macros_object_expansion, macros_object_expansion_pre_eval, macros_function, macros_function_arglist, macros_function_expansion, macros_function_expansion_pre_eval, include_file_index, include_file_cache, min_types);
++			--include_level;
+ 			if (!IncludeTokenList.empty())
+ 				{
+ 				size_t j = IncludeTokenList.size();
+@@ -3247,8 +3264,8 @@
+ 	if (-1!=macro_index)
+ 		{
+ 		const char* macro_value = NULL;
+-		char Buffer[10];
+-		char FileBuffer[MAX_PATH+2];
++		char buf[10];
++		char file_buf[MAX_PATH+2];
+ 		if (NULL!=macro_identifier_default[macro_index].second)
+ 			// value known, substitute in
+ 			macro_value = macro_identifier_default[macro_index].second;
+@@ -3256,16 +3273,22 @@
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__FILE__&quot;))
+ 			{
+ 			assert(NULL!=x.src_filename);
+-			FileBuffer[0] = '&quot;';
+-			strcpy(FileBuffer+1,x.src_filename);
+-			FileBuffer[1+strlen(x.src_filename)] = '&quot;';
+-			FileBuffer[2+strlen(x.src_filename)] = '\x00';
+-			macro_value = FileBuffer;
++			file_buf[0] = '&quot;';
++			strcpy(file_buf+1,x.src_filename);
++			file_buf[1+strlen(x.src_filename)] = '&quot;';
++			file_buf[2+strlen(x.src_filename)] = '\0';
++			macro_value = file_buf;
+ 			}
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__LINE__&quot;))
+-			macro_value = ltoa((long)(x.logical_line.first),Buffer,10);
++			macro_value = z_umaxtoa(x.logical_line.first,buf,10);
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__TIME__&quot;))
+ 			macro_value = time_buffer;
++		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__TIMESTAMP__&quot;))
++			macro_value = time_date_buffer;
++		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__COUNTER__&quot;))
++			macro_value = z_umaxtoa(counter_macro++,buf,10);
++		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__INCLUDE_LEVEL__&quot;))
++			macro_value = z_umaxtoa(include_level,buf,10);
+ 		else{
+ 			assert(!strcmp(macro_identifier_default[macro_index].first,&quot;__DATE__&quot;));
+ 			macro_value = date_buffer;
+@@ -3861,7 +3884,9 @@
+ 		INFORM(date_buffer);
+ 		INC_INFORM(&quot;#define __TIME__ &quot;);
+ 		INFORM(time_buffer);
+-		i = 4;
++		INC_INFORM(&quot;#define __TIMESTAMP__ &quot;);
++		INFORM(time_date_buffer);
++		i = 7;
+ 		while(i&lt;macro_identifier_default_count)
+ 			{
+ 			INC_INFORM(&quot;#define &quot;);
+
+Modified: trunk/CPreproc.hpp
+===================================================================
+--- trunk/CPreproc.hpp	2009-09-20 05:13:04 UTC (rev 252)
++++ trunk/CPreproc.hpp	2009-09-22 18:09:46 UTC (rev 253)
+@@ -39,6 +39,8 @@
+ 	void set_debug(bool _debug_mode) {debug_mode = _debug_mode;};
+ 	bool require_padding(char lhs, char rhs) const;
+ private:
++	uintmax_t counter_macro;
++	uintmax_t include_level;
+ 	size_t lang_code;
+ 	zaimoni::LangConf&amp; lang;					//!&lt; lexer corresponding to the language being preprocessed
+ 	const virtual_machine::CPUInfo&amp; target_machine;	//!&lt; target machine information
+@@ -46,6 +48,7 @@
+ 	const zaimoni::POD_pair&lt;const char*,size_t&gt;* macro_locked_default; 
+ 	size_t macro_identifier_default_count;
+ 	size_t macro_locked_default_count;
++	char time_date_buffer[26+3];	//!&lt; for __TIMESTAMP__ predefined macro
+ 	char date_buffer[14];	//!&lt; for __DATE__ predefined macro
+ 	char time_buffer[11];	//!&lt; for __TIME__ predefined macro
+ 	bool debug_mode;		//!&lt; triggers some diagnostics
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000019.html">[Zcplusplus-commits] r252 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000021.html">[Zcplusplus-commits] r254 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#20">[ date ]</a>
+              <a href="thread.html#20">[ thread ]</a>
+              <a href="subject.html#20">[ subject ]</a>
+              <a href="author.html#20">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

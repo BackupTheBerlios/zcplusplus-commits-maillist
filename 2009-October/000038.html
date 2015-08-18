@@ -1,0 +1,624 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r271 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r271%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C200910180534.n9I5YX9w004414%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000037.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r271 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r271%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C200910180534.n9I5YX9w004414%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r271 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 18 07:34:33 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000037.html">[Zcplusplus-commits] r270 - trunk/tests/zcc/decl.C99
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#38">[ date ]</a>
+              <a href="thread.html#38">[ thread ]</a>
+              <a href="subject.html#38">[ subject ]</a>
+              <a href="author.html#38">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-10-18 07:34:07 +0200 (Sun, 18 Oct 2009)
+New Revision: 271
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in
+   trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in
+   trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in
+   trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in
+   trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in
+   trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_truncate1.h
+   trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_truncate2.h
+   trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_truncate1.h
+   trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_truncate2.h
+   trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp
+   trunk/tests/zcc/decl.C99/Error_union_truncate1.h
+   trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_union_truncate2.h
+   trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+internal formatting at the context-free parsing stage for enum/class/struct/union
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/CSupport.cpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -3835,6 +3835,271 @@
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+ 
++#ifndef NDEBUG
++static bool is_C99_anonymous_specifier(const parse_tree&amp; src,const char* const spec_name)
++{
++	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
++#ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++#endif
++			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;()
++			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(src));
++		return true;
++	return false;
++}
++
++static bool is_C99_named_specifier(const parse_tree&amp; src,const char* const spec_name)
++{
++	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
++#ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++#endif
++			&amp;&amp;	NULL!=src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;()
++			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	src.empty&lt;2&gt;());
++		return true;
++	return false;
++}
++
++static bool is_C99_named_specifier_definition(const parse_tree&amp; src,const char* const spec_name)
++{
++	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
++#ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++#endif
++			&amp;&amp;	NULL!=src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;()
++			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(src));
++		return true;
++	return false;
++}
++#endif
++
++static bool C99_looks_like_identifier(const parse_tree&amp; x)
++{
++	if (!x.is_atomic()) return false;
++	if (PARSE_TYPE &amp; x.flags) return false;
++	if (C99_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
++	if (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags) return true;
++	return false;
++}
++
++static bool CPP_looks_like_identifier(const parse_tree&amp; x)
++{
++	if (!x.is_atomic()) return false;
++	if (PARSE_TYPE &amp; x.flags) return false;
++	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
++	if (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags) return true;
++	return false;
++}
++
++static void make_target_postfix_arg(parse_tree&amp; src,size_t&amp; offset,const size_t i,const size_t j)
++{
++	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1) :  _new_buffer&lt;parse_tree&gt;(1));
++	if (NULL==tmp)
++		{	// need that slack space now
++		src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++		offset = 0;
++		tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);
++		}
++	*tmp = src.data&lt;0&gt;()[j];
++	src.c_array&lt;0&gt;()[i].fast_set_arg&lt;2&gt;(tmp);
++	src.c_array&lt;0&gt;()[j].clear();
++}
++
++void C99_notice_struct_union_enum(parse_tree&amp; src)
++{
++	assert(!src.empty&lt;0&gt;());
++	size_t i = 0;
++	size_t offset = 0;
++	while(i+offset&lt;src.size&lt;0&gt;())
++		{
++		const char* const tmp2 = robust_token_is_string&lt;4&gt;(src.data&lt;0&gt;()[i],&quot;enum&quot;) ? &quot;enum&quot;
++							: robust_token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i],&quot;struct&quot;) ? &quot;struct&quot;
++							: robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[i],&quot;union&quot;) ? &quot;union&quot; : 0;
++		if (tmp2)
++			{
++			if (1&gt;=src.size&lt;0&gt;()-(i+offset))
++				{	// unterminated declaration
++					//! \test zcc/decl.C99/Error_enum_truncate1.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(&quot; specifier cut off by end of scope (&quot;);
++				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C99 6.7.2.1p1)&quot; : &quot;C99 6.7.2.2p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
++				offset += 1;
++				continue;
++				};
++			if (is_naked_brace_pair(src.data&lt;0&gt;()[i+1]))
++				{	// anonymous: postfix arg {...}
++				make_target_postfix_arg(src,offset,i,i+1);
++				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
++				offset += 1;
++				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
++				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					C99_notice_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
++					};
++				continue;
++				};
++			if (!C99_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
++				{	//! \test zcc/decl.C99/Error_enum_truncate2.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(&quot; neither specifier nor definition (&quot;);
++				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C99 6.7.2.1p1)&quot; : &quot;C99 6.7.2.2p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
++				offset += 1;
++				continue;
++				};
++			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
++			src.c_array&lt;0&gt;()[i].grab_index_token_location_from&lt;1,0&gt;(src.data&lt;0&gt;()[i+1]);
++			src.c_array&lt;0&gt;()[i+1].clear();
++			if (2&lt;src.size&lt;0&gt;()-(i+offset) &amp;&amp; is_naked_brace_pair(src.data&lt;0&gt;()[i+2]))
++				{
++				make_target_postfix_arg(src,offset,i,i+2);
++				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
++				offset += 2;
++				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
++				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					C99_notice_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
++					};
++				continue;
++				};
++			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
++			offset += 1;
++			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
++			continue;
++			}
++		else if (   is_naked_parentheses_pair(src.data&lt;0&gt;()[i])
++				 || is_naked_brace_pair(src.data&lt;0&gt;()[i])
++				 || is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
++			{
++			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
++				{	// recurse into (...)
++				if (0&lt;offset)
++					{
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					};
++				C99_notice_struct_union_enum(src.c_array&lt;0&gt;()[i]);
++				}
++			}
++		++i;
++		};
++	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++}
++
++void CPP_notice_class_struct_union_enum(parse_tree&amp; src)
++{
++	assert(!src.empty&lt;0&gt;());
++	size_t i = 0;
++	size_t offset = 0;
++	while(i+offset&lt;src.size&lt;0&gt;())
++		{
++		const char* const tmp2 = robust_token_is_string&lt;4&gt;(src.data&lt;0&gt;()[i],&quot;enum&quot;) ? &quot;enum&quot;
++							: robust_token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i],&quot;struct&quot;) ? &quot;struct&quot;
++							: robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[i],&quot;union&quot;) ? &quot;union&quot;
++							: robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[i],&quot;class&quot;) ? &quot;class&quot; : 0;
++		if (tmp2)
++			{
++			if (1&gt;=src.size&lt;0&gt;()-(i+offset))
++				{	// unterminated declaration
++					//! \test zcc/decl.C99/Error_enum_truncate1.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(&quot; specifier cut off by end of scope (&quot;);
++				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C++98 9p1)&quot; : &quot;C++98 7.2p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
++				offset += 1;
++				continue;
++				};
++			if (is_naked_brace_pair(src.data&lt;0&gt;()[i+1]))
++				{	// anonymous: postfix arg {...}
++				make_target_postfix_arg(src,offset,i,i+1);
++				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
++				offset += 1;
++				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
++				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					CPP_notice_class_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
++					};
++				continue;
++				};
++			if (!CPP_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
++				{	//! \test zcc/decl.C99/Error_enum_truncate2.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(&quot; neither specifier nor definition (&quot;);
++				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C++98 9p1)&quot; : &quot;C++98 7.2p1)&quot;);
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
++				offset += 1;
++				continue;
++				};
++			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
++			src.c_array&lt;0&gt;()[i].grab_index_token_location_from&lt;1,0&gt;(src.data&lt;0&gt;()[i+1]);
++			src.c_array&lt;0&gt;()[i+1].clear();
++			if (2&lt;src.size&lt;0&gt;()-(i+offset) &amp;&amp; is_naked_brace_pair(src.data&lt;0&gt;()[i+2]))
++				{
++				make_target_postfix_arg(src,offset,i,i+1);
++				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
++				offset += 2;
++				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
++				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					CPP_notice_class_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
++					};
++				continue;
++				};
++			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
++			offset += 1;
++			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
++			continue;
++			}
++		else if (   is_naked_parentheses_pair(src.data&lt;0&gt;()[i])
++				 || is_naked_brace_pair(src.data&lt;0&gt;()[i])
++				 || is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
++			{
++			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
++				{	// recurse into (...)/{...}/[...]
++				if (0&lt;offset)
++					{
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					};
++				CPP_notice_class_struct_union_enum(src.c_array&lt;0&gt;()[i]);
++				}
++			}
++		++i;
++		};
++	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++}
++
+ bool convert_to(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest,const C_PPIntCore&amp; src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+@@ -8915,6 +9180,8 @@
+ 	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	C99_notice_primary_type(src);
++	// struct/union/enum specifiers can occur in all sorts of strange places
++	C99_notice_struct_union_enum(src);
+ }
+ 
+ bool CPP_ok_for_toplevel_qualified_name(const parse_tree&amp; x)
+@@ -9051,7 +9318,10 @@
+ 	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	// do context-free part of qualified-names
+ 	CPP_notice_scope_glue(src);
++	// class/struct/union/enum specifiers can occur in all sorts of strange places
++	CPP_notice_class_struct_union_enum(src);
+ }
+ 
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+
+Added: trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_class_truncate1.hpp
++// incomplete class declaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class
+
+Added: trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_class_truncate2.hpp
++// incomplete class declaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class %
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate1.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate1.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate1.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate1.h
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate1.hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate2.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate2.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate2.h
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate2.hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate1.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate1.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate1.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate1.h
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate1.hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate2.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate2.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate2.h
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate2.hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate1.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate1.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate1.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate1.h
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate1.hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate2.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate2.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate2.h
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate2.hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union %
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum %
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct %
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union %
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000037.html">[Zcplusplus-commits] r270 - trunk/tests/zcc/decl.C99
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#38">[ date ]</a>
+              <a href="thread.html#38">[ thread ]</a>
+              <a href="subject.html#38">[ subject ]</a>
+              <a href="author.html#38">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,319 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r294 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r294%20-%20trunk&In-Reply-To=%3C200912040949.nB49nKWa024216%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000060.html">
+   <LINK REL="Next"  HREF="000062.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r294 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r294%20-%20trunk&In-Reply-To=%3C200912040949.nB49nKWa024216%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r294 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Dec  4 10:49:20 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000060.html">[Zcplusplus-commits] r293 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000062.html">[Zcplusplus-commits] r295 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#61">[ date ]</a>
+              <a href="thread.html#61">[ thread ]</a>
+              <a href="subject.html#61">[ subject ]</a>
+              <a href="author.html#61">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-04 10:49:05 +0100 (Fri, 04 Dec 2009)
+New Revision: 294
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+bring up C++ name lookup for union/struct/class/enum
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-12-03 05:37:51 UTC (rev 293)
++++ trunk/type_system.cpp	2009-12-04 09:49:05 UTC (rev 294)
+@@ -42,6 +42,66 @@
+ }
+ 
+ type_system::type_index
++type_system::_get_id_union_CPP(const char* const x) const
++{
++	errr tmp = _get_id_union(x);
++	if (0&lt;tmp) return tmp;
++
++	// hmm...not an exact match
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; tmp2 = dealias_inline_namespace_index(x);
++	if (0&gt;tmp2.first) return 0;
++
++	// it was remapped
++	while(tmp2.first&lt;tmp2.second)
++		{
++		tmp = _get_id_union(inline_namespace_alias_map.data()[tmp2.first].second);
++		if (0&lt;tmp) return tmp;
++		++tmp2.first;
++		}
++	return _get_id_union(inline_namespace_alias_map.data()[tmp2.first].second);
++}
++
++type_system::type_index
++type_system::get_id_union_CPP(const char* alias,const char* active_namespace) const
++{
++	assert(alias &amp;&amp; *alias);
++
++	if (!strncmp(alias,&quot;::&quot;,2))
++		{	// fully-qualified
++		// pretend not fully qualified, but no surrounding namespace
++		alias += 2;
++		active_namespace = NULL;
++		};
++	if (active_namespace &amp;&amp; *active_namespace)
++		{
++		// ok..march up to global
++		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
++		if (is_string_registered(tmp_alias))
++			{	// registered, so could be indexed
++			const type_index tmp2 = _get_id_union_CPP(tmp_alias);
++			if (tmp2) return (free(tmp_alias),tmp2);
++			}
++
++		const size_t extra_namespaces = count_disjoint_substring_instances(active_namespace,&quot;::&quot;);
++		if (extra_namespaces)
++			{
++			zaimoni::weakautovalarray_ptr_throws&lt;const char*&gt; intra_namespace(extra_namespaces);
++			report_disjoint_substring_instances(active_namespace,&quot;::&quot;,intra_namespace.c_array(),extra_namespaces);
++			size_t i = extra_namespaces;
++			do	{
++				--i;
++				namespace_concatenate(tmp_alias,alias,active_namespace,intra_namespace[i]-active_namespace,&quot;::&quot;);
++				const type_index tmp2 = _get_id_union_CPP(tmp_alias);
++				if (tmp2) return (free(tmp_alias),tmp2);
++				}
++			while(0&lt;i);
++			}
++		free(tmp_alias);
++		}
++	return _get_id_union_CPP(alias);
++}
++
++type_system::type_index
+ type_system::_get_id_struct_class(const char* const x) const
+ {
+ 	const size_t x_len = strlen(x);
+@@ -69,6 +129,66 @@
+ 	return 0;
+ }
+ 
++type_system::type_index
++type_system::_get_id_struct_class_CPP(const char* const x) const
++{
++	errr tmp = _get_id_struct_class(x);
++	if (0&lt;tmp) return tmp;
++
++	// hmm...not an exact match
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; tmp2 = dealias_inline_namespace_index(x);
++	if (0&gt;tmp2.first) return 0;
++
++	// it was remapped
++	while(tmp2.first&lt;tmp2.second)
++		{
++		tmp = _get_id_struct_class(inline_namespace_alias_map.data()[tmp2.first].second);
++		if (0&lt;tmp) return tmp;
++		++tmp2.first;
++		}
++	return _get_id_struct_class(inline_namespace_alias_map.data()[tmp2.first].second);
++}
++
++type_system::type_index
++type_system::get_id_struct_class_CPP(const char* alias,const char* active_namespace) const
++{
++	assert(alias &amp;&amp; *alias);
++
++	if (!strncmp(alias,&quot;::&quot;,2))
++		{	// fully-qualified
++		// pretend not fully qualified, but no surrounding namespace
++		alias += 2;
++		active_namespace = NULL;
++		};
++	if (active_namespace &amp;&amp; *active_namespace)
++		{
++		// ok..march up to global
++		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
++		if (is_string_registered(tmp_alias))
++			{	// registered, so could be indexed
++			const type_index tmp2 = _get_id_struct_class_CPP(tmp_alias);
++			if (tmp2) return (free(tmp_alias),tmp2);
++			}
++
++		const size_t extra_namespaces = count_disjoint_substring_instances(active_namespace,&quot;::&quot;);
++		if (extra_namespaces)
++			{
++			zaimoni::weakautovalarray_ptr_throws&lt;const char*&gt; intra_namespace(extra_namespaces);
++			report_disjoint_substring_instances(active_namespace,&quot;::&quot;,intra_namespace.c_array(),extra_namespaces);
++			size_t i = extra_namespaces;
++			do	{
++				--i;
++				namespace_concatenate(tmp_alias,alias,active_namespace,intra_namespace[i]-active_namespace,&quot;::&quot;);
++				const type_index tmp2 = _get_id_struct_class_CPP(tmp_alias);
++				if (tmp2) return (free(tmp_alias),tmp2);
++				}
++			while(0&lt;i);
++			}
++		free(tmp_alias);
++		}
++	return _get_id_struct_class_CPP(alias);
++}
++
+ type_system::type_index type_system::_get_id_enum(const char* const x) const
+ {
+ 	const size_t x_len = strlen(x);
+@@ -87,6 +207,66 @@
+ 	return 0;
+ }
+ 
++type_system::type_index
++type_system::_get_id_enum_CPP(const char* const x) const
++{
++	errr tmp = _get_id_enum(x);
++	if (0&lt;tmp) return tmp;
++
++	// hmm...not an exact match
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; tmp2 = dealias_inline_namespace_index(x);
++	if (0&gt;tmp2.first) return 0;
++
++	// it was remapped
++	while(tmp2.first&lt;tmp2.second)
++		{
++		tmp = _get_id_enum(inline_namespace_alias_map.data()[tmp2.first].second);
++		if (0&lt;tmp) return tmp;
++		++tmp2.first;
++		}
++	return _get_id_enum(inline_namespace_alias_map.data()[tmp2.first].second);
++}
++
++type_system::type_index
++type_system::get_id_enum_CPP(const char* alias,const char* active_namespace) const
++{
++	assert(alias &amp;&amp; *alias);
++
++	if (!strncmp(alias,&quot;::&quot;,2))
++		{	// fully-qualified
++		// pretend not fully qualified, but no surrounding namespace
++		alias += 2;
++		active_namespace = NULL;
++		};
++	if (active_namespace &amp;&amp; *active_namespace)
++		{
++		// ok..march up to global
++		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
++		if (is_string_registered(tmp_alias))
++			{	// registered, so could be indexed
++			const type_index tmp2 = _get_id_enum_CPP(tmp_alias);
++			if (tmp2) return (free(tmp_alias),tmp2);
++			}
++
++		const size_t extra_namespaces = count_disjoint_substring_instances(active_namespace,&quot;::&quot;);
++		if (extra_namespaces)
++			{
++			zaimoni::weakautovalarray_ptr_throws&lt;const char*&gt; intra_namespace(extra_namespaces);
++			report_disjoint_substring_instances(active_namespace,&quot;::&quot;,intra_namespace.c_array(),extra_namespaces);
++			size_t i = extra_namespaces;
++			do	{
++				--i;
++				namespace_concatenate(tmp_alias,alias,active_namespace,intra_namespace[i]-active_namespace,&quot;::&quot;);
++				const type_index tmp2 = _get_id_enum_CPP(tmp_alias);
++				if (tmp2) return (free(tmp_alias),tmp2);
++				}
++			while(0&lt;i);
++			}
++		free(tmp_alias);
++		}
++	return _get_id_enum_CPP(alias);
++}
++
+ const char* type_system::_name(size_t id) const
+ {
+ 	if (0==id) return &quot;(?)&quot;;
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-12-03 05:37:51 UTC (rev 293)
++++ trunk/type_system.hpp	2009-12-04 09:49:05 UTC (rev 294)
+@@ -43,16 +43,19 @@
+ 		assert(x &amp;&amp; *x);
+ 		return _get_id_union(x);
+ 		}
++	type_index get_id_union_CPP(const char* alias,const char* active_namespace) const;
+ 	type_index get_id_struct_class(const char* x) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+ 		return _get_id_struct_class(x);
+ 		}
++	type_index get_id_struct_class_CPP(const char* alias,const char* active_namespace) const;
+ 	type_index get_id_enum(const char* x) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+ 		return _get_id_enum(x);
+ 		}
++	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
+ 	const char* name(type_index id) const
+ 		{
+ 		assert(core_types_size+dynamic_types.size()&gt;=id);
+@@ -108,9 +111,13 @@
+ 	const enum_def* get_enum_def(type_index i);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+ private:
+-	type_index _get_id_union(const char* const x) const;
+-	type_index _get_id_enum(const char* const x) const;
+-	type_index _get_id_struct_class(const char* const x) const;
++	type_index _get_id_union(const char* x) const;
++	type_index _get_id_union_CPP(const char* x) const;
++	type_index _get_id_enum(const char* x) const;
++	type_index _get_id_enum_CPP(const char* x) const;
++	type_index _get_id_struct_class(const char* x) const;
++	type_index _get_id_struct_class_CPP(const char* x) const;
++
+ 	const char* _name(type_index id) const;
+ 	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000060.html">[Zcplusplus-commits] r293 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000062.html">[Zcplusplus-commits] r295 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#61">[ date ]</a>
+              <a href="thread.html#61">[ thread ]</a>
+              <a href="subject.html#61">[ subject ]</a>
+              <a href="author.html#61">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

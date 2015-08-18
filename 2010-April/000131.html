@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r364 - trunk/tests/zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r364%20-%20trunk/tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201004070615.o376FdOB019279%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000130.html">
+   <LINK REL="Next"  HREF="000132.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r364 - trunk/tests/zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r364%20-%20trunk/tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201004070615.o376FdOB019279%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r364 - trunk/tests/zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  7 08:15:39 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000130.html">[Zcplusplus-commits] r363 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert
+</A></li>
+        <LI>Next message: <A HREF="000132.html">[Zcplusplus-commits] r365 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-07 08:15:36 +0200 (Wed, 07 Apr 2010)
+New Revision: 364
+
+Modified:
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+Log:
+source for operator - test cases
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-07 06:07:22 UTC (rev 363)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-07 06:15:36 UTC (rev 364)
+@@ -67,3 +67,14 @@
+ STATIC_ASSERT(1+0,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1+1,&quot;automatic success has failed&quot;);
+ 
++// check -
++STATIC_ASSERT(!(-1- -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1-0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1-1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0- -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0-0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0-1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1- -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1-0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1-1),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-04-07 06:07:22 UTC (rev 363)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-04-07 06:15:36 UTC (rev 364)
+@@ -62,3 +62,15 @@
+ STATIC_ASSERT(one+zero,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(one+one,&quot;automatic success has failed&quot;);
+ 
++// check -
++STATIC_ASSERT(!(neg_one-neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one-zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one-one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero-neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero-zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero-one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one-neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one-zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one-one),&quot;automatic success has failed&quot;);
++
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000130.html">[Zcplusplus-commits] r363 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert
+</A></li>
+	<LI>Next message: <A HREF="000132.html">[Zcplusplus-commits] r365 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#131">[ date ]</a>
+              <a href="thread.html#131">[ thread ]</a>
+              <a href="subject.html#131">[ subject ]</a>
+              <a href="author.html#131">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

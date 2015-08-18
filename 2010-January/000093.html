@@ -1,0 +1,239 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r326 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r326%20-%20trunk&In-Reply-To=%3C201001102302.o0AN215C032173%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000092.html">
+   <LINK REL="Next"  HREF="000094.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r326 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r326%20-%20trunk&In-Reply-To=%3C201001102302.o0AN215C032173%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r326 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 11 00:02:01 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000092.html">[Zcplusplus-commits] r325 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000094.html">[Zcplusplus-commits] r327 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#93">[ date ]</a>
+              <a href="thread.html#93">[ thread ]</a>
+              <a href="subject.html#93">[ subject ]</a>
+              <a href="author.html#93">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-01-11 00:01:56 +0100 (Mon, 11 Jan 2010)
+New Revision: 326
+
+Modified:
+   trunk/CPUInfo.cpp
+   trunk/CSupport.cpp
+   trunk/unsigned_var_int.cpp
+   trunk/unsigned_var_int.hpp
+Log:
+new constructor for unsigned_var_int
+
+Modified: trunk/CPUInfo.cpp
+===================================================================
+--- trunk/CPUInfo.cpp	2010-01-10 09:37:43 UTC (rev 325)
++++ trunk/CPUInfo.cpp	2010-01-10 23:01:56 UTC (rev 326)
+@@ -172,8 +172,7 @@
+ {
+ 	assert(machine_type);
+ 	assert(src_int&lt;=unsigned_max(machine_type));
+-	unsigned_var_int tmp(0);
+-	tmp.resize(src_int.size());
++	unsigned_var_int tmp(0,src_int.size());
+ 	tmp -= src_int;
+ 	tmp.mask_to(C_bit(machine_type));
+ 	tmp.MoveInto(src_int);
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-01-10 09:37:43 UTC (rev 325)
++++ trunk/CSupport.cpp	2010-01-10 23:01:56 UTC (rev 326)
+@@ -2461,8 +2461,7 @@
+ #ifdef ZCC_LEGACY_FIXED_INT
+ 	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+ #else
+-	unsigned_var_int tmp;
+-	tmp.set_bitcount(VM_MAX_BIT_PLATFORM);
++	unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ #endif
+ #ifndef NDEBUG
+ #ifdef ZCC_LEGACY_FIXED_INT
+@@ -2991,8 +2990,7 @@
+ #ifdef ZCC_LEGACY_FIXED_INT
+ 												unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+ #else
+-												unsigned_var_int tmp;
+-												tmp.set_bitcount(VM_MAX_BIT_PLATFORM);
++												unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ #endif
+ 												if (VM_MAX_BIT_PLATFORM&gt;target_machine-&gt;C_char_bit()) tmp.set(target_machine-&gt;C_char_bit());
+ 												tmp -= 1;
+@@ -3002,8 +3000,7 @@
+ #ifdef ZCC_LEGACY_FIXED_INT
+ 												unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+ #else
+-												unsigned_var_int tmp;
+-												tmp.set_bitcount(VM_MAX_BIT_PLATFORM);
++												unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ #endif
+ 												tmp.set(target_machine-&gt;C_char_bit()-1);
+ 												return tmp==result;
+@@ -4139,10 +4136,8 @@
+ 	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; alt_radix(src.radix);
+ 	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; strict_ub;
+ #else
+-	unsigned_var_int alt_radix(src.radix);
+-	unsigned_var_int strict_ub;
+-	strict_ub.set_bitcount(VM_MAX_BIT_PLATFORM);
+-	alt_radix.set_bitcount(VM_MAX_BIT_PLATFORM);
++	const unsigned_var_int alt_radix(src.radix,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
++	unsigned_var_int strict_ub(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ #endif
+ 	const char* target = src.ptr;
+ 	size_t target_len = src.digit_span;
+
+Modified: trunk/unsigned_var_int.cpp
+===================================================================
+--- trunk/unsigned_var_int.cpp	2010-01-10 09:37:43 UTC (rev 325)
++++ trunk/unsigned_var_int.cpp	2010-01-10 23:01:56 UTC (rev 326)
+@@ -27,6 +27,14 @@
+ 	unsigned_copy(_data.c_array(),src,n);
+ }
+ 
++unsigned_var_int::unsigned_var_int(uintmax_t src,size_t bytecount)
++{
++	const size_t n = bytes_to_represent(src);
++	_data.init(bytecount &lt; n ? n : bytecount);
++	unsigned_copy(_data.c_array(),src,n);
++	if (bytecount&lt;n) _data.resize(bytecount);
++}
++
+ unsigned_var_int&amp; unsigned_var_int::operator=(const unsigned_var_int&amp; src)
+ {
+ 	_data.resize(src._data.size());
+@@ -53,9 +61,7 @@
+ unsigned_var_int&amp; unsigned_var_int::operator+=(const unsigned_var_int&amp; rhs)
+ {
+ 	if (size()&lt;=rhs.size())
+-		{
+ 		unsigned_sum(c_array(),size(),rhs.data());
+-		}
+ 	else{	// need to zero-extend rhs
+ 		unsigned_var_int tmp(rhs);
+ 		tmp._data.resize(size());
+@@ -95,8 +101,7 @@
+ 
+ unsigned_var_int&amp; unsigned_var_int::operator*=(const unsigned_var_int&amp; rhs)
+ {
+-	unsigned_var_int tmp(0);;
+-	tmp.resize(size());
++	unsigned_var_int tmp(0,size());
+ 	unsigned_mult(tmp.c_array(),tmp.size(),data(),size(),rhs.data(),rhs.size());
+ 	return *this = tmp;
+ }
+@@ -151,16 +156,14 @@
+ 
+ unsigned_var_int operator/(unsigned_var_int lhs,const unsigned_var_int&amp; rhs)
+ {
+-	unsigned_var_int quotient(0);
+-	quotient.resize(rhs.size());
++	unsigned_var_int quotient(0,rhs.size());
+ 	lhs.div_op(rhs,quotient);
+ 	return quotient;
+ }
+ 
+ unsigned_var_int&amp; unsigned_var_int::operator/=(const unsigned_var_int&amp; rhs)
+ {
+-	unsigned_var_int quotient(0);
+-	quotient.resize(rhs.size());
++	unsigned_var_int quotient(0,rhs.size());
+ 	div_op(rhs,quotient);
+ 	quotient.MoveInto(*this);
+ 	return *this;
+@@ -168,8 +171,7 @@
+ 
+ unsigned_var_int&amp; unsigned_var_int::operator%=(const unsigned_var_int&amp; rhs)
+ {
+-	unsigned_var_int quotient(0);
+-	quotient.resize(rhs.size());
++	unsigned_var_int quotient(0,rhs.size());
+ 	div_op(rhs,quotient);
+ 	return *this;
+ }
+@@ -192,10 +194,8 @@
+ char* z_ucharint_toa(unsigned_var_int target,char* const buf,unsigned int radix)
+ {
+ 	char* ret = buf;
+-	unsigned_var_int radix_copy(radix);
+-	radix_copy.resize(target.size());
+-	unsigned_var_int power_up(1);
+-	power_up.resize(target.size());
++	const unsigned_var_int radix_copy(radix,target.size());
++	unsigned_var_int power_up(1,target.size());
+ 	while(power_up&lt;=target/radix_copy) power_up *= radix_copy;
+ 	do	{
+ 		unsigned char tmp = (unsigned char)((target/power_up).to_uint());
+
+Modified: trunk/unsigned_var_int.hpp
+===================================================================
+--- trunk/unsigned_var_int.hpp	2010-01-10 09:37:43 UTC (rev 325)
++++ trunk/unsigned_var_int.hpp	2010-01-10 23:01:56 UTC (rev 326)
+@@ -16,6 +16,7 @@
+ public:
+ 	unsigned_var_int() {_data.init(0);};
+ 	explicit unsigned_var_int(uintmax_t src);
++	unsigned_var_int(uintmax_t src,size_t bytecount);
+ 	unsigned_var_int(const unsigned_var_int&amp; src);
+ 
+ 	unsigned_var_int&amp; operator=(const unsigned_var_int&amp; src);
+@@ -84,6 +85,7 @@
+ 		};
+ 
+ 	void resize(size_t n) {_data.resize(n);};
++	static size_t bytes_from_bits(size_t n) {return n/CHAR_BIT+(0&lt;n%CHAR_BIT);};
+ 	void set_bitcount(size_t n) {_data.resize(n/CHAR_BIT+(0&lt;n%CHAR_BIT));};
+ 	void mask_to(size_t bitcount) {assert(bitcount&lt;=CHAR_BIT*_data.size());return ::mask_to(_data.c_array(),_data.size(),bitcount);};
+ 	uintmax_t to_uint() const {return ::to_uint(_data.data(),_data.size());};
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000092.html">[Zcplusplus-commits] r325 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000094.html">[Zcplusplus-commits] r327 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#93">[ date ]</a>
+              <a href="thread.html#93">[ thread ]</a>
+              <a href="subject.html#93">[ subject ]</a>
+              <a href="author.html#93">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

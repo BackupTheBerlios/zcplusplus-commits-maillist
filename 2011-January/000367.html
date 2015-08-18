@@ -1,0 +1,463 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r600 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r600%20-%20trunk&In-Reply-To=%3C20110126233830.3C7CC48119B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000366.html">
+   <LINK REL="Next"  HREF="000368.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r600 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r600%20-%20trunk&In-Reply-To=%3C20110126233830.3C7CC48119B%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r600 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 27 00:38:29 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000366.html">[Zcplusplus-commits] r599 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000368.html">[Zcplusplus-commits] r601 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#367">[ date ]</a>
+              <a href="thread.html#367">[ thread ]</a>
+              <a href="subject.html#367">[ subject ]</a>
+              <a href="author.html#367">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-27 00:38:29 +0100 (Thu, 27 Jan 2011)
+New Revision: 600
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+lines of code reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-26 19:45:02 UTC (rev 599)
++++ trunk/CSupport.cpp	2011-01-26 23:38:29 UTC (rev 600)
+@@ -13080,6 +13080,14 @@
+ 	INFORM(&quot;prior definition here&quot;);
+ }
+ 
++static void change_definition_to_different_specifier(parse_tree&amp; x, const char* const text)
++{
++	assert(text &amp;&amp; *text);
++	x.set_index_token_from_str_literal&lt;0&gt;(text);
++	x.DeleteIdx&lt;2&gt;(0);
++	assert(is_C99_named_specifier(x,text));
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -13329,9 +13337,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;struct&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;struct&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+STRUCT_NAME);
+ 					continue;
+ 					}
+@@ -13344,9 +13350,7 @@
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -13571,9 +13575,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -13586,9 +13588,7 @@
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -13729,9 +13729,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -13748,9 +13746,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;struct&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;struct&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+STRUCT_NAME);
+ 					continue;
+ 					}
+@@ -14494,9 +14490,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,text));
++					change_definition_to_different_specifier(tmp2,text);
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+@@ -14509,9 +14503,7 @@
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -14714,9 +14706,7 @@
+ 						INFORM(strcmp(&quot;class&quot;,text) ? &quot;prior definition here&quot; : &quot;prior definition as class here&quot;);
+ 						zcc_errors.inc_error();
+ 						// reduce to named-specifier
+-						tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-						tmp2.DeleteIdx&lt;2&gt;(0);
+-						assert(is_C99_named_specifier(tmp2,text));
++						change_definition_to_different_specifier(tmp2,text);
+ 						pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 						continue;
+ 						}					
+@@ -14738,9 +14728,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -14753,9 +14741,7 @@
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -14955,9 +14941,7 @@
+ 						INFORM(strcmp(&quot;class&quot;,text) ? &quot;prior definition as struct here&quot; : &quot;prior definition here&quot;);
+ 						zcc_errors.inc_error();
+ 						// reduce to named-specifier
+-						tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-						tmp2.DeleteIdx&lt;2&gt;(0);
+-						assert(is_C99_named_specifier(tmp2,text));
++						change_definition_to_different_specifier(tmp2,text);
+ 						pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 						continue;
+ 						}					
+@@ -14979,9 +14963,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -14994,9 +14976,7 @@
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -15139,9 +15119,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -15163,9 +15141,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,text));
++					change_definition_to_different_specifier(tmp2,text);
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-26 19:45:02 UTC (rev 599)
++++ trunk/CSupport.cpp.in	2011-01-26 23:38:29 UTC (rev 600)
+@@ -13224,6 +13224,14 @@
+ 	INFORM(&quot;prior definition here&quot;);
+ }
+ 
++static void change_definition_to_different_specifier(parse_tree&amp; x, const char* const text)
++{
++	assert(text &amp;&amp; *text);
++	x.set_index_token_from_str_literal&lt;0&gt;(text);
++	x.DeleteIdx&lt;2&gt;(0);
++	assert(is_C99_named_specifier(x,text));
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -13473,9 +13481,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;struct&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;struct&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+STRUCT_NAME);
+ 					continue;
+ 					}
+@@ -13488,9 +13494,7 @@
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -13715,9 +13719,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -13730,9 +13732,7 @@
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -13873,9 +13873,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -13892,9 +13890,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;struct&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;struct&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;struct&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(C99_nontype_decl_specifier_list)+STRUCT_NAME);
+ 					continue;
+ 					}
+@@ -14638,9 +14634,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,text));
++					change_definition_to_different_specifier(tmp2,text);
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+@@ -14653,9 +14647,7 @@
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -14858,9 +14850,7 @@
+ 						INFORM(strcmp(&quot;class&quot;,text) ? &quot;prior definition here&quot; : &quot;prior definition as class here&quot;);
+ 						zcc_errors.inc_error();
+ 						// reduce to named-specifier
+-						tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-						tmp2.DeleteIdx&lt;2&gt;(0);
+-						assert(is_C99_named_specifier(tmp2,text));
++						change_definition_to_different_specifier(tmp2,text);
+ 						pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 						continue;
+ 						}					
+@@ -14882,9 +14872,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -14897,9 +14885,7 @@
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -15099,9 +15085,7 @@
+ 						INFORM(strcmp(&quot;class&quot;,text) ? &quot;prior definition as struct here&quot; : &quot;prior definition here&quot;);
+ 						zcc_errors.inc_error();
+ 						// reduce to named-specifier
+-						tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-						tmp2.DeleteIdx&lt;2&gt;(0);
+-						assert(is_C99_named_specifier(tmp2,text));
++						change_definition_to_different_specifier(tmp2,text);
+ 						pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 						continue;
+ 						}					
+@@ -15123,9 +15107,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -15138,9 +15120,7 @@
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+ 					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -15283,9 +15263,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;union&quot;);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,&quot;union&quot;));
++					change_definition_to_different_specifier(tmp2,&quot;union&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+UNION_NAME);
+ 					continue;
+ 					}
+@@ -15307,9 +15285,7 @@
+ 					message_header(*tmp3);
+ 					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+-					tmp2.set_index_token_from_str_literal&lt;0&gt;(text);
+-					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(tmp2,text));
++					change_definition_to_different_specifier(tmp2,text);
+ 					pre_invariant_decl_scanner.reclassify(k--,strcmp(&quot;class&quot;,text) ? STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+STRUCT_NAME : STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+CLASS_NAME);
+ 					continue;
+ 					}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000366.html">[Zcplusplus-commits] r599 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000368.html">[Zcplusplus-commits] r601 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#367">[ date ]</a>
+              <a href="thread.html#367">[ thread ]</a>
+              <a href="subject.html#367">[ subject ]</a>
+              <a href="author.html#367">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

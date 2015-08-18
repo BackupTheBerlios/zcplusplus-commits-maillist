@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r305 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r305%20-%20trunk&In-Reply-To=%3C200912090410.nB94AM8g009672%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000071.html">
+   <LINK REL="Next"  HREF="000073.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r305 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r305%20-%20trunk&In-Reply-To=%3C200912090410.nB94AM8g009672%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r305 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Dec  9 05:10:22 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000071.html">[Zcplusplus-commits] r304 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000073.html">[Zcplusplus-commits] r306 - in trunk/Zaimoni.STL: . LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#72">[ date ]</a>
+              <a href="thread.html#72">[ thread ]</a>
+              <a href="subject.html#72">[ subject ]</a>
+              <a href="author.html#72">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-09 05:10:18 +0100 (Wed, 09 Dec 2009)
+New Revision: 305
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+object file size reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-12-09 01:41:13 UTC (rev 304)
++++ trunk/CSupport.cpp	2009-12-09 04:10:18 UTC (rev 305)
+@@ -6028,32 +6028,40 @@
+ static void assemble_binary_infix_arguments(parse_tree&amp; src, size_t&amp; i, const lex_flags _flags)
+ {
+ 	assert(1&lt;=i &amp;&amp; 2&lt;=src.size&lt;0&gt;()-i);
+-	parse_tree* const tmp = repurpose_inner_parentheses(src.c_array&lt;0&gt;()[i-1]);	// RAM conservation
+-	*tmp = src.data&lt;0&gt;()[i-1];
+-	parse_tree* const tmp2 = repurpose_inner_parentheses(src.c_array&lt;0&gt;()[i+1]);	// RAM conservation
+-	*tmp2 = src.data&lt;0&gt;()[i+1];
+-	src.c_array&lt;0&gt;()[i].fast_set_arg&lt;1&gt;(tmp);
+-	src.c_array&lt;0&gt;()[i].fast_set_arg&lt;2&gt;(tmp2);
+-	src.c_array&lt;0&gt;()[i].core_flag_update();
+-	src.c_array&lt;0&gt;()[i].flags |= _flags;
+-	src.c_array&lt;0&gt;()[i-1].clear();
+-	src.c_array&lt;0&gt;()[i+1].clear();
++	{
++	parse_tree* tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
++	parse_tree* const tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
++	*tmp = tmp_c_array[0];
++	parse_tree* const tmp2 = repurpose_inner_parentheses(tmp_c_array[2]);	// RAM conservation
++	*tmp2 = tmp_c_array[2];
++	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp);
++	tmp_c_array[1].fast_set_arg&lt;2&gt;(tmp2);
++	tmp_c_array[1].core_flag_update();
++	tmp_c_array[1].flags |= _flags;
++	tmp_c_array[0].clear();
++	tmp_c_array[2].clear();
++	}
+ 	src.DeleteIdx&lt;0&gt;(i+1);
+ 	src.DeleteIdx&lt;0&gt;(--i);
+-	cancel_outermost_parentheses(src.c_array&lt;0&gt;()[i].c_array&lt;1&gt;()[0]);
+-	cancel_outermost_parentheses(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0]);
++
++	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++	cancel_outermost_parentheses(tmp.c_array&lt;1&gt;()[0]);
++	cancel_outermost_parentheses(tmp.c_array&lt;2&gt;()[0]);
+ }
+ 
+ static void merge_binary_infix_argument(parse_tree&amp; src, size_t&amp; i, const lex_flags _flags)
+ {
+ 	assert(1&lt;=i);
+-	parse_tree* const tmp = repurpose_inner_parentheses(src.c_array&lt;0&gt;()[i-1]);	// RAM conservation
+-	*tmp = src.data&lt;0&gt;()[i-1];
++	{
++	parse_tree* tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
++	parse_tree* const tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
++	*tmp = tmp_c_array[0];
+ 
+-	src.c_array&lt;0&gt;()[i].fast_set_arg&lt;1&gt;(tmp);
+-	src.c_array&lt;0&gt;()[i].core_flag_update();
+-	src.c_array&lt;0&gt;()[i].flags |= _flags;
+-	src.c_array&lt;0&gt;()[i-1].clear();
++	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp);
++	tmp_c_array[1].core_flag_update();
++	tmp_c_array[1].flags |= _flags;
++	tmp_c_array[0].clear();
++	}
+ 	src.DeleteIdx&lt;0&gt;(--i);
+ 	cancel_outermost_parentheses(src.c_array&lt;0&gt;()[i].c_array&lt;1&gt;()[0]);
+ }
+@@ -6112,15 +6120,19 @@
+ 	if (mult_subtype)
+ 		{
+ 		if (1&gt;i || 2&gt;src.size&lt;0&gt;()-i) return false;
+-		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i-1]);
+-		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+-		if (	(PARSE_MULT_EXPRESSION &amp; src.data&lt;0&gt;()[i-1].flags)
+-			&amp;&amp;	(PARSE_PM_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags))
++		parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
++		inspect_potential_paren_primary_expression(tmp_c_array[0]);
++		inspect_potential_paren_primary_expression(tmp_c_array[2]);
++		if (	(PARSE_MULT_EXPRESSION &amp; tmp_c_array[0].flags)
++			&amp;&amp;	(PARSE_PM_EXPRESSION &amp; tmp_c_array[2].flags))
+ 			{
+-			assemble_binary_infix_arguments(src,i,PARSE_STRICT_MULT_EXPRESSION);
++			assemble_binary_infix_arguments(src,i,PARSE_STRICT_MULT_EXPRESSION);	// tmp_c_array goes invalid here
+ 			assert(is_C99_mult_operator_expression(src.data&lt;0&gt;()[i]));
+-			src.c_array&lt;0&gt;()[i].subtype = mult_subtype;
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(0);	// handle type inference later
++			{
++			parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++			tmp.subtype = mult_subtype;
++			tmp.type_code.set_type(0);	// handle type inference later
++			}
+ 			assert(is_C99_mult_operator_expression(src.data&lt;0&gt;()[i]));
+ 			return true;
+ 			}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000071.html">[Zcplusplus-commits] r304 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000073.html">[Zcplusplus-commits] r306 - in trunk/Zaimoni.STL: . LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#72">[ date ]</a>
+              <a href="thread.html#72">[ thread ]</a>
+              <a href="subject.html#72">[ subject ]</a>
+              <a href="author.html#72">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

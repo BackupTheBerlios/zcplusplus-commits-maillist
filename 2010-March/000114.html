@@ -1,0 +1,981 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r347 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r347%20-%20trunk&In-Reply-To=%3C201003082005.o28K5fKS031428%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000113.html">
+   <LINK REL="Next"  HREF="000115.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r347 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r347%20-%20trunk&In-Reply-To=%3C201003082005.o28K5fKS031428%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r347 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Mar  8 21:05:41 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000113.html">[Zcplusplus-commits] r346 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000115.html">[Zcplusplus-commits] r348 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#114">[ date ]</a>
+              <a href="thread.html#114">[ thread ]</a>
+              <a href="subject.html#114">[ subject ]</a>
+              <a href="author.html#114">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-08 21:05:37 +0100 (Mon, 08 Mar 2010)
+New Revision: 347
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+executable size reduction for z_cpp
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-08 19:13:22 UTC (rev 346)
++++ trunk/CSupport.cpp	2010-03-08 20:05:37 UTC (rev 347)
+@@ -519,6 +519,7 @@
+ 
+ BOOST_STATIC_ASSERT(C_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+ BOOST_STATIC_ASSERT(CPP_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
++#/*cut-cpp*/
+ 
+ static const char* C99_echo_reserved_keyword(const char* x,size_t x_len)
+ {
+@@ -542,7 +543,6 @@
+ 	return NULL;
+ }
+ 
+-#/*cut-cpp*/
+ static const char* C99_echo_reserved_symbol(const char* x,size_t x_len)
+ {
+ 	assert(NULL!=x);
+@@ -3450,6 +3450,7 @@
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
++#/*cut-cpp*/
+ 
+ static bool is_naked_brace_pair(const parse_tree&amp; src)
+ {
+@@ -3470,6 +3471,7 @@
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
++#/*cut-cpp*/
+ 
+ #ifndef NDEBUG
+ static bool is_array_deref_strict(const parse_tree&amp; src)
+@@ -3838,6 +3840,7 @@
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
++#/*cut-cpp*/
+ 
+ static bool is_C99_anonymous_specifier(const parse_tree&amp; src,const char* const spec_name)
+ {
+@@ -3911,7 +3914,7 @@
+ 	src.c_array&lt;0&gt;()[j].clear();
+ }
+ 
+-void C99_notice_struct_union_enum(parse_tree&amp; src)
++static void C99_notice_struct_union_enum(parse_tree&amp; src)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+ 	size_t i = 0;
+@@ -4005,7 +4008,7 @@
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ }
+ 
+-void CPP_notice_class_struct_union_enum(parse_tree&amp; src)
++static void CPP_notice_class_struct_union_enum(parse_tree&amp; src)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+ 	size_t i = 0;
+@@ -4099,6 +4102,7 @@
+ 		};
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ }
++#/*cut-cpp*/
+ 
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+@@ -9260,9 +9264,8 @@
+ 	// struct/union/enum specifiers can occur in all sorts of strange places
+ 	C99_notice_struct_union_enum(src);
+ }
+-#/*cut-cpp*/
+ 
+-bool CPP_ok_for_toplevel_qualified_name(const parse_tree&amp; x)
++static bool CPP_ok_for_toplevel_qualified_name(const parse_tree&amp; x)
+ {
+ 	if (!x.is_atomic()) return false;
+ 	if (PARSE_PRIMARY_TYPE &amp; x.flags) return false;
+@@ -9388,7 +9391,6 @@
+ 		};
+ }
+ 
+-#/*cut-cpp*/
+ //! \todo check that the fact all literals are already legal-form is used
+ static void CPP_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+ {
+@@ -10057,6 +10059,7 @@
+ 			}
+ 		};
+ }
++#/*cut-cpp*/
+ 
+ //! \todo should this be a type_system member?
+ static bool check_for_typedef(type_spec&amp; dest,const char* const src,const type_system&amp; types)
+@@ -10389,6 +10392,7 @@
+ 	uintmax_t get_flags() const {return flags;};
+ 	void value_copy_type(type_spec&amp; dest) const {value_copy(dest,base_type);};
+ };
++#/*cut-cpp*/
+ 
+ size_t C99_init_declarator_scanner(const parse_tree&amp; x, size_t i,type_spec&amp; target_type, size_t&amp; initdecl_identifier_idx)
+ {
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-08 19:13:22 UTC (rev 346)
++++ trunk/CSupport_pp.cpp	2010-03-08 20:05:37 UTC (rev 347)
+@@ -513,29 +513,6 @@
+ BOOST_STATIC_ASSERT(C_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+ BOOST_STATIC_ASSERT(CPP_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+ 
+-static const char* C99_echo_reserved_keyword(const char* x,size_t x_len)
+-{
+-	assert(NULL!=x);
+-	assert(x_len&lt;=strlen(x));
+-	size_t i = C_KEYWORD_STRICT_UB-C_KEYWORD_NONSTRICT_LB;
+-	do	if (x_len==valid_keyword[C_KEYWORD_NONSTRICT_LB + --i].second &amp;&amp; !strncmp(valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+-			return valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first;
+-	while(0&lt;i);
+-	return NULL;
+-}
+-
+-static const char* CPP_echo_reserved_keyword(const char* x,size_t x_len)
+-{
+-	assert(NULL!=x);
+-	assert(x_len&lt;=strlen(x));
+-	size_t i = CPP_KEYWORD_STRICT_UB-CPP_KEYWORD_NONSTRICT_LB;
+-	do	if (x_len==valid_keyword[CPP_KEYWORD_NONSTRICT_LB + --i].second &amp;&amp; !strncmp(valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+-			return valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first;
+-	while(0&lt;i);
+-	return NULL;
+-}
+-
+-
+ namespace C_TYPE {
+ 
+ enum hard_type_indexes {
+@@ -3406,27 +3383,7 @@
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+ 
+-static bool is_naked_brace_pair(const parse_tree&amp; src)
+-{
+-	return		robust_token_is_char&lt;'{'&gt;(src.index_tokens[0].token)
+-			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
+-#endif
+-			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+-}
+-
+-static bool is_naked_bracket_pair(const parse_tree&amp; src)
+-{
+-	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+-			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
+-#ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
+-#endif
+-			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+-}
+-
+-#ifndef NDEBUG
+ static bool is_array_deref_strict(const parse_tree&amp; src)
+ {
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+@@ -3794,267 +3751,6 @@
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+ 
+-static bool is_C99_anonymous_specifier(const parse_tree&amp; src,const char* const spec_name)
+-{
+-	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+-#ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
+-#endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+-		return true;
+-	return false;
+-}
+-
+-static bool is_C99_named_specifier(const parse_tree&amp; src,const char* const spec_name)
+-{
+-	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+-#ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
+-#endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	src.empty&lt;2&gt;())
+-		return true;
+-	return false;
+-}
+-
+-static bool is_C99_named_specifier_definition(const parse_tree&amp; src,const char* const spec_name)
+-{
+-	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
+-#ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
+-#endif
+-			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+-		return true;
+-	return false;
+-}
+-
+-static bool C99_looks_like_identifier(const parse_tree&amp; x)
+-{
+-	if (!x.is_atomic()) return false;
+-	if (PARSE_TYPE &amp; x.flags) return false;
+-	if (C99_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+-	return C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags;
+-}
+-
+-static bool CPP_looks_like_identifier(const parse_tree&amp; x)
+-{
+-	if (!x.is_atomic()) return false;
+-	if (PARSE_TYPE &amp; x.flags) return false;
+-	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+-	return C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags;
+-}
+-
+-static void make_target_postfix_arg(parse_tree&amp; src,size_t&amp; offset,const size_t i,const size_t j)
+-{
+-	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1) :  _new_buffer&lt;parse_tree&gt;(1));
+-	if (NULL==tmp)
+-		{	// need that slack space now
+-		src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-		offset = 0;
+-		tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);
+-		}
+-	*tmp = src.data&lt;0&gt;()[j];
+-	src.c_array&lt;0&gt;()[i].fast_set_arg&lt;2&gt;(tmp);
+-	src.c_array&lt;0&gt;()[j].clear();
+-}
+-
+-void C99_notice_struct_union_enum(parse_tree&amp; src)
+-{
+-	assert(!src.empty&lt;0&gt;());
+-	size_t i = 0;
+-	size_t offset = 0;
+-	while(i+offset&lt;src.size&lt;0&gt;())
+-		{
+-		const char* const tmp2 = robust_token_is_string&lt;4&gt;(src.data&lt;0&gt;()[i],&quot;enum&quot;) ? &quot;enum&quot;
+-							: robust_token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i],&quot;struct&quot;) ? &quot;struct&quot;
+-							: robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[i],&quot;union&quot;) ? &quot;union&quot; : 0;
+-		if (tmp2)
+-			{
+-			if (1&gt;=src.size&lt;0&gt;()-(i+offset))
+-				{	// unterminated declaration
+-					//! \test zcc/decl.C99/Error_enum_truncate1.h
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(tmp2);
+-				INC_INFORM(&quot; specifier cut off by end of scope (&quot;);
+-				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C99 6.7.2.1p1)&quot; : &quot;C99 6.7.2.2p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
+-				offset += 1;
+-				continue;
+-				};
+-			if (is_naked_brace_pair(src.data&lt;0&gt;()[i+1]))
+-				{	// anonymous: postfix arg {...}
+-				make_target_postfix_arg(src,offset,i,i+1);
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+-				offset += 1;
+-				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
+-				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					C99_notice_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
+-					};
+-				continue;
+-				};
+-			if (!C99_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+-				{	//! \test zcc/decl.C99/Error_enum_truncate2.h
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(tmp2);
+-				INC_INFORM(&quot; neither specifier nor definition (&quot;);
+-				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C99 6.7.2.1p1)&quot; : &quot;C99 6.7.2.2p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
+-				offset += 1;
+-				continue;
+-				};
+-			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
+-			src.c_array&lt;0&gt;()[i].grab_index_token_location_from&lt;1,0&gt;(src.data&lt;0&gt;()[i+1]);
+-			src.c_array&lt;0&gt;()[i+1].clear();
+-			if (2&lt;src.size&lt;0&gt;()-(i+offset) &amp;&amp; is_naked_brace_pair(src.data&lt;0&gt;()[i+2]))
+-				{
+-				make_target_postfix_arg(src,offset,i,i+2);
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+-				offset += 2;
+-				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+-				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					C99_notice_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
+-					};
+-				continue;
+-				};
+-			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+-			offset += 1;
+-			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+-			continue;
+-			}
+-		else if (   is_naked_parentheses_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_brace_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
+-			{
+-			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
+-				{	// recurse into (...)
+-				if (0&lt;offset)
+-					{
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					};
+-				C99_notice_struct_union_enum(src.c_array&lt;0&gt;()[i]);
+-				}
+-			}
+-		++i;
+-		};
+-	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-}
+-
+-void CPP_notice_class_struct_union_enum(parse_tree&amp; src)
+-{
+-	assert(!src.empty&lt;0&gt;());
+-	size_t i = 0;
+-	size_t offset = 0;
+-	while(i+offset&lt;src.size&lt;0&gt;())
+-		{
+-		const char* const tmp2 = robust_token_is_string&lt;4&gt;(src.data&lt;0&gt;()[i],&quot;enum&quot;) ? &quot;enum&quot;
+-							: robust_token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i],&quot;struct&quot;) ? &quot;struct&quot;
+-							: robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[i],&quot;union&quot;) ? &quot;union&quot;
+-							: robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[i],&quot;class&quot;) ? &quot;class&quot; : 0;
+-		if (tmp2)
+-			{
+-			if (1&gt;=src.size&lt;0&gt;()-(i+offset))
+-				{	// unterminated declaration
+-					//! \test zcc/decl.C99/Error_enum_truncate1.h
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(tmp2);
+-				INC_INFORM(&quot; specifier cut off by end of scope (&quot;);
+-				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C++98 9p1)&quot; : &quot;C++98 7.2p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
+-				offset += 1;
+-				continue;
+-				};
+-			if (is_naked_brace_pair(src.data&lt;0&gt;()[i+1]))
+-				{	// anonymous: postfix arg {...}
+-				make_target_postfix_arg(src,offset,i,i+1);
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+-				offset += 1;
+-				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
+-				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					CPP_notice_class_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
+-					};
+-				continue;
+-				};
+-			if (!CPP_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+-				{	//! \test zcc/decl.C99/Error_enum_truncate2.h
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(tmp2);
+-				INC_INFORM(&quot; neither specifier nor definition (&quot;);
+-				INFORM(strcmp(tmp2,&quot;enum&quot;) ? &quot;C++98 9p1)&quot; : &quot;C++98 7.2p1)&quot;);
+-				zcc_errors.inc_error();
+-				// remove from parse
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i,src.size&lt;0&gt;()-offset);
+-				offset += 1;
+-				continue;
+-				};
+-			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
+-			src.c_array&lt;0&gt;()[i].grab_index_token_location_from&lt;1,0&gt;(src.data&lt;0&gt;()[i+1]);
+-			src.c_array&lt;0&gt;()[i+1].clear();
+-			if (2&lt;src.size&lt;0&gt;()-(i+offset) &amp;&amp; is_naked_brace_pair(src.data&lt;0&gt;()[i+2]))
+-				{
+-				make_target_postfix_arg(src,offset,i,i+2);
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+-				offset += 2;
+-				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+-				if (!src.data&lt;0&gt;()[i].data&lt;2&gt;()-&gt;empty&lt;0&gt;())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					CPP_notice_class_struct_union_enum(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;());
+-					};
+-				continue;
+-				};
+-			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+-			offset += 1;
+-			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+-			continue;
+-			}
+-		else if (   is_naked_parentheses_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_brace_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
+-			{
+-			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
+-				{	// recurse into (...)/{...}/[...]
+-				if (0&lt;offset)
+-					{
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					};
+-				CPP_notice_class_struct_union_enum(src.c_array&lt;0&gt;()[i]);
+-				}
+-			}
+-		++i;
+-		};
+-	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-}
+-
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+@@ -9117,133 +8813,6 @@
+ }
+ 
+ 
+-bool CPP_ok_for_toplevel_qualified_name(const parse_tree&amp; x)
+-{
+-	if (!x.is_atomic()) return false;
+-	if (PARSE_PRIMARY_TYPE &amp; x.flags) return false;
+-	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+-	if (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags) return true;
+-	if (token_is_string&lt;2&gt;(x.index_tokens[0].token,&quot;::&quot;)) return true;
+-	return false;
+-}
+-
+-static void CPP_notice_scope_glue(parse_tree&amp; src)
+-{
+-	assert(!src.empty&lt;0&gt;());
+-	size_t i = 0;
+-	{
+-	size_t offset = 0;
+-	while(i+offset&lt;src.size&lt;0&gt;())
+-		{
+-		if (robust_token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i],&quot;::&quot;))
+-			{
+-			const bool is_global = (0&lt;i) &amp;&amp; !CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i-1]);
+-			size_t resize_to = src.data&lt;0&gt;()[i].index_tokens[0].token.second;
+-			size_t forward_span = 0;
+-			bool last_scope = true;
+-			bool have_suppressed_consecutive_scope = false;
+-			while(i+offset+forward_span+1&lt;src.size&lt;0&gt;() &amp;&amp; CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i+forward_span+1]))
+-				{
+-				const bool this_scope = robust_token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i+forward_span+1],&quot;::&quot;);
+-				if (!last_scope &amp;&amp; !this_scope) break;
+-				if (last_scope &amp;&amp; this_scope)
+-					{
+-					if (!have_suppressed_consecutive_scope)
+-						{	//! \test zcc/decl.C99/Error_consecutive_doublecolon_type.hpp
+-						simple_error(src.c_array&lt;0&gt;()[i],&quot; consecutive :: operators in nested-name-specifier&quot;);
+-						have_suppressed_consecutive_scope = true;
+-						}
+-					// remove from parse
+-					src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+forward_span,src.size&lt;0&gt;()-offset);
+-					offset += 1;
+-					continue;
+-					}
+-				last_scope = this_scope;
+-				++forward_span;
+-				resize_to += src.data&lt;0&gt;()[i+forward_span].index_tokens[0].token.second;
+-				};
+-			// assemble this into something identifier-like
+-			if (!is_global)
+-				{
+-				--i;
+-				++forward_span;
+-				resize_to += src.data&lt;0&gt;()[i].index_tokens[0].token.second;
+-				};
+-			if (0&lt;forward_span)
+-				{
+-				char* tmp = _new_buffer&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(resize_to));
+-				if (NULL==tmp)
+-					{
+-					if (0==offset) throw std::bad_alloc();
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					tmp = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(resize_to));
+-					};
+-				strncpy(tmp,src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].token.second);
+-				size_t j = 1;
+-				do	strncat(tmp,src.data&lt;0&gt;()[i+j].index_tokens[0].token.first,src.data&lt;0&gt;()[i+j].index_tokens[0].token.second);
+-				while(forward_span&gt;= ++j);
+-				const char* tmp2 = is_string_registered(tmp);
+-				if (NULL==tmp2)
+-					{
+-					src.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(tmp,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
+-					src.c_array&lt;0&gt;()[i].control_index_token&lt;0&gt;(true);
+-					}
+-				else{
+-					free(tmp);
+-					src.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(tmp2,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
+-					};
+-				j = 1;
+-				do	src.c_array&lt;0&gt;()[i+j].destroy();
+-				while(forward_span&gt;= ++j);
+-				src.DestroyNAtAndRotateTo&lt;0&gt;(forward_span,i+1,src.size&lt;0&gt;()-offset);
+-				offset += forward_span;
+-				};
+-			if (last_scope)
+-				{	// might be able to save: new, delete, operator ___, destructor name
+-				if (	i+offset+1&gt;=src.size&lt;0&gt;()
+-					||	(   !robust_token_is_string&lt;3&gt;(src.data&lt;0&gt;()[i+1],&quot;new&quot;)
+-						 &amp;&amp; !robust_token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i+1],&quot;delete&quot;)
+-						 &amp;&amp; !robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[i+1],&quot;operator&quot;)
+-						 &amp;&amp; !robust_token_is_char&lt;'~'&gt;(src.data&lt;0&gt;()[i+1])))	// no, compl does not interoperate for destructor names
+-					//! \test zcc/decl.C99/Error_doublecolon_type.hpp
+-					simple_error(src.c_array&lt;0&gt;()[i],&quot; nested-name-specifier ending in ::&quot;);
+-				}
+-			};
+-		++i;
+-		};
+-	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-	}
+-
+-	// efficiency tuning: we have to have no empty slots at top level before recursing,
+-	// to mitigate risk of dynamic memory allocation failure
+-	i = 0;
+-	while(i&lt;src.size&lt;0&gt;())
+-		{
+-		parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
+-		if (is_naked_parentheses_pair(tmp))
+-			{
+-			if (!tmp.empty&lt;0&gt;())
+-				// recurse into (...)
+-				CPP_notice_scope_glue(tmp);
+-			}
+-		else if (is_naked_brace_pair(tmp))
+-			{
+-			if (!tmp.empty&lt;0&gt;())
+-				// recurse into {...}
+-				CPP_notice_scope_glue(tmp);
+-			}
+-		else if (is_naked_bracket_pair(tmp))
+-			{
+-			if (!tmp.empty&lt;0&gt;())
+-				// recurse into [...]
+-				CPP_notice_scope_glue(tmp);
+-			}
+-		++i;
+-		};
+-}
+-
+-
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+ bool C99_integer_literal_is_zero(const char* const x,const size_t x_len,const lex_flags flags)
+ {
+@@ -9870,338 +9439,6 @@
+ 		};
+ }
+ 
+-//! \todo should this be a type_system member?
+-static bool check_for_typedef(type_spec&amp; dest,const char* const src,const type_system&amp; types)
+-{
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef(src);
+-	if (NULL!=tmp)
+-		{	//! \todo C++: check for access control if source ends up being a class or struct
+-		value_copy(dest,tmp-&gt;first);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-//! \todo should this be a type_system member?
+-static bool check_for_typedef(type_spec&amp; dest,const char* const src,const char* const active_namespace,const type_system&amp; types)
+-{
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef_CPP(src,active_namespace);
+-	if (NULL!=tmp)
+-		{	//! \todo C++: check for access control if source ends up being a class or struct
+-		value_copy(dest,tmp-&gt;first);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-//! \todo does this need to be in ParseTree.hpp?
+-static size_t 
+-flush_token(parse_tree&amp; x, const size_t i, const size_t n, const char* const target)
+-{
+-	assert(x.size&lt;0&gt;()&gt;i);
+-	assert(x.size&lt;0&gt;()-i&gt;=n);
+-	size_t offset = 0;
+-	size_t j = 0;
+-	do	if (robust_token_is_string(x.data&lt;0&gt;()[i+j],target))
+-			++offset;
+-		else if (0&lt;offset)
+-			x.c_array&lt;0&gt;()[i+j-offset] = x.data&lt;0&gt;()[i+j];
+-	while(n&gt; ++j);
+-	if (0&lt;offset)
+-		{
+-		j = offset;
+-		while(0&lt;j) x.c_array&lt;0&gt;()[i+n- j--].clear();
+-		x.DeleteNSlotsAt&lt;0&gt;(offset,i+n-offset);
+-		}
+-	return offset;
+-}
+-
+-class C99_decl_specifier_scanner
+-{
+-private:
+-	size_t decl_count[CHAR_BIT*sizeof(uintmax_t)];
+-	uintmax_t flags;
+-	type_spec base_type;
+-	const type_system&amp; types;
+-public:
+-	C99_decl_specifier_scanner(const type_system&amp; _types) : flags(0),types(_types)
+-		{
+-		clear(decl_count);
+-		base_type.clear();
+-		};
+-	// trivial destructor, copy constructor, assignment fine
+-	bool operator()(const parse_tree&amp; x)
+-		{
+-		BOOST_STATIC_ASSERT(CHAR_BIT*sizeof(uintmax_t)&gt;=STATIC_SIZE(C99_decl_specifiers));
+-		if (!x.is_atomic()) return false;
+-		const errr Idx = linear_find(x.index_tokens[0].token.first,x.index_tokens[0].token.second,C99_decl_specifiers,STATIC_SIZE(C99_decl_specifiers));
+-		if (0&lt;=Idx)
+-			{
+-			flags |= (1ULL&lt;&lt;Idx);
+-			++decl_count[Idx];
+-			return true;
+-			};
+-		// not a decl-specifier; bail out if we already have a type
+-		if (base_type.base_type_index) return false;
+-		if (PARSE_PRIMARY_TYPE &amp; x.flags)
+-			{
+-			value_copy(base_type,x.type_code);
+-			return true;
+-			}
+-		// handle typedefs
+-		if (check_for_typedef(base_type,x.index_tokens[0].token.first,types)) return true;
+-		//! \todo handle other known types
+-#if 0
+-		// we must accept any specifier here: C99 6.7.2p1
+-		if (   is_C99_anonymous_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;enum&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;struct&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;union&quot;))
+-			return true;
+-#endif
+-		return false;
+-		};
+-	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+-		{
+-		assert(x.size&lt;0&gt;()&gt;i);
+-		assert(x.size&lt;0&gt;()-i&gt;=decl_count);
+-		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_DECLSPEC_AUTO) &amp; flags)
+-			{	// storage class specifiers
+-			const char* specs[5];
+-			unsigned int storage_count = 0;
+-			unsigned int erased_count = 0;
+-			if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; flags)
+-				specs[storage_count++] = &quot;typedef&quot;;
+-			if (C99_CPP0X_DECLSPEC_STATIC &amp; flags)
+-				specs[storage_count++] = &quot;static&quot;;
+-			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+-				specs[storage_count++] = &quot;extern&quot;;
+-			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+-				{	//! \test zcc/decl.C99/Error_register_global.h
+-				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;register&quot;;
+-				++erased_count;
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;storage-class specifier register disallowed at translation-unit level (C99 6.9p2)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;register&quot;);
+-				flags &amp;= ~C99_CPP0X_DECLSPEC_REGISTER;
+-				}
+-			if (C99_DECLSPEC_AUTO &amp; flags)
+-				{	//! \test zcc/decl.C99/Error_auto_global.h
+-				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;auto&quot;;
+-				++erased_count;
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;storage-class specifier auto disallowed at translation-unit level (C99 6.9p2)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;auto&quot;);
+-				flags &amp;= ~C99_DECLSPEC_AUTO;
+-				};
+-			if (1&lt;storage_count)
+-				{	//! \test zcc/decl.C99/Error_extern_static.h
+-					//! \test zcc/decl.C99/Error_extern_typedef.h
+-					//! \test zcc/decl.C99/Error_static_typedef.h
+-					//! \test zcc/decl.C99/Error_extern_static_typedef.h
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
+-				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+-				INFORM(&quot; (C99 6.7.1p2)&quot;);
+-				zcc_errors.inc_error();
+-				};
+-			storage_count -= erased_count;
+-			// inline requires a function type
+-			// typedef must have a function type to tolerate anything (but kills inline)
+-			return 1&gt;=storage_count;
+-			};
+-		return true;
+-		}
+-	void fixup_type() { base_type.qualifier&lt;0&gt;() |= ((C99_CPP0X_DECLSPEC_CONST | C99_CPP0X_DECLSPEC_VOLATILE) &amp; flags); };
+-	uintmax_t get_flags() const {return flags;};
+-	void value_copy_type(type_spec&amp; dest) const {value_copy(dest,base_type);};
+-};
+-
+-class CPP0X_decl_specifier_scanner
+-{
+-private:
+-	size_t decl_count[CHAR_BIT*sizeof(uintmax_t)];
+-	uintmax_t flags;
+-	type_spec base_type;
+-	const type_system&amp; types;
+-	// these two might belong in a koenig_lookup object
+-	const char* const active_namespace;
+-public:
+-	CPP0X_decl_specifier_scanner(const type_system&amp; _types,const char* const _active_namespace) : flags(0),types(_types),active_namespace(_active_namespace)
+-		{
+-		clear(decl_count);
+-		base_type.clear();
+-		}
+-	// trivial destructor, copy constructor, assignment fine
+-	bool operator()(parse_tree&amp; x,const size_t i)
+-		{
+-		BOOST_STATIC_ASSERT(CHAR_BIT*sizeof(uintmax_t)&gt;=STATIC_SIZE(CPP0X_decl_specifiers));
+-		assert(x.size&lt;0&gt;()&gt;i);
+-		if (!x.data&lt;0&gt;()[i].is_atomic()) return false;
+-		const errr Idx = linear_find(x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second,CPP0X_decl_specifiers,STATIC_SIZE(CPP0X_decl_specifiers));
+-		if (0&lt;=Idx)
+-			{
+-			flags |= (1ULL&lt;&lt;Idx);
+-			++decl_count[Idx];
+-			return true;
+-			};
+-		// not a decl-specifier; bail out if we already have a type
+-		if (base_type.base_type_index) return false;
+-		if (PARSE_PRIMARY_TYPE &amp; x.data&lt;0&gt;()[i].flags)
+-			{
+-			value_copy(base_type,x.data&lt;0&gt;()[i].type_code);
+-			return true;
+-			}
+-		{	// handle typedefs
+-		// determine what fully-qualified name would be
+-		if (   x.data&lt;0&gt;()[i].is_atomic()
+-			&amp;&amp; !(PARSE_TYPE &amp; x.data&lt;0&gt;()[i].flags)
+-			&amp;&amp; !CPP_echo_reserved_keyword(x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second)
+-			&amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.data&lt;0&gt;()[i].index_tokens[0].flags))
+-			{	// shove Koenig lookup into type_system
+-#if 0
+-			if (check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,active_namespace,types)) return true;
+-			if (check_for_enum(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,active_namespace,types)) return true;
+-			if (check_for_class_struct_union(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,active_namespace,types)) return true;
+-			return false;
+-#else
+-			return check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,types);
+-#endif
+-			}
+-		}
+-		//! \todo handle other known types
+-#if 0
+-		// we must accept any specifier here: C++0X 7.1.6.2p1
+-		if (   is_C99_anonymous_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;enum&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;struct&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;union&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;class&quot;)
+-			|| is_C99_named_specifier(x,&quot;class&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;class&quot;))
+-			return true;
+-#endif
+-		return false;
+-		};
+-	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+-		{
+-		assert(x.size&lt;0&gt;()&gt;i);
+-		assert(x.size&lt;0&gt;()-i&gt;=decl_count);
+-		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | CPP_DECLSPEC_MUTABLE | CPP_DECLSPEC_VIRTUAL | CPP_DECLSPEC_EXPLICIT | CPP_DECLSPEC_FRIEND) &amp; flags)
+-			{	// storage class specifiers
+-			const char* specs[5];
+-			unsigned int storage_count = 0;
+-			unsigned int erased_count = 0;
+-			if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; flags)
+-				specs[storage_count++] = &quot;typedef&quot;;
+-			if (C99_CPP0X_DECLSPEC_STATIC &amp; flags)
+-				specs[storage_count++] = &quot;static&quot;;
+-			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+-				specs[storage_count++] = &quot;extern&quot;;
+-			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+-				{	//! \test zcc/default/decl.C99/Error_register_global.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;register&quot;;
+-				++erased_count;
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;storage-class specifier register allowed only to objects named in a block, or function parameters (C++98 7.1.1p2)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;register&quot;);
+-				flags &amp;= ~C99_CPP0X_DECLSPEC_REGISTER;
+-				}
+-			if (CPP_DECLSPEC_MUTABLE &amp; flags)
+-				{	//! \test zcc/default/decl.C99/Error_mutable_global.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;mutable&quot;;
+-				++erased_count;
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;storage-class specifier mutable only allowed for non-static non-const non-reference class data members (C++0X 7.1.1p10)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;mutable&quot;);
+-				flags &amp;= ~CPP_DECLSPEC_MUTABLE;
+-				};
+-			if (1&lt;storage_count)
+-				{	//! \test zcc/decl.C99/Error_extern_static.hpp
+-					//! \test zcc/decl.C99/Error_extern_typedef.hpp
+-					//! \test zcc/decl.C99/Error_static_typedef.hpp
+-					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
+-				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+-				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
+-				zcc_errors.inc_error();
+-				}
+-			storage_count -= erased_count;
+-			// thread_local ok at namespace scope for objects/references
+-			// inline dies if not a function type
+-			// typedef must have a function type to tolerate anything (but kills inline)
+-			// virtual and explicit can only be used in class declarations: erase (C++0X 7.1.2p5, 7.1.2p6
+-			if (CPP_DECLSPEC_VIRTUAL &amp; flags)
+-				{	//! \test zcc/default/decl.C99/Error_virtual_global.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;function specifier virtual allowed only for class member functions (C++98 7.1.2p5)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;virtual&quot;);
+-				flags &amp;= ~CPP_DECLSPEC_VIRTUAL;
+-				};
+-			if (CPP_DECLSPEC_EXPLICIT &amp; flags)
+-				{	//! \test zcc/default/decl.C99/Error_explicit_global.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;function specifier explicit allowed only for constructors (C++98 7.1.2p6)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;explicit&quot;);
+-				flags &amp;= ~CPP_DECLSPEC_EXPLICIT;
+-				};
+-			// friend is only usable within a class
+-			if (CPP_DECLSPEC_FRIEND &amp; flags)
+-				{	//! \test zcc/default/decl.C99/Error_friend_global.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;decl-specifier friend only useful within a class definition (C++98 7.1.4)&quot;);
+-				zcc_errors.inc_error();
+-				decl_count -= flush_token(x,i,decl_count,&quot;friend&quot;);
+-				flags &amp;= ~CPP_DECLSPEC_FRIEND;
+-				};
+-			return 1&gt;=storage_count;
+-			};
+-		return true;
+-		};
+-	void fixup_type() { base_type.qualifier&lt;0&gt;() |= ((C99_CPP0X_DECLSPEC_CONST | C99_CPP0X_DECLSPEC_VOLATILE) &amp; flags); };
+-	uintmax_t get_flags() const {return flags;};
+-	void value_copy_type(type_spec&amp; dest) const {value_copy(dest,base_type);};
+-};
+-
+ size_t C99_init_declarator_scanner(const parse_tree&amp; x, size_t i,type_spec&amp; target_type, size_t&amp; initdecl_identifier_idx)
+ {
+ 	assert(x.size&lt;0&gt;()&gt;i);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000113.html">[Zcplusplus-commits] r346 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000115.html">[Zcplusplus-commits] r348 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#114">[ date ]</a>
+              <a href="thread.html#114">[ thread ]</a>
+              <a href="subject.html#114">[ subject ]</a>
+              <a href="author.html#114">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

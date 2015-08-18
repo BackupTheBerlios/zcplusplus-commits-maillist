@@ -1,0 +1,397 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r264 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r264%20-%20trunk&In-Reply-To=%3C200909300037.n8U0bka5018134%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000030.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r264 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r264%20-%20trunk&In-Reply-To=%3C200909300037.n8U0bka5018134%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r264 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 30 02:37:46 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000030.html">[Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#31">[ date ]</a>
+              <a href="thread.html#31">[ thread ]</a>
+              <a href="subject.html#31">[ subject ]</a>
+              <a href="author.html#31">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-30 02:37:40 +0200 (Wed, 30 Sep 2009)
+New Revision: 264
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+minor cleanups; verify that planned infrastructure for functions and structs compiles
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-09-27 06:01:41 UTC (rev 263)
++++ trunk/CSupport.cpp	2009-09-30 00:37:40 UTC (rev 264)
+@@ -1621,6 +1621,12 @@
+ 	return NULL!=x.first &amp;&amp; detect_C_right_brace_op(x.first,x.second);
+ }
+ 
++template&lt;char c&gt; inline bool robust_token_is_char(const parse_tree&amp; x)
++{
++	return x.is_atomic()
++		&amp;&amp; robust_token_is_char&lt;c&gt;(x.index_tokens[0].token);
++}
++
+ //! \todo if we have an asphyxiates_left_brace, suppress_naked_brackets_and_braces goes obsolete
+ static bool asphyxiates_left_bracket(const weak_token&amp; x)
+ {
+@@ -9982,6 +9988,15 @@
+ 	return 0;
+ }
+ 
++static size_t span_to_semicolon(const parse_tree* const first,const parse_tree* const last)
++{
++	assert(first);
++	assert(last);
++	const parse_tree* iter = first;
++	while(iter!=last &amp;&amp; !robust_token_is_char&lt;';'&gt;(*iter)) ++iter;
++	return iter-first;
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -10012,10 +10027,8 @@
+ 		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;_Static_Assert&quot;))
+ 			{	// _Static_Assert ( constant-expression , string-literal ) ;
+ 			// find the next ';'
+-			size_t j = i;
+-			while(src.size&lt;0&gt;()&gt; ++j
+-				  &amp;&amp; (!src.data&lt;0&gt;()[j].is_atomic() || !robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)));
+-			if (src.size&lt;0&gt;()==j)
++			const size_t j = i+span_to_semicolon(src.data&lt;0&gt;()+i,src.end&lt;0&gt;());
++			if (src.size&lt;0&gt;()&lt;=j)
+ 				{	//! \test zcc/staticassert.C99/Error_scope1.h
+ 					//! \test zcc/staticassert.C99/Error_scope2.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -10027,9 +10040,8 @@
+ 				};
+ 			if (   !is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1])
+ 				|| 3&gt;src.data&lt;0&gt;()[i+1].size&lt;0&gt;()
+-				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].is_atomic()
++				|| !robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2])
+ 				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].is_atomic()
+-				|| !robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].index_tokens[0].token)
+ 				|| C_TESTFLAG_STRING_LITERAL!=src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].index_tokens[0].flags)
+ 				{	//! \test zcc/staticassert.C99/Error_badarg1.h
+ 					//! \test zcc/staticassert.C99/Error_badarg2.h
+@@ -10211,8 +10223,7 @@
+ 					INFORM(&quot;declarator missing (C99 6.7p1)&quot;);
+ 					zcc_errors.inc_error();
+ 					// find the next semicolon
+-					size_t j = i+decl_count+decl_offset;
+-					while((!src.data&lt;0&gt;()[j].is_atomic() || !token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)) &amp;&amp; src.size&lt;0&gt;()&gt; ++j);
++					const size_t j = i+decl_count+decl_offset+span_to_semicolon(src.data&lt;0&gt;()+i+decl_count+decl_offset,src.end&lt;0&gt;());
+ 					if (have_we_parsed_yet)
+ 						src.DeleteNSlotsAt&lt;0&gt;(j-(i+decl_count+decl_offset),i+decl_count+decl_offset-1);
+ 					else
+@@ -10226,15 +10237,14 @@
+ 					INFORM(&quot;declarator has no identifier to declare (C99 6.7p1)&quot;);
+ 					zcc_errors.inc_error();
+ 					// find the next semicolon, unless we have () immediately in which case we have nothing to look for
+-					const bool unwind_to_compound_statement = robust_token_is_char&lt;'('&gt;(src.data&lt;0&gt;()[i+decl_count+decl_offset].index_tokens[0].token) &amp;&amp; robust_token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i+decl_count+decl_offset].index_tokens[1].token);
++					const bool unwind_to_compound_statement = is_naked_parentheses_pair(src.data&lt;0&gt;()[i+decl_count+decl_offset]);
+ 					if (unwind_to_compound_statement)
+ 						{
+ 						assert(!have_we_parsed_yet);
+ 						src.DeleteNSlotsAt&lt;0&gt;(decl_count+decl_offset+initdecl_span,i);
+ 						}
+ 					else{
+-						size_t j = i+decl_count+decl_offset;
+-						while((!src.data&lt;0&gt;()[j].is_atomic() || !token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)) &amp;&amp; src.size&lt;0&gt;()&gt; ++j);
++						const size_t j = i+decl_count+decl_offset+span_to_semicolon(src.data&lt;0&gt;()+i+decl_count+decl_offset,src.end&lt;0&gt;());
+ 						if (have_we_parsed_yet)
+ 							src.DeleteNSlotsAt&lt;0&gt;(j-(i+decl_count+decl_offset),i+decl_count+decl_offset-1);
+ 						else
+@@ -10384,10 +10394,8 @@
+ 		if (robust_token_is_string&lt;13&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;static_assert&quot;))
+ 			{	// static_assert ( constant-expression , string-literal ) ;
+ 			// find the next ';'
+-			size_t j = i;
+-			while(src.size&lt;0&gt;()&gt; ++j
+-				  &amp;&amp; (!src.data&lt;0&gt;()[j].is_atomic() || !robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)));
+-			if (src.size&lt;0&gt;()==j)
++			const size_t j = i+span_to_semicolon(src.data&lt;0&gt;()+i,src.end&lt;0&gt;());
++			if (src.size&lt;0&gt;()&lt;=j)
+ 				{	//! \test zcc/staticassert.C99/Error_scope1.hpp
+ 					//! \test zcc/staticassert.C99/Error_scope2.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -10399,9 +10407,8 @@
+ 				};
+ 			if (   !is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1])
+ 				|| 3&gt;src.data&lt;0&gt;()[i+1].size&lt;0&gt;()
+-				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].is_atomic()
++				|| !robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2])
+ 				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].is_atomic()
+-				|| !robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].index_tokens[0].token)
+ 				|| C_TESTFLAG_STRING_LITERAL!=src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].index_tokens[0].flags)
+ 				{	//! \test zcc/staticassert.C99/Error_badarg1.hpp
+ 					//! \test zcc/staticassert.C99/Error_badarg2.hpp
+@@ -10708,8 +10715,7 @@
+ 					INFORM(&quot;declarator missing (C++98 7p1)&quot;);
+ 					zcc_errors.inc_error();
+ 					// find the next semicolon
+-					size_t j = i+decl_count+decl_offset;
+-					while((!src.data&lt;0&gt;()[j].is_atomic() || !token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)) &amp;&amp; src.size&lt;0&gt;()&gt; ++j);
++					const size_t j = i+decl_count+decl_offset+span_to_semicolon(src.data&lt;0&gt;()+i+decl_count+decl_offset,src.end&lt;0&gt;());
+ 					if (have_we_parsed_yet)
+ 						src.DeleteNSlotsAt&lt;0&gt;(j-(i+decl_count+decl_offset),i+decl_count+decl_offset-1);
+ 					else
+@@ -10723,15 +10729,14 @@
+ 					INFORM(&quot;declarator has no name to declare (C++98 7p1)&quot;);
+ 					zcc_errors.inc_error();
+ 					// find the next semicolon, unless we have () immediately in which case we have nothing to look for
+-					const bool unwind_to_compound_statement = robust_token_is_char&lt;'('&gt;(src.data&lt;0&gt;()[i+decl_count+decl_offset].index_tokens[0].token) &amp;&amp; robust_token_is_char&lt;')'&gt;(src.data&lt;0&gt;()[i+decl_count+decl_offset].index_tokens[1].token);
++					const bool unwind_to_compound_statement = is_naked_parentheses_pair(src.data&lt;0&gt;()[i+decl_count+decl_offset]);
+ 					if (unwind_to_compound_statement)
+ 						{
+ 						assert(!have_we_parsed_yet);
+ 						src.DeleteNSlotsAt&lt;0&gt;(decl_count+decl_offset+initdecl_span,i);
+ 						}
+ 					else{
+-						size_t j = i+decl_count+decl_offset;
+-						while((!src.data&lt;0&gt;()[j].is_atomic() || !token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)) &amp;&amp; src.size&lt;0&gt;()&gt; ++j);
++						const size_t j = i+decl_count+decl_offset+span_to_semicolon(src.data&lt;0&gt;()+i+decl_count+decl_offset,src.end&lt;0&gt;());
+ 						if (have_we_parsed_yet)
+ 							src.DeleteNSlotsAt&lt;0&gt;(j-(i+decl_count+decl_offset),i+decl_count+decl_offset-1);
+ 						else
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-09-27 06:01:41 UTC (rev 263)
++++ trunk/type_system.cpp	2009-09-30 00:37:40 UTC (rev 264)
+@@ -4,14 +4,19 @@
+ #include &quot;type_system.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
+ 
++// macros to help out dynamic registration
++#define DYNAMIC_FUNCTYPE 1
++#define DYNAMIC_STRUCTDECL 2
++#define DYNAMIC_C_STRUCTDEF 3
++
+ type_system::type_index
+ type_system::_get_id(const char* const x,size_t x_len) const
+ {
+-	errr tmp = linear_find(x,x_len,core_types,core_types_size);
++	errr tmp = linear_find_lencached(x,x_len,core_types,core_types_size);
+ 	if (0&lt;=tmp) return tmp+1;
+ 	if (!dynamic_types.empty())
+ 		{
+-		tmp = binary_find(x,x_len,dynamic_types);
++		tmp = linear_find_lencached(x,x_len,dynamic_types);
+ 		if (0&lt;=tmp) return tmp+1+core_types_size;
+ 		}
+ 	return 0;
+@@ -20,8 +25,7 @@
+ const char* type_system::_name(size_t id) const
+ {
+ 	if (0==id) return &quot;(?)&quot;;
+-	if (core_types_size&gt; --id)
+-		return core_types[id].first;
++	if (core_types_size&gt; --id) return core_types[id].first;
+ 	if (dynamic_types.size() &gt; (id -= core_types_size))
+ 		return dynamic_types[id].first;
+ 	return &quot;(?)&quot;;
+@@ -30,8 +34,8 @@
+ // implement C/C++ typedef system
+ void type_system::set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src)
+ {
+-	assert(NULL!=alias &amp;&amp; '0'!= *alias);
+-	assert(NULL!=filename &amp;&amp; '0'!= *alias);
++	assert(alias &amp;&amp; *alias);
++	assert(filename &amp;&amp; *filename);
+ 	//! \todo: strip off trailing inline namespaces
+ 	// &lt;unknown&gt; is the hack for anonymous namespaces taken from GCC, it's always inline
+ 	errr tmp = binary_find(alias,strlen(alias),typedef_registry.data(),typedef_registry.size());
+@@ -47,7 +51,7 @@
+ 
+ const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_typedef(const char* const alias) const
+ {
+-	assert(NULL!=alias);
++	assert(alias &amp;&amp; *alias);
+ 	//! \todo: strip off trailing inline namespaces
+ 	// &lt;unknown&gt; is the hack for anonymous namespaces taken from GCC, it's always inline
+ 	errr tmp = binary_find(alias,strlen(alias),typedef_registry.data(),typedef_registry.size());
+@@ -55,3 +59,93 @@
+ 	return NULL;
+ }
+ 
++type_system::type_index type_system::register_functype(const char* const alias, function_type*&amp; src)
++{
++	assert(alias &amp;&amp; *alias);
++	assert(src);
++	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_FUNCTYPE}};
++	tmp.third.first.first = src;
++
++	type_index result = get_id(alias);
++	if (result) return result;
++
++	const size_t dynamic_types_size = dynamic_types.size();
++	const size_t dynamic_types_max_size = dynamic_types.max_size();
++	if (	dynamic_types_max_size&lt;1+core_types_size
++		|| 	dynamic_types_max_size-(1+core_types_size)&lt;dynamic_types_size)
++		FATAL(&quot;Host implementation limit exceeded: cannot record function type used in program&quot;);
++	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp)) throw std::bad_alloc();
++	src = NULL;
++	return dynamic_types_size+2+core_types_size;
++}
++
++type_system::type_index type_system::register_structdecl(const char* const alias, union_struct_decl*&amp; src)
++{
++	assert(alias &amp;&amp; *alias);
++	assert(src);
++	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
++	tmp.third.first.second = src;
++
++	type_index result = get_id(alias);
++	if (result) return result;
++
++	const size_t dynamic_types_size = dynamic_types.size();
++	const size_t dynamic_types_max_size = dynamic_types.max_size();
++	if (	dynamic_types_max_size&lt;2+core_types_size
++		|| 	dynamic_types_max_size-(2+core_types_size)&lt;dynamic_types_size)
++		FATAL(&quot;Host implementation limit exceeded: cannot record union/struct type used in program&quot;);
++	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp)) throw std::bad_alloc();
++	src = NULL;
++	return dynamic_types_size+2+core_types_size;
++}
++
++type_system::type_index type_system::register_C_structdef(const char* const alias, C_union_struct_def*&amp; src)
++{
++	assert(alias &amp;&amp; *alias);
++	assert(src);
++	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
++	tmp.third.first.third = src;
++
++	type_index result = get_id(alias);
++	if (result) return result;
++
++	const size_t dynamic_types_size = dynamic_types.size();
++	const size_t dynamic_types_max_size = dynamic_types.max_size();
++	if (	dynamic_types_max_size&lt;2+core_types_size
++		|| 	dynamic_types_max_size-(2+core_types_size)&lt;dynamic_types_size)
++		FATAL(&quot;Host implementation limit exceeded: cannot record union/struct type used in program&quot;);
++	if (!dynamic_types.InsertSlotAt(dynamic_types_size,tmp)) throw std::bad_alloc();
++	src = NULL;
++	return dynamic_types_size+2+core_types_size;
++}
++
++const function_type* type_system::get_functype(type_system::type_index i)
++{
++	if (core_types_size&gt;=i) return NULL;
++	i -= core_types_size;
++	if (dynamic_types.size()&lt;=i) return NULL;
++	const dynamic_type_format&amp; tmp = dynamic_types[i];
++	if (DYNAMIC_FUNCTYPE!=tmp.third.second) return NULL;
++	return tmp.third.first.first;
++}
++
++const union_struct_decl* type_system::get_structdecl(type_system::type_index i)
++{
++	if (core_types_size&gt;=i) return NULL;
++	i -= core_types_size;
++	if (dynamic_types.size()&lt;=i) return NULL;
++	const dynamic_type_format&amp; tmp = dynamic_types[i];
++	if (DYNAMIC_STRUCTDECL!=tmp.third.second) return NULL;
++	return tmp.third.first.second;
++}
++
++const C_union_struct_def* type_system::get_C_structdef(type_system::type_index i)
++{
++	if (core_types_size&gt;=i) return NULL;
++	i -= core_types_size;
++	if (dynamic_types.size()&lt;=i) return NULL;
++	const dynamic_type_format&amp; tmp = dynamic_types[i];
++	if (DYNAMIC_C_STRUCTDEF!=tmp.third.second) return NULL;
++	return tmp.third.first.third;
++}
++
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-09-27 06:01:41 UTC (rev 263)
++++ trunk/type_system.hpp	2009-09-30 00:37:40 UTC (rev 264)
+@@ -10,7 +10,7 @@
+ 
+ class function_type;
+ class union_struct_decl;
+-class union_struct_def;
++class C_union_struct_def;
+ 
+ class type_system
+ {
+@@ -22,7 +22,8 @@
+ 	const size_t core_types_size;
+ 	const size_t int_priority_size;
+ private:
+-	zaimoni::autovalarray_ptr&lt;zaimoni::POD_triple&lt;char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_triple&lt;function_type*,union_struct_decl*,union_struct_def*&gt;, unsigned char&gt; &gt; &gt; dynamic_types;
++	typedef zaimoni::POD_triple&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_triple&lt;function_type*,union_struct_decl*,C_union_struct_def*&gt;, unsigned char&gt; &gt; dynamic_type_format;
++	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+ 	// uncopyable
+ 	type_system(const type_system&amp; src);
+@@ -54,6 +55,13 @@
+ 
+ 	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
++
++	type_index register_functype(const char* const alias, function_type*&amp; src);
++	type_index register_structdecl(const char* const alias, union_struct_decl*&amp; src);
++	type_index register_C_structdef(const char* const alias, C_union_struct_def*&amp; src);
++	const function_type* get_functype(type_index i);
++	const union_struct_decl* get_structdecl(type_index i);
++	const C_union_struct_def* get_C_structdef(type_index i);
+ private:
+ 	type_index _get_id(const char* const x,size_t x_len) const;
+ 	const char* _name(type_index id) const;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000030.html">[Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#31">[ date ]</a>
+              <a href="thread.html#31">[ thread ]</a>
+              <a href="subject.html#31">[ subject ]</a>
+              <a href="author.html#31">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

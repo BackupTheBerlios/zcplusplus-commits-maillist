@@ -1,0 +1,837 @@
+From zaimoni at mail.berlios.de  Mon May 23 04:38:34 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 23 May 2011 04:38:34 +0200
+Subject: [Zcplusplus-commits] r646 - trunk
+Message-ID: <20110523023834.3FD02481405@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-05-23 04:38:33 +0200 (Mon, 23 May 2011)
+New Revision: 646
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system.hpp
+   trunk/type_system.hpp.in
+Log:
+infrastructure for planned __zcc_linkage compiler extension
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.cpp	2011-05-23 02:38:33 UTC (rev 646)
+@@ -385,6 +385,18 @@
+ 	return set_typedef(name,filename,lineno,src);
+ }
+ 
++const char* type_system::get_typedef_name(const type_index base_type_index) const
++{
++	const zaimoni::POD_pair<const char*,zaimoni::POD_triple<type_spec,const char*,size_t> >* iter = typedef_registry.begin();
++	const zaimoni::POD_pair<const char*,zaimoni::POD_triple<type_spec,const char*,size_t> >* const iter_end = typedef_registry.end();
++	while(iter!=iter_end)
++		{
++		if (base_type_index==iter->second.first.base_type_index && 0==iter->second.first.pointer_power) return iter->first;
++		++iter;
++		};
++	return NULL;
++}
++
+ const zaimoni::POD_triple<type_spec,const char*,size_t>* type_system::get_typedef(const char* const alias) const
+ {
+ 	assert(alias && *alias);
+@@ -942,3 +954,97 @@
+ 	src = NULL;
+ }
+ 
++int type_system::_C_linkage_code(const char* alias) const
++{
++/*
++* no linkage [C1X 6.2.2p6]
++** identifier that isn't an object or function
++** identifier that is a function parameter
++** block-scope identifier for an object not declared extern
++*/
++	if (  get_typedef(alias)
++	   || get_enumerator(alias)
++	   || get_id_enum(alias)
++	   || get_id_union(alias)
++	   || get_id_struct_class(alias))
++	   return 0;	// no linkage
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
++
++/*
++[C++0X 3.5p4]
++* unnamed namespaces, and all namespaces declared within them at any depth, have internal linkage.
++* other namespaces have external linkage
++*/
++static int _CPP_namespace_linkage(const char* x)
++{
++	return x && *x && strstr(x,"<unknown>") ? 1	/* internal*/
++		: 2;	/* external (C++) */
++}
++
++static bool _CPP_unnamed_tag(const char* const x)
++{
++	if (!x) return true;
++	const size_t x_len = strlen(x);
++	if (sizeof("<unknown>")-1>x_len) return false;
++	return !strcmp(x+(x_len-(sizeof("<unknown>")-1)),"<unknown>");	
++}
++
++int type_system::_CPP_linkage_code(const char* alias,const char* active_namespace) const
++{
++	if (const zaimoni::POD_triple<type_spec,const char*,size_t>* const tmp = get_typedef_CPP(alias,active_namespace))
++	{	// linkage is from namespace if we are the typedef of an unnamed enum/struct/class/union
++		// otherwise we have no linkage
++		if (0!=tmp->first.pointer_power) return 0;	// typedef of pointer or array has no linkage
++		if (core_types_size>=tmp->first.base_type_index) return 0;	// the invariant types are not unnamed enum/struct/class/union
++		if (const union_struct_decl* const tmp2 = get_structdecl(tmp->first.base_type_index))
++			{
++			//! \todo check for extern "C", etc. (would require retaining id and checking record)
++			if (!_CPP_unnamed_tag(tmp2->tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		else if (const enum_def* const tmp2 = get_enum_def(tmp->first.base_type_index))
++			{
++			if (!_CPP_unnamed_tag(tmp2->tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		return 0;	// no linkage
++	};
++	if (const enumerator_info* const tmp = get_enumerator_CPP(alias,active_namespace))
++		{	// linkage is from named enumeration or typedef'ed unnamed enumeration
++		const enum_def* const tmp2 = get_enum_def(tmp->second.first.first);
++		assert(tmp2);
++		//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (!_CPP_unnamed_tag(tmp2->tag()))
++			return _CPP_namespace_linkage(tmp2->tag());	// named, so use namespace linkage
++		// see if there's a typedef targeting us; if so process the typedef
++		if (const char* const tmp3 = get_typedef_name(tmp->second.first.first))
++			// we need the typedef name to be returned
++			return _CPP_namespace_linkage(tmp3);
++		return 0;	// no linkage
++		}
++	if (get_id_enum_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_union_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++			//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_struct_class_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
++
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.cpp.in	2011-05-23 02:38:33 UTC (rev 646)
+@@ -400,6 +400,18 @@
+ 	return set_typedef(name,filename,lineno,src);
+ }
+ 
++const char* type_system::get_typedef_name(const type_index base_type_index) const
++{
++	const zaimoni::POD_pair<const char*,zaimoni::POD_triple<type_spec,const char*,size_t> >* iter = typedef_registry.begin();
++	const zaimoni::POD_pair<const char*,zaimoni::POD_triple<type_spec,const char*,size_t> >* const iter_end = typedef_registry.end();
++	while(iter!=iter_end)
++		{
++		if (base_type_index==iter->second.first.base_type_index && 0==iter->second.first.pointer_power) return iter->first;
++		++iter;
++		};
++	return NULL;
++}
++
+ const zaimoni::POD_triple<type_spec,const char*,size_t>* type_system::get_typedef(const char* const alias) const
+ {
+ 	assert(alias && *alias);
+@@ -956,5 +968,99 @@
+ 	tmp.third.first.third = src;
+ 	src = NULL;
+ }
++
++int type_system::_C_linkage_code(const char* alias) const
++{
++/*
++* no linkage [C1X 6.2.2p6]
++** identifier that isn't an object or function
++** identifier that is a function parameter
++** block-scope identifier for an object not declared extern
++*/
++	if (  get_typedef(alias)
++	   || get_enumerator(alias)
++	   || get_id_enum(alias)
++	   || get_id_union(alias)
++	   || get_id_struct_class(alias))
++	   return 0;	// no linkage
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
++
++/*
++[C++0X 3.5p4]
++* unnamed namespaces, and all namespaces declared within them at any depth, have internal linkage.
++* other namespaces have external linkage
++*/
++static int _CPP_namespace_linkage(const char* x)
++{
++	return x && *x && strstr(x,"<unknown>") ? 1	/* internal*/
++		: 2;	/* external (C++) */
++}
++
++static bool _CPP_unnamed_tag(const char* const x)
++{
++	if (!x) return true;
++	const size_t x_len = strlen(x);
++	if (sizeof("<unknown>")-1>x_len) return false;
++	return !strcmp(x+(x_len-(sizeof("<unknown>")-1)),"<unknown>");	
++}
++
++int type_system::_CPP_linkage_code(const char* alias,const char* active_namespace) const
++{
++	if (const zaimoni::POD_triple<type_spec,const char*,size_t>* const tmp = get_typedef_CPP(alias,active_namespace))
++	{	// linkage is from namespace if we are the typedef of an unnamed enum/struct/class/union
++		// otherwise we have no linkage
++		if (0!=tmp->first.pointer_power) return 0;	// typedef of pointer or array has no linkage
++		if (core_types_size>=tmp->first.base_type_index) return 0;	// the invariant types are not unnamed enum/struct/class/union
++		if (const union_struct_decl* const tmp2 = get_structdecl(tmp->first.base_type_index))
++			{
++			//! \todo check for extern "C", etc. (would require retaining id and checking record)
++			if (!_CPP_unnamed_tag(tmp2->tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		else if (const enum_def* const tmp2 = get_enum_def(tmp->first.base_type_index))
++			{
++			if (!_CPP_unnamed_tag(tmp2->tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		return 0;	// no linkage
++	};
++	if (const enumerator_info* const tmp = get_enumerator_CPP(alias,active_namespace))
++		{	// linkage is from named enumeration or typedef'ed unnamed enumeration
++		const enum_def* const tmp2 = get_enum_def(tmp->second.first.first);
++		assert(tmp2);
++		//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (!_CPP_unnamed_tag(tmp2->tag()))
++			return _CPP_namespace_linkage(tmp2->tag());	// named, so use namespace linkage
++		// see if there's a typedef targeting us; if so process the typedef
++		if (const char* const tmp3 = get_typedef_name(tmp->second.first.first))
++			// we need the typedef name to be returned
++			return _CPP_namespace_linkage(tmp3);
++		return 0;	// no linkage
++		}
++	if (get_id_enum_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_union_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++			//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_struct_class_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern "C", etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
+ #/*cut-cpp*/
+ 
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.hpp	2011-05-23 02:38:33 UTC (rev 646)
+@@ -106,6 +106,7 @@
+ 
+ 	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec& src);	// invalidates src
+ 	void set_typedef_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec& src);	// invalidates src
++	const char* get_typedef_name(const type_index base_type_index) const;
+ 	const zaimoni::POD_triple<type_spec,const char*,size_t>* get_typedef(const char* const alias) const;
+ 	const zaimoni::POD_triple<type_spec,const char*,size_t>* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+@@ -129,6 +130,17 @@
+ 	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
+ 	void set_enum_underlying_type(type_index i,size_t new_type);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*& src);
++
++	int C_linkage_code(const char* alias) const
++		{
++		assert(alias && *alias);
++		return _C_linkage_code(alias);
++		};
++	int CPP_linkage_code(const char* alias,const char* active_namespace) const
++		{
++		assert(alias && *alias);
++		return _CPP_linkage_code(alias,active_namespace);
++		};
+ private:
+ 	const char* _name(type_index id) const;
+ 	type_index _get_id_union(const char* x) const;
+@@ -146,6 +158,9 @@
+ 	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
+ 	const char* construct_canonical_name_and_aliasing_CPP(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len);
+ 
++	int _C_linkage_code(const char* x) const;	
++	int _CPP_linkage_code(const char* x,const char* active_namespace) const;	
++	
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+ 	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+
+Modified: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.hpp.in	2011-05-23 02:38:33 UTC (rev 646)
+@@ -128,6 +128,7 @@
+ 
+ 	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec& src);	// invalidates src
+ 	void set_typedef_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec& src);	// invalidates src
++	const char* get_typedef_name(const type_index base_type_index) const;
+ 	const zaimoni::POD_triple<type_spec,const char*,size_t>* get_typedef(const char* const alias) const;
+ 	const zaimoni::POD_triple<type_spec,const char*,size_t>* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+@@ -151,6 +152,17 @@
+ 	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
+ 	void set_enum_underlying_type(type_index i,size_t new_type);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*& src);
++
++	int C_linkage_code(const char* alias) const
++		{
++		assert(alias && *alias);
++		return _C_linkage_code(alias);
++		};
++	int CPP_linkage_code(const char* alias,const char* active_namespace) const
++		{
++		assert(alias && *alias);
++		return _CPP_linkage_code(alias,active_namespace);
++		};
+ #/*cut-cpp*/
+ private:
+ 	const char* _name(type_index id) const;
+@@ -170,6 +182,9 @@
+ 	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
+ 	const char* construct_canonical_name_and_aliasing_CPP(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len);
+ 
++	int _C_linkage_code(const char* x) const;	
++	int _CPP_linkage_code(const char* x,const char* active_namespace) const;	
++	
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+ 	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+
+
+
+From zaimoni at mail.berlios.de  Thu May 26 20:34:34 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 26 May 2011 20:34:34 +0200
+Subject: [Zcplusplus-commits] r647 - trunk
+Message-ID: <20110526183434.4BACD481357@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-05-26 20:34:33 +0200 (Thu, 26 May 2011)
+New Revision: 647
+
+Modified:
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+__zcc_linkage wants to know active namespace, like properly parsing identifiers does
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-05-23 02:38:33 UTC (rev 646)
++++ trunk/ParseTree.cpp	2011-05-26 18:34:33 UTC (rev 647)
+@@ -9,6 +9,7 @@
+ 
+ bool (*parse_tree::hook_INC_INFORM)(const parse_tree&) = NULL;
+ type_system* parse_tree::types = NULL;
++const char* parse_tree::active_namespace = NULL;
+ 
+ // in case we have to debug memory corruption
+ // #define IRRATIONAL_CAUTION 1
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2011-05-23 02:38:33 UTC (rev 646)
++++ trunk/ParseTree.hpp	2011-05-26 18:34:33 UTC (rev 647)
+@@ -53,6 +53,9 @@
+     // language-specific helpers for INC_INFORM
+     static bool (*hook_INC_INFORM)(const parse_tree&);
+     static type_system* types;
++
++    // other parsing assistance
++    static const char* active_namespace;	// for C++ and similar languages 
+     
+ 	void MoveInto(parse_tree& dest);
+ 	void OverwriteInto(parse_tree& dest);
+
+
+
+From zaimoni at mail.berlios.de  Thu May 26 21:23:04 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 26 May 2011 21:23:04 +0200
+Subject: [Zcplusplus-commits] r648 - trunk
+Message-ID: <20110526192304.B41CA481357@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-05-26 21:23:04 +0200 (Thu, 26 May 2011)
+New Revision: 648
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+Perl-localize parse_tree::active_namespace correctly
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-05-26 18:34:33 UTC (rev 647)
++++ trunk/CSupport.cpp	2011-05-26 19:23:04 UTC (rev 648)
+@@ -11,6 +11,7 @@
+ #include "Zaimoni.STL/MetaRAM2.hpp"
+ #include "Zaimoni.STL/lite_alg.hpp"
+ #include "Zaimoni.STL/LexParse/LangConf.hpp"
++#include "Zaimoni.STL/Perl_localize.hpp"
+ #include "Zaimoni.STL/search.hpp"
+ #include "Zaimoni.STL/simple_lock.hpp"
+ #include "AtomicString.h"
+@@ -14162,6 +14163,7 @@
+ 		return;
+ 		}
+ 
++	zaimoni::Perl::localize<const char*>(parse_tree::active_namespace,active_namespace);		
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i<src.size<0>())
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-05-26 18:34:33 UTC (rev 647)
++++ trunk/CSupport.cpp.in	2011-05-26 19:23:04 UTC (rev 648)
+@@ -21,6 +21,9 @@
+ #include "Zaimoni.STL/MetaRAM2.hpp"
+ #include "Zaimoni.STL/lite_alg.hpp"
+ #include "Zaimoni.STL/LexParse/LangConf.hpp"
++#/*cut-cpp*/
++#include "Zaimoni.STL/Perl_localize.hpp"
++#/*cut-cpp*/
+ #include "Zaimoni.STL/search.hpp"
+ #include "Zaimoni.STL/simple_lock.hpp"
+ #include "AtomicString.h"
+@@ -14306,6 +14309,7 @@
+ 		return;
+ 		}
+ 
++	zaimoni::Perl::localize<const char*>(parse_tree::active_namespace,active_namespace);		
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i<src.size<0>())
+
+
+
+From zaimoni at mail.berlios.de  Fri May 27 07:57:19 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Fri, 27 May 2011 07:57:19 +0200
+Subject: [Zcplusplus-commits] r649 - trunk
+Message-ID: <20110527055719.966D6481125@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-05-27 07:57:18 +0200 (Fri, 27 May 2011)
+New Revision: 649
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+wire in extension __zcc_linkage
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-05-26 19:23:04 UTC (rev 648)
++++ trunk/CSupport.cpp	2011-05-27 05:57:18 UTC (rev 649)
+@@ -3975,6 +3975,8 @@
+ #define C99_UNARY_SUBTYPE_NOT 5
+ #define C99_UNARY_SUBTYPE_COMPL 6
+ #define C99_UNARY_SUBTYPE_SIZEOF 7
++// extensions
++#define ZCC_UNARY_SUBTYPE_LINKAGE 8
+ 
+ template<char c> static bool is_C99_unary_operator_expression(const parse_tree& src)
+ {
+@@ -4038,7 +4040,19 @@
+ 			&&	1==src.size<2>() && ((PARSE_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
+ //			&&	1==src.size<2>() && ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
+ }
++
++static bool is_ZCC_linkage_expression(const parse_tree& src)
++{
++	return		(robust_token_is_string<13>(src.index_tokens[0].token,"__zcc_linkage"))
++#ifndef NDEBUG
++			&&	src.index_tokens[0].src_filename
+ #endif
++			&&	!src.index_tokens[1].token.first
++			&&	src.empty<0>() && src.empty<1>()
++			&&	1==src.size<2>() && ((PARSE_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
++//			&&	1==src.size<2>() && ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
++}
++#endif
+ 
+ #define C99_MULT_SUBTYPE_DIV 1
+ #define C99_MULT_SUBTYPE_MOD 2
+@@ -6866,6 +6880,122 @@
+ 	return false;
+ }
+ 
++// handle our extension __zcc_linkage
++//! \throw std::bad_alloc
++static bool terse_locate_ZCC_linkage(parse_tree& src, size_t& i, const type_system& types)
++{
++	assert(!src.empty<0>());
++	assert(i<src.size<0>());
++	assert(!(PARSE_OBVIOUS & src.data<0>()[i].flags));
++	assert(src.data<0>()[i].is_atomic());
++
++	if (token_is_string<13>(src.data<0>()[i].index_tokens[0].token,"__zcc_linkage"))
++		{
++		assert(1<src.size<0>()-i);
++		inspect_potential_paren_primary_expression(src.c_array<0>()[i+1]);
++		if (is_C99_unary_operator_expression<'+'>(src.data<0>()[i+1]) || is_C99_unary_operator_expression<'-'>(src.data<0>()[i+1]))
++			C_unary_plusminus_easy_syntax_check(src.c_array<0>()[i+1],types);
++		else if (is_C99_unary_operator_expression<'*'>(src.data<0>()[i+1]))
++			C_deref_easy_syntax_check(src.c_array<0>()[i+1],types);
++		if (is_naked_parentheses_pair(src.data<0>()[i+1]))
++			{
++			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
++			src.c_array<0>()[i].type_code.set_type(C_TYPE::INT);	//! \todo would be nice to range-limit this
++			assert(is_ZCC_linkage_expression(src.c_array<0>()[i]));
++			return true;			
++			}
++		}
++	return false;
++}
++
++//! \throw std::bad_alloc()
++static bool eval_C99_ZCC_linkage(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (	1==src.size<2>()
++		&& 	src.data<2>()->is_atomic()
++		&& 	C_TESTFLAG_IDENTIFIER==src.data<2>()->index_tokens[0].flags)
++		{
++		const int tmp = types.C_linkage_code(src.data<2>()->index_tokens[0].token.first);
++		const bool is_negative = 0>tmp;
++		const umaxint tmp2(is_negative ? -tmp : tmp);
++		parse_tree tmp3;
++		src.type_code.set_type(C_TYPE::INT);
++		VM_to_signed_literal(tmp3,is_negative,tmp2,src,types);
++		tmp3.MoveInto(src);
++		return true;
++		}
++	return false;
++}
++
++// deferring namespaces is not going to work, what about resolving identifiers as primary expressions
++// maybe go with a Perl-localization
++//! \throw std::bad_alloc()
++static bool eval_CPP_ZCC_linkage(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (	1==src.size<2>()
++		&& 	src.data<2>()->is_atomic()
++		&& 	C_TESTFLAG_IDENTIFIER==src.data<2>()->index_tokens[0].flags)
++		{
++		const int tmp = types.CPP_linkage_code(src.data<2>()->index_tokens[0].token.first,parse_tree::active_namespace);
++		const bool is_negative = 0>tmp;
++		const umaxint tmp2(is_negative ? -tmp : tmp);
++		parse_tree tmp3;
++		src.type_code.set_type(C_TYPE::INT);
++		VM_to_signed_literal(tmp3,is_negative,tmp2,src,types);
++		tmp3.MoveInto(src);
++		return true;
++		}
++	return false;
++}
++
++//! \throw std::bad_alloc()
++static void C99_ZCC_linkage_easy_syntax_check(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (eval_C99_ZCC_linkage(src,types)) return;
++}
++
++//! \throw std::bad_alloc()
++static void CPP_ZCC_linkage_easy_syntax_check(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (eval_CPP_ZCC_linkage(src,types)) return;
++}
++
++//! \throw std::bad_alloc()
++static bool locate_C99_ZCC_linkage(parse_tree& src, size_t& i, const type_system& types)
++{
++	assert(!src.empty<0>());
++	assert(i<src.size<0>());
++
++	if (	!(PARSE_OBVIOUS & src.data<0>()[i].flags)
++		&&	src.data<0>()[i].is_atomic()
++		&&	terse_locate_ZCC_linkage(src,i,types))
++		{
++		C99_ZCC_linkage_easy_syntax_check(src.c_array<0>()[i],types);
++		return true;
++		}
++	return false;
++}
++
++//! \throw std::bad_alloc()
++static bool locate_CPP_ZCC_linkage(parse_tree& src, size_t& i, const type_system& types)
++{
++	assert(!src.empty<0>());
++	assert(i<src.size<0>());
++
++	if (	!(PARSE_OBVIOUS & src.data<0>()[i].flags)
++		&&	src.data<0>()[i].is_atomic()
++		&&	terse_locate_ZCC_linkage(src,i,types))
++		{
++		CPP_ZCC_linkage_easy_syntax_check(src.c_array<0>()[i],types);
++		return true;
++		}
++	return false;
++}
++
+ /* Scan for unary operators and cast expressions
+ unary-expression:
+ 	postfix-expression
+@@ -6897,6 +7027,7 @@
+ 	if (locate_C99_bitwise_complement(src,i,types)) return;
+ 	if (locate_C99_unary_plusminus(src,i,types)) return;
+ 	if (locate_C99_sizeof(src,i,types)) return;
++	if (locate_C99_ZCC_linkage(src,i,types)) return;
+ 
+ #if 0
+ 	if (terse_locate_unary_operator(src,i))
+@@ -6975,6 +7106,7 @@
+ 	if (locate_CPP_bitwise_complement(src,i,types)) return;
+ 	if (locate_CPP_unary_plusminus(src,i,types)) return;
+ 	if (locate_CPP_sizeof(src,i,types)) return;
++	if (locate_CPP_ZCC_linkage(src,i,types)) return;
+ 
+ #if 0
+ 	if (token_is_string<2>(src.data<0>()[i].index_tokens[0].token,"++"))
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-05-26 19:23:04 UTC (rev 648)
++++ trunk/CSupport.cpp.in	2011-05-27 05:57:18 UTC (rev 649)
+@@ -4035,7 +4035,11 @@
+ #define C99_UNARY_SUBTYPE_ADDRESSOF 4
+ #define C99_UNARY_SUBTYPE_NOT 5
+ #define C99_UNARY_SUBTYPE_COMPL 6
++#/*cut-cpp*/
+ #define C99_UNARY_SUBTYPE_SIZEOF 7
++// extensions
++#define ZCC_UNARY_SUBTYPE_LINKAGE 8
++#/*cut-cpp*/
+ 
+ template<char c> static bool is_C99_unary_operator_expression(const parse_tree& src)
+ {
+@@ -4100,7 +4104,19 @@
+ 			&&	1==src.size<2>() && ((PARSE_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
+ //			&&	1==src.size<2>() && ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
+ }
++
++static bool is_ZCC_linkage_expression(const parse_tree& src)
++{
++	return		(robust_token_is_string<13>(src.index_tokens[0].token,"__zcc_linkage"))
++#ifndef NDEBUG
++			&&	src.index_tokens[0].src_filename
+ #endif
++			&&	!src.index_tokens[1].token.first
++			&&	src.empty<0>() && src.empty<1>()
++			&&	1==src.size<2>() && ((PARSE_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
++//			&&	1==src.size<2>() && ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) & src.data<2>()->flags);
++}
++#endif
+ #/*cut-cpp*/
+ 
+ #define C99_MULT_SUBTYPE_DIV 1
+@@ -6961,6 +6977,122 @@
+ 		}
+ 	return false;
+ }
++
++// handle our extension __zcc_linkage
++//! \throw std::bad_alloc
++static bool terse_locate_ZCC_linkage(parse_tree& src, size_t& i, const type_system& types)
++{
++	assert(!src.empty<0>());
++	assert(i<src.size<0>());
++	assert(!(PARSE_OBVIOUS & src.data<0>()[i].flags));
++	assert(src.data<0>()[i].is_atomic());
++
++	if (token_is_string<13>(src.data<0>()[i].index_tokens[0].token,"__zcc_linkage"))
++		{
++		assert(1<src.size<0>()-i);
++		inspect_potential_paren_primary_expression(src.c_array<0>()[i+1]);
++		if (is_C99_unary_operator_expression<'+'>(src.data<0>()[i+1]) || is_C99_unary_operator_expression<'-'>(src.data<0>()[i+1]))
++			C_unary_plusminus_easy_syntax_check(src.c_array<0>()[i+1],types);
++		else if (is_C99_unary_operator_expression<'*'>(src.data<0>()[i+1]))
++			C_deref_easy_syntax_check(src.c_array<0>()[i+1],types);
++		if (is_naked_parentheses_pair(src.data<0>()[i+1]))
++			{
++			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
++			src.c_array<0>()[i].type_code.set_type(C_TYPE::INT);	//! \todo would be nice to range-limit this
++			assert(is_ZCC_linkage_expression(src.c_array<0>()[i]));
++			return true;			
++			}
++		}
++	return false;
++}
++
++//! \throw std::bad_alloc()
++static bool eval_C99_ZCC_linkage(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (	1==src.size<2>()
++		&& 	src.data<2>()->is_atomic()
++		&& 	C_TESTFLAG_IDENTIFIER==src.data<2>()->index_tokens[0].flags)
++		{
++		const int tmp = types.C_linkage_code(src.data<2>()->index_tokens[0].token.first);
++		const bool is_negative = 0>tmp;
++		const umaxint tmp2(is_negative ? -tmp : tmp);
++		parse_tree tmp3;
++		src.type_code.set_type(C_TYPE::INT);
++		VM_to_signed_literal(tmp3,is_negative,tmp2,src,types);
++		tmp3.MoveInto(src);
++		return true;
++		}
++	return false;
++}
++
++// deferring namespaces is not going to work, what about resolving identifiers as primary expressions
++// maybe go with a Perl-localization
++//! \throw std::bad_alloc()
++static bool eval_CPP_ZCC_linkage(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (	1==src.size<2>()
++		&& 	src.data<2>()->is_atomic()
++		&& 	C_TESTFLAG_IDENTIFIER==src.data<2>()->index_tokens[0].flags)
++		{
++		const int tmp = types.CPP_linkage_code(src.data<2>()->index_tokens[0].token.first,parse_tree::active_namespace);
++		const bool is_negative = 0>tmp;
++		const umaxint tmp2(is_negative ? -tmp : tmp);
++		parse_tree tmp3;
++		src.type_code.set_type(C_TYPE::INT);
++		VM_to_signed_literal(tmp3,is_negative,tmp2,src,types);
++		tmp3.MoveInto(src);
++		return true;
++		}
++	return false;
++}
++
++//! \throw std::bad_alloc()
++static void C99_ZCC_linkage_easy_syntax_check(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (eval_C99_ZCC_linkage(src,types)) return;
++}
++
++//! \throw std::bad_alloc()
++static void CPP_ZCC_linkage_easy_syntax_check(parse_tree& src,const type_system& types)
++{
++	assert(is_ZCC_linkage_expression(src));
++	if (eval_CPP_ZCC_linkage(src,types)) return;
++}
++
++//! \throw std::bad_alloc()
++static bool locate_C99_ZCC_linkage(parse_tree& src, size_t& i, const type_system& types)
++{
++	assert(!src.empty<0>());
++	assert(i<src.size<0>());
++
++	if (	!(PARSE_OBVIOUS & src.data<0>()[i].flags)
++		&&	src.data<0>()[i].is_atomic()
++		&&	terse_locate_ZCC_linkage(src,i,types))
++		{
++		C99_ZCC_linkage_easy_syntax_check(src.c_array<0>()[i],types);
++		return true;
++		}
++	return false;
++}
++
++//! \throw std::bad_alloc()
++static bool locate_CPP_ZCC_linkage(parse_tree& src, size_t& i, const type_system& types)
++{
++	assert(!src.empty<0>());
++	assert(i<src.size<0>());
++
++	if (	!(PARSE_OBVIOUS & src.data<0>()[i].flags)
++		&&	src.data<0>()[i].is_atomic()
++		&&	terse_locate_ZCC_linkage(src,i,types))
++		{
++		CPP_ZCC_linkage_easy_syntax_check(src.c_array<0>()[i],types);
++		return true;
++		}
++	return false;
++}
+ #/*cut-cpp*/
+ 
+ /* Scan for unary operators and cast expressions
+@@ -6995,6 +7127,7 @@
+ 	if (locate_C99_unary_plusminus(src,i,types)) return;
+ #/*cut-cpp*/
+ 	if (locate_C99_sizeof(src,i,types)) return;
++	if (locate_C99_ZCC_linkage(src,i,types)) return;
+ #/*cut-cpp*/
+ 
+ #if 0
+@@ -7075,6 +7208,7 @@
+ 	if (locate_CPP_unary_plusminus(src,i,types)) return;
+ #/*cut-cpp*/
+ 	if (locate_CPP_sizeof(src,i,types)) return;
++	if (locate_CPP_ZCC_linkage(src,i,types)) return;
+ #/*cut-cpp*/
+ 
+ #if 0
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-05-26 19:23:04 UTC (rev 648)
++++ trunk/CSupport_pp.cpp	2011-05-27 05:57:18 UTC (rev 649)
+@@ -2956,7 +2956,6 @@
+ #define C99_UNARY_SUBTYPE_ADDRESSOF 4
+ #define C99_UNARY_SUBTYPE_NOT 5
+ #define C99_UNARY_SUBTYPE_COMPL 6
+-#define C99_UNARY_SUBTYPE_SIZEOF 7
+ 
+ template<char c> static bool is_C99_unary_operator_expression(const parse_tree& src)
+ {
+
+
+

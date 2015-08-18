@@ -1,0 +1,454 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r631 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r631%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110415022723.81C044813B2%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000397.html">
+   <LINK REL="Next"  HREF="000399.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r631 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r631%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110415022723.81C044813B2%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r631 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 15 04:27:23 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000397.html">[Zcplusplus-commits] r630 - trunk/tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000399.html">[Zcplusplus-commits] r632 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#398">[ date ]</a>
+              <a href="thread.html#398">[ thread ]</a>
+              <a href="subject.html#398">[ subject ]</a>
+              <a href="author.html#398">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-15 04:27:22 +0200 (Fri, 15 Apr 2011)
+New Revision: 631
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in
+   trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.h
+   trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.h
+   trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.h
+   trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_thread_local_typedef.h
+   trunk/tests/zcc/decl.C99/Error_thread_local_typedef.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+wire in _Thread_Local/thread_local
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-04-09 03:55:16 UTC (rev 630)
++++ trunk/CSupport.cpp	2011-04-15 02:27:22 UTC (rev 631)
+@@ -11660,22 +11660,25 @@
+ 		{
+ 		assert(x.size&lt;0&gt;()&gt;i);
+ 		assert(x.size&lt;0&gt;()-i&gt;=decl_count);
+-		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_DECLSPEC_AUTO) &amp; flags)
++		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_CPP0X_DECLSPEC_THREAD_LOCAL | C99_DECLSPEC_AUTO) &amp; flags)
+ 			{	// storage class specifiers
+ 			const char* specs[5];
+ 			unsigned int storage_count = 0;
+-			unsigned int erased_count = 0;
++			bool thread_local_compat = false;
+ 			if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; flags)
+ 				specs[storage_count++] = &quot;typedef&quot;;
+ 			if (C99_CPP0X_DECLSPEC_STATIC &amp; flags)
+ 				specs[storage_count++] = &quot;static&quot;;
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
++			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
++				{
++				specs[storage_count++] = &quot;_Thread_Local&quot;;
++				thread_local_compat = ((C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN) &amp; flags);
++				}
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+ 				{	//! \test zcc/decl.C99/Error_register_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;register&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier register disallowed at translation-unit level (C99 6.9p2)&quot;);
+@@ -11686,8 +11689,6 @@
+ 			if (C99_DECLSPEC_AUTO &amp; flags)
+ 				{	//! \test zcc/decl.C99/Error_auto_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;auto&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier auto disallowed at translation-unit level (C99 6.9p2)&quot;);
+@@ -11695,7 +11696,7 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;auto&quot;);
+ 				flags &amp;= ~C99_DECLSPEC_AUTO;
+ 				};
+-			if (1&lt;storage_count)
++			if (1&lt;storage_count-thread_local_compat)
+ 				{	//! \test zcc/decl.C99/Error_extern_static.h
+ 					//! \test zcc/decl.C99/Error_extern_typedef.h
+ 					//! \test zcc/decl.C99/Error_static_typedef.h
+@@ -11707,7 +11708,6 @@
+ 				INFORM(&quot; (C99 6.7.1p2)&quot;);
+ 				zcc_errors.inc_error();
+ 				};
+-			storage_count -= erased_count;
+ 			// inline requires a function type
+ 			// typedef must have a function type to tolerate anything (but kills inline)
+ 			return 1&gt;=storage_count;
+@@ -11770,22 +11770,25 @@
+ 		{
+ 		assert(x.size&lt;0&gt;()&gt;i);
+ 		assert(x.size&lt;0&gt;()-i&gt;=decl_count);
+-		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | CPP_DECLSPEC_MUTABLE | CPP_DECLSPEC_VIRTUAL | CPP_DECLSPEC_EXPLICIT | CPP_DECLSPEC_FRIEND) &amp; flags)
++		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_CPP0X_DECLSPEC_THREAD_LOCAL | CPP_DECLSPEC_MUTABLE | CPP_DECLSPEC_VIRTUAL | CPP_DECLSPEC_EXPLICIT | CPP_DECLSPEC_FRIEND) &amp; flags)
+ 			{	// storage class specifiers
+ 			const char* specs[5];
+ 			unsigned int storage_count = 0;
+-			unsigned int erased_count = 0;
++			bool thread_local_compat = false;
+ 			if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; flags)
+ 				specs[storage_count++] = &quot;typedef&quot;;
+ 			if (C99_CPP0X_DECLSPEC_STATIC &amp; flags)
+ 				specs[storage_count++] = &quot;static&quot;;
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
++			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
++				{
++				specs[storage_count++] = &quot;thread_local&quot;;
++				thread_local_compat = ((C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN) &amp; flags);
++				}
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+ 				{	//! \test zcc/default/decl.C99/Error_register_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;register&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier register allowed only to objects named in a block, or function parameters (C++98 7.1.1p2)&quot;);
+@@ -11796,8 +11799,6 @@
+ 			if (CPP_DECLSPEC_MUTABLE &amp; flags)
+ 				{	//! \test zcc/default/decl.C99/Error_mutable_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;mutable&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier mutable only allowed for non-static non-const non-reference class data members (C++0X 7.1.1p10)&quot;);
+@@ -11805,7 +11806,7 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;mutable&quot;);
+ 				flags &amp;= ~CPP_DECLSPEC_MUTABLE;
+ 				};
+-			if (1&lt;storage_count)
++			if (1&lt;storage_count-thread_local_compat)
+ 				{	//! \test zcc/decl.C99/Error_extern_static.hpp
+ 					//! \test zcc/decl.C99/Error_extern_typedef.hpp
+ 					//! \test zcc/decl.C99/Error_static_typedef.hpp
+@@ -11818,7 +11819,6 @@
+ 				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
+ 				zcc_errors.inc_error();
+ 				}
+-			storage_count -= erased_count;
+ 			// thread_local ok at namespace scope for objects/references
+ 			// inline dies if not a function type
+ 			// typedef must have a function type to tolerate anything (but kills inline)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-04-09 03:55:16 UTC (rev 630)
++++ trunk/CSupport.cpp.in	2011-04-15 02:27:22 UTC (rev 631)
+@@ -11804,22 +11804,25 @@
+ 		{
+ 		assert(x.size&lt;0&gt;()&gt;i);
+ 		assert(x.size&lt;0&gt;()-i&gt;=decl_count);
+-		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_DECLSPEC_AUTO) &amp; flags)
++		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_CPP0X_DECLSPEC_THREAD_LOCAL | C99_DECLSPEC_AUTO) &amp; flags)
+ 			{	// storage class specifiers
+ 			const char* specs[5];
+ 			unsigned int storage_count = 0;
+-			unsigned int erased_count = 0;
++			bool thread_local_compat = false;
+ 			if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; flags)
+ 				specs[storage_count++] = &quot;typedef&quot;;
+ 			if (C99_CPP0X_DECLSPEC_STATIC &amp; flags)
+ 				specs[storage_count++] = &quot;static&quot;;
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
++			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
++				{
++				specs[storage_count++] = &quot;_Thread_Local&quot;;
++				thread_local_compat = ((C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN) &amp; flags);
++				}
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+ 				{	//! \test zcc/decl.C99/Error_register_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;register&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier register disallowed at translation-unit level (C99 6.9p2)&quot;);
+@@ -11830,8 +11833,6 @@
+ 			if (C99_DECLSPEC_AUTO &amp; flags)
+ 				{	//! \test zcc/decl.C99/Error_auto_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;auto&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier auto disallowed at translation-unit level (C99 6.9p2)&quot;);
+@@ -11839,7 +11840,7 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;auto&quot;);
+ 				flags &amp;= ~C99_DECLSPEC_AUTO;
+ 				};
+-			if (1&lt;storage_count)
++			if (1&lt;storage_count-thread_local_compat)
+ 				{	//! \test zcc/decl.C99/Error_extern_static.h
+ 					//! \test zcc/decl.C99/Error_extern_typedef.h
+ 					//! \test zcc/decl.C99/Error_static_typedef.h
+@@ -11851,7 +11852,6 @@
+ 				INFORM(&quot; (C99 6.7.1p2)&quot;);
+ 				zcc_errors.inc_error();
+ 				};
+-			storage_count -= erased_count;
+ 			// inline requires a function type
+ 			// typedef must have a function type to tolerate anything (but kills inline)
+ 			return 1&gt;=storage_count;
+@@ -11914,22 +11914,25 @@
+ 		{
+ 		assert(x.size&lt;0&gt;()&gt;i);
+ 		assert(x.size&lt;0&gt;()-i&gt;=decl_count);
+-		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | CPP_DECLSPEC_MUTABLE | CPP_DECLSPEC_VIRTUAL | CPP_DECLSPEC_EXPLICIT | CPP_DECLSPEC_FRIEND) &amp; flags)
++		if ((C99_CPP0X_DECLSPEC_TYPEDEF | C99_CPP0X_DECLSPEC_REGISTER | C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN | C99_CPP0X_DECLSPEC_THREAD_LOCAL | CPP_DECLSPEC_MUTABLE | CPP_DECLSPEC_VIRTUAL | CPP_DECLSPEC_EXPLICIT | CPP_DECLSPEC_FRIEND) &amp; flags)
+ 			{	// storage class specifiers
+ 			const char* specs[5];
+ 			unsigned int storage_count = 0;
+-			unsigned int erased_count = 0;
++			bool thread_local_compat = false;
+ 			if (C99_CPP0X_DECLSPEC_TYPEDEF &amp; flags)
+ 				specs[storage_count++] = &quot;typedef&quot;;
+ 			if (C99_CPP0X_DECLSPEC_STATIC &amp; flags)
+ 				specs[storage_count++] = &quot;static&quot;;
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
++			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
++				{
++				specs[storage_count++] = &quot;thread_local&quot;;
++				thread_local_compat = ((C99_CPP0X_DECLSPEC_STATIC | C99_CPP0X_DECLSPEC_EXTERN) &amp; flags);
++				}
+ 			if (C99_CPP0X_DECLSPEC_REGISTER &amp; flags)
+ 				{	//! \test zcc/default/decl.C99/Error_register_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;register&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier register allowed only to objects named in a block, or function parameters (C++98 7.1.1p2)&quot;);
+@@ -11940,8 +11943,6 @@
+ 			if (CPP_DECLSPEC_MUTABLE &amp; flags)
+ 				{	//! \test zcc/default/decl.C99/Error_mutable_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+-				specs[storage_count++] = &quot;mutable&quot;;
+-				++erased_count;
+ 				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;storage-class specifier mutable only allowed for non-static non-const non-reference class data members (C++0X 7.1.1p10)&quot;);
+@@ -11949,7 +11950,7 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;mutable&quot;);
+ 				flags &amp;= ~CPP_DECLSPEC_MUTABLE;
+ 				};
+-			if (1&lt;storage_count)
++			if (1&lt;storage_count-thread_local_compat)
+ 				{	//! \test zcc/decl.C99/Error_extern_static.hpp
+ 					//! \test zcc/decl.C99/Error_extern_typedef.hpp
+ 					//! \test zcc/decl.C99/Error_static_typedef.hpp
+@@ -11962,7 +11963,6 @@
+ 				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
+ 				zcc_errors.inc_error();
+ 				}
+-			storage_count -= erased_count;
+ 			// thread_local ok at namespace scope for objects/references
+ 			// inline dies if not a function type
+ 			// typedef must have a function type to tolerate anything (but kills inline)
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.h	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static_thread_local_typedef.h
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++extern static _Thread_Local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_extern_static_thread_local_typedef.hpp	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static_thread_local_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++extern static thread_local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.h	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_thread_local_typedef.h
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++extern _Thread_Local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_extern_thread_local_typedef.hpp	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_thread_local_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++extern thread_local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.h	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_static_thread_local_typedef.h
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++static _Thread_Local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_static_thread_local_typedef.hpp	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_static_thread_local_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++static thread_local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_thread_local_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_thread_local_typedef.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_thread_local_typedef.h	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_thread_local_typedef.h
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++_Thread_Local typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_thread_local_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_thread_local_typedef.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_thread_local_typedef.hpp	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_thread_local_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++thread_local typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_static_thread_local_typedef.in	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++extern static THREAD_LOCAL typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_thread_local_typedef.in	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++extern THREAD_LOCAL typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_static_thread_local_typedef.in	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++static THREAD_LOCAL typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_thread_local_typedef.in	2011-04-15 02:27:22 UTC (rev 631)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++// declaration with too many storage qualifiers
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++THREAD_LOCAL typedef int i;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000397.html">[Zcplusplus-commits] r630 - trunk/tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000399.html">[Zcplusplus-commits] r632 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#398">[ date ]</a>
+              <a href="thread.html#398">[ thread ]</a>
+              <a href="subject.html#398">[ subject ]</a>
+              <a href="author.html#398">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

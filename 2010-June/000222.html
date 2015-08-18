@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r455 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r455%20-%20trunk&In-Reply-To=%3C201006070054.o570sxND019126%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000221.html">
+   <LINK REL="Next"  HREF="000223.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r455 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r455%20-%20trunk&In-Reply-To=%3C201006070054.o570sxND019126%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r455 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jun  7 02:54:59 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000221.html">[Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000223.html">[Zcplusplus-commits] r456 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#222">[ date ]</a>
+              <a href="thread.html#222">[ thread ]</a>
+              <a href="subject.html#222">[ subject ]</a>
+              <a href="author.html#222">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-07 02:54:55 +0200 (Mon, 07 Jun 2010)
+New Revision: 455
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+minor code clean
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-05 23:09:38 UTC (rev 454)
++++ trunk/CSupport.cpp	2010-06-07 00:54:55 UTC (rev 455)
+@@ -1124,14 +1124,14 @@
+ {
+ 	const errr i = linear_find(x,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list));
+ 	if (STATIC_SIZE(C99_decl_specifier_list)&gt;i) return i;
+-	return (size_t)(-1);
++	return SIZE_MAX;
+ }
+ 
+ size_t CPP0X_invariant_decl_specifier(const char* const x)
+ {
+ 	const errr i = linear_find(x,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list));
+ 	if (STATIC_SIZE(CPP0X_decl_specifier_list)&gt;i) return i;
+-	return (size_t)(-1);
++	return SIZE_MAX;
+ }	
+ #/*cut-cpp*/
+ 
+@@ -3698,7 +3698,6 @@
+ 			while(!invariant_decl_scanner.empty());
+ 
+ 			// defer handling: _Thread_Local, typedef, other storage class issues
+-			invariant_decl_scanner.clear();
+ 			}
+ 		}
+ 	while(src.size&lt;0&gt;()&gt; ++i);
+@@ -4028,7 +4027,6 @@
+ 			while(!invariant_decl_scanner.empty());
+ 
+ 			// defer handling thread_local, typedef restrictions 
+-			invariant_decl_scanner.clear();
+ 			}
+ 		}
+ 	while(src.size&lt;0&gt;()&gt; ++i);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000221.html">[Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000223.html">[Zcplusplus-commits] r456 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#222">[ date ]</a>
+              <a href="thread.html#222">[ thread ]</a>
+              <a href="subject.html#222">[ subject ]</a>
+              <a href="author.html#222">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

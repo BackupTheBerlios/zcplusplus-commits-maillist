@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r244 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/core.RAM
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r244%20-%20in%20trunk%3A%20.%20POSIX/cmp%20Zaimoni.STL%0A%09Zaimoni.STL/core.RAM&In-Reply-To=%3C200909051637.n85GbOqd026960%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000010.html">
+   <LINK REL="Next"  HREF="000012.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r244 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/core.RAM</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r244%20-%20in%20trunk%3A%20.%20POSIX/cmp%20Zaimoni.STL%0A%09Zaimoni.STL/core.RAM&In-Reply-To=%3C200909051637.n85GbOqd026960%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r244 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/core.RAM">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep  5 18:37:24 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000010.html">[Zcplusplus-commits] r243 - in trunk: . POSIX POSIX/cmp	Zaimoni.STL/Pure.C
+</A></li>
+        <LI>Next message: <A HREF="000012.html">[Zcplusplus-commits] r245 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#11">[ date ]</a>
+              <a href="thread.html#11">[ thread ]</a>
+              <a href="subject.html#11">[ subject ]</a>
+              <a href="author.html#11">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-05 18:37:15 +0200 (Sat, 05 Sep 2009)
+New Revision: 244
+
+Removed:
+   trunk/cpp_util.h
+Modified:
+   trunk/AtomicString.cpp
+   trunk/POSIX/cmp/cmp.c
+   trunk/Zaimoni.STL/Compiler.h
+   trunk/Zaimoni.STL/core.RAM/memory.cpp
+   trunk/type_spec.cpp
+   trunk/z_cpp.cpp
+   trunk/zcc.cpp
+Log:
+Object size tuning; handle a Once And Only Once violation between Z.C++ cmp and zcc/z_cpp
+
+Modified: trunk/AtomicString.cpp
+===================================================================
+--- trunk/AtomicString.cpp	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/AtomicString.cpp	2009-09-05 16:37:15 UTC (rev 244)
+@@ -41,8 +41,7 @@
+ 
+ EXTERN_C const char* register_substring(const char* const x,const unsigned long x_len)
+ {
+-	if (NULL==x) return NULL;
+-	if (0==x_len) return NULL;
++	if (NULL==x || 0==x_len) return NULL;
+ 	size_t LB = 0;
+ 	size_t StrictUB = string_cache_size;
+ 	while(LB&lt;StrictUB)
+@@ -80,8 +79,7 @@
+ 
+ EXTERN_C const char* is_substring_registered(const char* const x,const unsigned long x_len)
+ {
+-	if (NULL==x) return NULL;
+-	if (0==x_len) return NULL;
++	if (NULL==x || 0==x_len) return NULL;
+ 	size_t LB = 0;
+ 	size_t StrictUB = string_cache_size;
+ 	while(LB&lt;StrictUB)
+
+Modified: trunk/POSIX/cmp/cmp.c
+===================================================================
+--- trunk/POSIX/cmp/cmp.c	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/POSIX/cmp/cmp.c	2009-09-05 16:37:15 UTC (rev 244)
+@@ -14,10 +14,6 @@
+ #define OUTPUT_VERBOSE 1
+ #define OUTPUT_SILENT 2
+ 
+-/*! \bug Once And Only Once violation (cf. cpp_util.h) */
+-#define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
+-#define C_STRING_TO_STDOUT(A) fwrite(A,strlen(A),1,stdout)
+-
+ static int output_mode = OUTPUT_DEFAULT;
+ static FILE* files[2] = { NULL, NULL };
+ static const char* filenames[2] = { NULL, NULL };
+
+Modified: trunk/Zaimoni.STL/Compiler.h
+===================================================================
+--- trunk/Zaimoni.STL/Compiler.h	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/Zaimoni.STL/Compiler.h	2009-09-05 16:37:15 UTC (rev 244)
+@@ -29,6 +29,14 @@
+ 
+ #define STATIC_SIZE(A) (sizeof(A)/sizeof(*A))
+ 
++/* C strings to stdout; include stdio.h before using these */
++/* including cstdio ok if not on a deathstation */
++#define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
++#define C_STRING_TO_STDOUT(A) fwrite(A,strlen(A),1,stdout)
++#ifdef __cplusplus
++#define STL_PTR_STRING_TO_STDOUT(A) fwrite((A)-&gt;data(),(A)-&gt;size(),1,stdout)
++#endif
++
+ /* platform config copied from Boost */
+ /* would prefer to use BOOST_PLATFORM, but strings aren't allowed in preprocessor tests */
+ /* for now, detect Mac OS X by MACOSX pendng proper documentation */
+
+Modified: trunk/Zaimoni.STL/core.RAM/memory.cpp
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/memory.cpp	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/Zaimoni.STL/core.RAM/memory.cpp	2009-09-05 16:37:15 UTC (rev 244)
+@@ -899,7 +899,7 @@
+ 	return Tmp;
+ }
+ 
+-void* operator new(size_t NewSize, const std::nothrow_t&amp; tracer) throw ()
++void* operator new[](std::size_t NewSize) throw (std::bad_alloc)
+ {
+ 	void* Tmp = calloc(1,NewSize);
+ 	while(NULL==Tmp &amp;&amp; NULL!=ZaimoniNewHandler)
+@@ -911,7 +911,7 @@
+ 	return Tmp;
+ }
+ 
+-void* operator new[](std::size_t NewSize) throw (std::bad_alloc)
++void* operator new(size_t NewSize, const std::nothrow_t&amp; tracer) throw ()
+ {
+ 	void* Tmp = calloc(1,NewSize);
+ 	while(NULL==Tmp &amp;&amp; NULL!=ZaimoniNewHandler)
+
+Deleted: trunk/cpp_util.h
+===================================================================
+--- trunk/cpp_util.h	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/cpp_util.h	2009-09-05 16:37:15 UTC (rev 244)
+@@ -1,12 +0,0 @@
+-/* cpp_util.h */
+-/* C preprocessor utilities */
+-
+-#ifndef CPP_UTIL_H
+-#define CPP_UTIL_H 1
+-
+-/* C strings to stdout; include cstdio/stdio.h before using these */
+-#define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
+-#define C_STRING_TO_STDOUT(A) fwrite(A,strlen(A),1,stdout)
+-#define STL_PTR_STRING_TO_STDOUT(A) fwrite((A)-&gt;data(),(A)-&gt;size(),1,stdout)
+-
+-#endif
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/type_spec.cpp	2009-09-05 16:37:15 UTC (rev 244)
+@@ -93,8 +93,7 @@
+ 		{
+ 		if (0== --pointer_power)
+ 			{
+-			free(extent_vector);
+-			extent_vector = NULL;
++			FREE_AND_NULL(extent_vector);
+ 			qualifier_vector.second[old_ptr_power] = '\0';
+ 			assert(lvalue &amp; qualifier_vector.second[old_ptr_power-1]);	// result of dereference is a C/C++ lvalue; problem is elsewhere if this triggers
+ 			}
+@@ -135,8 +134,7 @@
+ {
+ 	if (0&lt;base_type_index)
+ 		{
+-		free(extent_vector);
+-		extent_vector = NULL;
++		FREE_AND_NULL(extent_vector);
+ 		if (sizeof(unsigned char*)&lt;=pointer_power_after_array_decay())
+ 			{
+ 			free(qualifier_vector.first);
+@@ -154,8 +152,7 @@
+ {
+ 	if (0&lt;base_type_index)
+ 		{
+-		free(extent_vector);
+-		extent_vector = NULL;
++		FREE_AND_NULL(extent_vector);
+ 		if (sizeof(unsigned char*)&lt;=pointer_power_after_array_decay())
+ 			{
+ 			free(qualifier_vector.first);
+
+Modified: trunk/z_cpp.cpp
+===================================================================
+--- trunk/z_cpp.cpp	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/z_cpp.cpp	2009-09-05 16:37:15 UTC (rev 244)
+@@ -8,7 +8,6 @@
+ #include &quot;CPreproc.hpp&quot;
+ #include &quot;load_src.hpp&quot;
+ #include &quot;AtomicString.h&quot;
+-#include &quot;cpp_util.h&quot;
+ #include &quot;filesystem.h&quot;
+ #include &quot;langroute.hpp&quot;
+ #include &quot;errors.hpp&quot;
+
+Modified: trunk/zcc.cpp
+===================================================================
+--- trunk/zcc.cpp	2009-09-04 23:10:53 UTC (rev 243)
++++ trunk/zcc.cpp	2009-09-05 16:37:15 UTC (rev 244)
+@@ -8,7 +8,6 @@
+ #include &quot;CPreproc.hpp&quot;
+ #include &quot;load_src.hpp&quot;
+ #include &quot;AtomicString.h&quot;
+-#include &quot;cpp_util.h&quot;
+ #include &quot;filesystem.h&quot;
+ #include &quot;errors.hpp&quot;
+ #include &quot;langroute.hpp&quot;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000010.html">[Zcplusplus-commits] r243 - in trunk: . POSIX POSIX/cmp	Zaimoni.STL/Pure.C
+</A></li>
+	<LI>Next message: <A HREF="000012.html">[Zcplusplus-commits] r245 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#11">[ date ]</a>
+              <a href="thread.html#11">[ thread ]</a>
+              <a href="subject.html#11">[ subject ]</a>
+              <a href="author.html#11">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

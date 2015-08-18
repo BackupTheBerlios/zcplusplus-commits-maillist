@@ -1,0 +1,417 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r243 - in trunk: . POSIX POSIX/cmp	Zaimoni.STL/Pure.C
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r243%20-%20in%20trunk%3A%20.%20POSIX%20POSIX/cmp%0A%09Zaimoni.STL/Pure.C&In-Reply-To=%3C200909042311.n84NB028026860%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000009.html">
+   <LINK REL="Next"  HREF="000011.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r243 - in trunk: . POSIX POSIX/cmp	Zaimoni.STL/Pure.C</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r243%20-%20in%20trunk%3A%20.%20POSIX%20POSIX/cmp%0A%09Zaimoni.STL/Pure.C&In-Reply-To=%3C200909042311.n84NB028026860%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r243 - in trunk: . POSIX POSIX/cmp	Zaimoni.STL/Pure.C">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep  5 01:11:00 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000009.html">[Zcplusplus-commits] r242 - in trunk: . Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log lib lib/MSVC32.zcc
+</A></li>
+        <LI>Next message: <A HREF="000011.html">[Zcplusplus-commits] r244 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/core.RAM
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-05 01:10:53 +0200 (Sat, 05 Sep 2009)
+New Revision: 243
+
+Added:
+   trunk/NMake.inc
+   trunk/POSIX/
+   trunk/POSIX/cmp/
+   trunk/POSIX/cmp/MakeMake.cfg
+   trunk/POSIX/cmp/Makefile
+   trunk/POSIX/cmp/NMake.dep
+   trunk/POSIX/cmp/NMakefile
+   trunk/POSIX/cmp/POSIX.dep
+   trunk/POSIX/cmp/cmp.c
+Modified:
+   trunk/Zaimoni.STL/Pure.C/NMakefile
+Log:
+partial cmp reimplementation (enough to run test drivers)
+
+Added: trunk/NMake.inc
+===================================================================
+--- trunk/NMake.inc	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/NMake.inc	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,20 @@
++# GNU compatibility core
++srcdir = \CPP_App\Z.C++
++prefix = \CPP_App\Z.C++
++exec_prefix = $(prefix)
++bindir = $(exec_prefix)\bin
++includedir = $(exec_prefix)\include
++libdir = $(exec_prefix)\lib
++
++AR = lib
++
++EXEEXT = exe
++OBJEXT = obj
++
++# /Wall warns on system headers in VC 2008, not good
++CFLAGS = /O1 /EHsc /MD /W3
++CXXFLAGS =
++
++OTHER_INCLUDEDIR = -I \MingWin.aux\Headers.lib
++C_MACROS = 
++CXX_MACROS = 
+
+Added: trunk/POSIX/cmp/MakeMake.cfg
+===================================================================
+--- trunk/POSIX/cmp/MakeMake.cfg	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/POSIX/cmp/MakeMake.cfg	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,24 @@
++########
++ProgObjects = {	'cmp':['cmp'] }
++MainPrograms = ['cmp']
++
++# process control
++C_assembly_preprocessing = ''
++object_strip = ''
++#object_strip = 'strip --preserve-dates --strip-unneeded $*.o'
++
++# defines catalog
++# NDEBUG: release mode
++# ZAIMONI_FORCE_ISO: try to build as ISO C++ rather than with custom memory manager (pre-alpha)
++C_defines = []
++
++# language
++CPP_suffix = ''
++CPP_libraries = ' -lz_stdio_log' # -mwindows -mno-cygwin
++CPP_override_libraries = {}
++
++C_enabled = '.c'
++C_hard_nonsystem_includedirs = []
++C_soft_nonsystem_includedirs = ['c:/MingWin.aux/Headers.lib']
++C_backtrack_dirs = []
++
+
+Added: trunk/POSIX/cmp/Makefile
+===================================================================
+--- trunk/POSIX/cmp/Makefile	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/POSIX/cmp/Makefile	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,27 @@
++# POSIX makefile
++
++.SUFFIXES:
++.SUFFIXES:  .c .o .exe
++
++include ../../POSIX.inc
++
++# GNU targets we know about
++all: cmp.exe
++
++clean:
++	rm -f *.o *.exe
++
++# dependencies
++include POSIX.dep
++
++cmp.exe : $(OBJECTS_CMP_LINK_PRIORITY)
++	$(CC) $(LINK_FLAGS) -ocmp.exe $(OBJECTS_CMP)  -lz_stdio_log
++	strip --preserve-dates --strip-unneeded cmp.exe
++
++# inference rules
++# global project search paths for headers
++# processing details
++
++.c.o:
++	$(CC) $(CFLAGS) $(ARCH_FLAGS) $(OTHER_INCLUDEDIR) $(C_MACROS) \
++	 -o $*.o -c -xc -pipe $&lt;
+
+Added: trunk/POSIX/cmp/NMake.dep
+===================================================================
+--- trunk/POSIX/cmp/NMake.dep	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/POSIX/cmp/NMake.dep	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,5 @@
++OBJECTS_CMP = cmp.obj
++OBJECTS_CMP_LINK_PRIORITY = cmp.obj
++
++# dependencies
++cmp.obj: c:\MingWin.aux\Headers.lib\Zaimoni.STL\Logging.h c:\MingWin.aux\Headers.lib\Zaimoni.STL\Compiler.h c:\MingWin.aux\Headers.lib\Zaimoni.STL\flat_alg.h
+
+Added: trunk/POSIX/cmp/NMakefile
+===================================================================
+--- trunk/POSIX/cmp/NMakefile	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/POSIX/cmp/NMakefile	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,25 @@
++# NMake makefile
++
++.SUFFIXES:
++.SUFFIXES:  .c .obj .exe
++
++!INCLUDE ..\..\NMake.inc
++
++# GNU targets we know about
++all: cmp.exe
++
++clean:
++	del *.obj *.exe *.manifest
++
++# dependencies
++!INCLUDE NMake.dep
++
++cmp.exe : $(OBJECTS_CMP_LINK_PRIORITY)
++	$(CC) $(LINK_FLAGS) /OUT:cmp.exe $(OBJECTS_CMP) $(host_libdir)\z_stdio_log.lib
++
++# inference rules
++# global project search paths for headers
++# processing details
++
++# default .c.obj
++
+
+Added: trunk/POSIX/cmp/POSIX.dep
+===================================================================
+--- trunk/POSIX/cmp/POSIX.dep	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/POSIX/cmp/POSIX.dep	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,5 @@
++OBJECTS_CMP = cmp.o
++OBJECTS_CMP_LINK_PRIORITY = cmp.o
++
++# dependencies
++cmp.o: c:/MingWin.aux/Headers.lib/Zaimoni.STL/Logging.h c:/MingWin.aux/Headers.lib/Zaimoni.STL/Compiler.h c:/MingWin.aux/Headers.lib/Zaimoni.STL/flat_alg.h
+
+Added: trunk/POSIX/cmp/cmp.c
+===================================================================
+--- trunk/POSIX/cmp/cmp.c	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/POSIX/cmp/cmp.c	2009-09-04 23:10:53 UTC (rev 243)
+@@ -0,0 +1,175 @@
++/*
++ * cmp.c
++ * this partially implements the POSIX cmp utility
++ * (C)2009 Kenneth Boyd, license: MIT.txt
++ */
++
++#include &lt;stdlib.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;limits.h&gt;
++#include &lt;fcntl.h&gt;
++#include &quot;Zaimoni.STL/Logging.h&quot;
++
++#define OUTPUT_DEFAULT 0
++#define OUTPUT_VERBOSE 1
++#define OUTPUT_SILENT 2
++
++/*! \bug Once And Only Once violation (cf. cpp_util.h) */
++#define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
++#define C_STRING_TO_STDOUT(A) fwrite(A,strlen(A),1,stdout)
++
++static int output_mode = OUTPUT_DEFAULT;
++static FILE* files[2] = { NULL, NULL };
++static const char* filenames[2] = { NULL, NULL };
++
++typedef struct {
++	const char* option;
++	const char* desc;
++} optdesc;
++
++static const optdesc option_map_bool[]
++=	{	{ &quot;-&quot;,	&quot;use this by itself for STDIN on either file1 or file2\n&quot;},
++		{ &quot;-l&quot;,	&quot;POSIX 2/3 verbose listing on stdout\n&quot;},
++		{ &quot;-s&quot;,	&quot;print nothing to stdout\n&quot;} };
++
++static int recognize_bool_opt(const char* const x)
++{
++	if (NULL==x || !*x) return -1;
++	{
++	size_t j = STATIC_SIZE(option_map_bool);
++	do if (!strcmp(option_map_bool[--j].option,x)) return j;
++	while(0&lt;j);
++	}
++	return -1;
++}
++
++/*! 
++ * processes command-line options.
++ * 
++ * \param argc main's argc
++ * \param argv main's argv
++ * 
++ * \return true if and only if a tty device is clearly involved (usually stdin)
++ */
++static unsigned int process_options(const size_t argc, char* argv[])
++{
++	unsigned int invoke_undefined_behavior = 0;
++	size_t i = 0;
++	size_t file_count = 0;
++	assert(3&lt;=argc &amp;&amp; NULL!=argv);
++	while(argc &gt; ++i)
++		{
++		int index = recognize_bool_opt((assert(NULL!=argv[i]),argv[i]));
++		if (0&lt;=index)
++			{	/* handle directly */
++			assert(STATIC_SIZE(option_map_bool)&gt;(size_t)index);
++			switch(index)
++			{
++			default: _fatal_code(&quot;bug caused out-of-bounds index\n&quot;,3);
++			case 0:	/* - */
++				{
++				if (2==file_count) _fatal_code(&quot;POSIX 2/3 requires exactly two files\n&quot;,2);
++				if (1 &amp; invoke_undefined_behavior) _fatal_code(&quot;cmp - - invokes undefined behavior&quot;,2);
++#ifdef ZAIMONI_HAVE_MICROSOFT_IO_H
++				/* _setmode uses invalid_parameter handlers in recent versions */
++				if (-1==_setmode(_fileno( stdin ),_O_BINARY )) _fatal_code(&quot;couldn't force binary stdin&quot;,2);
++#endif
++				filenames[file_count] = argv[i];
++				files[file_count++] = stdin;
++				invoke_undefined_behavior = 1;
++				break;
++				}
++			case 1:	/* -l */
++			case 2:	/* -s */
++				{
++				if (output_mode) _fatal_code(&quot;POSIX 2/3 only allows changing output mode once\n&quot;,2);
++				if (NULL!=files[0]) _fatal_code(&quot;POSIX 2/3 disallows changing output mode after starting to specify files\n&quot;,2);
++				output_mode = index;
++				break;
++				}
++			};
++			continue;
++			};
++		if (2==file_count) _fatal_code(&quot;POSIX 2/3 requires exactly two files\n&quot;,2);
++		filenames[file_count] = argv[i];
++		if (NULL==(files[file_count++] = fopen(argv[i],&quot;rb&quot;)))
++			_fatal_code(&quot;target file not opened\n&quot;,2);
++		}
++	if (2!=file_count) _fatal_code(&quot;POSIX 2/3 requires exactly two files\n&quot;,2);
++	assert(OUTPUT_DEFAULT&lt;=output_mode &amp;&amp; output_mode&lt;=OUTPUT_SILENT);
++/*#ifdef ZAIMONI_HAVE_MICROSOFT_IO_H*/
++#if 0
++	/* _isatty uses invalid_parameter handlers in recent versions */ 
++	return (_isatty(_fileno(files[0])) ? 1 : 0) | (_isatty(_fileno(files[1])) ? 2 : 0);
++#else
++	return 1 &amp; invoke_undefined_behavior;
++#endif
++}
++
++static void help(void)
++{
++	size_t i = 0;
++	STRING_LITERAL_TO_STDOUT(&quot;Z.C++ cmp 0.1\n&quot;);
++	STRING_LITERAL_TO_STDOUT(&quot;usage: cmp [options] file1 file2\n&quot;);
++	STRING_LITERAL_TO_STDOUT(&quot;options\n&quot;);
++	do	{
++		STRING_LITERAL_TO_STDOUT(&quot; &quot;);
++		C_STRING_TO_STDOUT(option_map_bool[i].option);
++		STRING_LITERAL_TO_STDOUT(&quot;: &quot;);
++		C_STRING_TO_STDOUT(option_map_bool[i].desc);
++		}
++	while(STATIC_SIZE(option_map_bool) &gt; ++i);
++	STRING_LITERAL_TO_STDOUT(&quot;\nThis cmp doesn't respond to the following environment variables:\n&quot;);
++	STRING_LITERAL_TO_STDOUT(&quot;\tLANG LC_ALL LC_TYPE LC_MESSAGES NLSPATH\n&quot;);
++	exit(2);	/* invoking help is an error, technically */
++}
++
++int main(int argc, char* argv[])
++{
++	if (3&gt;argc) help();
++	process_options(argc,argv);
++
++	{
++/*	const unsigned int using_stdin = process_options(argc,argv); */
++	/* slow path suitable for tty-type psuedofiles */
++	/*! \todo fast path for true files */
++	int linenum = 1;
++	int file0_char = fgetc(files[0]);
++	int file1_char = fgetc(files[1]);
++	int already_errored = 0;
++	int bytenum = 1;
++	while(EOF!=file0_char &amp;&amp; EOF!=file1_char)
++		{
++		if (file0_char!=file1_char)
++			switch(output_mode)
++			{
++			default: _fatal_code(&quot;bug caused invalid output mode\n&quot;,3);
++			case OUTPUT_VERBOSE:
++				{
++				printf(&quot;%d %o %o\n&quot;, bytenum, file0_char, file1_char);
++				already_errored = 1;
++				break;
++				}
++			case OUTPUT_DEFAULT:
++				{
++				printf(&quot;%s %s differ: char %d, line %d\n&quot;, filenames[0], filenames[1], bytenum, linenum);
++				}
++			case OUTPUT_SILENT: exit(EXIT_FAILURE);
++			};
++		/* clamp byte number and line number at INT_MAX, to avoid undefined behavior */
++		if (INT_MAX&gt;bytenum) ++bytenum;
++		if ('\n'==file0_char &amp;&amp; INT_MAX&gt;linenum) ++linenum;
++		};
++	if (already_errored) exit(EXIT_FAILURE);
++	{
++	const int truncated = (EOF==file0_char)-(EOF==file1_char);
++	if (truncated)
++		{
++		if (OUTPUT_SILENT!=output_mode)
++			fprintf(stderr,&quot;cmp: EOF on %s\n&quot;,filenames[(0&gt;truncated)]);
++		exit(EXIT_FAILURE);
++		};
++	}
++	}
++	exit(EXIT_SUCCESS);
++}
+
+Modified: trunk/Zaimoni.STL/Pure.C/NMakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/NMakefile	2009-09-04 22:05:15 UTC (rev 242)
++++ trunk/Zaimoni.STL/Pure.C/NMakefile	2009-09-04 23:10:53 UTC (rev 243)
+@@ -26,7 +26,7 @@
+ format_util.obj: format_util.c format_util.h
+ 
+ auto_int.h : int_probe.c
+-	$(CC) -oint_probe.exe $(CFLAGS) int_probe.c
++	$(CC) /OUT:int_probe.exe $(CFLAGS) int_probe.c
+ 	.\int_probe.exe &gt; auto_int.h
+ 	del int_probe.exe.manifest
+ 	del int_probe.exe
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000009.html">[Zcplusplus-commits] r242 - in trunk: . Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log lib lib/MSVC32.zcc
+</A></li>
+	<LI>Next message: <A HREF="000011.html">[Zcplusplus-commits] r244 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/core.RAM
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#10">[ date ]</a>
+              <a href="thread.html#10">[ thread ]</a>
+              <a href="subject.html#10">[ subject ]</a>
+              <a href="author.html#10">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

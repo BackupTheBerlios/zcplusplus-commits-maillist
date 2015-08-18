@@ -1,0 +1,2819 @@
+From zaimoni at mail.berlios.de  Fri Feb  4 10:13:58 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Fri,  4 Feb 2011 10:13:58 +0100
+Subject: [Zcplusplus-commits] r608 - trunk
+Message-ID: <20110204091358.D689A481353@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-04 10:13:58 +0100 (Fri, 04 Feb 2011)
+New Revision: 608
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+GetCCharacterLiteralAt interface cleanup
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-29 05:04:25 UTC (rev 607)
++++ trunk/CSupport.cpp	2011-02-04 09:13:58 UTC (rev 608)
+@@ -2813,12 +2813,12 @@
+ 	return false;
+ }
+ 
+-void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*& tmp)
++static char* GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx)
+ {
+ 	assert(src);
+ 	assert(2<=src_len);
+-	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
++	char* tmp = NULL;
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len>target_idx);
+ 	const bool wide_str = ('L'==src[0]);
+@@ -2836,7 +2836,7 @@
+ 		tmp = tmp2;
+ 		if (wide_str) *(tmp2++) = 'L';
+ 		strcpy(tmp2,"'\\0'");
+-		return;
++		return tmp;
+ 		};
+ 
+ 	size_t i = 0;
+@@ -2851,12 +2851,13 @@
+ 			*(tmp2++) = '\'';
+ 			strncpy(tmp2,src+i,step);
+ 			*(tmp2 += step) = '\'';
+-			return;
++			return tmp;
+ 			}
+ 		i += step;
+ 		++j;
+ 		}
+ 	while(src_len > i);
++	return tmp;
+ }
+ 
+ /*! 
+@@ -7687,10 +7688,8 @@
+ 		size_t i = 0;
+ 		while(i<lhs_len-1)
+ 			{
+-			char* lhs_lit = NULL;
+-			char* rhs_lit = NULL;
+-			GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i,lhs_lit);
+-			GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i,rhs_lit);
++			char* const lhs_lit = GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i);
++			char* const rhs_lit = GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i);
+ 			const uintmax_t lhs_val = EvalCharacterLiteral(lhs_lit,strlen(lhs_lit));
+ 			const uintmax_t rhs_val = EvalCharacterLiteral(rhs_lit,strlen(rhs_lit));
+ 			free(lhs_lit);
+@@ -10971,9 +10970,8 @@
+ 			}
+ 		return;
+ 		};
+-	char* tmp2 = NULL;
+ 	assert(tmp.representable_as_uint());
+-	GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint(),tmp2);
++	char* tmp2 = GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint());
+ 	assert(tmp2);
+ 	src.destroy();	// str_lit goes invalid here, don't use again
+ 	src.grab_index_token_from<0>(tmp2,C_TESTFLAG_CHAR_LITERAL);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-29 05:04:25 UTC (rev 607)
++++ trunk/CSupport.cpp.in	2011-02-04 09:13:58 UTC (rev 608)
+@@ -2868,12 +2868,12 @@
+ 	return false;
+ }
+ 
+-void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*& tmp)
++static char* GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx)
+ {
+ 	assert(src);
+ 	assert(2<=src_len);
+-	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
++	char* tmp = NULL;
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len>target_idx);
+ 	const bool wide_str = ('L'==src[0]);
+@@ -2891,7 +2891,7 @@
+ 		tmp = tmp2;
+ 		if (wide_str) *(tmp2++) = 'L';
+ 		strcpy(tmp2,"'\\0'");
+-		return;
++		return tmp;
+ 		};
+ 
+ 	size_t i = 0;
+@@ -2906,12 +2906,13 @@
+ 			*(tmp2++) = '\'';
+ 			strncpy(tmp2,src+i,step);
+ 			*(tmp2 += step) = '\'';
+-			return;
++			return tmp;
+ 			}
+ 		i += step;
+ 		++j;
+ 		}
+ 	while(src_len > i);
++	return tmp;
+ }
+ 
+ /*! 
+@@ -7794,10 +7795,8 @@
+ 		size_t i = 0;
+ 		while(i<lhs_len-1)
+ 			{
+-			char* lhs_lit = NULL;
+-			char* rhs_lit = NULL;
+-			GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i,lhs_lit);
+-			GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i,rhs_lit);
++			char* const lhs_lit = GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i);
++			char* const rhs_lit = GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i);
+ 			const uintmax_t lhs_val = EvalCharacterLiteral(lhs_lit,strlen(lhs_lit));
+ 			const uintmax_t rhs_val = EvalCharacterLiteral(rhs_lit,strlen(rhs_lit));
+ 			free(lhs_lit);
+@@ -11108,9 +11107,8 @@
+ 			}
+ 		return;
+ 		};
+-	char* tmp2 = NULL;
+ 	assert(tmp.representable_as_uint());
+-	GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint(),tmp2);
++	char* tmp2 = GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint());
+ 	assert(tmp2);
+ 	src.destroy();	// str_lit goes invalid here, don't use again
+ 	src.grab_index_token_from<0>(tmp2,C_TESTFLAG_CHAR_LITERAL);
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2011-01-29 05:04:25 UTC (rev 607)
++++ trunk/CSupport_pp.cpp	2011-02-04 09:13:58 UTC (rev 608)
+@@ -2586,12 +2586,12 @@
+ 	return false;
+ }
+ 
+-void GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx, char*& tmp)
++static char* GetCCharacterLiteralAt(const char* src, size_t src_len, size_t target_idx)
+ {
+ 	assert(src);
+ 	assert(2<=src_len);
+-	assert(!tmp);
+ 	assert(IsLegalCString(src,src_len));
++	char* tmp = NULL;
+ 	const size_t C_str_len = LengthOfCStringLiteral(src,src_len);
+ 	assert(C_str_len>target_idx);
+ 	const bool wide_str = ('L'==src[0]);
+@@ -2609,7 +2609,7 @@
+ 		tmp = tmp2;
+ 		if (wide_str) *(tmp2++) = 'L';
+ 		strcpy(tmp2,"'\\0'");
+-		return;
++		return tmp;
+ 		};
+ 
+ 	size_t i = 0;
+@@ -2624,12 +2624,13 @@
+ 			*(tmp2++) = '\'';
+ 			strncpy(tmp2,src+i,step);
+ 			*(tmp2 += step) = '\'';
+-			return;
++			return tmp;
+ 			}
+ 		i += step;
+ 		++j;
+ 		}
+ 	while(src_len > i);
++	return tmp;
+ }
+ 
+ /*! 
+@@ -5860,10 +5861,8 @@
+ 		size_t i = 0;
+ 		while(i<lhs_len-1)
+ 			{
+-			char* lhs_lit = NULL;
+-			char* rhs_lit = NULL;
+-			GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i,lhs_lit);
+-			GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i,rhs_lit);
++			char* const lhs_lit = GetCCharacterLiteralAt(lhs.index_tokens[0].token.first,lhs.index_tokens[0].token.second,i);
++			char* const rhs_lit = GetCCharacterLiteralAt(rhs.index_tokens[0].token.first,rhs.index_tokens[0].token.second,i);
+ 			const uintmax_t lhs_val = EvalCharacterLiteral(lhs_lit,strlen(lhs_lit));
+ 			const uintmax_t rhs_val = EvalCharacterLiteral(rhs_lit,strlen(rhs_lit));
+ 			free(lhs_lit);
+@@ -8616,9 +8615,8 @@
+ 			}
+ 		return;
+ 		};
+-	char* tmp2 = NULL;
+ 	assert(tmp.representable_as_uint());
+-	GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint(),tmp2);
++	char* tmp2 = GetCCharacterLiteralAt(str_lit.first,str_lit.second,tmp.to_uint());
+ 	assert(tmp2);
+ 	src.destroy();	// str_lit goes invalid here, don't use again
+ 	src.grab_index_token_from<0>(tmp2,C_TESTFLAG_CHAR_LITERAL);
+
+
+
+From zaimoni at mail.berlios.de  Sun Feb  6 09:19:57 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun,  6 Feb 2011 09:19:57 +0100
+Subject: [Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse
+Message-ID: <20110206081957.81542481364@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-06 09:19:57 +0100 (Sun, 06 Feb 2011)
+New Revision: 609
+
+Modified:
+   trunk/ZParser.cpp
+   trunk/Zaimoni.STL/LexParse/MetaToken.hpp
+Log:
+MetaToken<T>::release() member function
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2011-02-04 09:13:58 UTC (rev 608)
++++ trunk/ZParser.cpp	2011-02-06 08:19:57 UTC (rev 609)
+@@ -134,9 +134,7 @@
+ 				parse_tree& tmp = ParsedList[0]->c_array<0>()[old_parsed_size];
+ 				if (!init_parse_tree_from_token(tmp,tmp_front,pretokenized[0],lang))
+ 					{
+-					char* tmp2 = NULL; //! \bug adjust API, should be able to add qualifications safely
+-					tmp_front.TransferOutAndNULL(tmp2);
+-					tmp.index_tokens[0].token.first = tmp2;
++					tmp.index_tokens[0].token.first = tmp_front.release();
+ 					tmp.control_index_token<0>(true);
+ 					}
+ 				}
+
+Modified: trunk/Zaimoni.STL/LexParse/MetaToken.hpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/MetaToken.hpp	2011-02-04 09:13:58 UTC (rev 608)
++++ trunk/Zaimoni.STL/LexParse/MetaToken.hpp	2011-02-06 08:19:57 UTC (rev 609)
+@@ -84,6 +84,7 @@
+ 	virtual void prefix_chop(size_t prefix) {ltrim(prefix);};	// override to help out TokenSource
+ 
+ 	void TransferOutAndNULL(T*& dest) {_token.TransferOutAndNULL(dest);};
++	T* release() {return _token.release();};
+ 
+ 	// STL interfaces
+ 	const T* data() const {return _token.data();};
+
+
+
+From zaimoni at mail.berlios.de  Tue Feb  8 12:14:51 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue,  8 Feb 2011 12:14:51 +0100
+Subject: [Zcplusplus-commits] r610 - in trunk: . tests/cpp tests/cpp.in
+	tests/zcc tests/zcc.in
+Message-ID: <20110208111451.8AC11480BF3@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-08 12:14:51 +0100 (Tue, 08 Feb 2011)
+New Revision: 610
+
+Modified:
+   trunk/MakeMake.cfg
+   trunk/Makefile
+   trunk/POSIX.dep
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp.in/run_tests_C99.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+   trunk/tests/cpp/run_tests_C99.bat
+   trunk/tests/cpp/run_tests_C99.sh
+   trunk/tests/zcc.in/run_tests.in
+   trunk/tests/zcc.in/run_tests_C99.in
+   trunk/tests/zcc/run_tests.bat
+   trunk/tests/zcc/run_tests.sh
+   trunk/tests/zcc/run_tests_C99.bat
+   trunk/tests/zcc/run_tests_C99.sh
+Log:
+move destination for executables to bin subdirectory
+
+Modified: trunk/MakeMake.cfg
+===================================================================
+--- trunk/MakeMake.cfg	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/MakeMake.cfg	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,7 +1,7 @@
+ ########
+-ProgObjects = {	'z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','type_system_pp','ParseTree','type_spec_pp','CSupport_pp','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc_pp','CPreproc_autogen_pp'),
+-				'zcc':('zcc','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc','CPreproc_autogen','ZParser')}
+-MainPrograms = ['z_cpp','zcc']
++ProgObjects = {	'bin/z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','type_system_pp','ParseTree','type_spec_pp','CSupport_pp','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc_pp','CPreproc_autogen_pp'),
++				'bin/zcc':('zcc','errors','langroute','AtomicString','str_aux','lex_core','filesystem','uchar_blob','unsigned_var_int','CPUInfo','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','end_lc','end_nl','load_src','CPreproc','CPreproc_autogen','ZParser')}
++MainPrograms = ['bin/z_cpp','bin/zcc']
+ 
+ # process control
+ C_assembly_preprocessing = ''
+
+Modified: trunk/Makefile
+===================================================================
+--- trunk/Makefile	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/Makefile	2011-02-08 11:14:51 UTC (rev 610)
+@@ -6,7 +6,7 @@
+ include POSIX.inc
+ 
+ # GNU targets we know about
+-all: z_cpp.exe zcc.exe
++all: bin/z_cpp.exe bin/zcc.exe
+ 
+ clean:
+ 	rm -f *.o *.exe lib/host.zcc/*.a
+@@ -18,13 +18,13 @@
+ make_Zaimoni_STL:
+ 	cd Zaimoni.STL; make host_install
+ 
+-z_cpp.exe : make_Zaimoni_STL $(OBJECTS_Z_CPP_LINK_PRIORITY)
+-	g++ $(LINK_FLAGS) -oz_cpp.exe $(OBJECTS_Z_CPP) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
+-	strip --preserve-dates --strip-unneeded z_cpp.exe
++bin/zcc.exe : make_Zaimoni_STL $(OBJECTS_BIN/ZCC_LINK_PRIORITY)
++	g++ $(LINK_FLAGS) -obin/zcc.exe $(OBJECTS_BIN/ZCC) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
++	strip --preserve-dates --strip-unneeded bin/zcc.exe
+ 
+-zcc.exe : make_Zaimoni_STL $(OBJECTS_ZCC_LINK_PRIORITY)
+-	g++ $(LINK_FLAGS) -ozcc.exe $(OBJECTS_ZCC) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
+-	strip --preserve-dates --strip-unneeded zcc.exe
++bin/z_cpp.exe : make_Zaimoni_STL $(OBJECTS_BIN/Z_CPP_LINK_PRIORITY)
++	g++ $(LINK_FLAGS) -obin/z_cpp.exe $(OBJECTS_BIN/Z_CPP) -lz_langconf  -lz_langconf -lz_log_adapter -lz_stdio_log -lz_mutex -lz_format_util -lz_stdio_c -lz_memory
++	strip --preserve-dates --strip-unneeded bin/z_cpp.exe
+ 
+ # inference rules
+ # processing details
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/POSIX.dep	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,11 +1,11 @@
+-OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o type_system_pp.o ParseTree.o type_spec_pp.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = type_spec_pp.o CPreproc_pp.o type_system_pp.o CSupport_pp.o CPreproc_autogen_pp.o ParseTree.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o z_cpp.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_BIN/ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
++OBJECTS_BIN/ZCC_LINK_PRIORITY = ZParser.o CSupport.o ParseTree.o type_system.o zcc.o struct_type.o type_spec.o CPreproc.o CPreproc_autogen.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+-OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = type_system.o CSupport.o CPreproc.o CPreproc_autogen.o ZParser.o ParseTree.o type_spec.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o zcc.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
++OBJECTS_BIN/Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o type_system_pp.o ParseTree.o type_spec_pp.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o end_lc.o end_nl.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
++OBJECTS_BIN/Z_CPP_LINK_PRIORITY = CSupport_pp.o ParseTree.o z_cpp.o type_spec_pp.o CPreproc_pp.o type_system_pp.o CPreproc_autogen_pp.o load_src.o end_nl.o end_lc.o Trigraph.o Flat_UNI.o errors.o uchar_blob.o CPUInfo.o unsigned_var_int.o unsigned_aux.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o
+ 
+ # dependencies
+-z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
++zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+ errors.o: errors.hpp langroute.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ langroute.o: langroute.hpp _CSupport1.hpp Zaimoni.STL/Logging.h Zaimoni.STL/POD.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp
+ AtomicString.o: AtomicString.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -15,10 +15,11 @@
+ uchar_blob.o: uchar_blob.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp
+ unsigned_var_int.o: unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp
+ CPUInfo.o: CPUInfo.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp
+-type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+-ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
++type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
++ParseTree.o: ParseTree.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp weak_token.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h
++type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPDecimalInteger.o: C_PPDecimalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPOctalInteger.o: C_PPOctalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -31,13 +32,12 @@
+ end_lc.o: end_lc.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_nl.o: end_nl.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+-CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimon
+ i.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+-struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
+-type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+-type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+-CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
++z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
++type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
++type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
++CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimon
+ i.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs regression tests for z_cpp.exe
+- at REM (C)2009 Kenneth Boyd, license: MIT.txt
++ at REM (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ @setlocal
+ @set BAD_PASS=0
+@@ -9,14 +9,14 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+- at set CPP=..\..\z_cpp
+- at set CPP_ISO=..\..\z_cpp --pedantic
+- at set CPP_SIGNMAG_NOTRAP=..\..\z_cpp --int-sign-magnitude
+- at set CPP_SIGNMAG_TRAP=..\..\z_cpp --int-sign-magnitude --int-traps
+- at set CPP_ONESCOMP_NOTRAP=..\..\z_cpp --int-ones-complement
+- at set CPP_ONESCOMP_TRAP=..\..\z_cpp --int-ones-complement --int-traps
+- at set CPP_TWOSCOMP_NOTRAP=..\..\z_cpp --int-twos-complement
+- at set CPP_TWOSCOMP_TRAP=..\..\z_cpp --int-twos-complement --int-traps
++ at set CPP=..\..\bin\z_cpp
++ at set CPP_ISO=..\..\bin\z_cpp --pedantic
++ at set CPP_SIGNMAG_NOTRAP=..\..\bin\z_cpp --int-sign-magnitude
++ at set CPP_SIGNMAG_TRAP=..\..\bin\z_cpp --int-sign-magnitude --int-traps
++ at set CPP_ONESCOMP_NOTRAP=..\..\bin\z_cpp --int-ones-complement
++ at set CPP_ONESCOMP_TRAP=..\..\bin\z_cpp --int-ones-complement --int-traps
++ at set CPP_TWOSCOMP_NOTRAP=..\..\bin\z_cpp --int-twos-complement
++ at set CPP_TWOSCOMP_TRAP=..\..\bin\z_cpp --int-twos-complement --int-traps
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # runs regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+@@ -16,14 +16,14 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP=../../z_cpp
+-	local CPP_ISO="../../z_cpp --pedantic"
+-	local CPP_SIGNMAG_NOTRAP="../../z_cpp --int-sign-magnitude"
+-	local CPP_SIGNMAG_TRAP="../../z_cpp --int-sign-magnitude --int-traps"
+-	local CPP_ONESCOMP_NOTRAP="../../z_cpp --int-ones-complement"
+-	local CPP_ONESCOMP_TRAP="../../z_cpp --int-ones-complement --int-traps"
+-	local CPP_TWOSCOMP_NOTRAP="../../z_cpp --int-twos-complement"
+-	local CPP_TWOSCOMP_TRAP="../../z_cpp --int-twos-complement --int-traps"
++	local CPP=../../bin/z_cpp
++	local CPP_ISO="../../bin/z_cpp --pedantic"
++	local CPP_SIGNMAG_NOTRAP="../../bin/z_cpp --int-sign-magnitude"
++	local CPP_SIGNMAG_TRAP="../../bin/z_cpp --int-sign-magnitude --int-traps"
++	local CPP_ONESCOMP_NOTRAP="../../bin/z_cpp --int-ones-complement"
++	local CPP_ONESCOMP_TRAP="../../bin/z_cpp --int-ones-complement --int-traps"
++	local CPP_TWOSCOMP_NOTRAP="../../bin/z_cpp --int-twos-complement"
++	local CPP_TWOSCOMP_TRAP="../../bin/z_cpp --int-twos-complement --int-traps"
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/cpp/run_tests_C99.bat
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests_C99.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs only C99 regression tests for z_cpp.exe
+- at REM (C)2009 Kenneth Boyd, license: MIT.txt
++ at REM (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ @setlocal
+ @set BAD_PASS=0
+ @set BAD_PASS_NAME=LastAccepted:
+@@ -8,7 +8,7 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+- at set CPP=..\..\z_cpp --pedantic
++ at set CPP=..\..\bin\z_cpp --pedantic
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/cpp/run_tests_C99.sh
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp/run_tests_C99.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # runs only C99 regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+ 
+@@ -15,7 +15,7 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP="../../z_cpp --pedantic"
++	local CPP="../../bin/z_cpp --pedantic"
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp.in/run_tests.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,16 +1,16 @@
+ SUFFIXES h hpp
+ DESC runs regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ PROLOG
+-VAR CPP ../../z_cpp
+-VAR CPP_ISO ../../z_cpp --pedantic
+-VAR CPP_SIGNMAG_NOTRAP ../../z_cpp --int-sign-magnitude
+-VAR CPP_SIGNMAG_TRAP ../../z_cpp --int-sign-magnitude --int-traps
+-VAR CPP_ONESCOMP_NOTRAP ../../z_cpp --int-ones-complement
+-VAR CPP_ONESCOMP_TRAP ../../z_cpp --int-ones-complement --int-traps
+-VAR CPP_TWOSCOMP_NOTRAP ../../z_cpp --int-twos-complement
+-VAR CPP_TWOSCOMP_TRAP ../../z_cpp --int-twos-complement --int-traps
++VAR CPP ../../bin/z_cpp
++VAR CPP_ISO ../../bin/z_cpp --pedantic
++VAR CPP_SIGNMAG_NOTRAP ../../bin/z_cpp --int-sign-magnitude
++VAR CPP_SIGNMAG_TRAP ../../bin/z_cpp --int-sign-magnitude --int-traps
++VAR CPP_ONESCOMP_NOTRAP ../../bin/z_cpp --int-ones-complement
++VAR CPP_ONESCOMP_TRAP ../../bin/z_cpp --int-ones-complement --int-traps
++VAR CPP_TWOSCOMP_NOTRAP ../../bin/z_cpp --int-twos-complement
++VAR CPP_TWOSCOMP_TRAP ../../bin/z_cpp --int-twos-complement --int-traps
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO Error*
+
+Modified: trunk/tests/cpp.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests_C99.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/cpp.in/run_tests_C99.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,8 +1,8 @@
+ SUFFIXES h
+ DESC runs only C99 regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ PROLOG
+-VAR CPP ../../z_cpp --pedantic
++VAR CPP ../../bin/z_cpp --pedantic
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP Error*
+
+Modified: trunk/tests/zcc/run_tests.bat
+===================================================================
+--- trunk/tests/zcc/run_tests.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,7 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs regression tests for z_cpp.exe
+- at REM (C)2009 Kenneth Boyd, license: MIT.txt
++ at REM (C)2009,2011 Kenneth Boyd, license: MIT.txt
++ at REM Note: namespace.CPP, compat subdirectories have no C files
+ 
+ @setlocal
+ @set BAD_PASS=0
+@@ -9,10 +10,10 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+- at set CPP=..\..\zcc
+- at set CPP_ISO=..\..\zcc --pedantic
+- at set CPP_BACKPORT=..\..\zcc -Wbackport
+- at set CPP_COMPAT=..\..\zcc -Wc-c++-compat
++ at set CPP=..\..\bin\zcc
++ at set CPP_ISO=..\..\bin\zcc --pedantic
++ at set CPP_BACKPORT=..\..\bin\zcc -Wbackport
++ at set CPP_COMPAT=..\..\bin\zcc -Wc-c++-compat
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/zcc/run_tests.sh
+===================================================================
+--- trunk/tests/zcc/run_tests.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,7 @@
+ #!/bin/sh
+ # runs regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
++# Note: namespace.CPP, compat subdirectories have no C files
+ 
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+@@ -16,10 +17,10 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP=../../zcc
+-	local CPP_ISO="../../zcc --pedantic"
+-	local CPP_BACKPORT="../../zcc -Wbackport"
+-	local CPP_COMPAT="../../zcc -Wc-c++-compat"
++	local CPP=../../bin/zcc
++	local CPP_ISO="../../bin/zcc --pedantic"
++	local CPP_BACKPORT="../../bin/zcc -Wbackport"
++	local CPP_COMPAT="../../bin/zcc -Wc-c++-compat"
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/zcc/run_tests_C99.bat
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.bat	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests_C99.bat	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ @REM not sure how far below WinXP this will run
+ @REM runs only C99 regression tests for z_cpp.exe
+- at REM (C)2009 Kenneth Boyd, license: MIT.txt
++ at REM (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ @setlocal
+ @set BAD_PASS=0
+ @set BAD_PASS_NAME=LastAccepted:
+@@ -8,7 +8,7 @@
+ @set FAILED=0
+ @set BAD_FAIL_NAME=LastRejected:
+ @set ACCEPT_TEST=0
+- at set CPP=..\..\zcc --pedantic
++ at set CPP=..\..\bin\zcc --pedantic
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+
+Modified: trunk/tests/zcc/run_tests_C99.sh
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.sh	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc/run_tests_C99.sh	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # runs only C99 regression tests for z_cpp.exe
+-# (C)2009 Kenneth Boyd, license: MIT.txt
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ ASSERT_FAILED=0
+ ASSERT_FAIL_NAME=
+ 
+@@ -15,7 +15,7 @@
+ 	local FAILED=0
+ 	local BAD_FAIL_NAME=
+ 	local ACCEPT_TEST=0
+-	local CPP="../../zcc --pedantic"
++	local CPP="../../bin/zcc --pedantic"
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+
+Modified: trunk/tests/zcc.in/run_tests.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc.in/run_tests.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,12 +1,13 @@
+ SUFFIXES h hpp
+ DESC runs regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
++DESC Note: namespace.CPP, compat subdirectories have no C files
+ 
+ PROLOG
+-VAR CPP ../../zcc
+-VAR CPP_ISO ../../zcc --pedantic
+-VAR CPP_BACKPORT ../../zcc -Wbackport
+-VAR CPP_COMPAT ../../zcc -Wc-c++-compat
++VAR CPP ../../bin/zcc
++VAR CPP_ISO ../../bin/zcc --pedantic
++VAR CPP_BACKPORT ../../bin/zcc -Wbackport
++VAR CPP_COMPAT ../../bin/zcc -Wc-c++-compat
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO decl.C99/Error*
+
+Modified: trunk/tests/zcc.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests_C99.in	2011-02-06 08:19:57 UTC (rev 609)
++++ trunk/tests/zcc.in/run_tests_C99.in	2011-02-08 11:14:51 UTC (rev 610)
+@@ -1,8 +1,8 @@
+ SUFFIXES h
+ DESC runs only C99 regression tests for z_cpp.exe
+-DESC (C)2009 Kenneth Boyd, license: MIT.txt
++DESC (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ PROLOG
+-VAR CPP ../../zcc --pedantic
++VAR CPP ../../bin/zcc --pedantic
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP decl.C99/Error*
+
+
+
+From zaimoni at mail.berlios.de  Tue Feb  8 12:48:36 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue,  8 Feb 2011 12:48:36 +0100
+Subject: [Zcplusplus-commits] r611 - trunk
+Message-ID: <20110208114837.46966480D1A@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-08 12:48:36 +0100 (Tue, 08 Feb 2011)
+New Revision: 611
+
+Added:
+   trunk/bin/
+Log:
+build system fix
+
+
+
+From zaimoni at mail.berlios.de  Fri Feb 11 11:42:13 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Fri, 11 Feb 2011 11:42:13 +0100
+Subject: [Zcplusplus-commits] r612 - trunk
+Message-ID: <20110211104213.E426848139E@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-11 11:42:13 +0100 (Fri, 11 Feb 2011)
+New Revision: 612
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+C1X: first step towards _Thread_Local to be parsed like C++0X thread_local
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-02-08 11:48:36 UTC (rev 611)
++++ trunk/CSupport.cpp	2011-02-11 10:42:13 UTC (rev 612)
+@@ -910,7 +910,8 @@
+ 		DICT_STRUCT("static"),
+ 		DICT_STRUCT("extern"),
+ 		DICT_STRUCT("inline"),
+-		DICT_STRUCT("auto")
++		DICT_STRUCT("auto"),
++		DICT_STRUCT("_Thread_Local")	// C1X, but in reserved class of identifiers
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -919,13 +920,13 @@
+ 	{	DICT_STRUCT("typedef"),
+ 		DICT_STRUCT("const"),
+ 		DICT_STRUCT("volatile"),
+-		DICT_STRUCT("thread_local"),
++		DICT_STRUCT("mutable"),
+ 		DICT_STRUCT("register"),
+ 		DICT_STRUCT("static"),
+ 		DICT_STRUCT("extern"),
+ 		DICT_STRUCT("inline"),
+ 		DICT_STRUCT("constexpr"),
+-		DICT_STRUCT("mutable"),
++		DICT_STRUCT("thread_local"),
+ 		DICT_STRUCT("virtual"),
+ 		DICT_STRUCT("explicit"),
+ 		DICT_STRUCT("friend")
+@@ -938,8 +939,9 @@
+ #define C99_CPP0X_DECLSPEC_STATIC (1ULL<<5)
+ #define C99_CPP0X_DECLSPEC_EXTERN (1ULL<<6)
+ #define C99_CPP0X_DECLSPEC_INLINE (1ULL<<7)
++#define C99_CPP0X_DECLSPEC_THREAD_LOCAL (1ULL<<9)
+ #define C99_DECLSPEC_AUTO (1ULL<<8)
+-#define CPP_DECLSPEC_MUTABLE (1ULL<<9)
++#define CPP_DECLSPEC_MUTABLE (1ULL<<3)
+ #define CPP_DECLSPEC_VIRTUAL (1ULL<<10)
+ #define CPP_DECLSPEC_EXPLICIT (1ULL<<11)
+ #define CPP_DECLSPEC_FRIEND (1ULL<<12)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-02-08 11:48:36 UTC (rev 611)
++++ trunk/CSupport.cpp.in	2011-02-11 10:42:13 UTC (rev 612)
+@@ -962,7 +962,8 @@
+ 		DICT_STRUCT("static"),
+ 		DICT_STRUCT("extern"),
+ 		DICT_STRUCT("inline"),
+-		DICT_STRUCT("auto")
++		DICT_STRUCT("auto"),
++		DICT_STRUCT("_Thread_Local")	// C1X, but in reserved class of identifiers
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -971,13 +972,13 @@
+ 	{	DICT_STRUCT("typedef"),
+ 		DICT_STRUCT("const"),
+ 		DICT_STRUCT("volatile"),
+-		DICT_STRUCT("thread_local"),
++		DICT_STRUCT("mutable"),
+ 		DICT_STRUCT("register"),
+ 		DICT_STRUCT("static"),
+ 		DICT_STRUCT("extern"),
+ 		DICT_STRUCT("inline"),
+ 		DICT_STRUCT("constexpr"),
+-		DICT_STRUCT("mutable"),
++		DICT_STRUCT("thread_local"),
+ 		DICT_STRUCT("virtual"),
+ 		DICT_STRUCT("explicit"),
+ 		DICT_STRUCT("friend")
+@@ -990,8 +991,9 @@
+ #define C99_CPP0X_DECLSPEC_STATIC (1ULL<<5)
+ #define C99_CPP0X_DECLSPEC_EXTERN (1ULL<<6)
+ #define C99_CPP0X_DECLSPEC_INLINE (1ULL<<7)
++#define C99_CPP0X_DECLSPEC_THREAD_LOCAL (1ULL<<9)
+ #define C99_DECLSPEC_AUTO (1ULL<<8)
+-#define CPP_DECLSPEC_MUTABLE (1ULL<<9)
++#define CPP_DECLSPEC_MUTABLE (1ULL<<3)
+ #define CPP_DECLSPEC_VIRTUAL (1ULL<<10)
+ #define CPP_DECLSPEC_EXPLICIT (1ULL<<11)
+ #define CPP_DECLSPEC_FRIEND (1ULL<<12)
+
+
+
+From zaimoni at mail.berlios.de  Fri Feb 11 12:01:18 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Fri, 11 Feb 2011 12:01:18 +0100
+Subject: [Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM
+Message-ID: <20110211110118.C81F348139E@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-11 12:01:18 +0100 (Fri, 11 Feb 2011)
+New Revision: 613
+
+Modified:
+   trunk/Zaimoni.STL/core.RAM/memory.cpp
+Log:
+lines of code reduction, bugfix, warning reduction for Windows/GCC memory manager
+
+Modified: trunk/Zaimoni.STL/core.RAM/memory.cpp
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-02-11 10:42:13 UTC (rev 612)
++++ trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-02-11 11:01:18 UTC (rev 613)
+@@ -898,66 +898,63 @@
+ void* operator new(size_t NewSize) throw (std::bad_alloc)
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	while(NULL==Tmp && NULL!=ZaimoniNewHandler)
+-		{
+-		ZaimoniNewHandler();
+-		Tmp = calloc(1,NewSize);
+-		}
+-	if (NULL==Tmp) throw std::bad_alloc();
++	if (ZaimoniNewHandler)
++		while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++
++	if (!Tmp) throw std::bad_alloc();
+ 	return Tmp;
+ }
+ 
+ void* operator new[](std::size_t NewSize) throw (std::bad_alloc)
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	while(NULL==Tmp && NULL!=ZaimoniNewHandler)
+-		{
+-		ZaimoniNewHandler();
+-		Tmp = calloc(1,NewSize);
+-		}
+-	if (NULL==Tmp) throw std::bad_alloc();
++	if (ZaimoniNewHandler)
++		while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++
++	if (!Tmp) throw std::bad_alloc();
+ 	return Tmp;
+ }
+ 
+-void* operator new(size_t NewSize, const std::nothrow_t& tracer) throw ()
++void* operator new(size_t NewSize, const std::nothrow_t&) throw ()
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	while(NULL==Tmp && NULL!=ZaimoniNewHandler)
+-		{
+-		ZaimoniNewHandler();
+-		Tmp = calloc(1,NewSize);
+-		}
++	if (ZaimoniNewHandler)
++		try	{
++			while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++			}
++		catch(const std::bad_alloc&)
++			{
++			return NULL;
++			}
++
+ 	return Tmp;
+ }
+ 
+-void*
+-operator new[](std::size_t NewSize, const std::nothrow_t& tracer) throw ()
++void* operator new[](std::size_t NewSize, const std::nothrow_t&) throw ()
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	try	{
+-		while(NULL==Tmp && NULL!=ZaimoniNewHandler)
++	if (ZaimoniNewHandler)
++		try	{
++			while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++			}
++		catch(const std::bad_alloc&)
+ 			{
+-			ZaimoniNewHandler();
+-			Tmp = calloc(1,NewSize);
++			return NULL;
+ 			}
+-		}
+-	catch(const std::bad_alloc&)
+-		{
+-		return NULL;
+-		}
++
+ 	return Tmp;
+ }
+ 
+ void operator delete(void* Target) throw ()
+ {/* FORMALLY CORRECT: 4/16/98, Kenneth Boyd */ free(Target);}
+ 
+-void operator delete(void* Target, const std::nothrow_t& tracer) throw ()
++void operator delete(void* Target, const std::nothrow_t&) throw ()
+ {/* FORMALLY CORRECT: 4/16/98, Kenneth Boyd */ free(Target);}
+ 
+ void operator delete[](void* Target) throw()
+ {/* FORMALLY CORRECT: 9/27/2005, Kenneth Boyd */ free(Target);}
+ 
+-void operator delete[](void* Target, const std::nothrow_t& tracer) throw()
++void operator delete[](void* Target, const std::nothrow_t&) throw()
+ {/* FORMALLY CORRECT: 9/27/2005, Kenneth Boyd */ free(Target);}
+ 
+ #endif
+
+
+
+From zaimoni at mail.berlios.de  Mon Feb 14 20:09:42 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 14 Feb 2011 20:09:42 +0100
+Subject: [Zcplusplus-commits] r614 - trunk
+Message-ID: <20110214190942.906044813D5@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-14 20:09:42 +0100 (Mon, 14 Feb 2011)
+New Revision: 614
+
+Modified:
+   trunk/POSIX.dep
+   trunk/str_aux.cpp
+   trunk/str_aux.h
+Log:
+new function C_make_string; future changes to dependencies
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2011-02-11 11:01:18 UTC (rev 613)
++++ trunk/POSIX.dep	2011-02-14 19:09:42 UTC (rev 614)
+@@ -9,7 +9,7 @@
+ errors.o: errors.hpp langroute.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ langroute.o: langroute.hpp _CSupport1.hpp Zaimoni.STL/Logging.h Zaimoni.STL/POD.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp
+ AtomicString.o: AtomicString.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+-str_aux.o: str_aux.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
++str_aux.o: str_aux.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/flat_alg.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp
+ lex_core.o: lex_core.h Zaimoni.STL/lite_alg.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ filesystem.o: filesystem.h Zaimoni.STL/Compiler.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h
+ uchar_blob.o: uchar_blob.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp
+@@ -17,7 +17,7 @@
+ CPUInfo.o: CPUInfo.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp
+ struct_type.o: struct_type.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp
+ type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+-ParseTree.o: ParseTree.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp weak_token.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h
++ParseTree.o: ParseTree.hpp str_aux.h type_spec.hpp Zaimoni.STL/MetaRAM2.hpp weak_token.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h
+ type_spec.o: type_spec.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp weak_token.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -32,12 +32,12 @@
+ end_lc.o: end_lc.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_nl.o: end_nl.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+-CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logi
+ c_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp str_aux.h type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimon
+ i.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
++ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp str_aux.h type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
+ z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
+ type_system_pp.o: type_system_pp.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ type_spec_pp.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system_pp.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uc
+ har_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+-CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimon
+ i.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
++CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp str_aux.h type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/Perl_localize.hpp DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.
+ hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+
+Modified: trunk/str_aux.cpp
+===================================================================
+--- trunk/str_aux.cpp	2011-02-11 11:01:18 UTC (rev 613)
++++ trunk/str_aux.cpp	2011-02-14 19:09:42 UTC (rev 614)
+@@ -1,10 +1,16 @@
+ // str_aux.cpp
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt 
+ 
+ #include "str_aux.h"
+ 
+ #include <string.h>
+ #include "Zaimoni.STL/Logging.h"
+ 
++#ifdef __cplusplus
++#include "Zaimoni.STL/Compiler.h"
++#include "Zaimoni.STL/MetaRAM2.hpp"
++#endif
++
+ EXTERN_C size_t count_disjoint_substring_instances(const char* const src,const char* const match)
+ {
+ 	assert(src && *src);
+@@ -44,3 +50,15 @@
+ 	assert(0<n);
+ }
+ 
++EXTERN_C char* C_make_string(const char* src,size_t src_len)
++{
++	assert(src);
++#ifdef __cplusplus
++	char* const tmp = zaimoni::_new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(src_len));
++#else
++	char* const tmp = (char*)calloc(1,ZAIMONI_LEN_WITH_NULL(src_len));
++	if (!tmp) _fatal("FATAL: RAM exhaustion");
++#endif
++	memmove(tmp,src,src_len);
++}
++
+
+Modified: trunk/str_aux.h
+===================================================================
+--- trunk/str_aux.h	2011-02-11 11:01:18 UTC (rev 613)
++++ trunk/str_aux.h	2011-02-14 19:09:42 UTC (rev 614)
+@@ -1,4 +1,5 @@
+ // str_aux.h
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt 
+ 
+ #ifndef STR_AUX_H
+ #define STR_AUX_H 1
+@@ -30,6 +31,15 @@
+  */
+ void report_disjoint_substring_instances(const char* src,const char* match,const char** index_stack,size_t index_stack_size);
+ 
++/**
++ * copies the C string pointed to by src of length src_len, to a calloc'ed 
++ * buffer suitable for freeing.
++ *
++ * \return non-NULL copy of string.  C++ implementation throws std::bad_alloc;
++ * C implementation terminates with exit code EXIT_FAILURE.
++ */
++char* C_make_string(const char* src,size_t src_len);
++
+ #ifdef __cplusplus
+ }	/* extern "C" */
+ #endif
+
+
+
+From zaimoni at mail.berlios.de  Mon Feb 14 20:10:07 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 14 Feb 2011 20:10:07 +0100
+Subject: [Zcplusplus-commits] r615 - trunk
+Message-ID: <20110214191007.EEA404813D5@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-14 20:10:07 +0100 (Mon, 14 Feb 2011)
+New Revision: 615
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+   trunk/ParseTree.cpp
+   trunk/ZParser.cpp
+Log:
+actually use C_make_string
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/CPreproc.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -1,5 +1,5 @@
+ // CPreproc.cpp
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include "CPreproc.hpp"
+ 
+@@ -19,6 +19,7 @@
+ #include "langroute.hpp"
+ #include "load_src.hpp"
+ #include "ParseTree.hpp"
++#include "str_aux.h"
+ #include "type_system.hpp"
+ #include "weak_token.hpp"
+ #include "_version.h"
+@@ -1194,9 +1195,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(TokenList[i]->data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -1243,10 +1242,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
++							
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token<char>(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token<char>;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+@@ -1320,10 +1317,8 @@
+ 								macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-								macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-								strncpy(macros_function[function_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-								ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
++								macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
++								
+ 								macros_function_arglist[function_macro_insertion_index] = new Token<char>;
+ 								arglist.MoveInto(*macros_function_arglist[function_macro_insertion_index]);
+ 
+@@ -1365,10 +1360,8 @@
+ 							macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-							macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_function[function_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
+ 							macros_function_arglist[function_macro_insertion_index] = new Token<char>;
+ 							macros_function_expansion[function_macro_insertion_index] = new Token<char>;
+ 							macros_function_expansion_pre_eval[function_macro_insertion_index] = new Token<char>(expansion);
+@@ -2176,8 +2169,7 @@
+ 				while(2<j)
+ 					{
+ 					if (C_TESTFLAG_IDENTIFIER!=pretokenized[--j].third) continue;
+-					char* tmp = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[j].second));
+-					strncpy(tmp,x+pretokenized[j].first,pretokenized[j].second);
++					char* tmp = C_make_string(x+pretokenized[j].first,pretokenized[j].second);
+ 					if (!locked_macros.InsertSlotAt(locked_macros.size(),tmp))
+ 						{
+ 						free(tmp);
+@@ -3009,8 +3001,7 @@
+ 					}
+ 
+ 				char buf[FILENAME_MAX];
+-				char* const look_for = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
+-				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
+ 				if (strchr(look_for,'"'))
+ 					{
+ 					message_header(x);
+@@ -3043,8 +3034,7 @@
+ 							continue;
+ 							}
+ 						char buf[FILENAME_MAX];
+-						char* const look_for = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
+-						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
+ 						if (strchr(look_for,'<'))
+ 							{
+ 							message_header(x);
+@@ -3523,14 +3513,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr<char*> macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,&macro_stack);
+ 			}
+ 		else{
+ 			used_macro_stack->insertNSlotsAt(1,used_macro_stack->size());
+-			used_macro_stack->back() = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(used_macro_stack->back(),x.data()+critical_offset,token_len);
++			used_macro_stack->back() = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+ 			used_macro_stack->DeleteIdx(used_macro_stack->size()-1);
+ 			}
+@@ -3622,16 +3610,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr<char*> macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
+-
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, &macro_stack, formal_arguments, actual_arguments, Test);
+ 			}
+ 		else{
+ 			used_macro_stack->insertNSlotsAt(1,used_macro_stack->size());
+-			used_macro_stack->back() = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(used_macro_stack->back(),x.data()+critical_offset,token_len);
+-
++			used_macro_stack->back() = C_make_string(x.data()+critical_offset,token_len); 
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, used_macro_stack, formal_arguments, actual_arguments, Test);
+ 			used_macro_stack->DeleteIdx(used_macro_stack->size()-1);
+ 			}
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/CPreproc.cpp.in	2011-02-14 19:10:07 UTC (rev 615)
+@@ -4,7 +4,7 @@
+ #/*cut-nocpp*/
+ // CPreproc_pp.cpp
+ #/*cut-nocpp*/
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #/*cut-cpp*/
+ #include "CPreproc.hpp"
+@@ -34,6 +34,7 @@
+ #include "langroute.hpp"
+ #include "load_src.hpp"
+ #include "ParseTree.hpp"
++#include "str_aux.h"
+ #/*cut-cpp*/
+ #include "type_system.hpp"
+ #/*cut-cpp*/
+@@ -1221,9 +1222,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(TokenList[i]->data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -1270,10 +1269,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
++							
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token<char>(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token<char>;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+@@ -1347,10 +1344,8 @@
+ 								macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-								macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-								strncpy(macros_function[function_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-								ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
++								macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
++								
+ 								macros_function_arglist[function_macro_insertion_index] = new Token<char>;
+ 								arglist.MoveInto(*macros_function_arglist[function_macro_insertion_index]);
+ 
+@@ -1392,10 +1387,8 @@
+ 							macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-							macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_function[function_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
+ 							macros_function_arglist[function_macro_insertion_index] = new Token<char>;
+ 							macros_function_expansion[function_macro_insertion_index] = new Token<char>;
+ 							macros_function_expansion_pre_eval[function_macro_insertion_index] = new Token<char>(expansion);
+@@ -2217,8 +2210,7 @@
+ 				while(2<j)
+ 					{
+ 					if (C_TESTFLAG_IDENTIFIER!=pretokenized[--j].third) continue;
+-					char* tmp = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[j].second));
+-					strncpy(tmp,x+pretokenized[j].first,pretokenized[j].second);
++					char* tmp = C_make_string(x+pretokenized[j].first,pretokenized[j].second);
+ 					if (!locked_macros.InsertSlotAt(locked_macros.size(),tmp))
+ 						{
+ 						free(tmp);
+@@ -3050,8 +3042,7 @@
+ 					}
+ 
+ 				char buf[FILENAME_MAX];
+-				char* const look_for = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
+-				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
+ 				if (strchr(look_for,'"'))
+ 					{
+ 					message_header(x);
+@@ -3084,8 +3075,7 @@
+ 							continue;
+ 							}
+ 						char buf[FILENAME_MAX];
+-						char* const look_for = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
+-						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
+ 						if (strchr(look_for,'<'))
+ 							{
+ 							message_header(x);
+@@ -3569,14 +3559,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr<char*> macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,&macro_stack);
+ 			}
+ 		else{
+ 			used_macro_stack->insertNSlotsAt(1,used_macro_stack->size());
+-			used_macro_stack->back() = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(used_macro_stack->back(),x.data()+critical_offset,token_len);
++			used_macro_stack->back() = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+ 			used_macro_stack->DeleteIdx(used_macro_stack->size()-1);
+ 			}
+@@ -3668,16 +3656,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr<char*> macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
+-
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, &macro_stack, formal_arguments, actual_arguments, Test);
+ 			}
+ 		else{
+ 			used_macro_stack->insertNSlotsAt(1,used_macro_stack->size());
+-			used_macro_stack->back() = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(used_macro_stack->back(),x.data()+critical_offset,token_len);
+-
++			used_macro_stack->back() = C_make_string(x.data()+critical_offset,token_len); 
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, used_macro_stack, formal_arguments, actual_arguments, Test);
+ 			used_macro_stack->DeleteIdx(used_macro_stack->size()-1);
+ 			}
+@@ -5119,9 +5103,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],inbound_lines[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(inbound_lines[i]->data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(inbound_lines[i]->data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -5168,10 +5150,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_object[object_macro_insertion_index] = C_make_string(inbound_lines[i]->data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_object[object_macro_insertion_index],inbound_lines[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token<char>(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token<char>;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/CPreproc_pp.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -1,5 +1,5 @@
+ // CPreproc_pp.cpp
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include "CPreproc_pp.hpp"
+ 
+@@ -18,6 +18,7 @@
+ #include "langroute.hpp"
+ #include "load_src.hpp"
+ #include "ParseTree.hpp"
++#include "str_aux.h"
+ #include "type_system_pp.hpp"
+ #include "weak_token.hpp"
+ #include "_version.h"
+@@ -1178,9 +1179,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(TokenList[i]->data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -1227,10 +1226,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
++							
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token<char>(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token<char>;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+@@ -1304,10 +1301,8 @@
+ 								macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-								macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-								strncpy(macros_function[function_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-								ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
++								macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
++								
+ 								macros_function_arglist[function_macro_insertion_index] = new Token<char>;
+ 								arglist.MoveInto(*macros_function_arglist[function_macro_insertion_index]);
+ 
+@@ -1349,10 +1344,8 @@
+ 							macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-							macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]->data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_function[function_macro_insertion_index],TokenList[i]->data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
+ 							macros_function_arglist[function_macro_insertion_index] = new Token<char>;
+ 							macros_function_expansion[function_macro_insertion_index] = new Token<char>;
+ 							macros_function_expansion_pre_eval[function_macro_insertion_index] = new Token<char>(expansion);
+@@ -2136,8 +2129,7 @@
+ 				while(2<j)
+ 					{
+ 					if (C_TESTFLAG_IDENTIFIER!=pretokenized[--j].third) continue;
+-					char* tmp = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[j].second));
+-					strncpy(tmp,x+pretokenized[j].first,pretokenized[j].second);
++					char* tmp = C_make_string(x+pretokenized[j].first,pretokenized[j].second);
+ 					if (!locked_macros.InsertSlotAt(locked_macros.size(),tmp))
+ 						{
+ 						free(tmp);
+@@ -2969,8 +2961,7 @@
+ 					}
+ 
+ 				char buf[FILENAME_MAX];
+-				char* const look_for = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
+-				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
+ 				if (strchr(look_for,'"'))
+ 					{
+ 					message_header(x);
+@@ -3003,8 +2994,7 @@
+ 							continue;
+ 							}
+ 						char buf[FILENAME_MAX];
+-						char* const look_for = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
+-						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
+ 						if (strchr(look_for,'<'))
+ 							{
+ 							message_header(x);
+@@ -3483,14 +3473,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr<char*> macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,&macro_stack);
+ 			}
+ 		else{
+ 			used_macro_stack->insertNSlotsAt(1,used_macro_stack->size());
+-			used_macro_stack->back() = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(used_macro_stack->back(),x.data()+critical_offset,token_len);
++			used_macro_stack->back() = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+ 			used_macro_stack->DeleteIdx(used_macro_stack->size()-1);
+ 			}
+@@ -3582,16 +3570,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr<char*> macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
+-
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, &macro_stack, formal_arguments, actual_arguments, Test);
+ 			}
+ 		else{
+ 			used_macro_stack->insertNSlotsAt(1,used_macro_stack->size());
+-			used_macro_stack->back() = _new_buffer_nonNULL_throws<char>(token_len);
+-			memmove(used_macro_stack->back(),x.data()+critical_offset,token_len);
+-
++			used_macro_stack->back() = C_make_string(x.data()+critical_offset,token_len); 
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, used_macro_stack, formal_arguments, actual_arguments, Test);
+ 			used_macro_stack->DeleteIdx(used_macro_stack->size()-1);
+ 			}
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/ParseTree.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -3,6 +3,8 @@
+ 
+ #include "ParseTree.hpp"
+ 
++#include "str_aux.h"
++
+ using namespace zaimoni;
+ 
+ bool (*parse_tree::hook_INC_INFORM)(const parse_tree&) = NULL;
+@@ -314,16 +316,12 @@
+ 	tmp.index_tokens[1] = src.index_tokens[1];
+ 	if (src.own_index_token<0>())
+ 		{
+-		char* tmp2 = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(tmp.index_tokens[0].token.second));
+-		memmove(tmp2,src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+-		tmp.index_tokens[0].token.first = tmp2;
++		tmp.index_tokens[0].token.first = C_make_string(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+ 		tmp.control_index_token<0>(true);
+ 		};
+ 	if (src.own_index_token<1>())
+ 		{
+-		char* tmp2 = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(tmp.index_tokens[1].token.second));
+-		memmove(tmp2,src.index_tokens[1].token.first,src.index_tokens[1].token.second);
+-		tmp.index_tokens[1].token.first = tmp2;
++		tmp.index_tokens[1].token.first = C_make_string(src.index_tokens[1].token.first,src.index_tokens[1].token.second);
+ 		tmp.control_index_token<1>(true);
+ 		};
+ 	tmp.flags = src.flags;
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/ZParser.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -1,5 +1,5 @@
+ // ZParser.cpp
+-// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include "ZParser.hpp"
+ 
+@@ -10,6 +10,7 @@
+ #include "errcount.hpp"
+ #include "langroute.hpp"
+ #include "ParseTree.hpp"
++#include "str_aux.h"
+ #include "type_system.hpp"
+ 
+ #include "Zaimoni.STL/AutoPtr.hpp"
+@@ -145,9 +146,7 @@
+ 					POD_triple<size_t,size_t,lex_flags>& tmp3 = pretokenized[i];
+ 					if (!init_parse_tree_from_token(tmp,tmp_front,tmp3,lang))
+ 					    {
+-						char* tmp2 = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(tmp3.second));
+-						memmove(tmp2,tmp_front.data()+tmp3.first,tmp3.second);
+-						tmp.index_tokens[0].token.first = tmp2;
++						tmp.index_tokens[0].token.first = C_make_string(tmp_front.data()+tmp3.first,tmp3.second);
+ 						tmp.control_index_token<0>(true);
+ 						}
+ 					}
+
+
+
+From zaimoni at mail.berlios.de  Thu Feb 17 00:38:48 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 17 Feb 2011 00:38:48 +0100
+Subject: [Zcplusplus-commits] r616 - trunk
+Message-ID: <20110216233849.176C64813E6@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-17 00:38:48 +0100 (Thu, 17 Feb 2011)
+New Revision: 616
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+Log:
+render defining INSTALL_TO completely optional
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-02-14 19:10:07 UTC (rev 615)
++++ trunk/CPreproc.cpp	2011-02-16 23:38:48 UTC (rev 616)
+@@ -39,20 +39,25 @@
+ #define ERR_STR "error: "
+ #define WARN_STR "warning: "
+ 
+-#define INSTALL_TO "\\CPP_App\\Z.C++"
++// define this to hard-code an install path
++//#define INSTALL_TO "\\CPP_App\\Z.C++"
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++" ZAIMONI_PATH_SEP "include",
++#endif	
+ 	// C++-only relative paths
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++" ZAIMONI_PATH_SEP "include",
++#ifdef INSTALL_TO
+ 	// install path
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc" ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "include",
++#endif	
+ 	// relative paths
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc" ZAIMONI_PATH_SEP "include",
+@@ -60,16 +65,20 @@
+ };
+ 
+ static const char* actual_system_include_search[] =	{
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// C++-only relative paths
+ 	NULL,
+ 	NULL,
++#ifdef INSTALL_TO
+ 	// install path
+ 	NULL,
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// relative paths
+ 	NULL,
+ 	NULL,
+@@ -78,10 +87,12 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(fixed_system_include_search)==STATIC_SIZE(actual_system_include_search));
+ 
++#ifdef INSTALL_TO
+ #define START_CPP_ONLY_PATHS 4
++#else
++#define START_CPP_ONLY_PATHS 2
++#endif
+ 
+-#undef INSTALL_TO
+-
+ static bool fixed_system_include_exists_init = false;
+ 
+ static void init_fixed_system_include_search(void)
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-02-14 19:10:07 UTC (rev 615)
++++ trunk/CPreproc.cpp.in	2011-02-16 23:38:48 UTC (rev 616)
+@@ -59,20 +59,25 @@
+ #define ERR_STR "error: "
+ #define WARN_STR "warning: "
+ 
+-#define INSTALL_TO "\\CPP_App\\Z.C++"
++// define this to hard-code an install path
++//#define INSTALL_TO "\\CPP_App\\Z.C++"
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++" ZAIMONI_PATH_SEP "include",
++#endif	
+ 	// C++-only relative paths
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++" ZAIMONI_PATH_SEP "include",
++#ifdef INSTALL_TO
+ 	// install path
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc" ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "include",
++#endif	
+ 	// relative paths
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc" ZAIMONI_PATH_SEP "include",
+@@ -80,16 +85,20 @@
+ };
+ 
+ static const char* actual_system_include_search[] =	{
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// C++-only relative paths
+ 	NULL,
+ 	NULL,
++#ifdef INSTALL_TO
+ 	// install path
+ 	NULL,
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// relative paths
+ 	NULL,
+ 	NULL,
+@@ -98,10 +107,12 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(fixed_system_include_search)==STATIC_SIZE(actual_system_include_search));
+ 
++#ifdef INSTALL_TO
+ #define START_CPP_ONLY_PATHS 4
++#else
++#define START_CPP_ONLY_PATHS 2
++#endif
+ 
+-#undef INSTALL_TO
+-
+ static bool fixed_system_include_exists_init = false;
+ 
+ static void init_fixed_system_include_search(void)
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-02-14 19:10:07 UTC (rev 615)
++++ trunk/CPreproc_pp.cpp	2011-02-16 23:38:48 UTC (rev 616)
+@@ -38,20 +38,25 @@
+ #define ERR_STR "error: "
+ #define WARN_STR "warning: "
+ 
+-#define INSTALL_TO "\\CPP_App\\Z.C++"
++// define this to hard-code an install path
++//#define INSTALL_TO "\\CPP_App\\Z.C++"
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++" ZAIMONI_PATH_SEP "include",
++#endif	
+ 	// C++-only relative paths
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zc++" ZAIMONI_PATH_SEP "include",
++#ifdef INSTALL_TO
+ 	// install path
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc" ZAIMONI_PATH_SEP "include",
+ 	INSTALL_TO ZAIMONI_PATH_SEP "include",
++#endif	
+ 	// relative paths
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc-" ZCC_VERSION ZAIMONI_PATH_SEP "include",
+ 	".." ZAIMONI_PATH_SEP "lib" ZAIMONI_PATH_SEP "zcc" ZAIMONI_PATH_SEP "include",
+@@ -59,16 +64,20 @@
+ };
+ 
+ static const char* actual_system_include_search[] =	{
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// C++-only relative paths
+ 	NULL,
+ 	NULL,
++#ifdef INSTALL_TO
+ 	// install path
+ 	NULL,
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// relative paths
+ 	NULL,
+ 	NULL,
+@@ -77,10 +86,12 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(fixed_system_include_search)==STATIC_SIZE(actual_system_include_search));
+ 
++#ifdef INSTALL_TO
+ #define START_CPP_ONLY_PATHS 4
++#else
++#define START_CPP_ONLY_PATHS 2
++#endif
+ 
+-#undef INSTALL_TO
+-
+ static bool fixed_system_include_exists_init = false;
+ 
+ static void init_fixed_system_include_search(void)
+
+
+
+From zaimoni at mail.berlios.de  Sun Feb 27 03:15:20 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 27 Feb 2011 03:15:20 +0100
+Subject: [Zcplusplus-commits] r617 - trunk/tests/zcc.in/decl.C99
+Message-ID: <20110227021521.269AB481443@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-27 03:15:20 +0100 (Sun, 27 Feb 2011)
+New Revision: 617
+
+Modified:
+   trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+Log:
+*.in adjustment
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2011-02-16 23:38:48 UTC (rev 616)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2011-02-27 02:15:20 UTC (rev 617)
+@@ -1,6 +1,7 @@
+ SUFFIXES h hpp
++OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined enum
+-// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum good_test {
+ 	x_factor = 1
+@@ -27,39 +28,205 @@
+ const volatile extern enum good_test x13;
+ volatile extern const enum good_test x14;
+ volatile const extern enum good_test x15;
+-
+ volatile static enum good_test x16;
+ const static volatile enum good_test x17;
+ const volatile static enum good_test x18;
+ volatile static const enum good_test x19;
+ volatile const static enum good_test x20;
+ 
++// ringing the changes on THREAD_LOCAL extern
++extern THREAD_LOCAL enum good_test x21;
++extern THREAD_LOCAL const enum good_test x22;
++extern THREAD_LOCAL volatile enum good_test x23;
++extern THREAD_LOCAL const volatile enum good_test x24;
++extern THREAD_LOCAL volatile const enum good_test x25;
++THREAD_LOCAL extern enum good_test x26;
++THREAD_LOCAL extern const enum good_test x27;
++THREAD_LOCAL extern volatile enum good_test x28;
++THREAD_LOCAL extern const volatile enum good_test x29;
++THREAD_LOCAL extern volatile const enum good_test x30;
++
++// ringing the changes on THREAD_LOCAL static
++static THREAD_LOCAL enum good_test x31;
++static THREAD_LOCAL const enum good_test x32;
++static THREAD_LOCAL volatile enum good_test x33;
++static THREAD_LOCAL const volatile enum good_test x34;
++static THREAD_LOCAL volatile const enum good_test x35;
++THREAD_LOCAL static enum good_test x36;
++THREAD_LOCAL static const enum good_test x37;
++THREAD_LOCAL static volatile enum good_test x38;
++THREAD_LOCAL static const volatile enum good_test x39;
++THREAD_LOCAL static volatile const enum good_test x40;
++
++// THREAD_LOCAL extern not in first two postions is deprecated, but legal
++extern const THREAD_LOCAL enum good_test x41;
++const extern THREAD_LOCAL enum good_test x42;
++extern volatile THREAD_LOCAL enum good_test x43;
++volatile extern THREAD_LOCAL enum good_test x44;
++extern const THREAD_LOCAL volatile enum good_test x45;
++extern const volatile THREAD_LOCAL enum good_test x46;
++const extern THREAD_LOCAL volatile enum good_test x47;
++const extern volatile THREAD_LOCAL enum good_test x48;
++const volatile extern THREAD_LOCAL enum good_test x49;
++extern volatile THREAD_LOCAL const enum good_test x50;
++extern volatile const THREAD_LOCAL enum good_test x51;
++volatile extern THREAD_LOCAL const enum good_test x52;
++volatile extern const THREAD_LOCAL enum good_test x53;
++volatile const extern THREAD_LOCAL enum good_test x54;
++THREAD_LOCAL const extern enum good_test x55;
++const THREAD_LOCAL extern enum good_test x56;
++THREAD_LOCAL volatile extern enum good_test x57;
++volatile THREAD_LOCAL extern enum good_test x58;
++THREAD_LOCAL const extern volatile enum good_test x59;
++THREAD_LOCAL const volatile extern enum good_test x60;
++const THREAD_LOCAL extern volatile enum good_test x61;
++const THREAD_LOCAL volatile extern enum good_test x62;
++const volatile THREAD_LOCAL extern enum good_test x63;
++THREAD_LOCAL volatile extern const enum good_test x64;
++THREAD_LOCAL volatile const extern enum good_test x65;
++volatile THREAD_LOCAL extern const enum good_test x66;
++volatile THREAD_LOCAL const extern enum good_test x67;
++volatile const THREAD_LOCAL extern enum good_test x68;
++
++// THREAD_LOCAL static not in first two postions is deprecated, but legal
++static const THREAD_LOCAL enum good_test x69;
++const static THREAD_LOCAL enum good_test x70;
++static volatile THREAD_LOCAL enum good_test x71;
++volatile static THREAD_LOCAL enum good_test x72;
++static const THREAD_LOCAL volatile enum good_test x73;
++static const volatile THREAD_LOCAL enum good_test x74;
++const static THREAD_LOCAL volatile enum good_test x75;
++const static volatile THREAD_LOCAL enum good_test x76;
++const volatile static THREAD_LOCAL enum good_test x77;
++static volatile THREAD_LOCAL const enum good_test x78;
++static volatile const THREAD_LOCAL enum good_test x79;
++volatile static THREAD_LOCAL const enum good_test x80;
++volatile static const THREAD_LOCAL enum good_test x81;
++volatile const static THREAD_LOCAL enum good_test x82;
++THREAD_LOCAL const static enum good_test x83;
++const THREAD_LOCAL static enum good_test x84;
++THREAD_LOCAL volatile static enum good_test x85;
++volatile THREAD_LOCAL static enum good_test x86;
++THREAD_LOCAL const static volatile enum good_test x87;
++THREAD_LOCAL const volatile static enum good_test x88;
++const THREAD_LOCAL static volatile enum good_test x89;
++const THREAD_LOCAL volatile static enum good_test x90;
++const volatile THREAD_LOCAL static enum good_test x91;
++THREAD_LOCAL volatile static const enum good_test x92;
++THREAD_LOCAL volatile const static enum good_test x93;
++volatile THREAD_LOCAL static const enum good_test x94;
++volatile THREAD_LOCAL const static enum good_test x95;
++volatile const THREAD_LOCAL static enum good_test x96;
++
+ // define-declares
+ // ringing the changes on extern
+-extern enum good_test2 { x_factor2 = 1 } x21;
+-extern const enum good_test3 { x_factor3 = 1 } x22;
+-extern volatile enum good_test4 { x_factor4 = 1 } x23;
+-extern const volatile enum good_test5 { x_factor5 = 1 } x24;
+-extern volatile const enum good_test6 { x_factor6 = 1 } x25;
++extern enum good_test1 { x_factor1 = 1 } x_1;
++extern const enum good_test2 { x_factor2 = 1 } x_2;
++extern volatile enum good_test3 { x_factor3 = 1 } x_3;
++extern const volatile enum good_test4 { x_factor4 = 1 } x_4;
++extern volatile const enum good_test5 { x_factor5 = 1 } x_5;
+ 
+ // ringing the changes on static
+ // (don't test static const -- no chance to initialize before use)
+-static enum good_test7 { x_factor7 = 1 } x26;
+-static volatile enum good_test8 { x_factor8 = 1 } x27;
+-static const volatile enum good_test9 { x_factor9 = 1 } x28;
+-static volatile const enum good_test10 { x_factor10 = 1 } x29;
++static enum good_test6 { x_factor6 = 1 } x_6;
++static volatile enum good_test7 { x_factor7 = 1 } x_7;
++static const volatile enum good_test8 { x_factor8 = 1 } x_8;
++static volatile const enum good_test9 { x_factor9 = 1 } x_9;
+ 
+ // extern/static not in first postion is deprecated, but legal
+-const extern enum good_test11 { x_factor11 = 1 } x30;
+-volatile extern enum good_test12 { x_factor12 = 1 } x31;
+-const extern volatile enum good_test13 { x_factor13 = 1 } x32;
+-const volatile extern enum good_test14 { x_factor14 = 1 } x33;
+-volatile extern const enum good_test15 { x_factor15 = 1 } x34;
+-volatile const extern enum good_test16 { x_factor16 = 1 } x35;
++const extern enum good_test10 { x_factor10 = 1 } x_10;
++volatile extern enum good_test11 { x_factor11 = 1 } x_11;
++const extern volatile enum good_test12 { x_factor12 = 1 } x_12;
++const volatile extern enum good_test13 { x_factor13 = 1 } x_13;
++volatile extern const enum good_test14 { x_factor14 = 1 } x_14;
++volatile const extern enum good_test15 { x_factor15 = 1 } x_15;
++volatile static enum good_test16 { x_factor16 = 1 } x_16;
++const static volatile enum good_test17 { x_factor17 = 1 } x_17;
++const volatile static enum good_test18 { x_factor18 = 1 } x_18;
++volatile static const enum good_test19 { x_factor19 = 1 } x_19;
++volatile const static enum good_test20 { x_factor20 = 1 } x_20;
+ 
+-volatile static enum good_test17 { x_factor17 = 1 } x16;
+-const static volatile enum good_test18 { x_factor18 = 1 } x37;
+-const volatile static enum good_test19 { x_factor19 = 1 } x38;
+-volatile static const enum good_test20 { x_factor20 = 1 } x39;
+-volatile const static enum good_test21 { x_factor21 = 1 } x40;
++// ringing the changes on THREAD_LOCAL extern
++extern THREAD_LOCAL enum good_test21 { x_factor21 = 1 } x_21;
++extern THREAD_LOCAL const enum good_test22 { x_factor22 = 1 } x_22;
++extern THREAD_LOCAL volatile enum good_test23 { x_factor23 = 1 } x_23;
++extern THREAD_LOCAL const volatile enum good_test24 { x_factor24 = 1 } x_24;
++extern THREAD_LOCAL volatile const enum good_test25 { x_factor25 = 1 } x_25;
++THREAD_LOCAL extern enum good_test26 { x_factor26 = 1 } x_26;
++THREAD_LOCAL extern const enum good_test27 { x_factor27 = 1 } x_27;
++THREAD_LOCAL extern volatile enum good_test28 { x_factor28 = 1 } x_28;
++THREAD_LOCAL extern const volatile enum good_test29 { x_factor29 = 1 } x_29;
++THREAD_LOCAL extern volatile const enum good_test30 { x_factor30 = 1 } x_30;
+ 
++// ringing the changes on THREAD_LOCAL static
++static THREAD_LOCAL enum good_test31 { x_factor31 = 1 } x_31;
++static THREAD_LOCAL const enum good_test32 { x_factor32 = 1 } x_32;
++static THREAD_LOCAL volatile enum good_test33 { x_factor33 = 1 } x_33;
++static THREAD_LOCAL const volatile enum good_test34 { x_factor34 = 1 } x_34;
++static THREAD_LOCAL volatile const enum good_test35 { x_factor35 = 1 } x_35;
++THREAD_LOCAL static enum good_test36 { x_factor36 = 1 } x_36;
++THREAD_LOCAL static const enum good_test37 { x_factor37 = 1 } x_37;
++THREAD_LOCAL static volatile enum good_test38 { x_factor38 = 1 } x_38;
++THREAD_LOCAL static const volatile enum good_test39 { x_factor39 = 1 } x_39;
++THREAD_LOCAL static volatile const enum good_test40 { x_factor40 = 1 } x_40;
++
++// THREAD_LOCAL extern not in first two postions is deprecated, but legal
++extern const THREAD_LOCAL enum good_test41 { x_factor41 = 1 } x_41;
++const extern THREAD_LOCAL enum good_test42 { x_factor42 = 1 } x_42;
++extern volatile THREAD_LOCAL enum good_test43 { x_factor43 = 1 } x_43;
++volatile extern THREAD_LOCAL enum good_test44 { x_factor44 = 1 } x_44;
++extern const THREAD_LOCAL volatile enum good_test45 { x_factor45 = 1 } x_45;
++extern const volatile THREAD_LOCAL enum good_test46 { x_factor46 = 1 } x_46;
++const extern THREAD_LOCAL volatile enum good_test47 { x_factor47 = 1 } x_47;
++const extern volatile THREAD_LOCAL enum good_test48 { x_factor48 = 1 } x_48;
++const volatile extern THREAD_LOCAL enum good_test49 { x_factor49 = 1 } x_49;
++extern volatile THREAD_LOCAL const enum good_test50 { x_factor50 = 1 } x_50;
++extern volatile const THREAD_LOCAL enum good_test51 { x_factor51 = 1 } x_51;
++volatile extern THREAD_LOCAL const enum good_test52 { x_factor52 = 1 } x_52;
++volatile extern const THREAD_LOCAL enum good_test53 { x_factor53 = 1 } x_53;
++volatile const extern THREAD_LOCAL enum good_test54 { x_factor54 = 1 } x_54;
++THREAD_LOCAL const extern enum good_test55 { x_factor55 = 1 } x_55;
++const THREAD_LOCAL extern enum good_test56 { x_factor56 = 1 } x_56;
++THREAD_LOCAL volatile extern enum good_test57 { x_factor57 = 1 } x_57;
++volatile THREAD_LOCAL extern enum good_test58 { x_factor58 = 1 } x_58;
++THREAD_LOCAL const extern volatile enum good_test59 { x_factor59 = 1 } x_59;
++THREAD_LOCAL const volatile extern enum good_test60 { x_factor60 = 1 } x_60;
++const THREAD_LOCAL extern volatile enum good_test61 { x_factor61 = 1 } x_61;
++const THREAD_LOCAL volatile extern enum good_test62 { x_factor62 = 1 } x_62;
++const volatile THREAD_LOCAL extern enum good_test63 { x_factor63 = 1 } x_63;
++THREAD_LOCAL volatile extern const enum good_test64 { x_factor64 = 1 } x_64;
++THREAD_LOCAL volatile const extern enum good_test65 { x_factor65 = 1 } x_65;
++volatile THREAD_LOCAL extern const enum good_test66 { x_factor66 = 1 } x_66;
++volatile THREAD_LOCAL const extern enum good_test67 { x_factor67 = 1 } x_67;
++volatile const THREAD_LOCAL extern enum good_test68 { x_factor68 = 1 } x_68;
++
++// THREAD_LOCAL static not in first two postions is deprecated, but legal
++static const THREAD_LOCAL enum good_test69 { x_factor69 = 1 } x_69;
++const static THREAD_LOCAL enum good_test70 { x_factor70 = 1 } x_70;
++static volatile THREAD_LOCAL enum good_test71 { x_factor71 = 1 } x_71;
++volatile static THREAD_LOCAL enum good_test72 { x_factor72 = 1 } x_72;
++static const THREAD_LOCAL volatile enum good_test73 { x_factor73 = 1 } x_73;
++static const volatile THREAD_LOCAL enum good_test74 { x_factor74 = 1 } x_74;
++const static THREAD_LOCAL volatile enum good_test75 { x_factor75 = 1 } x_75;
++const static volatile THREAD_LOCAL enum good_test76 { x_factor76 = 1 } x_76;
++const volatile static THREAD_LOCAL enum good_test77 { x_factor77 = 1 } x_77;
++static volatile THREAD_LOCAL const enum good_test78 { x_factor78 = 1 } x_78;
++static volatile const THREAD_LOCAL enum good_test79 { x_factor79 = 1 } x_79;
++volatile static THREAD_LOCAL const enum good_test80 { x_factor80 = 1 } x_80;
++volatile static const THREAD_LOCAL enum good_test81 { x_factor81 = 1 } x_81;
++volatile const static THREAD_LOCAL enum good_test82 { x_factor82 = 1 } x_82;
++THREAD_LOCAL const static enum good_test83 { x_factor83 = 1 } x_83;
++const THREAD_LOCAL static enum good_test84 { x_factor84 = 1 } x_84;
++THREAD_LOCAL volatile static enum good_test85 { x_factor85 = 1 } x_85;
++volatile THREAD_LOCAL static enum good_test86 { x_factor86 = 1 } x_86;
++THREAD_LOCAL const static volatile enum good_test87 { x_factor87 = 1 } x_87;
++THREAD_LOCAL const volatile static enum good_test88 { x_factor88 = 1 } x_88;
++const THREAD_LOCAL static volatile enum good_test89 { x_factor89 = 1 } x_89;
++const THREAD_LOCAL volatile static enum good_test90 { x_factor90 = 1 } x_90;
++const volatile THREAD_LOCAL static enum good_test91 { x_factor91 = 1 } x_91;
++THREAD_LOCAL volatile static const enum good_test92 { x_factor92 = 1 } x_92;
++THREAD_LOCAL volatile const static enum good_test93 { x_factor93 = 1 } x_93;
++volatile THREAD_LOCAL static const enum good_test94 { x_factor94 = 1 } x_94;
++volatile THREAD_LOCAL const static enum good_test95 { x_factor95 = 1 } x_95;
++volatile const THREAD_LOCAL static enum good_test96 { x_factor96 = 1 } x_96;
++
+
+
+
+From zaimoni at mail.berlios.de  Sun Feb 27 03:16:29 2011
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 27 Feb 2011 03:16:29 +0100
+Subject: [Zcplusplus-commits] r618 - in trunk: tests/zcc/decl.C99 tools
+Message-ID: <20110227021629.8A9E2481443@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2011-02-27 03:16:29 +0100 (Sun, 27 Feb 2011)
+New Revision: 618
+
+Added:
+   trunk/tools/decl_infile.py
+Modified:
+   trunk/tests/zcc/decl.C99/Pass_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_enum_def.hpp
+Log:
+enumeration declaration test augmentation
+
+Modified: trunk/tests/zcc/decl.C99/Pass_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def.h	2011-02-27 02:15:20 UTC (rev 617)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def.h	2011-02-27 02:16:29 UTC (rev 618)
+@@ -1,6 +1,6 @@
+ // decl.C99\Pass_enum_def.h
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined enum
+-// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum good_test {
+ 	x_factor = 1
+@@ -27,39 +27,205 @@
+ const volatile extern enum good_test x13;
+ volatile extern const enum good_test x14;
+ volatile const extern enum good_test x15;
+-
+ volatile static enum good_test x16;
+ const static volatile enum good_test x17;
+ const volatile static enum good_test x18;
+ volatile static const enum good_test x19;
+ volatile const static enum good_test x20;
+ 
++// ringing the changes on _Thread_Local extern
++extern _Thread_Local enum good_test x21;
++extern _Thread_Local const enum good_test x22;
++extern _Thread_Local volatile enum good_test x23;
++extern _Thread_Local const volatile enum good_test x24;
++extern _Thread_Local volatile const enum good_test x25;
++_Thread_Local extern enum good_test x26;
++_Thread_Local extern const enum good_test x27;
++_Thread_Local extern volatile enum good_test x28;
++_Thread_Local extern const volatile enum good_test x29;
++_Thread_Local extern volatile const enum good_test x30;
++
++// ringing the changes on _Thread_Local static
++static _Thread_Local enum good_test x31;
++static _Thread_Local const enum good_test x32;
++static _Thread_Local volatile enum good_test x33;
++static _Thread_Local const volatile enum good_test x34;
++static _Thread_Local volatile const enum good_test x35;
++_Thread_Local static enum good_test x36;
++_Thread_Local static const enum good_test x37;
++_Thread_Local static volatile enum good_test x38;
++_Thread_Local static const volatile enum good_test x39;
++_Thread_Local static volatile const enum good_test x40;
++
++// _Thread_Local extern not in first two postions is deprecated, but legal
++extern const _Thread_Local enum good_test x41;
++const extern _Thread_Local enum good_test x42;
++extern volatile _Thread_Local enum good_test x43;
++volatile extern _Thread_Local enum good_test x44;
++extern const _Thread_Local volatile enum good_test x45;
++extern const volatile _Thread_Local enum good_test x46;
++const extern _Thread_Local volatile enum good_test x47;
++const extern volatile _Thread_Local enum good_test x48;
++const volatile extern _Thread_Local enum good_test x49;
++extern volatile _Thread_Local const enum good_test x50;
++extern volatile const _Thread_Local enum good_test x51;
++volatile extern _Thread_Local const enum good_test x52;
++volatile extern const _Thread_Local enum good_test x53;
++volatile const extern _Thread_Local enum good_test x54;
++_Thread_Local const extern enum good_test x55;
++const _Thread_Local extern enum good_test x56;
++_Thread_Local volatile extern enum good_test x57;
++volatile _Thread_Local extern enum good_test x58;
++_Thread_Local const extern volatile enum good_test x59;
++_Thread_Local const volatile extern enum good_test x60;
++const _Thread_Local extern volatile enum good_test x61;
++const _Thread_Local volatile extern enum good_test x62;
++const volatile _Thread_Local extern enum good_test x63;
++_Thread_Local volatile extern const enum good_test x64;
++_Thread_Local volatile const extern enum good_test x65;
++volatile _Thread_Local extern const enum good_test x66;
++volatile _Thread_Local const extern enum good_test x67;
++volatile const _Thread_Local extern enum good_test x68;
++
++// _Thread_Local static not in first two postions is deprecated, but legal
++static const _Thread_Local enum good_test x69;
++const static _Thread_Local enum good_test x70;
++static volatile _Thread_Local enum good_test x71;
++volatile static _Thread_Local enum good_test x72;
++static const _Thread_Local volatile enum good_test x73;
++static const volatile _Thread_Local enum good_test x74;
++const static _Thread_Local volatile enum good_test x75;
++const static volatile _Thread_Local enum good_test x76;
++const volatile static _Thread_Local enum good_test x77;
++static volatile _Thread_Local const enum good_test x78;
++static volatile const _Thread_Local enum good_test x79;
++volatile static _Thread_Local const enum good_test x80;
++volatile static const _Thread_Local enum good_test x81;
++volatile const static _Thread_Local enum good_test x82;
++_Thread_Local const static enum good_test x83;
++const _Thread_Local static enum good_test x84;
++_Thread_Local volatile static enum good_test x85;
++volatile _Thread_Local static enum good_test x86;
++_Thread_Local const static volatile enum good_test x87;
++_Thread_Local const volatile static enum good_test x88;
++const _Thread_Local static volatile enum good_test x89;
++const _Thread_Local volatile static enum good_test x90;
++const volatile _Thread_Local static enum good_test x91;
++_Thread_Local volatile static const enum good_test x92;
++_Thread_Local volatile const static enum good_test x93;
++volatile _Thread_Local static const enum good_test x94;
++volatile _Thread_Local const static enum good_test x95;
++volatile const _Thread_Local static enum good_test x96;
++
+ // define-declares
+ // ringing the changes on extern
+-extern enum good_test2 { x_factor2 = 1 } x21;
+-extern const enum good_test3 { x_factor3 = 1 } x22;
+-extern volatile enum good_test4 { x_factor4 = 1 } x23;
+-extern const volatile enum good_test5 { x_factor5 = 1 } x24;
+-extern volatile const enum good_test6 { x_factor6 = 1 } x25;
++extern enum good_test1 { x_factor1 = 1 } x_1;
++extern const enum good_test2 { x_factor2 = 1 } x_2;
++extern volatile enum good_test3 { x_factor3 = 1 } x_3;
++extern const volatile enum good_test4 { x_factor4 = 1 } x_4;
++extern volatile const enum good_test5 { x_factor5 = 1 } x_5;
+ 
+ // ringing the changes on static
+ // (don't test static const -- no chance to initialize before use)
+-static enum good_test7 { x_factor7 = 1 } x26;
+-static volatile enum good_test8 { x_factor8 = 1 } x27;
+-static const volatile enum good_test9 { x_factor9 = 1 } x28;
+-static volatile const enum good_test10 { x_factor10 = 1 } x29;
++static enum good_test6 { x_factor6 = 1 } x_6;
++static volatile enum good_test7 { x_factor7 = 1 } x_7;
++static const volatile enum good_test8 { x_factor8 = 1 } x_8;
++static volatile const enum good_test9 { x_factor9 = 1 } x_9;
+ 
+ // extern/static not in first postion is deprecated, but legal
+-const extern enum good_test11 { x_factor11 = 1 } x30;
+-volatile extern enum good_test12 { x_factor12 = 1 } x31;
+-const extern volatile enum good_test13 { x_factor13 = 1 } x32;
+-const volatile extern enum good_test14 { x_factor14 = 1 } x33;
+-volatile extern const enum good_test15 { x_factor15 = 1 } x34;
+-volatile const extern enum good_test16 { x_factor16 = 1 } x35;
++const extern enum good_test10 { x_factor10 = 1 } x_10;
++volatile extern enum good_test11 { x_factor11 = 1 } x_11;
++const extern volatile enum good_test12 { x_factor12 = 1 } x_12;
++const volatile extern enum good_test13 { x_factor13 = 1 } x_13;
++volatile extern const enum good_test14 { x_factor14 = 1 } x_14;
++volatile const extern enum good_test15 { x_factor15 = 1 } x_15;
++volatile static enum good_test16 { x_factor16 = 1 } x_16;
++const static volatile enum good_test17 { x_factor17 = 1 } x_17;
++const volatile static enum good_test18 { x_factor18 = 1 } x_18;
++volatile static const enum good_test19 { x_factor19 = 1 } x_19;
++volatile const static enum good_test20 { x_factor20 = 1 } x_20;
+ 
+-volatile static enum good_test17 { x_factor17 = 1 } x16;
+-const static volatile enum good_test18 { x_factor18 = 1 } x37;
+-const volatile static enum good_test19 { x_factor19 = 1 } x38;
+-volatile static const enum good_test20 { x_factor20 = 1 } x39;
+-volatile const static enum good_test21 { x_factor21 = 1 } x40;
++// ringing the changes on _Thread_Local extern
++extern _Thread_Local enum good_test21 { x_factor21 = 1 } x_21;
++extern _Thread_Local const enum good_test22 { x_factor22 = 1 } x_22;
++extern _Thread_Local volatile enum good_test23 { x_factor23 = 1 } x_23;
++extern _Thread_Local const volatile enum good_test24 { x_factor24 = 1 } x_24;
++extern _Thread_Local volatile const enum good_test25 { x_factor25 = 1 } x_25;
++_Thread_Local extern enum good_test26 { x_factor26 = 1 } x_26;
++_Thread_Local extern const enum good_test27 { x_factor27 = 1 } x_27;
++_Thread_Local extern volatile enum good_test28 { x_factor28 = 1 } x_28;
++_Thread_Local extern const volatile enum good_test29 { x_factor29 = 1 } x_29;
++_Thread_Local extern volatile const enum good_test30 { x_factor30 = 1 } x_30;
+ 
++// ringing the changes on _Thread_Local static
++static _Thread_Local enum good_test31 { x_factor31 = 1 } x_31;
++static _Thread_Local const enum good_test32 { x_factor32 = 1 } x_32;
++static _Thread_Local volatile enum good_test33 { x_factor33 = 1 } x_33;
++static _Thread_Local const volatile enum good_test34 { x_factor34 = 1 } x_34;
++static _Thread_Local volatile const enum good_test35 { x_factor35 = 1 } x_35;
++_Thread_Local static enum good_test36 { x_factor36 = 1 } x_36;
++_Thread_Local static const enum good_test37 { x_factor37 = 1 } x_37;
++_Thread_Local static volatile enum good_test38 { x_factor38 = 1 } x_38;
++_Thread_Local static const volatile enum good_test39 { x_factor39 = 1 } x_39;
++_Thread_Local static volatile const enum good_test40 { x_factor40 = 1 } x_40;
++
++// _Thread_Local extern not in first two postions is deprecated, but legal
++extern const _Thread_Local enum good_test41 { x_factor41 = 1 } x_41;
++const extern _Thread_Local enum good_test42 { x_factor42 = 1 } x_42;
++extern volatile _Thread_Local enum good_test43 { x_factor43 = 1 } x_43;
++volatile extern _Thread_Local enum good_test44 { x_factor44 = 1 } x_44;
++extern const _Thread_Local volatile enum good_test45 { x_factor45 = 1 } x_45;
++extern const volatile _Thread_Local enum good_test46 { x_factor46 = 1 } x_46;
++const extern _Thread_Local volatile enum good_test47 { x_factor47 = 1 } x_47;
++const extern volatile _Thread_Local enum good_test48 { x_factor48 = 1 } x_48;
++const volatile extern _Thread_Local enum good_test49 { x_factor49 = 1 } x_49;
++extern volatile _Thread_Local const enum good_test50 { x_factor50 = 1 } x_50;
++extern volatile const _Thread_Local enum good_test51 { x_factor51 = 1 } x_51;
++volatile extern _Thread_Local const enum good_test52 { x_factor52 = 1 } x_52;
++volatile extern const _Thread_Local enum good_test53 { x_factor53 = 1 } x_53;
++volatile const extern _Thread_Local enum good_test54 { x_factor54 = 1 } x_54;
++_Thread_Local const extern enum good_test55 { x_factor55 = 1 } x_55;
++const _Thread_Local extern enum good_test56 { x_factor56 = 1 } x_56;
++_Thread_Local volatile extern enum good_test57 { x_factor57 = 1 } x_57;
++volatile _Thread_Local extern enum good_test58 { x_factor58 = 1 } x_58;
++_Thread_Local const extern volatile enum good_test59 { x_factor59 = 1 } x_59;
++_Thread_Local const volatile extern enum good_test60 { x_factor60 = 1 } x_60;
++const _Thread_Local extern volatile enum good_test61 { x_factor61 = 1 } x_61;
++const _Thread_Local volatile extern enum good_test62 { x_factor62 = 1 } x_62;
++const volatile _Thread_Local extern enum good_test63 { x_factor63 = 1 } x_63;
++_Thread_Local volatile extern const enum good_test64 { x_factor64 = 1 } x_64;
++_Thread_Local volatile const extern enum good_test65 { x_factor65 = 1 } x_65;
++volatile _Thread_Local extern const enum good_test66 { x_factor66 = 1 } x_66;
++volatile _Thread_Local const extern enum good_test67 { x_factor67 = 1 } x_67;
++volatile const _Thread_Local extern enum good_test68 { x_factor68 = 1 } x_68;
++
++// _Thread_Local static not in first two postions is deprecated, but legal
++static const _Thread_Local enum good_test69 { x_factor69 = 1 } x_69;
++const static _Thread_Local enum good_test70 { x_factor70 = 1 } x_70;
++static volatile _Thread_Local enum good_test71 { x_factor71 = 1 } x_71;
++volatile static _Thread_Local enum good_test72 { x_factor72 = 1 } x_72;
++static const _Thread_Local volatile enum good_test73 { x_factor73 = 1 } x_73;
++static const volatile _Thread_Local enum good_test74 { x_factor74 = 1 } x_74;
++const static _Thread_Local volatile enum good_test75 { x_factor75 = 1 } x_75;
++const static volatile _Thread_Local enum good_test76 { x_factor76 = 1 } x_76;
++const volatile static _Thread_Local enum good_test77 { x_factor77 = 1 } x_77;
++static volatile _Thread_Local const enum good_test78 { x_factor78 = 1 } x_78;
++static volatile const _Thread_Local enum good_test79 { x_factor79 = 1 } x_79;
++volatile static _Thread_Local const enum good_test80 { x_factor80 = 1 } x_80;
++volatile static const _Thread_Local enum good_test81 { x_factor81 = 1 } x_81;
++volatile const static _Thread_Local enum good_test82 { x_factor82 = 1 } x_82;
++_Thread_Local const static enum good_test83 { x_factor83 = 1 } x_83;
++const _Thread_Local static enum good_test84 { x_factor84 = 1 } x_84;
++_Thread_Local volatile static enum good_test85 { x_factor85 = 1 } x_85;
++volatile _Thread_Local static enum good_test86 { x_factor86 = 1 } x_86;
++_Thread_Local const static volatile enum good_test87 { x_factor87 = 1 } x_87;
++_Thread_Local const volatile static enum good_test88 { x_factor88 = 1 } x_88;
++const _Thread_Local static volatile enum good_test89 { x_factor89 = 1 } x_89;
++const _Thread_Local volatile static enum good_test90 { x_factor90 = 1 } x_90;
++const volatile _Thread_Local static enum good_test91 { x_factor91 = 1 } x_91;
++_Thread_Local volatile static const enum good_test92 { x_factor92 = 1 } x_92;
++_Thread_Local volatile const static enum good_test93 { x_factor93 = 1 } x_93;
++volatile _Thread_Local static const enum good_test94 { x_factor94 = 1 } x_94;
++volatile _Thread_Local const static enum good_test95 { x_factor95 = 1 } x_95;
++volatile const _Thread_Local static enum good_test96 { x_factor96 = 1 } x_96;
++
+
+Modified: trunk/tests/zcc/decl.C99/Pass_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def.hpp	2011-02-27 02:15:20 UTC (rev 617)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def.hpp	2011-02-27 02:16:29 UTC (rev 618)
+@@ -1,6 +1,6 @@
+ // decl.C99\Pass_enum_def.hpp
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined enum
+-// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum good_test {
+ 	x_factor = 1
+@@ -27,39 +27,205 @@
+ const volatile extern enum good_test x13;
+ volatile extern const enum good_test x14;
+ volatile const extern enum good_test x15;
+-
+ volatile static enum good_test x16;
+ const static volatile enum good_test x17;
+ const volatile static enum good_test x18;
+ volatile static const enum good_test x19;
+ volatile const static enum good_test x20;
+ 
++// ringing the changes on thread_local extern
++extern thread_local enum good_test x21;
++extern thread_local const enum good_test x22;
++extern thread_local volatile enum good_test x23;
++extern thread_local const volatile enum good_test x24;
++extern thread_local volatile const enum good_test x25;
++thread_local extern enum good_test x26;
++thread_local extern const enum good_test x27;
++thread_local extern volatile enum good_test x28;
++thread_local extern const volatile enum good_test x29;
++thread_local extern volatile const enum good_test x30;
++
++// ringing the changes on thread_local static
++static thread_local enum good_test x31;
++static thread_local const enum good_test x32;
++static thread_local volatile enum good_test x33;
++static thread_local const volatile enum good_test x34;
++static thread_local volatile const enum good_test x35;
++thread_local static enum good_test x36;
++thread_local static const enum good_test x37;
++thread_local static volatile enum good_test x38;
++thread_local static const volatile enum good_test x39;
++thread_local static volatile const enum good_test x40;
++
++// thread_local extern not in first two postions is deprecated, but legal
++extern const thread_local enum good_test x41;
++const extern thread_local enum good_test x42;
++extern volatile thread_local enum good_test x43;
++volatile extern thread_local enum good_test x44;
++extern const thread_local volatile enum good_test x45;
++extern const volatile thread_local enum good_test x46;
++const extern thread_local volatile enum good_test x47;
++const extern volatile thread_local enum good_test x48;
++const volatile extern thread_local enum good_test x49;
++extern volatile thread_local const enum good_test x50;
++extern volatile const thread_local enum good_test x51;
++volatile extern thread_local const enum good_test x52;
++volatile extern const thread_local enum good_test x53;
++volatile const extern thread_local enum good_test x54;
++thread_local const extern enum good_test x55;
++const thread_local extern enum good_test x56;
++thread_local volatile extern enum good_test x57;
++volatile thread_local extern enum good_test x58;
++thread_local const extern volatile enum good_test x59;
++thread_local const volatile extern enum good_test x60;
++const thread_local extern volatile enum good_test x61;
++const thread_local volatile extern enum good_test x62;
++const volatile thread_local extern enum good_test x63;
++thread_local volatile extern const enum good_test x64;
++thread_local volatile const extern enum good_test x65;
++volatile thread_local extern const enum good_test x66;
++volatile thread_local const extern enum good_test x67;
++volatile const thread_local extern enum good_test x68;
++
++// thread_local static not in first two postions is deprecated, but legal
++static const thread_local enum good_test x69;
++const static thread_local enum good_test x70;
++static volatile thread_local enum good_test x71;
++volatile static thread_local enum good_test x72;
++static const thread_local volatile enum good_test x73;
++static const volatile thread_local enum good_test x74;
++const static thread_local volatile enum good_test x75;
++const static volatile thread_local enum good_test x76;
++const volatile static thread_local enum good_test x77;
++static volatile thread_local const enum good_test x78;
++static volatile const thread_local enum good_test x79;
++volatile static thread_local const enum good_test x80;
++volatile static const thread_local enum good_test x81;
++volatile const static thread_local enum good_test x82;
++thread_local const static enum good_test x83;
++const thread_local static enum good_test x84;
++thread_local volatile static enum good_test x85;
++volatile thread_local static enum good_test x86;
++thread_local const static volatile enum good_test x87;
++thread_local const volatile static enum good_test x88;
++const thread_local static volatile enum good_test x89;
++const thread_local volatile static enum good_test x90;
++const volatile thread_local static enum good_test x91;
++thread_local volatile static const enum good_test x92;
++thread_local volatile const static enum good_test x93;
++volatile thread_local static const enum good_test x94;
++volatile thread_local const static enum good_test x95;
++volatile const thread_local static enum good_test x96;
++
+ // define-declares
+ // ringing the changes on extern
+-extern enum good_test2 { x_factor2 = 1 } x21;
+-extern const enum good_test3 { x_factor3 = 1 } x22;
+-extern volatile enum good_test4 { x_factor4 = 1 } x23;
+-extern const volatile enum good_test5 { x_factor5 = 1 } x24;
+-extern volatile const enum good_test6 { x_factor6 = 1 } x25;
++extern enum good_test1 { x_factor1 = 1 } x_1;
++extern const enum good_test2 { x_factor2 = 1 } x_2;
++extern volatile enum good_test3 { x_factor3 = 1 } x_3;
++extern const volatile enum good_test4 { x_factor4 = 1 } x_4;
++extern volatile const enum good_test5 { x_factor5 = 1 } x_5;
+ 
+ // ringing the changes on static
+ // (don't test static const -- no chance to initialize before use)
+-static enum good_test7 { x_factor7 = 1 } x26;
+-static volatile enum good_test8 { x_factor8 = 1 } x27;
+-static const volatile enum good_test9 { x_factor9 = 1 } x28;
+-static volatile const enum good_test10 { x_factor10 = 1 } x29;
++static enum good_test6 { x_factor6 = 1 } x_6;
++static volatile enum good_test7 { x_factor7 = 1 } x_7;
++static const volatile enum good_test8 { x_factor8 = 1 } x_8;
++static volatile const enum good_test9 { x_factor9 = 1 } x_9;
+ 
+ // extern/static not in first postion is deprecated, but legal
+-const extern enum good_test11 { x_factor11 = 1 } x30;
+-volatile extern enum good_test12 { x_factor12 = 1 } x31;
+-const extern volatile enum good_test13 { x_factor13 = 1 } x32;
+-const volatile extern enum good_test14 { x_factor14 = 1 } x33;
+-volatile extern const enum good_test15 { x_factor15 = 1 } x34;
+-volatile const extern enum good_test16 { x_factor16 = 1 } x35;
++const extern enum good_test10 { x_factor10 = 1 } x_10;
++volatile extern enum good_test11 { x_factor11 = 1 } x_11;
++const extern volatile enum good_test12 { x_factor12 = 1 } x_12;
++const volatile extern enum good_test13 { x_factor13 = 1 } x_13;
++volatile extern const enum good_test14 { x_factor14 = 1 } x_14;
++volatile const extern enum good_test15 { x_factor15 = 1 } x_15;
++volatile static enum good_test16 { x_factor16 = 1 } x_16;
++const static volatile enum good_test17 { x_factor17 = 1 } x_17;
++const volatile static enum good_test18 { x_factor18 = 1 } x_18;
++volatile static const enum good_test19 { x_factor19 = 1 } x_19;
++volatile const static enum good_test20 { x_factor20 = 1 } x_20;
+ 
+-volatile static enum good_test17 { x_factor17 = 1 } x16;
+-const static volatile enum good_test18 { x_factor18 = 1 } x37;
+-const volatile static enum good_test19 { x_factor19 = 1 } x38;
+-volatile static const enum good_test20 { x_factor20 = 1 } x39;
+-volatile const static enum good_test21 { x_factor21 = 1 } x40;
++// ringing the changes on thread_local extern
++extern thread_local enum good_test21 { x_factor21 = 1 } x_21;
++extern thread_local const enum good_test22 { x_factor22 = 1 } x_22;
++extern thread_local volatile enum good_test23 { x_factor23 = 1 } x_23;
++extern thread_local const volatile enum good_test24 { x_factor24 = 1 } x_24;
++extern thread_local volatile const enum good_test25 { x_factor25 = 1 } x_25;
++thread_local extern enum good_test26 { x_factor26 = 1 } x_26;
++thread_local extern const enum good_test27 { x_factor27 = 1 } x_27;
++thread_local extern volatile enum good_test28 { x_factor28 = 1 } x_28;
++thread_local extern const volatile enum good_test29 { x_factor29 = 1 } x_29;
++thread_local extern volatile const enum good_test30 { x_factor30 = 1 } x_30;
+ 
++// ringing the changes on thread_local static
++static thread_local enum good_test31 { x_factor31 = 1 } x_31;
++static thread_local const enum good_test32 { x_factor32 = 1 } x_32;
++static thread_local volatile enum good_test33 { x_factor33 = 1 } x_33;
++static thread_local const volatile enum good_test34 { x_factor34 = 1 } x_34;
++static thread_local volatile const enum good_test35 { x_factor35 = 1 } x_35;
++thread_local static enum good_test36 { x_factor36 = 1 } x_36;
++thread_local static const enum good_test37 { x_factor37 = 1 } x_37;
++thread_local static volatile enum good_test38 { x_factor38 = 1 } x_38;
++thread_local static const volatile enum good_test39 { x_factor39 = 1 } x_39;
++thread_local static volatile const enum good_test40 { x_factor40 = 1 } x_40;
++
++// thread_local extern not in first two postions is deprecated, but legal
++extern const thread_local enum good_test41 { x_factor41 = 1 } x_41;
++const extern thread_local enum good_test42 { x_factor42 = 1 } x_42;
++extern volatile thread_local enum good_test43 { x_factor43 = 1 } x_43;
++volatile extern thread_local enum good_test44 { x_factor44 = 1 } x_44;
++extern const thread_local volatile enum good_test45 { x_factor45 = 1 } x_45;
++extern const volatile thread_local enum good_test46 { x_factor46 = 1 } x_46;
++const extern thread_local volatile enum good_test47 { x_factor47 = 1 } x_47;
++const extern volatile thread_local enum good_test48 { x_factor48 = 1 } x_48;
++const volatile extern thread_local enum good_test49 { x_factor49 = 1 } x_49;
++extern volatile thread_local const enum good_test50 { x_factor50 = 1 } x_50;
++extern volatile const thread_local enum good_test51 { x_factor51 = 1 } x_51;
++volatile extern thread_local const enum good_test52 { x_factor52 = 1 } x_52;
++volatile extern const thread_local enum good_test53 { x_factor53 = 1 } x_53;
++volatile const extern thread_local enum good_test54 { x_factor54 = 1 } x_54;
++thread_local const extern enum good_test55 { x_factor55 = 1 } x_55;
++const thread_local extern enum good_test56 { x_factor56 = 1 } x_56;
++thread_local volatile extern enum good_test57 { x_factor57 = 1 } x_57;
++volatile thread_local extern enum good_test58 { x_factor58 = 1 } x_58;
++thread_local const extern volatile enum good_test59 { x_factor59 = 1 } x_59;
++thread_local const volatile extern enum good_test60 { x_factor60 = 1 } x_60;
++const thread_local extern volatile enum good_test61 { x_factor61 = 1 } x_61;
++const thread_local volatile extern enum good_test62 { x_factor62 = 1 } x_62;
++const volatile thread_local extern enum good_test63 { x_factor63 = 1 } x_63;
++thread_local volatile extern const enum good_test64 { x_factor64 = 1 } x_64;
++thread_local volatile const extern enum good_test65 { x_factor65 = 1 } x_65;
++volatile thread_local extern const enum good_test66 { x_factor66 = 1 } x_66;
++volatile thread_local const extern enum good_test67 { x_factor67 = 1 } x_67;
++volatile const thread_local extern enum good_test68 { x_factor68 = 1 } x_68;
++
++// thread_local static not in first two postions is deprecated, but legal
++static const thread_local enum good_test69 { x_factor69 = 1 } x_69;
++const static thread_local enum good_test70 { x_factor70 = 1 } x_70;
++static volatile thread_local enum good_test71 { x_factor71 = 1 } x_71;
++volatile static thread_local enum good_test72 { x_factor72 = 1 } x_72;
++static const thread_local volatile enum good_test73 { x_factor73 = 1 } x_73;
++static const volatile thread_local enum good_test74 { x_factor74 = 1 } x_74;
++const static thread_local volatile enum good_test75 { x_factor75 = 1 } x_75;
++const static volatile thread_local enum good_test76 { x_factor76 = 1 } x_76;
++const volatile static thread_local enum good_test77 { x_factor77 = 1 } x_77;
++static volatile thread_local const enum good_test78 { x_factor78 = 1 } x_78;
++static volatile const thread_local enum good_test79 { x_factor79 = 1 } x_79;
++volatile static thread_local const enum good_test80 { x_factor80 = 1 } x_80;
++volatile static const thread_local enum good_test81 { x_factor81 = 1 } x_81;
++volatile const static thread_local enum good_test82 { x_factor82 = 1 } x_82;
++thread_local const static enum good_test83 { x_factor83 = 1 } x_83;
++const thread_local static enum good_test84 { x_factor84 = 1 } x_84;
++thread_local volatile static enum good_test85 { x_factor85 = 1 } x_85;
++volatile thread_local static enum good_test86 { x_factor86 = 1 } x_86;
++thread_local const static volatile enum good_test87 { x_factor87 = 1 } x_87;
++thread_local const volatile static enum good_test88 { x_factor88 = 1 } x_88;
++const thread_local static volatile enum good_test89 { x_factor89 = 1 } x_89;
++const thread_local volatile static enum good_test90 { x_factor90 = 1 } x_90;
++const volatile thread_local static enum good_test91 { x_factor91 = 1 } x_91;
++thread_local volatile static const enum good_test92 { x_factor92 = 1 } x_92;
++thread_local volatile const static enum good_test93 { x_factor93 = 1 } x_93;
++volatile thread_local static const enum good_test94 { x_factor94 = 1 } x_94;
++volatile thread_local const static enum good_test95 { x_factor95 = 1 } x_95;
++volatile const thread_local static enum good_test96 { x_factor96 = 1 } x_96;
++
+
+Added: trunk/tools/decl_infile.py
+===================================================================
+--- trunk/tools/decl_infile.py	                        (rev 0)
++++ trunk/tools/decl_infile.py	2011-02-27 02:16:29 UTC (rev 618)
+@@ -0,0 +1,228 @@
++#!/usr/bin/python
++# an auxilliary script for generating the test files
++# verified for Python 2.5, 2.6, 2.7
++# fails: Python 3.0, 3.1, 3.2 (xrange not supported)
++# (C)2011 Kenneth Boyd, license: MIT.txt
++
++# target files
++target_files = ['Pass_enum_def.in']
++
++invariant_header_lines = [
++'SUFFIXES h hpp\n'
++'OBJECTLIKE_MACRO THREAD_LOCAL _Thread_Local thread_local\n'
++'// (C)2009,2011 Kenneth Boyd, license: MIT.txt\n'
++]
++
++context = {'Pass_enum_def.in':'// using singly defined enum\n'}
++
++global_define = {'Pass_enum_def.in':'\nenum good_test {\n\tx_factor = 1\n};\n\n'}
++
++section_comments = ['// ringing the changes on extern\n',
++"// ringing the changes on static\n// (don't test static const -- no chance to initialize before use)\n",
++'// extern/static not in first postion is deprecated, but legal\n',
++'// ringing the changes on THREAD_LOCAL extern\n',
++'// ringing the changes on THREAD_LOCAL static\n',
++'// THREAD_LOCAL extern not in first two postions is deprecated, but legal\n',
++'// THREAD_LOCAL static not in first two postions is deprecated, but legal\n']
++
++def enum_decl(i):
++	return "enum good_test x"+i
++	
++var_decl = {'Pass_enum_def.in':enum_decl}
++
++def enum_def(i):
++	return 'enum good_test'+i+' { x_factor'+i+' = 1 } x_'+i
++	
++var_def = {'Pass_enum_def.in':enum_def}
++
++test_qualifiers = [
++'extern',
++'extern const',
++'extern volatile',
++'extern const volatile',
++'extern volatile const',
++
++'static',
++'static volatile',
++'static const volatile',
++'static volatile const',
++
++'const extern',
++'volatile extern',
++'const extern volatile',
++'const volatile extern',
++'volatile extern const',
++'volatile const extern',
++
++'volatile static',
++'const static volatile',
++'const volatile static',
++'volatile static const',
++'volatile const static',
++
++'extern THREAD_LOCAL',
++'extern THREAD_LOCAL const',
++'extern THREAD_LOCAL volatile',
++'extern THREAD_LOCAL const volatile',
++'extern THREAD_LOCAL volatile const',
++'THREAD_LOCAL extern',
++'THREAD_LOCAL extern const',
++'THREAD_LOCAL extern volatile',
++'THREAD_LOCAL extern const volatile',
++'THREAD_LOCAL extern volatile const',
++
++'static THREAD_LOCAL',
++'static THREAD_LOCAL const',	# next
++'static THREAD_LOCAL volatile',
++'static THREAD_LOCAL const volatile',
++'static THREAD_LOCAL volatile const',
++'THREAD_LOCAL static',
++'THREAD_LOCAL static const',
++'THREAD_LOCAL static volatile',
++'THREAD_LOCAL static const volatile',
++'THREAD_LOCAL static volatile const',
++
++'extern const THREAD_LOCAL',
++'const extern THREAD_LOCAL',
++'extern volatile THREAD_LOCAL',
++'volatile extern THREAD_LOCAL',
++'extern const THREAD_LOCAL volatile',
++'extern const volatile THREAD_LOCAL',
++'const extern THREAD_LOCAL volatile',
++'const extern volatile THREAD_LOCAL',
++'const volatile extern THREAD_LOCAL',
++'extern volatile THREAD_LOCAL const',
++'extern volatile const THREAD_LOCAL',
++'volatile extern THREAD_LOCAL const',
++'volatile extern const THREAD_LOCAL',
++'volatile const extern THREAD_LOCAL',
++'THREAD_LOCAL const extern',
++'const THREAD_LOCAL extern',
++'THREAD_LOCAL volatile extern',
++'volatile THREAD_LOCAL extern',
++'THREAD_LOCAL const extern volatile',
++'THREAD_LOCAL const volatile extern',
++'const THREAD_LOCAL extern volatile',
++'const THREAD_LOCAL volatile extern',
++'const volatile THREAD_LOCAL extern',
++'THREAD_LOCAL volatile extern const',
++'THREAD_LOCAL volatile const extern',
++'volatile THREAD_LOCAL extern const',
++'volatile THREAD_LOCAL const extern',
++'volatile const THREAD_LOCAL extern',
++
++'static const THREAD_LOCAL',
++'const static THREAD_LOCAL',
++'static volatile THREAD_LOCAL',
++'volatile static THREAD_LOCAL',
++'static const THREAD_LOCAL volatile',
++'static const volatile THREAD_LOCAL',
++'const static THREAD_LOCAL volatile',
++'const static volatile THREAD_LOCAL',
++'const volatile static THREAD_LOCAL',
++'static volatile THREAD_LOCAL const',
++'static volatile const THREAD_LOCAL',
++'volatile static THREAD_LOCAL const',
++'volatile static const THREAD_LOCAL',
++'volatile const static THREAD_LOCAL',
++'THREAD_LOCAL const static',
++'const THREAD_LOCAL static',
++'THREAD_LOCAL volatile static',
++'volatile THREAD_LOCAL static',
++'THREAD_LOCAL const static volatile',
++'THREAD_LOCAL const volatile static',
++'const THREAD_LOCAL static volatile',
++'const THREAD_LOCAL volatile static',
++'const volatile THREAD_LOCAL static',
++'THREAD_LOCAL volatile static const',
++'THREAD_LOCAL volatile const static',
++'volatile THREAD_LOCAL static const',
++'volatile THREAD_LOCAL const static',
++'volatile const THREAD_LOCAL static'
++]
++
++def SpawnTestCase(dest_file):
++	TargetFile = open(dest_file,'w')
++	for line in invariant_header_lines:
++		TargetFile.write(line)
++	TargetFile.write(context[dest_file])
++	TargetFile.write(global_define[dest_file])
++
++	TargetFile.write(section_comments[0])
++	for i in xrange(5):
++		TargetFile.write(test_qualifiers[i]+' '+var_decl[dest_file](str(i+1))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[1])
++	for i in xrange(4):
++		TargetFile.write(test_qualifiers[i+5]+' '+var_decl[dest_file](str(i+6))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[2])
++	for i in xrange(11):
++		TargetFile.write(test_qualifiers[i+9]+' '+var_decl[dest_file](str(i+10))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[3])
++	for i in xrange(10):
++		TargetFile.write(test_qualifiers[i+20]+' '+var_decl[dest_file](str(i+21))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[4])
++	for i in xrange(10):
++		TargetFile.write(test_qualifiers[i+30]+' '+var_decl[dest_file](str(i+31))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[5])
++	for i in xrange(28):
++		TargetFile.write(test_qualifiers[i+40]+' '+var_decl[dest_file](str(i+41))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[6])
++	for i in xrange(28):
++		TargetFile.write(test_qualifiers[i+68]+' '+var_decl[dest_file](str(i+69))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write('// define-declares\n')
++	TargetFile.write(section_comments[0])
++	for i in xrange(5):
++		TargetFile.write(test_qualifiers[i]+' '+var_def[dest_file](str(i+1))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[1])
++	for i in xrange(4):
++		TargetFile.write(test_qualifiers[i+5]+' '+var_def[dest_file](str(i+6))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[2])
++	for i in xrange(11):
++		TargetFile.write(test_qualifiers[i+9]+' '+var_def[dest_file](str(i+10))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[3])
++	for i in xrange(10):
++		TargetFile.write(test_qualifiers[i+20]+' '+var_def[dest_file](str(i+21))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[4])
++	for i in xrange(10):
++		TargetFile.write(test_qualifiers[i+30]+' '+var_def[dest_file](str(i+31))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[5])
++	for i in xrange(28):
++		TargetFile.write(test_qualifiers[i+40]+' '+var_def[dest_file](str(i+41))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.write(section_comments[6])
++	for i in xrange(28):
++		TargetFile.write(test_qualifiers[i+68]+' '+var_def[dest_file](str(i+69))+';\n')
++	TargetFile.write('\n')
++
++	TargetFile.close()
++
++
++if __name__ == '__main__':
++	for filename in target_files:
++		SpawnTestCase(filename)
++
+
+
+

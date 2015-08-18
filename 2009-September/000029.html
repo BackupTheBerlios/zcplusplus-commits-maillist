@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r262 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r262%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200909270112.n8R1C7NG018940%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000028.html">
+   <LINK REL="Next"  HREF="000030.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r262 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r262%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200909270112.n8R1C7NG018940%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r262 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 27 03:12:07 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000028.html">[Zcplusplus-commits] r261 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000030.html">[Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#29">[ date ]</a>
+              <a href="thread.html#29">[ thread ]</a>
+              <a href="subject.html#29">[ subject ]</a>
+              <a href="author.html#29">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-27 03:12:02 +0200 (Sun, 27 Sep 2009)
+New Revision: 262
+
+Modified:
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+Give parse_tree a MoveInto method; also, now have weakautovalarray_ptr and weakautovalarray_ptr_throws classes
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2009-09-26 23:14:00 UTC (rev 261)
++++ trunk/ParseTree.cpp	2009-09-27 01:12:02 UTC (rev 262)
+@@ -235,7 +235,18 @@
+ 	tmp.clear();
+ }
+ 
++void parse_tree::MoveInto(parse_tree&amp; dest)
++{
++	dest.destroy();
++	memmove(dest.index_tokens,index_tokens,2*sizeof(*index_tokens));
++	memmove(dest.args,args,3*sizeof(*args));
++	dest.flags = flags;
++	dest.subtype = subtype;
++	dest.type_code = type_code;
++	clear();
++}
+ 
++
+ void parse_tree::_eval_to_arg(size_t arg_idx, size_t i)
+ {
+ 	parse_tree tmp = data(arg_idx)[i];
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2009-09-26 23:14:00 UTC (rev 261)
++++ trunk/ParseTree.hpp	2009-09-27 01:12:02 UTC (rev 262)
+@@ -49,6 +49,8 @@
+ 	// XXX synchronized against type_system.hpp
+     type_spec type_code;
+ 
++	void MoveInto(parse_tree&amp; dest);
++
+ 	parse_tree* c_array(size_t arg_idx)
+ 		{
+ 		assert(STATIC_SIZE(args)&gt;arg_idx);
+@@ -364,7 +366,29 @@
+ {
+ public:
+ 	parse_tree_class() {this-&gt;clear();};
++	parse_tree_class(const parse_tree_class&amp; src)
++		{
++		this-&gt;clear();
++		value_copy(*this,src);
++		};
++	parse_tree_class(const parse_tree&amp; src)
++		{
++		this-&gt;clear();
++		value_copy(*this,src);
++		};
+ 	~parse_tree_class() {this-&gt;destroy();};
++	const parse_tree_class&amp; operator=(const parse_tree_class&amp; src)
++		{
++		this-&gt;destroy();
++		value_copy(*this,src);
++		return *this;
++		}
++	const parse_tree_class&amp; operator=(const parse_tree&amp; src)
++		{
++		this-&gt;destroy();
++		value_copy(*this,src);
++		return *this;
++		}
+ };
+ 
+ void INC_INFORM(const parse_tree&amp; src);
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2009-09-26 23:14:00 UTC (rev 261)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2009-09-27 01:12:02 UTC (rev 262)
+@@ -164,13 +164,13 @@
+ 	explicit _meta_weakautoarray_ptr(T*&amp; src) : _ptr(src) {src = NULL;};
+ 	explicit _meta_weakautoarray_ptr(size_t n) : _ptr(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL) {};
+ 	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)) {};
+-	explicit _meta_weakautoarray_ptr(_meta_weakautoarray_ptr&amp; src) : _ptr(src._ptr) {src._ptr=NULL;};
++	explicit _meta_weakautoarray_ptr(const _meta_weakautoarray_ptr&amp; src) : _ptr(NULL) {*this=src;};
+ #else
+ 	explicit _meta_weakautoarray_ptr() : _ptr(NULL),_size(0) {};
+ 	explicit _meta_weakautoarray_ptr(T*&amp; src,size_t src_size) : _ptr(src),_size(src_size) {src = NULL;};
+ 	explicit _meta_weakautoarray_ptr(size_t n) : _ptr(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL),_size(n) {};
+ 	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
+-	explicit _meta_weakautoarray_ptr(_meta_weakautoarray_ptr&amp; src) : _ptr(src._ptr),_size(src._size) {src._ptr=NULL; src._size=0;};
++	explicit _meta_weakautoarray_ptr(_meta_weakautoarray_ptr&amp; src) : _ptr(NULL),_size(0) {*this=src;};
+ #endif
+ 	~_meta_weakautoarray_ptr() {_weak_flush(_ptr);};
+ 
+@@ -180,6 +180,8 @@
+ 	void operator=(const _meta_weakautoarray_ptr&amp; src);
+ 	template&lt;typename U&gt; bool value_copy_of(const U&amp; src);	// STL interfaces required of U: size(),data()
+ 	void reset() {_weak_flush(_ptr); this-&gt;NULLPtr();};
++	void reset(T*&amp; src);
++	void MoveInto(_meta_weakautoarray_ptr&lt;T&gt;&amp; dest) {dest.reset(_ptr);};
+ 
+ 	void TransferOutAndNULL(T*&amp; Target) {_weak_flush(Target); Target = _ptr; this-&gt;NULLPtr();}
+ 	bool Resize(size_t n) {return _weak_resize(_ptr,n);};
+@@ -237,6 +239,47 @@
+ };
+ 
+ template&lt;typename T&gt;
++class weakautovalarray_ptr : public _meta_weakautoarray_ptr&lt;T&gt;
++{
++public:
++	ZAIMONI_STL_TYPE_GLUE_ARRAY(T);
++
++	explicit weakautovalarray_ptr() {};
++	explicit weakautovalarray_ptr(T*&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++	explicit weakautovalarray_ptr(size_t n) : _meta_weakautoarray_ptr&lt;T&gt;(std::nothrow,n) {};
++	explicit weakautovalarray_ptr(const weakautovalarray_ptr&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++	explicit weakautovalarray_ptr(const _meta_weakautoarray_ptr&lt;T&gt;&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++//	~weakautoarray_ptr();	// default OK
++
++#ifndef ZAIMONI_FORCE_ISO
++	const weakautovalarray_ptr&amp; operator=(T* src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++#endif
++	const weakautovalarray_ptr&amp; operator=(weakautovalarray_ptr&amp; src) {reset(src._ptr); return *this;};
++
++	friend void zaimoni::swap(weakautovalarray_ptr&amp; lhs, weakautovalarray_ptr&amp; rhs) {lhs.swap(rhs);};
++};
++
++template&lt;typename T&gt;
++class weakautovalarray_ptr_throws : public _meta_weakautoarray_ptr&lt;T&gt;
++{
++public:
++	ZAIMONI_STL_TYPE_GLUE_ARRAY(T);
++
++	explicit weakautovalarray_ptr_throws() {};
++	explicit weakautovalarray_ptr_throws(T*&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++	explicit weakautovalarray_ptr_throws(size_t n) : _meta_weakautoarray_ptr&lt;T&gt;(n) {};
++	explicit weakautovalarray_ptr_throws(const weakautovalarray_ptr_throws&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++//	~weakautoarray_ptr_throws();	// default OK
++
++#ifndef ZAIMONI_FORCE_ISO
++	const weakautovalarray_ptr_throws&amp; operator=(T* src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++#endif
++	const weakautovalarray_ptr_throws&amp; operator=(weakautovalarray_ptr_throws&amp; src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++
++	friend void zaimoni::swap(weakautovalarray_ptr_throws&amp; lhs, weakautovalarray_ptr_throws&amp; rhs) {lhs.swap(rhs);};
++};
++
++template&lt;typename T&gt;
+ class _meta_autoarray_ptr : public c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;
+ {
+ protected:
+@@ -597,6 +640,19 @@
+ }
+ 
+ template&lt;typename T&gt;
++void
++_meta_weakautoarray_ptr&lt;T&gt;::reset(T*&amp; src)
++{	// this convolution handles a recursion issue
++	T* tmp = src;
++	src = NULL;
++	if (tmp!=_ptr)
++		{
++		if (NULL!=_ptr) _weak_flush(_ptr);
++		_ptr = tmp;
++		};
++}
++
++template&lt;typename T&gt;
+ template&lt;typename U&gt;
+ bool
+ _meta_autoarray_ptr&lt;T&gt;::grep(UnaryPredicate* Predicate,_meta_autoarray_ptr&lt;U*&gt;&amp; Target) const
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000028.html">[Zcplusplus-commits] r261 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000030.html">[Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#29">[ date ]</a>
+              <a href="thread.html#29">[ thread ]</a>
+              <a href="subject.html#29">[ subject ]</a>
+              <a href="author.html#29">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,276 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r616 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r616%20-%20trunk&In-Reply-To=%3C20110216233849.176C64813E6%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000382.html">
+   <LINK REL="Next"  HREF="000384.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r616 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r616%20-%20trunk&In-Reply-To=%3C20110216233849.176C64813E6%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r616 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Feb 17 00:38:48 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000382.html">[Zcplusplus-commits] r615 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000384.html">[Zcplusplus-commits] r617 - trunk/tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#383">[ date ]</a>
+              <a href="thread.html#383">[ thread ]</a>
+              <a href="subject.html#383">[ subject ]</a>
+              <a href="author.html#383">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-17 00:38:48 +0100 (Thu, 17 Feb 2011)
+New Revision: 616
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+Log:
+render defining INSTALL_TO completely optional
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-02-14 19:10:07 UTC (rev 615)
++++ trunk/CPreproc.cpp	2011-02-16 23:38:48 UTC (rev 616)
+@@ -39,20 +39,25 @@
+ #define ERR_STR &quot;error: &quot;
+ #define WARN_STR &quot;warning: &quot;
+ 
+-#define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
++// define this to hard-code an install path
++//#define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
++#endif	
+ 	// C++-only relative paths
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
++#ifdef INSTALL_TO
+ 	// install path
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;include&quot;,
++#endif	
+ 	// relative paths
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
+@@ -60,16 +65,20 @@
+ };
+ 
+ static const char* actual_system_include_search[] =	{
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// C++-only relative paths
+ 	NULL,
+ 	NULL,
++#ifdef INSTALL_TO
+ 	// install path
+ 	NULL,
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// relative paths
+ 	NULL,
+ 	NULL,
+@@ -78,10 +87,12 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(fixed_system_include_search)==STATIC_SIZE(actual_system_include_search));
+ 
++#ifdef INSTALL_TO
+ #define START_CPP_ONLY_PATHS 4
++#else
++#define START_CPP_ONLY_PATHS 2
++#endif
+ 
+-#undef INSTALL_TO
+-
+ static bool fixed_system_include_exists_init = false;
+ 
+ static void init_fixed_system_include_search(void)
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-02-14 19:10:07 UTC (rev 615)
++++ trunk/CPreproc.cpp.in	2011-02-16 23:38:48 UTC (rev 616)
+@@ -59,20 +59,25 @@
+ #define ERR_STR &quot;error: &quot;
+ #define WARN_STR &quot;warning: &quot;
+ 
+-#define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
++// define this to hard-code an install path
++//#define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
++#endif	
+ 	// C++-only relative paths
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
++#ifdef INSTALL_TO
+ 	// install path
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;include&quot;,
++#endif	
+ 	// relative paths
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
+@@ -80,16 +85,20 @@
+ };
+ 
+ static const char* actual_system_include_search[] =	{
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// C++-only relative paths
+ 	NULL,
+ 	NULL,
++#ifdef INSTALL_TO
+ 	// install path
+ 	NULL,
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// relative paths
+ 	NULL,
+ 	NULL,
+@@ -98,10 +107,12 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(fixed_system_include_search)==STATIC_SIZE(actual_system_include_search));
+ 
++#ifdef INSTALL_TO
+ #define START_CPP_ONLY_PATHS 4
++#else
++#define START_CPP_ONLY_PATHS 2
++#endif
+ 
+-#undef INSTALL_TO
+-
+ static bool fixed_system_include_exists_init = false;
+ 
+ static void init_fixed_system_include_search(void)
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-02-14 19:10:07 UTC (rev 615)
++++ trunk/CPreproc_pp.cpp	2011-02-16 23:38:48 UTC (rev 616)
+@@ -38,20 +38,25 @@
+ #define ERR_STR &quot;error: &quot;
+ #define WARN_STR &quot;warning: &quot;
+ 
+-#define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
++// define this to hard-code an install path
++//#define INSTALL_TO &quot;\\CPP_App\\Z.C++&quot;
+ 
+ //! \todo this should be language-sensitive; LangConf not a good location
+ static const char* const fixed_system_include_search[] = {
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
++#endif	
+ 	// C++-only relative paths
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zc++&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
++#ifdef INSTALL_TO
+ 	// install path
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	INSTALL_TO ZAIMONI_PATH_SEP &quot;include&quot;,
++#endif	
+ 	// relative paths
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc-&quot; ZCC_VERSION ZAIMONI_PATH_SEP &quot;include&quot;,
+ 	&quot;..&quot; ZAIMONI_PATH_SEP &quot;lib&quot; ZAIMONI_PATH_SEP &quot;zcc&quot; ZAIMONI_PATH_SEP &quot;include&quot;,
+@@ -59,16 +64,20 @@
+ };
+ 
+ static const char* actual_system_include_search[] =	{
++#ifdef INSTALL_TO
+ 	// C++-only install paths
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// C++-only relative paths
+ 	NULL,
+ 	NULL,
++#ifdef INSTALL_TO
+ 	// install path
+ 	NULL,
+ 	NULL,
+ 	NULL,
++#endif	
+ 	// relative paths
+ 	NULL,
+ 	NULL,
+@@ -77,10 +86,12 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(fixed_system_include_search)==STATIC_SIZE(actual_system_include_search));
+ 
++#ifdef INSTALL_TO
+ #define START_CPP_ONLY_PATHS 4
++#else
++#define START_CPP_ONLY_PATHS 2
++#endif
+ 
+-#undef INSTALL_TO
+-
+ static bool fixed_system_include_exists_init = false;
+ 
+ static void init_fixed_system_include_search(void)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000382.html">[Zcplusplus-commits] r615 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000384.html">[Zcplusplus-commits] r617 - trunk/tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#383">[ date ]</a>
+              <a href="thread.html#383">[ thread ]</a>
+              <a href="subject.html#383">[ subject ]</a>
+              <a href="author.html#383">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

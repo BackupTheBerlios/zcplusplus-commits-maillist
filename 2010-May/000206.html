@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r439%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert&In-Reply-To=%3C201005190901.o4J910TA032323%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000205.html">
+   <LINK REL="Next"  HREF="000207.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r439%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert&In-Reply-To=%3C201005190901.o4J910TA032323%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed May 19 11:01:00 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000205.html">[Zcplusplus-commits] r438 - in trunk: .	tests/zcc/default/staticassert
+</A></li>
+        <LI>Next message: <A HREF="000207.html">[Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#206">[ date ]</a>
+              <a href="thread.html#206">[ thread ]</a>
+              <a href="subject.html#206">[ subject ]</a>
+              <a href="author.html#206">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-19 11:00:55 +0200 (Wed, 19 May 2010)
+New Revision: 439
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+Log:
+better testing for typeid
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-19 08:21:44 UTC (rev 438)
++++ trunk/CSupport.cpp	2010-05-19 09:00:55 UTC (rev 439)
+@@ -8455,7 +8455,7 @@
+ 		&amp;&amp; C_TYPE::NOT_VOID!=lhs.data&lt;2&gt;()-&gt;type_code.base_type_index
+ 		&amp;&amp; C_TYPE::NOT_VOID!=rhs.data&lt;2&gt;()-&gt;type_code.base_type_index)
+ 		{
+-		is_equal = lhs.type_code.typeid_equal(rhs.type_code);
++		is_equal = lhs.data&lt;2&gt;()-&gt;type_code.typeid_equal(rhs.data&lt;2&gt;()-&gt;type_code);
+ 		return true;
+ 		}
+ 	return false;
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-19 08:21:44 UTC (rev 438)
++++ trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-19 09:00:55 UTC (rev 439)
+@@ -6,6 +6,7 @@
+ // can be known at compile-time in simple cases.
+ 
+ // identity checks
++static_assert(typeid(void)==typeid(void),&quot;automatic success failed&quot;);
+ static_assert(typeid(bool)==typeid(bool),&quot;automatic success failed&quot;);
+ static_assert(typeid(char)==typeid(char),&quot;automatic success failed&quot;);
+ static_assert(typeid(signed char)==typeid(signed char),&quot;automatic success failed&quot;);
+@@ -27,3 +28,24 @@
+ static_assert(typeid(float _Complex)==typeid(float _Complex),&quot;automatic success failed&quot;);
+ static_assert(typeid(double _Complex)==typeid(double _Complex),&quot;automatic success failed&quot;);
+ static_assert(typeid(long double _Complex)==typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++// inequality checks
++static_assert(typeid(void)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(void)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000205.html">[Zcplusplus-commits] r438 - in trunk: .	tests/zcc/default/staticassert
+</A></li>
+	<LI>Next message: <A HREF="000207.html">[Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#206">[ date ]</a>
+              <a href="thread.html#206">[ thread ]</a>
+              <a href="subject.html#206">[ subject ]</a>
+              <a href="author.html#206">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

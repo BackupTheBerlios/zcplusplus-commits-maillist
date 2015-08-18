@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r541 - trunk/tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r541%20-%20trunk/tests/zcc.in/decl.C99&In-Reply-To=%3C20101113012646.86A5A480C72%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000307.html">
+   <LINK REL="Next"  HREF="000309.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r541 - trunk/tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r541%20-%20trunk/tests/zcc.in/decl.C99&In-Reply-To=%3C20101113012646.86A5A480C72%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r541 - trunk/tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 13 02:26:46 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000307.html">[Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000309.html">[Zcplusplus-commits] r542 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#308">[ date ]</a>
+              <a href="thread.html#308">[ thread ]</a>
+              <a href="subject.html#308">[ subject ]</a>
+              <a href="author.html#308">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-13 02:26:46 +0100 (Sat, 13 Nov 2010)
+New Revision: 541
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_enum_as_struct.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_as_struct2.in
+   trunk/tests/zcc.in/decl.C99/Error_union_as_struct.in
+   trunk/tests/zcc.in/decl.C99/Error_union_as_struct2.in
+   trunk/tests/zcc.in/decl.C99/Error_union_as_struct3.in
+   trunk/tests/zcc.in/decl.C99/Error_union_as_struct4.in
+Log:
+test case infiles
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_as_struct.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_as_struct.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_as_struct.in	2010-11-13 01:26:46 UTC (rev 541)
+@@ -0,0 +1,10 @@
++SUFFIXES h hpp
++// using enum as struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++};
++
++struct bad_test;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_as_struct2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_as_struct2.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_as_struct2.in	2010-11-13 01:26:46 UTC (rev 541)
+@@ -0,0 +1,12 @@
++SUFFIXES h hpp
++// using enum as struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++};
++
++struct bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_as_struct.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_as_struct.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_union_as_struct.in	2010-11-13 01:26:46 UTC (rev 541)
+@@ -0,0 +1,10 @@
++SUFFIXES h hpp
++// using union as struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++struct bad_test;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_as_struct2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_as_struct2.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_union_as_struct2.in	2010-11-13 01:26:46 UTC (rev 541)
+@@ -0,0 +1,12 @@
++SUFFIXES h hpp
++// using union as struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++struct bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_as_struct3.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_as_struct3.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_union_as_struct3.in	2010-11-13 01:26:46 UTC (rev 541)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// using union as struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union bad_test;
++
++struct bad_test;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_as_struct4.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_as_struct4.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_union_as_struct4.in	2010-11-13 01:26:46 UTC (rev 541)
+@@ -0,0 +1,10 @@
++SUFFIXES h hpp
++// using union as struct
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union bad_test;
++
++struct bad_test {
++	int x_factor;
++};
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000307.html">[Zcplusplus-commits] r540 - in trunk: . tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000309.html">[Zcplusplus-commits] r542 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#308">[ date ]</a>
+              <a href="thread.html#308">[ thread ]</a>
+              <a href="subject.html#308">[ subject ]</a>
+              <a href="author.html#308">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

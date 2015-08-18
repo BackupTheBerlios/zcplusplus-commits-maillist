@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r382 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r382%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201004172330.o3HNUXtq005732%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000148.html">
+   <LINK REL="Next"  HREF="000150.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r382 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r382%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201004172330.o3HNUXtq005732%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r382 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 18 01:30:33 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000148.html">[Zcplusplus-commits] r381 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000150.html">[Zcplusplus-commits] r383 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#149">[ date ]</a>
+              <a href="thread.html#149">[ thread ]</a>
+              <a href="subject.html#149">[ subject ]</a>
+              <a href="author.html#149">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-18 01:30:22 +0200 (Sun, 18 Apr 2010)
+New Revision: 382
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+Log:
+bring up sizeof(char)==1
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-17 18:11:58 UTC (rev 381)
++++ trunk/CSupport.cpp	2010-04-17 23:30:22 UTC (rev 382)
+@@ -4871,6 +4871,15 @@
+ 				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				return true;
+ 				}
++#/*cut-cpp*/
++			else if (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags)
++				{	// abuse: handle parenthesized type-specifiers here
++				src.flags &amp;= parse_tree::RESERVED_MASK;	// just in case
++				src.flags |= (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags);
++				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
++				return false;	// not an expression 
++				}
++#/*cut-cpp*/
+ 			};
+ 		}
+ 	return false;
+@@ -6222,6 +6231,7 @@
+ 		src.index_tokens[0].token.second = 2;
+ 		src.index_tokens[0].flags = (C_TESTFLAG_PP_NUMERAL | C_TESTFLAG_INTEGER | C_TESTFLAG_DECIMAL);
+ 		src.type_code.set_type(size_t_type);
++		src.flags |= (PARSE_PRIMARY_EXPRESSION | parse_tree::CONSTANT_EXPRESSION);
+ 		break;
+ 		}
+ 	case C_TYPE::SHRT:
+@@ -11740,7 +11750,7 @@
+ 		// C static assertion scanner
+ 		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_Assert&quot;))
+ 			{	// _Static_Assert ( constant-expression , string-literal ) ;
+-			C99_CPP_handle_static_assertion(src,types,*CLexer-&gt;pp_support,i,&quot; : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;,NULL);
++			C99_CPP_handle_static_assertion(src,types,*CLexer-&gt;pp_support,i,&quot;control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;,NULL);
+ 			continue;
+ 			};
+ 		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+@@ -12228,7 +12238,7 @@
+ 		// C++ static assertion scanner
+ 		if (robust_token_is_string&lt;13&gt;(src.data&lt;0&gt;()[i],&quot;static_assert&quot;))
+ 			{	// static_assert ( constant-expression , string-literal ) ;
+-			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer-&gt;pp_support,i,&quot; : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)&quot;,active_namespace);
++			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer-&gt;pp_support,i,&quot;control expression for static assertion must be a constant convertible to bool (C++0X 7p4)&quot;,active_namespace);
+ 			continue;
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-17 18:11:58 UTC (rev 381)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-17 23:30:22 UTC (rev 382)
+@@ -211,3 +211,13 @@
+ _Static_Assert(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+ _Static_Assert(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
++// check sizeof
++_Static_Assert(1==sizeof 'A',&quot;automatic success has failed&quot;);
++_Static_Assert(1==sizeof(char),&quot;automatic success has failed&quot;);
++_Static_Assert(1==sizeof(signed char),&quot;automatic success has failed&quot;);
++_Static_Assert(1==sizeof(unsigned char),&quot;automatic success has failed&quot;);
++
++_Static_Assert(sizeof 'A'==1,&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(char)==1,&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-17 18:11:58 UTC (rev 381)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-17 23:30:22 UTC (rev 382)
+@@ -211,3 +211,13 @@
+ static_assert(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+ static_assert(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
++// check sizeof
++static_assert(1==sizeof 'A',&quot;automatic success has failed&quot;);
++static_assert(1==sizeof(char),&quot;automatic success has failed&quot;);
++static_assert(1==sizeof(signed char),&quot;automatic success has failed&quot;);
++static_assert(1==sizeof(unsigned char),&quot;automatic success has failed&quot;);
++
++static_assert(sizeof 'A'==1,&quot;automatic success has failed&quot;);
++static_assert(sizeof(char)==1,&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-17 18:11:58 UTC (rev 381)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-17 23:30:22 UTC (rev 382)
+@@ -212,3 +212,13 @@
+ STATIC_ASSERT(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
++// check sizeof
++STATIC_ASSERT(1==sizeof 'A',&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1==sizeof(char),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1==sizeof(signed char),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1==sizeof(unsigned char),&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(sizeof 'A'==1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(char)==1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000148.html">[Zcplusplus-commits] r381 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000150.html">[Zcplusplus-commits] r383 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#149">[ date ]</a>
+              <a href="thread.html#149">[ thread ]</a>
+              <a href="subject.html#149">[ subject ]</a>
+              <a href="author.html#149">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

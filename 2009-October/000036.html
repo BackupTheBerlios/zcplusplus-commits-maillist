@@ -1,0 +1,323 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r269 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r269%20-%20trunk&In-Reply-To=%3C200910172223.n9HMND0s008719%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000035.html">
+   <LINK REL="Next"  HREF="000037.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r269 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r269%20-%20trunk&In-Reply-To=%3C200910172223.n9HMND0s008719%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r269 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 18 00:23:13 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000035.html">[Zcplusplus-commits] r268 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000037.html">[Zcplusplus-commits] r270 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#36">[ date ]</a>
+              <a href="thread.html#36">[ thread ]</a>
+              <a href="subject.html#36">[ subject ]</a>
+              <a href="author.html#36">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-10-18 00:23:09 +0200 (Sun, 18 Oct 2009)
+New Revision: 269
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+handle nested-name-specifier syntax in the context-free parsing stage
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 18:39:59 UTC (rev 268)
++++ trunk/CSupport.cpp	2009-10-17 22:23:09 UTC (rev 269)
+@@ -3447,7 +3447,27 @@
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
+ 
++static bool is_naked_brace_pair(const parse_tree&amp; src)
++{
++	return		robust_token_is_char&lt;'{'&gt;(src.index_tokens[0].token)
++			&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.index_tokens[1].token)
+ #ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++#endif
++			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
++}
++
++static bool is_naked_bracket_pair(const parse_tree&amp; src)
++{
++	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
++			&amp;&amp;	robust_token_is_char&lt;']'&gt;(src.index_tokens[1].token)
++#ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename &amp;&amp; NULL!=src.index_tokens[1].src_filename
++#endif
++			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
++}
++
++#ifndef NDEBUG
+ static bool is_array_deref_strict(const parse_tree&amp; src)
+ {
+ 	return		robust_token_is_char&lt;'['&gt;(src.index_tokens[0].token)
+@@ -8897,6 +8917,131 @@
+ 	C99_notice_primary_type(src);
+ }
+ 
++bool CPP_ok_for_toplevel_qualified_name(const parse_tree&amp; x)
++{
++	if (!x.is_atomic()) return false;
++	if (PARSE_PRIMARY_TYPE &amp; x.flags) return false;
++	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
++	if (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags) return true;
++	if (token_is_string&lt;2&gt;(x.index_tokens[0].token,&quot;::&quot;)) return true;
++	return false;
++}
++
++void CPP_notice_scope_glue(parse_tree&amp; src)
++{
++	assert(!src.empty&lt;0&gt;());
++	size_t i = 0;
++	{
++	size_t offset = 0;
++	while(i+offset&lt;src.size&lt;0&gt;())
++		{
++		if (robust_token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i],&quot;::&quot;))
++			{
++			const bool is_global = (0&lt;i) &amp;&amp; !CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i-1]);
++			size_t resize_to = src.data&lt;0&gt;()[i].index_tokens[0].token.second;
++			size_t forward_span = 0;
++			bool last_scope = true;
++			bool have_suppressed_consecutive_scope = false;
++			while(i+offset+forward_span+1&lt;src.size&lt;0&gt;() &amp;&amp; CPP_ok_for_toplevel_qualified_name(src.data&lt;0&gt;()[i+forward_span+1]))
++				{
++				const bool this_scope = robust_token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i+forward_span+1],&quot;::&quot;);
++				if (!last_scope &amp;&amp; !this_scope) break;
++				if (last_scope &amp;&amp; this_scope)
++					{
++					if (!have_suppressed_consecutive_scope)
++						{	//! \test zcc/decl.C99/Error_consecutive_doublecolon_type.hpp
++						simple_error(src.c_array&lt;0&gt;()[i],&quot; consecutive :: operators in nested-name-specifier&quot;);
++						have_suppressed_consecutive_scope = true;
++						}
++					// remove from parse
++					src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+forward_span,src.size&lt;0&gt;()-offset);
++					offset += 1;
++					continue;
++					}
++				last_scope = this_scope;
++				++forward_span;
++				resize_to += src.data&lt;0&gt;()[i+forward_span].index_tokens[0].token.second;
++				};
++			// assemble this into something identifier-like
++			if (!is_global)
++				{
++				--i;
++				++forward_span;
++				resize_to += src.data&lt;0&gt;()[i].index_tokens[0].token.second;
++				};
++			if (0&lt;forward_span)
++				{
++				char* tmp = _new_buffer&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(resize_to));
++				if (NULL==tmp)
++					{
++					if (0==offset) throw std::bad_alloc();
++					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++					offset = 0;
++					tmp = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(resize_to));
++					};
++				strncpy(tmp,src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].token.second);
++				size_t j = 1;
++				do	strncat(tmp,src.data&lt;0&gt;()[i+j].index_tokens[0].token.first,src.data&lt;0&gt;()[i+j].index_tokens[0].token.second);
++				while(forward_span&gt;= ++j);
++				const char* tmp2 = is_string_registered(tmp);
++				if (NULL==tmp2)
++					{
++					src.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(tmp,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
++					src.c_array&lt;0&gt;()[i].control_index_token&lt;0&gt;(true);
++					}
++				else{
++					free(tmp);
++					src.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(tmp2,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
++					};
++				j = 1;
++				do	src.c_array&lt;0&gt;()[i+j].destroy();
++				while(forward_span&gt;= ++j);
++				src.DestroyNAtAndRotateTo&lt;0&gt;(forward_span,i+1,src.size&lt;0&gt;()-offset);
++				offset += forward_span;
++				};
++			if (last_scope)
++				{	// might be able to save: new, delete, operator ___, destructor name
++				if (	i+offset+1&gt;=src.size&lt;0&gt;()
++					||	(   !robust_token_is_string&lt;3&gt;(src.data&lt;0&gt;()[i+1],&quot;new&quot;)
++						 &amp;&amp; !robust_token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i+1],&quot;delete&quot;)
++						 &amp;&amp; !robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[i+1],&quot;operator&quot;)
++						 &amp;&amp; !robust_token_is_char&lt;'~'&gt;(src.data&lt;0&gt;()[i+1])))	// no, compl does not interoperate for destructor names
++					//! \test zcc/decl.C99/Error_doublecolon_type.hpp
++					simple_error(src.c_array&lt;0&gt;()[i],&quot; nested-name-specifier ending in ::&quot;);
++				}
++			};
++		++i;
++		};
++	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++	}
++
++	// efficiency tuning: we have to have no empty slots at top level before recursing,
++	// to mitigate risk of dynamic memory allocation failure
++	i = 0;
++	while(i&lt;src.size&lt;0&gt;())
++		{
++		if (is_naked_parentheses_pair(src.data&lt;0&gt;()[i]))
++			{
++			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
++				// recurse into (...)
++				CPP_notice_scope_glue(src.c_array&lt;0&gt;()[i]);
++			}
++		else if (is_naked_brace_pair(src.data&lt;0&gt;()[i]))
++			{
++			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
++				// recurse into {...}
++				CPP_notice_scope_glue(src.c_array&lt;0&gt;()[i]);
++			}
++		else if (is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
++			{
++			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
++				// recurse into [...]
++				CPP_notice_scope_glue(src.c_array&lt;0&gt;()[i]);
++			}
++		++i;
++		};
++}
++
+ //! \todo check that the fact all literals are already legal-form is used
+ static void CPP_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+ {
+@@ -8906,6 +9051,7 @@
+ 	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	CPP_notice_scope_glue(src);
+ }
+ 
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+@@ -9627,6 +9773,8 @@
+ 		// handle typedefs
+ 		if (check_for_typedef(base_type,x.index_tokens[0].token.first,types)) return true;
+ 		//! \todo handle other known types
++		// note: we have to handle typedefs of unions/structs, anonymous or otherwise ....
++		// worse, the typedef need not be *before* the union/struct declaration
+ 		return false;
+ 		};
+ 	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+@@ -9692,49 +9840,6 @@
+ 	void value_copy_type(type_spec&amp; dest) const {value_copy(dest,base_type);};
+ };
+ 
+-bool CPP_ok_for_toplevel_qualified_name(const parse_tree&amp; x)
+-{
+-	if (!x.is_atomic()) return false;
+-	if (PARSE_PRIMARY_TYPE &amp; x.flags) return false;
+-	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+-	if (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags) return true;
+-	if (token_is_string&lt;2&gt;(x.index_tokens[0].token,&quot;::&quot;)) return true;
+-	return false;
+-}
+-
+-bool CPP_locate_qualified_name(parse_tree&amp; x, size_t i)
+-{
+-	assert(x.size&lt;0&gt;()&gt;i);
+-	if (!CPP_ok_for_toplevel_qualified_name(x.data&lt;0&gt;()[i])) return NULL;
+-	size_t span = 1;
+-	size_t resize_to = x.data&lt;0&gt;()[i].index_tokens[0].token.second;
+-	while(x.size&lt;0&gt;()-i&gt;span &amp;&amp; CPP_ok_for_toplevel_qualified_name(x.data&lt;0&gt;()[i+span]) &amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.data&lt;0&gt;()[i+span].index_tokens[0].flags ? token_is_string&lt;2&gt;(x.data&lt;0&gt;()[i+span-1].index_tokens[0].token,&quot;::&quot;) : !token_is_string&lt;2&gt;(x.data&lt;0&gt;()[i+span-1].index_tokens[0].token,&quot;::&quot;)))
+-		resize_to += x.data&lt;0&gt;()[i+span++].index_tokens[0].token.second;
+-
+-	//! \todo handle templates later
+-	if (1&lt;=span &amp;&amp; token_is_string&lt;2&gt;(x.data&lt;0&gt;()[i+span-1].index_tokens[0].token,&quot;::&quot;)) x.c_array&lt;0&gt;()[i].flags |= parse_tree::INVALID;
+-	if (1&gt;=span) return span;
+-	{
+-	char* tmp = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(resize_to));
+-	strncpy(tmp,x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second);
+-	size_t j = 1;
+-	do	strncat(tmp,x.data&lt;0&gt;()[i+j].index_tokens[0].token.first,x.data&lt;0&gt;()[i+j].index_tokens[0].token.second);
+-	while(span&gt; ++j);
+-	const char* tmp2 = is_string_registered(tmp);
+-	if (NULL==tmp2)
+-		{
+-		x.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(tmp,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
+-		x.c_array&lt;0&gt;()[i].control_index_token&lt;0&gt;(true);
+-		}
+-	else{
+-		free(tmp);
+-		x.c_array&lt;0&gt;()[i].grab_index_token_from_str_literal&lt;0&gt;(tmp2,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
+-		}
+-	}
+-	x.DeleteNSlotsAt&lt;0&gt;(span-1,i+1);
+-	return true;
+-}
+-
+ //! \todo belongs elsewhere
+ size_t count_disjoint_substring_instances(const char* const src,const char* const match)
+ {
+@@ -9807,16 +9912,11 @@
+ 			}
+ 		{	// handle typedefs
+ 		// determine what fully-qualified name would be
+-		if (CPP_locate_qualified_name(x,i))
++		if (   x.data&lt;0&gt;()[i].is_atomic()
++			&amp;&amp; !(PARSE_TYPE &amp; x.data&lt;0&gt;()[i].flags)
++			&amp;&amp; !CPP_echo_reserved_keyword(x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second)
++			&amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.data&lt;0&gt;()[i].index_tokens[0].flags))
+ 			{
+-			if (parse_tree::INVALID &amp; x.data&lt;0&gt;()[i].flags)
+-				{	//! \test zcc/decl.C99/Error_doublecolon_type.hpp
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;qualified-name may not end in :: (C++98 7.1.5.3p1, 5.1p8)&quot;);
+-				zcc_errors.inc_error();
+-				return false;
+-				};
+ 			if (!strncmp(x.data&lt;0&gt;()[i].index_tokens[0].token.first,&quot;::&quot;,2))
+ 				{	// fully-qualified
+ 				assert(2&lt;x.data&lt;0&gt;()[i].index_tokens[0].token.second);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000035.html">[Zcplusplus-commits] r268 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000037.html">[Zcplusplus-commits] r270 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#36">[ date ]</a>
+              <a href="thread.html#36">[ thread ]</a>
+              <a href="subject.html#36">[ subject ]</a>
+              <a href="author.html#36">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

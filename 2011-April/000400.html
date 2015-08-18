@@ -1,0 +1,321 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r633 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r633%20-%20trunk&In-Reply-To=%3C20110416171123.26134481455%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000399.html">
+   <LINK REL="Next"  HREF="000401.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r633 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r633%20-%20trunk&In-Reply-To=%3C20110416171123.26134481455%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r633 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 16 19:11:22 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000399.html">[Zcplusplus-commits] r632 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000401.html">[Zcplusplus-commits] r634 - in trunk: . tests/cpp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#400">[ date ]</a>
+              <a href="thread.html#400">[ thread ]</a>
+              <a href="subject.html#400">[ subject ]</a>
+              <a href="author.html#400">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-16 19:11:22 +0200 (Sat, 16 Apr 2011)
+New Revision: 633
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+fix bug requiring normal-form enforcer on const, volatile
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-04-15 07:08:30 UTC (rev 632)
++++ trunk/CSupport.cpp	2011-04-16 17:11:22 UTC (rev 633)
+@@ -4453,13 +4453,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			if (!C99_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+@@ -4484,13 +4477,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
+@@ -4499,13 +4485,6 @@
+ 			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 			offset += 1;
+ 			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+-			// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
+-			size_t j = i;
+-			while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-				{
+-				std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-				--j;
+-				};
+ 			continue;
+ 			}
+ 		++i;
+@@ -4548,13 +4527,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			if (!CPP_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+@@ -4579,13 +4551,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
+@@ -4594,13 +4559,6 @@
+ 			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 			offset += 1;
+ 			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+-			// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
+-			size_t j = i;
+-			while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-				{
+-				std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-				--j;
+-				};
+ 			continue;
+ 			}
+ 		++i;
+@@ -10541,7 +10499,7 @@
+ 			record_qualifier_or_warn(src,type_spec::_const,i+k,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+-			if (0&lt;i) --i;
++			if (0&lt;i) --i; else --k;
+ 			if (invariant_decl_scanner.size()&lt;=k) return;
+ 			INVARIANT();
+ 			continue;
+@@ -10553,7 +10511,7 @@
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i+k,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+-			if (0&lt;i) --i;
++			if (0&lt;i) --i; else --k;
+ 			if (invariant_decl_scanner.size()&lt;=k) return;
+ 			INVARIANT();
+ 			continue;
+@@ -10570,7 +10528,7 @@
+ 					}
+ 				src.DeleteIdx&lt;0&gt;(i+offset);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+-				if (0&lt;i) --i;
++				if (0&lt;i) --i; else --k;
+ 				if (invariant_decl_scanner.size()&lt;=k) return;
+ 				INVARIANT();
+ 				continue;
+@@ -10613,7 +10571,7 @@
+ 					zcc_errors.inc_error();
+ 					have_warned_too_many_types = true;
+ 					}
+-				src.DeleteIdx&lt;0&gt;(i-- +offset);
++				src.DeleteIdx&lt;0&gt;(i+offset);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+ 				INVARIANT();
+ 				continue;
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-04-15 07:08:30 UTC (rev 632)
++++ trunk/CSupport.cpp.in	2011-04-16 17:11:22 UTC (rev 633)
+@@ -4515,13 +4515,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			if (!C99_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+@@ -4546,13 +4539,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
+@@ -4561,13 +4547,6 @@
+ 			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 			offset += 1;
+ 			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+-			// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
+-			size_t j = i;
+-			while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-				{
+-				std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-				--j;
+-				};
+ 			continue;
+ 			}
+ 		++i;
+@@ -4610,13 +4589,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			if (!CPP_looks_like_identifier(src.data&lt;0&gt;()[i+1]))
+@@ -4641,13 +4613,6 @@
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+-				// parser is having normal-form issues.  Shove named specifier definitions ahead of any const/volatile type qualifiers
+-				size_t j = i;
+-				while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-					{
+-					std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-					--j;
+-					};
+ 				continue;
+ 				};
+ 			src.c_array&lt;0&gt;()[i].grab_index_token_from&lt;1,0&gt;(src.c_array&lt;0&gt;()[i+1]);
+@@ -4656,13 +4621,6 @@
+ 			src.DestroyNAtAndRotateTo&lt;0&gt;(1,i+1,src.size&lt;0&gt;()-offset);
+ 			offset += 1;
+ 			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+-			// parser is having normal-form issues.  Shove named specifiers ahead of any const/volatile type qualifiers
+-			size_t j = i;
+-			while(0&lt;j &amp;&amp; (robust_token_is_string&lt;5&gt;(src.data&lt;0&gt;()[j-1],&quot;const&quot;) || robust_token_is_string&lt;8&gt;(src.data&lt;0&gt;()[j-1],&quot;volatile&quot;)))
+-				{
+-				std::swap(src.c_array&lt;0&gt;()[j],src.c_array&lt;0&gt;()[j-1]);
+-				--j;
+-				};
+ 			continue;
+ 			}
+ 		++i;
+@@ -10677,7 +10635,7 @@
+ 			record_qualifier_or_warn(src,type_spec::_const,i+k,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+-			if (0&lt;i) --i;
++			if (0&lt;i) --i; else --k;
+ 			if (invariant_decl_scanner.size()&lt;=k) return;
+ 			INVARIANT();
+ 			continue;
+@@ -10689,7 +10647,7 @@
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i+k,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+-			if (0&lt;i) --i;
++			if (0&lt;i) --i; else --k;
+ 			if (invariant_decl_scanner.size()&lt;=k) return;
+ 			INVARIANT();
+ 			continue;
+@@ -10706,7 +10664,7 @@
+ 					}
+ 				src.DeleteIdx&lt;0&gt;(i+offset);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+-				if (0&lt;i) --i;
++				if (0&lt;i) --i; else --k;
+ 				if (invariant_decl_scanner.size()&lt;=k) return;
+ 				INVARIANT();
+ 				continue;
+@@ -10749,7 +10707,7 @@
+ 					zcc_errors.inc_error();
+ 					have_warned_too_many_types = true;
+ 					}
+-				src.DeleteIdx&lt;0&gt;(i-- +offset);
++				src.DeleteIdx&lt;0&gt;(i+offset);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+ 				INVARIANT();
+ 				continue;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000399.html">[Zcplusplus-commits] r632 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000401.html">[Zcplusplus-commits] r634 - in trunk: . tests/cpp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#400">[ date ]</a>
+              <a href="thread.html#400">[ thread ]</a>
+              <a href="subject.html#400">[ subject ]</a>
+              <a href="author.html#400">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

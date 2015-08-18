@@ -1,0 +1,455 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r235 - in trunk/tests: cpp cpp/default	cpp/default/twoscomp.trap cpp.in cpp.in/default	cpp.in/default/twoscomp.trap
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r235%20-%20in%20trunk/tests%3A%20cpp%20cpp/default%0A%09cpp/default/twoscomp.trap%20cpp.in%20cpp.in/default%0A%09cpp.in/default/twoscomp.trap&In-Reply-To=%3C200908220743.n7M7hMYF022564%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000001.html">
+   <LINK REL="Next"  HREF="000003.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r235 - in trunk/tests: cpp cpp/default	cpp/default/twoscomp.trap cpp.in cpp.in/default	cpp.in/default/twoscomp.trap</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r235%20-%20in%20trunk/tests%3A%20cpp%20cpp/default%0A%09cpp/default/twoscomp.trap%20cpp.in%20cpp.in/default%0A%09cpp.in/default/twoscomp.trap&In-Reply-To=%3C200908220743.n7M7hMYF022564%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r235 - in trunk/tests: cpp cpp/default	cpp/default/twoscomp.trap cpp.in cpp.in/default	cpp.in/default/twoscomp.trap">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug 22 09:43:22 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000001.html">[Zcplusplus-commits] r234 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000003.html">[Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2">[ date ]</a>
+              <a href="thread.html#2">[ thread ]</a>
+              <a href="subject.html#2">[ subject ]</a>
+              <a href="author.html#2">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-22 09:43:11 +0200 (Sat, 22 Aug 2009)
+New Revision: 235
+
+Added:
+   trunk/tests/cpp.in/default/twoscomp.trap/
+   trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in
+   trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in
+   trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in
+   trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in
+   trunk/tests/cpp/default/twoscomp.trap/
+   trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h
+   trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp
+   trunk/tests/cpp/default/twoscomp.trap/Error_compl.h
+   trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp
+   trunk/tests/cpp/default/twoscomp.trap/Error_xor.h
+   trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp
+   trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h
+   trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp
+Modified:
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+Log:
+test cases for two's complement machines with trapping integers
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,31 @@
++// default\twoscomp.trap\Error_bitand.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++
++// spot-check &amp;
++#if INTMAX_MIN &amp; (INTMAX_MIN+1)
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,31 @@
++// default\twoscomp.trap\Error_bitand.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++
++// spot-check &amp;
++#if INTMAX_MIN &amp; (INTMAX_MIN+1)
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_compl.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_compl.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_compl.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,14 @@
++// default\twoscomp.trap\Error_compl.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++#if ~INTMAX_MAX
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,14 @@
++// default\twoscomp.trap\Error_compl.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++#if ~INTMAX_MAX
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_xor.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_xor.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_xor.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,16 @@
++// default\twoscomp.trap\Error_xor.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++
++// spot-check ^
++#if INTMAX_MAX ^ -1
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,16 @@
++// default\twoscomp.trap\Error_xor.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++
++// spot-check ^
++#if INTMAX_MAX ^ -1
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,20 @@
++// default\twoscomp.trap\Pass_int_min.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;limits.h&gt;
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,20 @@
++// default\twoscomp.trap\Pass_int_min.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;limits.h&gt;
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/run_tests.bat	2009-08-22 07:43:11 UTC (rev 235)
+@@ -16,6 +16,7 @@
+ @set CPP_ONESCOMP_NOTRAP=..\..\z_cpp --int-ones-complement
+ @set CPP_ONESCOMP_TRAP=..\..\z_cpp --int-ones-complement --int-traps
+ @set CPP_TWOSCOMP_NOTRAP=..\..\z_cpp --int-twos-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_TWOSCOMP_TRAP=..\..\z_cpp --int-twos-complement --int-traps
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+@@ -122,6 +123,14 @@
+ @for %%f in (default\twoscomp.notrap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (default\twoscomp.notrap\Pass*.hpp) do @echo %CPP_TWOSCOMP_NOTRAP% %%f &amp; @%CPP_TWOSCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (default\twoscomp.notrap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.h) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.hpp) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.h) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.hpp) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+ 
+ @echo Checking ZCC nonconforming errors
+ @echo ====
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/run_tests.sh	2009-08-22 07:43:11 UTC (rev 235)
+@@ -23,6 +23,7 @@
+ 	local CPP_ONESCOMP_NOTRAP=&quot;../../z_cpp --int-ones-complement&quot;
+ 	local CPP_ONESCOMP_TRAP=&quot;../../z_cpp --int-ones-complement --int-traps&quot;
+ 	local CPP_TWOSCOMP_NOTRAP=&quot;../../z_cpp --int-twos-complement&quot;
++	local CPP_TWOSCOMP_TRAP=&quot;../../z_cpp --int-twos-complement --int-traps&quot;
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+@@ -83,6 +84,10 @@
+ 	for F in default/onescomp.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ONESCOMP_TRAP $F; if $CPP_ONESCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in default/twoscomp.notrap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_NOTRAP $F; if $CPP_TWOSCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in default/twoscomp.notrap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_NOTRAP $F; if $CPP_TWOSCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.trap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.trap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.trap/Error*.h; do let ++REJECT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/twoscomp.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 
+ 	echo Checking ZCC nonconforming errors
+ 	echo ====
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,21 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++TRUE_EXPRESSION -INT_MIN==INT_MAX
++TRUE_EXPRESSION -LONG_MIN==LONG_MAX
++TRUE_EXPRESSION -LLONG_MIN==LLONG_MAX
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++
++// spot-check &amp;
++VALID_EXPRESSION INTMAX_MIN &amp; (INTMAX_MIN+1)
++
++
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,13 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++VALID_EXPRESSION ~INTMAX_MAX
++
++
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,15 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;stdint.h&gt;
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// &amp; : (randdriver)
++
++// spot-check ^
++VALID_EXPRESSION INTMAX_MAX ^ -1
++
++
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,11 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &lt;limits.h&gt;
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++TRUE_EXPRESSION -INT_MIN==INT_MAX
++TRUE_EXPRESSION -LONG_MIN==LONG_MAX
++TRUE_EXPRESSION -LLONG_MIN==LLONG_MAX
++
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/run_tests.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -10,6 +10,7 @@
+ VAR CPP_ONESCOMP_NOTRAP ../../z_cpp --int-ones-complement
+ VAR CPP_ONESCOMP_TRAP ../../z_cpp --int-ones-complement --int-traps
+ VAR CPP_TWOSCOMP_NOTRAP ../../z_cpp --int-twos-complement
++VAR CPP_TWOSCOMP_TRAP ../../z_cpp --int-twos-complement --int-traps
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO Error*
+@@ -41,6 +42,8 @@
+ PASS CPP_ONESCOMP_TRAP default/onescomp.core/Pass*
+ ERROR CPP_ONESCOMP_TRAP default/onescomp.trap/Error*
+ PASS CPP_TWOSCOMP_NOTRAP default/twoscomp.notrap/Pass*
++PASS CPP_TWOSCOMP_TRAP default/twoscomp.trap/Pass*
++ERROR CPP_TWOSCOMP_TRAP default/twoscomp.trap/Error*
+ 
+ ECHO Checking ZCC nonconforming errors
+ ERROR CPP default.nonconforming/Error*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000001.html">[Zcplusplus-commits] r234 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000003.html">[Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#2">[ date ]</a>
+              <a href="thread.html#2">[ thread ]</a>
+              <a href="subject.html#2">[ subject ]</a>
+              <a href="author.html#2">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

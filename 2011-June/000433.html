@@ -1,0 +1,138 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r666 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r666%20-%20trunk&In-Reply-To=%3C20110610031309.5332C48121D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000432.html">
+   <LINK REL="Next"  HREF="000434.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r666 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r666%20-%20trunk&In-Reply-To=%3C20110610031309.5332C48121D%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r666 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 10 05:13:09 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000432.html">[Zcplusplus-commits] r665 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000434.html">[Zcplusplus-commits] r667 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#433">[ date ]</a>
+              <a href="thread.html#433">[ thread ]</a>
+              <a href="subject.html#433">[ subject ]</a>
+              <a href="author.html#433">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-10 05:13:08 +0200 (Fri, 10 Jun 2011)
+New Revision: 666
+
+Modified:
+   trunk/ParseTree.hpp
+Log:
+reduce code churn from planned big-bang patch
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2011-06-10 01:50:46 UTC (rev 665)
++++ trunk/ParseTree.hpp	2011-06-10 03:13:08 UTC (rev 666)
+@@ -239,7 +239,7 @@
+ 		assert(size&lt;arg_idx&gt;()-i&gt;=n);
+ 		assert(0&lt;n);
+ 		size_t idx = n;
+-		do	ZCC_PARSETREE_CARRAY(arg_idx)[i+ --idx].destroy();
++		do	c_array&lt;arg_idx&gt;()[i+ --idx].destroy();
+ 		while(0&lt;idx);
+ #ifdef ZAIMONI_FORCE_ISO
+ 		zaimoni::_delete_n_slots_at(args[arg_idx].first,args[arg_idx].second,n,i);
+@@ -251,7 +251,7 @@
+ 		{
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;arg_idx);
+ 		assert(size&lt;arg_idx&gt;()&gt;i);
+-		ZCC_PARSETREE_CARRAY(arg_idx)[i].destroy();
++		c_array&lt;arg_idx&gt;()[i].destroy();
+ #ifdef ZAIMONI_FORCE_ISO
+ 		zaimoni::_delete_idx(args[arg_idx].first,args[arg_idx].second,i);
+ #else
+@@ -291,7 +291,7 @@
+ 	template&lt;size_t dest_idx&gt; void fast_set_arg(parse_tree* src)
+ 		{
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(args)&gt;dest_idx);
+-		assert(NULL!=src);
++		assert(src);
+ 		assert(NULL==ZCC_PARSETREE_CARRAY(dest_idx));
+ 		ZCC_PARSETREE_CARRAY(dest_idx) = src;
+ #ifdef ZAIMONI_FORCE_ISO
+@@ -325,7 +325,7 @@
+ 	template&lt;size_t dest_idx&gt; void grab_index_token_from(char*&amp; src,zaimoni::lex_flags src_flags)
+ 		{
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)&gt;dest_idx);
+-		assert(NULL!=src);
++		assert(src);
+ 		if (own_index_token&lt;dest_idx&gt;()) free(const_cast&lt;char*&gt;(index_tokens[dest_idx].token.first));
+ 		index_tokens[dest_idx].token.first = src;
+ 		index_tokens[dest_idx].token.second = strlen(src);
+@@ -336,7 +336,7 @@
+ 	template&lt;size_t dest_idx&gt; void grab_index_token_from(const char*&amp; src,zaimoni::lex_flags src_flags)
+ 		{
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)&gt;dest_idx);
+-		assert(NULL!=src);
++		assert(src);
+ 		if (own_index_token&lt;dest_idx&gt;()) free(const_cast&lt;char*&gt;(index_tokens[dest_idx].token.first));
+ 		index_tokens[dest_idx].token.first = src;
+ 		index_tokens[dest_idx].token.second = strlen(src);
+@@ -347,7 +347,7 @@
+ 	template&lt;size_t dest_idx&gt; void grab_index_token_from_str_literal(const char* const src,zaimoni::lex_flags src_flags)
+ 		{
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)&gt;dest_idx);
+-		assert(NULL!=src);
++		assert(src);
+ 		if (own_index_token&lt;dest_idx&gt;()) { free(const_cast&lt;char*&gt;(index_tokens[dest_idx].token.first)); };
+ 		index_tokens[dest_idx].token.first = src;
+ 		index_tokens[dest_idx].token.second = strlen(src);
+@@ -357,7 +357,7 @@
+ 	template&lt;size_t dest_idx&gt; void set_index_token_from_str_literal(const char* const src)
+ 		{
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)&gt;dest_idx);
+-		assert(NULL!=src);
++		assert(src);
+ 		if (own_index_token&lt;dest_idx&gt;()) { free(const_cast&lt;char*&gt;(index_tokens[dest_idx].token.first)); };
+ 		index_tokens[dest_idx].token.first = src;
+ 		index_tokens[dest_idx].token.second = strlen(src);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000432.html">[Zcplusplus-commits] r665 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000434.html">[Zcplusplus-commits] r667 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#433">[ date ]</a>
+              <a href="thread.html#433">[ thread ]</a>
+              <a href="subject.html#433">[ subject ]</a>
+              <a href="author.html#433">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

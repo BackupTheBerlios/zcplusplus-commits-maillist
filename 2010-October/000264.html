@@ -1,0 +1,943 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r498 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r498%20-%20trunk&In-Reply-To=%3C20101020184453.2A90D480819%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000265.html">
+   <LINK REL="Next"  HREF="000266.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r498 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r498%20-%20trunk&In-Reply-To=%3C20101020184453.2A90D480819%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r498 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Oct 20 20:44:52 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000265.html">[Zcplusplus-commits] r497 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000266.html">[Zcplusplus-commits] r499 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#264">[ date ]</a>
+              <a href="thread.html#264">[ thread ]</a>
+              <a href="subject.html#264">[ subject ]</a>
+              <a href="author.html#264">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-20 20:44:52 +0200 (Wed, 20 Oct 2010)
+New Revision: 498
+
+Modified:
+   trunk/CSupport.cpp.in
+Log:
+build system tweak #3
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-10-20 18:43:33 UTC (rev 497)
++++ trunk/CSupport.cpp.in	2010-10-20 18:44:52 UTC (rev 498)
+@@ -2,9 +2,14 @@
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
++#/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
+ #include &quot;_CSupport3.hpp&quot;
+ #include &quot;_CSupport4.hpp&quot;
++#/*cut-cpp*/
++#/*cut-nocpp*/
++#include &quot;CSupport_pp.hpp&quot;
++#/*cut-nocpp*/
+ #include &quot;_CSupport1.hpp&quot;
+ #include &quot;_CSupport2.hpp&quot;
+ 
+@@ -23,7 +28,12 @@
+ #include &quot;errcount.hpp&quot;
+ #include &quot;CPUInfo.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
++#/*cut-cpp*/
+ #include &quot;type_system.hpp&quot;
++#/*cut-cpp*/
++#/*cut-nocpp*/
++#include &quot;type_system_pp.hpp&quot;
++#/*cut-nocpp*/
+ #include &quot;type_algebra.hpp&quot;
+ #include &quot;weak_token.hpp&quot;
+ #include &quot;C_PPDecimalInteger.hpp&quot;
+@@ -31,10 +41,12 @@
+ #include &quot;C_PPOctalInteger.hpp&quot;
+ #include &quot;C_PPDecimalFloat.hpp&quot;
+ #include &quot;C_PPHexFloat.hpp&quot;
++#/*cut-cpp*/
+ #include &quot;enum_type.hpp&quot;
+ #include &quot;struct_type.hpp&quot;
+ #include &quot;kleene_star.hpp&quot;
+ #include &quot;cond_act.hpp&quot;
++#/*cut-cpp*/
+ #include &quot;CheckReturn.hpp&quot;
+ 
+ // handle function signature differences between z_cpp and other users
+@@ -44,8 +56,14 @@
+ #ifdef ARG_TYPES
+ #error internal macro ARG_TYPES already defined 
+ #endif
++#/*cut-cpp*/
+ #define SIG_CONST_TYPES ,const type_system&amp; types 
+ #define ARG_TYPES ,types 
++#/*cut-cpp*/
++#/*cut-nocpp*/
++#define SIG_CONST_TYPES 
++#define ARG_TYPES 
++#/*cut-nocpp*/
+ 
+ using namespace zaimoni;
+ using virtual_machine::umaxint;
+@@ -525,6 +543,7 @@
+ 
+ BOOST_STATIC_ASSERT(C_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+ BOOST_STATIC_ASSERT(CPP_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
++#/*cut-cpp*/
+ 
+ static const char* C99_echo_reserved_keyword(const char* x,size_t x_len)
+ {
+@@ -569,6 +588,7 @@
+ 	while(0&lt;i);
+ 	return NULL;
+ }
++#/*cut-cpp*/
+ 
+ namespace C_TYPE {
+ 
+@@ -605,11 +625,13 @@
+ 	assert(C_TYPE::INT&lt;=base_type_index &amp;&amp; C_TYPE::ULLONG&gt;=base_type_index);
+ 	return (virtual_machine::std_int_enum)((base_type_index-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ }
++#/*cut-cpp*/
+ 
+ static inline size_t unsigned_type_from_machine_type(virtual_machine::std_int_enum x)
+ {
+ 	return C_TYPE::SCHAR+2*(x-virtual_machine::std_int_char)+1;
+ }
++#/*cut-cpp*/
+ 
+ #if 0
+ static bool is_innate_type(size_t base_type_index)
+@@ -640,8 +662,13 @@
+ 
+ static bool converts_to_integerlike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
++#/*cut-cpp*/
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
++#/*cut-cpp*/
++#/*cut-nocpp*/
++	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=base_type_index;
++#/*cut-nocpp*/
+ }
+ 
+ static bool converts_to_integerlike(const type_spec&amp; type_code SIG_CONST_TYPES)
+@@ -653,20 +680,35 @@
+ static bool converts_to_integer(const type_spec&amp; type_code SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+ 	if (0&lt;type_code.pointer_power) return false;	// pointers do not have a standard conversion to integers
++#/*cut-cpp*/
+ 	if (C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index) return true;
+ 	return types.get_enum_def(type_code.base_type_index);
++#/*cut-cpp*/
++#/*cut-nocpp*/
++	return C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;type_code.base_type_index;
++#/*cut-nocpp*/
+ }
+ 
+ static bool converts_to_reallike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
++#/*cut-cpp*/
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
++#/*cut-cpp*/
++#/*cut-nocpp*/
++	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index;
++#/*cut-nocpp*/
+ }
+ 
+ static bool converts_to_arithmeticlike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
++#/*cut-cpp*/
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
++#/*cut-cpp*/
++#/*cut-nocpp*/
++	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE__COMPLEX&gt;=base_type_index;
++#/*cut-nocpp*/
+ }
+ 
+ static bool converts_to_arithmeticlike(const type_spec&amp; type_code SIG_CONST_TYPES)
+@@ -686,12 +728,14 @@
+ // the integer promotions rely on low-level weirdness, so test that here
+ static size_t arithmetic_reconcile(size_t base_type_index1, size_t base_type_index2 SIG_CONST_TYPES)
+ {
++#/*cut-cpp*/
+ 	{
+ 	const enum_def* tmp = types.get_enum_def(base_type_index1);
+ 	if (tmp) base_type_index1 = tmp-&gt;represent_as;
+ 	tmp = types.get_enum_def(base_type_index2);
+ 	if (tmp) base_type_index2 = tmp-&gt;represent_as;	
+ 	}
++#/*cut-cpp*/
+ 	assert(is_innate_definite_type(base_type_index1));
+ 	assert(is_innate_definite_type(base_type_index2));
+ 	// identity, do not do anything
+@@ -805,10 +849,12 @@
+ 
+ static size_t default_promote_type(size_t i SIG_CONST_TYPES)
+ {
++#/*cut-cpp*/
+ 	{
+ 	const enum_def* tmp = types.get_enum_def(i);
+ 	if (tmp) i = tmp-&gt;represent_as;
+ 	}
++#/*cut-cpp*/
+ 	switch(i)
+ 	{
+ 	case C_TYPE::BOOL: return C_TYPE::INT;
+@@ -947,6 +993,7 @@
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+ BOOST_STATIC_ASSERT(STATIC_SIZE(CPP_atomic_types)==CPP_TYPE_MAX);
++#/*cut-cpp*/
+ 
+ static const POD_pair&lt;const char*,size_t&gt; C99_decl_specifiers[] =
+ 	{	DICT_STRUCT(&quot;typedef&quot;),
+@@ -1086,6 +1133,7 @@
+ 	if (STATIC_SIZE(CPP0X_decl_specifier_list)&gt;i) return i;
+ 	return SIZE_MAX;
+ }	
++#/*cut-cpp*/
+ 
+ const size_t C_int_priority[]
+ 	=	{
+@@ -1201,6 +1249,7 @@
+ 	message_header(src.src_filename,src.logical_line.first);
+ }
+ 
++#/*cut-cpp*/
+ /* XXX this may belong with enum_type XXX */
+ static void message_header(const enum_def&amp; src)
+ {
+@@ -1214,6 +1263,7 @@
+ 	assert(src.filename() &amp;&amp; *src.filename());
+ 	message_header(src.filename(),src.loc().first);
+ }
++#/*cut-cpp*/
+ 
+ // balanced character count
+ static POD_pair&lt;size_t,size_t&gt;
+@@ -3182,6 +3232,7 @@
+ 		zcc_errors.inc_error();
+ 		};
+ }
++#/*cut-cpp*/
+ 
+ /* deal with following type catalog
+ atomic:
+@@ -3960,6 +4011,7 @@
+ 		}
+ 	while(src.size&lt;0&gt;()&gt; ++i);
+ }
++#/*cut-cpp*/
+ 
+ //! \todo generalize -- function pointer parameter target, functor target
+ static size_t _count_identifiers(const parse_tree&amp; src)
+@@ -3985,6 +4037,7 @@
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
++#/*cut-cpp*/
+ 
+ static bool is_naked_brace_pair(const parse_tree&amp; src)
+ {
+@@ -4012,6 +4065,7 @@
+ 		|| is_naked_brace_pair(src)
+ 		|| is_naked_bracket_pair(src));
+ }
++#/*cut-cpp*/
+ 
+ #ifndef NDEBUG
+ static bool is_array_deref_strict(const parse_tree&amp; src)
+@@ -4083,6 +4137,7 @@
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
++#/*cut-cpp*/
+ 
+ static bool is_CPP0X_typeid_expression(const parse_tree&amp; src)
+ {
+@@ -4113,6 +4168,7 @@
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+ #endif
++#/*cut-cpp*/
+ 
+ #define C99_MULT_SUBTYPE_DIV 1
+ #define C99_MULT_SUBTYPE_MOD 2
+@@ -4412,6 +4468,7 @@
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
++#/*cut-cpp*/
+ 
+ static bool is_C99_anonymous_specifier(const parse_tree&amp; src,const char* const spec_name)
+ {
+@@ -4687,6 +4744,7 @@
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),conditional_action&lt;bool (*)(const parse_tree&amp;),void (*)(parse_tree&amp;)&gt;(is_nonempty_naked_pair,CPP_notice_class_struct_union_enum));
+ }
++#/*cut-cpp*/
+ 
+ bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+@@ -4723,6 +4781,7 @@
+ 		};
+ 	return true;
+ }
++#/*cut-cpp*/
+ 
+ static const enum_def* is_noticed_enumerator(const parse_tree&amp; x,const type_system&amp; types)
+ {
+@@ -4731,6 +4790,7 @@
+ 		tmp = types.get_enum_def(x.type_code.base_type_index);
+ 	return tmp;
+ }
++#/*cut-cpp*/
+ 
+ // forward-declare to handle recursion
+ static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src SIG_CONST_TYPES);
+@@ -4784,6 +4844,7 @@
+ 		dest.set_bitcount(VM_MAX_BIT_PLATFORM);
+ 		return true;
+ 		}	
++#/*cut-cpp*/
+ 
+ 	// creative interpretation: enumerators as integer-like literals
+ 	if (is_noticed_enumerator(src,types))
+@@ -4793,6 +4854,7 @@
+ 		dest = tmp2-&gt;second.first.third;
+ 		return true;
+ 		}
++#/*cut-cpp*/
+ 		
+ 	if (!(C_TESTFLAG_INTEGER &amp; src.index_tokens[0].flags)) return false;
+ 	C_PPIntCore tmp;
+@@ -5113,6 +5175,7 @@
+ 		}
+ }
+ 
++#/*cut-cpp*/
+ // returns true if and only if no errors
+ static bool _this_vaguely_where_it_could_be_cplusplus(const parse_tree&amp; src)
+ {
+@@ -5147,6 +5210,7 @@
+ 	while(0&lt;j);
+ 	return starting_errors==zcc_errors.err_count();
+ }
++#/*cut-cpp*/
+ 
+ // this handles: ( ), [ ], { }
+ // the content of ( ), [ ], { } fills the zeroth argument array
+@@ -5352,6 +5416,7 @@
+ 				src.flags |= (PARSE_PAREN_PRIMARY_PASSTHROUGH &amp; src.data&lt;0&gt;()-&gt;flags);
+ 				return true;
+ 				}
++#/*cut-cpp*/
+ 			else if (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags)
+ 				{	// abuse: handle parenthesized type-specifiers here
+ 				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+@@ -5359,6 +5424,7 @@
+ 				src.flags |= (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags);
+ 				return false;	// not an expression 
+ 				}
++#/*cut-cpp*/
+ 			};
+ 		}
+ 	return false;
+@@ -5611,6 +5677,7 @@
+ 		}
+ }
+ 
++#/*cut-cpp*/
+ 
+ // if #include &lt;typeinfo&gt; hasn't happened, context-free error stops this
+ //! \throw std::bad_alloc
+@@ -5661,6 +5728,7 @@
+ 		return true;
+ 	return false;
+ }
++#/*cut-cpp*/
+ /*postfixexpression:
+ 	primaryexpression
+ 	postfixexpression [ expression ]
+@@ -5702,11 +5770,13 @@
+ 				{
+ 				}
+ 			}
++#/*cut-cpp*/
+ #endif
+ 		}
+ 	else{	// if (NULL==src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		if (locate_CPP0X_typeid(src,i,types)) return;
+ #if 0
++#/*cut-cpp*/
+ 		if (token_is_char&lt;'.'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			if (1&lt;=i &amp;&amp; 1&lt;src.size&lt;0&gt;()-i)
+@@ -5772,6 +5842,7 @@
+ 		is_true = !CCharLiteralIsFalse(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+ 		return true;
+ 		};
++#/*cut-cpp*/
+ 	if (is_noticed_enumerator(src,types))
+ 		{	// misintepret enumerators as literals (avoid dynamic memory thrashing)
+ 		const type_system::enumerator_info* const tmp2 = types.get_enumerator(src.index_tokens[0].token.first);
+@@ -5780,6 +5851,7 @@
+ 		is_true = !target_machine-&gt;is_zero(tmp2-&gt;second.first.third.data(),tmp2-&gt;second.first.third.size(),dest_type);
+ 		return true;
+ 		}
++#/*cut-cpp*/
+ 	if (!(C_TESTFLAG_PP_NUMERAL &amp; src.index_tokens[0].flags)) return false;
+ 	C_REALITY_CHECK_PP_NUMERAL_FLAGS(src.index_tokens[0].flags);
+ 	if (C_TESTFLAG_FLOAT &amp; src.index_tokens[0].flags) return false;	//! \todo handle floats as well (underflow to zero is target-sensitive)
+@@ -5863,6 +5935,7 @@
+ 	_label_one_literal(dest,types);
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
++#/*cut-cpp*/
+ 
+ // can't do much syntax-checking or immediate-evaluation here because of binary +/-
+ // unary +/- syntax checking out out of place as it's needed by all of the unary operators
+@@ -5895,6 +5968,7 @@
+ 	_label_one_literal(dest,types);
+ 	assert(PARSE_EXPRESSION &amp; dest.flags);
+ }
++#/*cut-cpp*/
+ 
+ static void force_decimal_literal(parse_tree&amp; dest,const char* src,const type_system&amp; types)
+ {
+@@ -5978,6 +6052,7 @@
+ 		}
+ 	else VM_to_literal(x,src_int,src,types);
+ }
++#/*cut-cpp*/
+ 
+ //! \throw std::bad_alloc()
+ static void enumerator_to_integer_representation(parse_tree&amp; x,const type_system&amp; types)
+@@ -6005,13 +6080,16 @@
+ 	}
+ 	tmp3.MoveInto(x);
+ }
++#/*cut-cpp*/
+ 
+ static bool is_integerlike_literal(const parse_tree&amp; x SIG_CONST_TYPES)
+ {
+ 	return converts_to_integerlike(x.type_code ARG_TYPES) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; x.flags);
+ }
+ 
++#/*cut-cpp*/
+ //! \throw std::bad_alloc()
++#/*cut-cpp*/
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+@@ -6026,6 +6104,7 @@
+ 			}
+ 		return false;
+ 		};
++#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+@@ -6035,6 +6114,7 @@
+ 			return true;
+ 			}
+ 		}
++#/*cut-cpp*/
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+@@ -6059,6 +6139,7 @@
+ 		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
++#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+@@ -6069,6 +6150,7 @@
+ 			}
+ 		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 		}
++#/*cut-cpp*/
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES) &amp;&amp; 1==(src.type_code.base_type_index-C_TYPE::INT)%2)
+ 		{	// unsigned...we're fine
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+@@ -6108,6 +6190,7 @@
+ 		simple_error(src,(C99_UNARY_SUBTYPE_PLUS==src.subtype) ? &quot; applies unary + to a pointer (C99 6.5.3.3p1)&quot; : &quot; applies unary - to a pointer (C99 6.5.3.3p1)&quot;);
+ 		return;
+ 		}
++#/*cut-cpp*/
+ 	// can type if an (C++0X unscoped) enumerator
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+@@ -6116,6 +6199,7 @@
+ 		src.type_code.set_type(tmp2-&gt;second.first.first);
+ 		}
+ 	else
++#/*cut-cpp*/
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES));
+@@ -6148,6 +6232,7 @@
+ 	assert((C99_UNARY_SUBTYPE_PLUS==src.subtype) ? is_C99_unary_operator_expression&lt;'+'&gt;(src) : is_C99_unary_operator_expression&lt;'-'&gt;(src));
+ 	
+ 	// can type if result is a primitive arithmetic type
++#/*cut-cpp*/
+ 	// can type if an (C++0X unscoped) enumerator
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+@@ -6156,6 +6241,7 @@
+ 		src.type_code.set_type(tmp2-&gt;second.first.first);
+ 		}
+ 	else
++#/*cut-cpp*/
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES));
+ 
+@@ -6535,11 +6621,13 @@
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
++#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+ 		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 		}
++#/*cut-cpp*/
+ 	umaxint res_int;
+ 	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;() ARG_TYPES)) 
+ 		{
+@@ -6732,6 +6820,7 @@
+ 
+ 	return terse_locate_CPP_unary_plusminus(src,i,types);
+ }
++#/*cut-cpp*/
+ 
+ // handle C++0X sizeof... elsewhere (context-free syntax checks should be fixed first, possibly consider sizeof... a psuedo-identifier)
+ //! \throw std::bad_alloc
+@@ -6995,6 +7084,7 @@
+ 		}
+ 	return false;
+ }
++#/*cut-cpp*/
+ 
+ /* Scan for unary operators and cast expressions
+ unary-expression:
+@@ -7026,7 +7116,9 @@
+ 	if (locate_C99_logical_NOT(src,i,types)) return;
+ 	if (locate_C99_bitwise_complement(src,i,types)) return;
+ 	if (locate_C99_unary_plusminus(src,i,types)) return;
++#/*cut-cpp*/
+ 	if (locate_C99_sizeof(src,i,types)) return;
++#/*cut-cpp*/
+ 
+ #if 0
+ 	if (terse_locate_unary_operator(src,i))
+@@ -7104,7 +7196,9 @@
+ 	if (locate_CPP_logical_NOT(src,i,types)) return;
+ 	if (locate_CPP_bitwise_complement(src,i,types)) return;
+ 	if (locate_CPP_unary_plusminus(src,i,types)) return;
++#/*cut-cpp*/
+ 	if (locate_CPP_sizeof(src,i,types)) return;
++#/*cut-cpp*/
+ 
+ #if 0
+ 	if (token_is_string&lt;2&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;++&quot;))
+@@ -7587,7 +7681,9 @@
+ BOOST_STATIC_ASSERT(1==C99_MULT_SUBTYPE_MOD-C99_MULT_SUBTYPE_DIV);
+ BOOST_STATIC_ASSERT(1==C99_MULT_SUBTYPE_MULT-C99_MULT_SUBTYPE_MOD);
+ 
++#/*cut-cpp*/
+ //! \throw std::bad_alloc
++#/*cut-cpp*/
+ static bool _mod_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_MOD==src.subtype &amp;&amp; is_C99_mult_operator_expression&lt;'%'&gt;(src));
+@@ -7604,6 +7700,7 @@
+ 		simple_error(src,&quot; has nonintegral RHS (C99 6.5.5p2, C++98 5.6p2)&quot;);
+ 		return false;
+ 		};
++#/*cut-cpp*/
+ 	if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+@@ -7616,11 +7713,14 @@
+ 		rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 		assert(rhs.second);
+ 		}
++#/*cut-cpp*/
+ 	src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 	return true;
+ }
+ 
++#/*cut-cpp*/
+ //! \throw std::bad_alloc
++#/*cut-cpp*/
+ static bool _mult_div_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV==src.subtype || C99_MULT_SUBTYPE_MULT==src.subtype);
+@@ -7642,6 +7742,7 @@
+ 		return false;
+ 		};
+ 
++#/*cut-cpp*/
+ 	// arithmeticlike subsumes integerlike so this is fine
+ 	if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 		{
+@@ -7655,6 +7756,7 @@
+ 		rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 		assert(rhs.second);
+ 		}
++#/*cut-cpp*/
+ 	src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 	return true;
+ }
+@@ -8209,6 +8311,7 @@
+ 				return;
+ 				}
+ 
++#/*cut-cpp*/
+ 			// arithmeticlike subsumes integerlike so this is fine
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				{
+@@ -8222,6 +8325,7 @@
+ 				rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 				assert(rhs.second);
+ 				}
++#/*cut-cpp*/
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+@@ -8270,6 +8374,7 @@
+ 				return;
+ 				}
+ 
++#/*cut-cpp*/
+ 			// arithmeticlike subsumes integerlike so this is fine
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				{
+@@ -8283,6 +8388,7 @@
+ 				rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
+ 				assert(rhs.second);
+ 				}
++#/*cut-cpp*/
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+@@ -8470,9 +8576,11 @@
+ 		{
+ 		if (!is_true)
+ 			{	// __ &lt;&lt; 0 or __ &gt;&gt; 0: lift
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
++#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			return true;
+@@ -8873,6 +8981,7 @@
+ 	return false;
+ }
+ 
++#/*cut-cpp*/
+ static bool typeid_equal_content(const parse_tree&amp; lhs, const parse_tree&amp; rhs,bool&amp; is_equal)
+ {
+ 	if (   is_CPP0X_typeid_expression(lhs) &amp;&amp; is_CPP0X_typeid_expression(rhs)
+@@ -8885,6 +8994,7 @@
+ 	return false;
+ }
+ 
++#/*cut-cpp*/
+ static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {	
+ 	BOOST_STATIC_ASSERT(1==C99_EQUALITY_SUBTYPE_NEQ-C99_EQUALITY_SUBTYPE_EQ);
+@@ -8902,7 +9012,9 @@
+ 				//! \test default/Pass_if_zero.hpp, default/Pass_if_zero.h, 
+ 			bool is_equal = false;
+ 			if (   C_string_literal_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
++#/*cut-cpp*/
+ 				|| typeid_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
++#/*cut-cpp*/
+ 				)
+ 				{
+ 				force_decimal_literal(src,is_equal_op==is_equal ? &quot;1&quot; : &quot;0&quot;,types);
+@@ -9165,18 +9277,22 @@
+ 		if 		(res_int==lhs_int)
+ 			// lhs &amp; rhs = lhs; conserve type
+ 			{
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
++#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			}
+ 		else if (res_int==rhs_int)
+ 			// lhs &amp; rhs = rhs; conserve type
+ 			{
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
++#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			}
+@@ -9329,9 +9445,11 @@
+ 		{
+ 		if (!is_true)
+ 			{	// 0 ^ __
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
++#/*cut-cpp*/
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9341,9 +9459,11 @@
+ 		{
+ 		if (!is_true)
+ 			{	// __ ^ 0
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
++#/*cut-cpp*/
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9507,9 +9627,11 @@
+ 		{
+ 		if (!is_true)
+ 			{	// 0 | __
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
++#/*cut-cpp*/
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9519,9 +9641,11 @@
+ 		{
+ 		if (!is_true)
+ 			{	// __ | 0
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
++#/*cut-cpp*/
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			//! \bug convert char literal to appropriate integer
+ 			return true;
+@@ -9539,18 +9663,22 @@
+ 		if 		(res_int==lhs_int)
+ 			// lhs | rhs = lhs; conserve type
+ 			{
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
++#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+ 			}
+ 		else if (res_int==rhs_int)
+ 			// lhs | rhs = rhs; conserve type
+ 			{
++#/*cut-cpp*/
+ 			// handle enumerators now
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
++#/*cut-cpp*/
+ 			src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			}
+@@ -10530,8 +10658,10 @@
+ 	_label_literals(src,types);
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),_label_CPP_literal);	// intercepts: true, false, this
+ 	if (!_match_pairs(src)) return false;
++#/*cut-cpp*/
+ 	// check that this is at least within a brace pair or a parentheses pair (it is actually required to be in a non-static member function, or constructor mem-initializer
+ 	if (!_this_vaguely_where_it_could_be_cplusplus(src)) return false;
++#/*cut-cpp*/	
+ 	try {
+ 		CPP_locate_expressions(src,SIZE_MAX,types);
+ 		}
+@@ -10545,6 +10675,7 @@
+ 	return true;
+ }
+ 
++#/*cut-cpp*/
+ static const POD_pair&lt;const char*,size_t&gt; C99_nontype_decl_specifier_list[] =
+ 	{	DICT_STRUCT(&quot;typedef&quot;),
+ 		DICT_STRUCT(&quot;const&quot;),
+@@ -10900,6 +11031,7 @@
+ 	// class/struct/union/enum specifiers can occur in all sorts of strange places
+ 	CPP_notice_class_struct_union_enum(src);
+ }
++#/*cut-cpp*/
+ 
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+ bool C99_integer_literal_is_zero(const char* const x,const size_t x_len,const lex_flags flags)
+@@ -11460,12 +11592,14 @@
+ 				}
+ 			}
+ 		}
++#/*cut-cpp*/
+ 	if (src.type_code.decays_to_nonnull_pointer())
+ 		{
+ 		force_decimal_literal(src,&quot;1&quot;,types);
+ 		src.type_code.set_type(C_TYPE::INT);
+ 		return;
+ 		}
++#/*cut-cpp*/
+ }
+ 
+ //! \throw std::bad_alloc
+@@ -11535,14 +11669,17 @@
+ 				}
+ 			}
+ 		}
++#/*cut-cpp*/
+ 	if (src.type_code.decays_to_nonnull_pointer())
+ 		{
+ 		force_decimal_literal(src,&quot;1&quot;,types);
+ 		src.type_code.set_type(C_TYPE::INT);
+ 		return;
+ 		}
++#/*cut-cpp*/
+ }
+ 
++#/*cut-cpp*/
+ static void conserve_tokens(parse_tree&amp; x)
+ {
+ 	if (x.own_index_token&lt;0&gt;())
+@@ -11568,6 +11705,7 @@
+ 			}
+ 		}
+ }
++#/*cut-cpp*/
+ 
+ //! \todo really should be somewhere in natural-language output
+ void INFORM_separated_list(const char* const* x,size_t x_len, const char* const sep)
+@@ -11584,6 +11722,7 @@
+ 			}
+ 		};
+ }
++#/*cut-cpp*/
+ 
+ //! \todo should this be a type_system member?
+ //! \throw std::bad_alloc
+@@ -14663,6 +14802,7 @@
+ {
+ 	CPP_ParseNamespace(src,types,NULL);
+ }
++#/*cut-cpp*/
+ 
+ PP_auxfunc C99_aux
+  = 	{
+@@ -14676,12 +14816,14 @@
+ 	C99_PPHackTree,
+ 	ConcatenateCStringLiterals,
+ 	C99_bad_syntax_tokenized,
++#/*cut-cpp*/
+ 	C99_echo_reserved_keyword,
+ 	C99_echo_reserved_symbol,
+ 	C99_ContextFreeParse,
+ 	C99_ContextParse,
+ 	C99_locate_expressions,
+ 	C99_literal_converts_to_bool
++#/*cut-cpp*/
+ 	};
+ 
+ PP_auxfunc CPlusPlus_aux
+@@ -14696,12 +14838,14 @@
+ 	CPP_PPHackTree,
+ 	ConcatenateCStringLiterals,
+ 	CPP_bad_syntax_tokenized,
++#/*cut-cpp*/
+ 	CPP_echo_reserved_keyword,
+ 	CPP_echo_reserved_symbol,
+ 	CPP_ContextFreeParse,
+ 	CPP_ContextParse,
+ 	CPP_locate_expressions,
+ 	CPP_literal_converts_to_bool
++#/*cut-cpp*/
+ 	};
+ 
+ #if 0
+@@ -14826,6 +14970,7 @@
+ 	assert(C_TYPE::DOUBLE__COMPLEX==linear_find(&quot;double _Complex&quot;,CPP_atomic_types,CPP_TYPE_MAX)+1);
+ 	assert(C_TYPE::LDOUBLE__COMPLEX==linear_find(&quot;long double _Complex&quot;,CPP_atomic_types,CPP_TYPE_MAX)+1);
+ 	assert(C_TYPE::WCHAR_T==linear_find(&quot;wchar_t&quot;,CPP_atomic_types,CPP_TYPE_MAX)+1);
++#/*cut-cpp*/
+ 
+ 	assert(C99_CPP_TYPEDEF_IDX==linear_find(&quot;typedef&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_TYPEDEF_IDX==linear_find(&quot;typedef&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+@@ -14869,6 +15014,7 @@
+ 	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;_Thread_Local&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C1X_CPP0X_THREAD_LOCAL_IDX==linear_find(&quot;thread_local&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(CPP_MUTABLE_IDX==linear_find(&quot;mutable&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
++#/*cut-cpp*/
+ 
+ 	/* does bool converts_to_integerlike(size_t base_type_index) work */
+ 	BOOST_STATIC_ASSERT(!(C_TYPE::BOOL&lt;=C_TYPE::NOT_VOID &amp;&amp; C_TYPE::NOT_VOID&lt;=C_TYPE::INTEGERLIKE));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000265.html">[Zcplusplus-commits] r497 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000266.html">[Zcplusplus-commits] r499 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#264">[ date ]</a>
+              <a href="thread.html#264">[ thread ]</a>
+              <a href="subject.html#264">[ subject ]</a>
+              <a href="author.html#264">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

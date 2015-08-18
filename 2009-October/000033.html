@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r266 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r266%20-%20trunk&In-Reply-To=%3C200910170556.n9H5unPZ010305%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000032.html">
+   <LINK REL="Next"  HREF="000034.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r266 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r266%20-%20trunk&In-Reply-To=%3C200910170556.n9H5unPZ010305%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r266 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Oct 17 07:56:49 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000032.html">[Zcplusplus-commits] r265 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000034.html">[Zcplusplus-commits] r267 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#33">[ date ]</a>
+              <a href="thread.html#33">[ thread ]</a>
+              <a href="subject.html#33">[ subject ]</a>
+              <a href="author.html#33">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-10-17 07:56:43 +0200 (Sat, 17 Oct 2009)
+New Revision: 266
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+make ..._reserved_... functions check what they mean; reject keywords as C++ namespace components
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-16 17:52:49 UTC (rev 265)
++++ trunk/CSupport.cpp	2009-10-17 05:56:43 UTC (rev 266)
+@@ -538,10 +538,6 @@
+ 	do	if (x_len==valid_keyword[C_KEYWORD_NONSTRICT_LB + --i].second &amp;&amp; !strncmp(valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+ 			return valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first;
+ 	while(0&lt;i);
+-	i = C_PREPROC_OP_STRICT_UB;
+-	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second &amp;&amp; !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+-			return valid_pure_preprocessing_op_punc[i].first;
+-	while(0&lt;i);
+ 	return NULL;
+ }
+ 
+@@ -553,10 +549,6 @@
+ 	do	if (x_len==valid_keyword[CPP_KEYWORD_NONSTRICT_LB + --i].second &amp;&amp; !strncmp(valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+ 			return valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first;
+ 	while(0&lt;i);
+-	i = CPP_PREPROC_OP_STRICT_UB;
+-	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second &amp;&amp; !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+-			return valid_pure_preprocessing_op_punc[i].first;
+-	while(0&lt;i);
+ 	return NULL;
+ }
+ 
+@@ -564,11 +556,7 @@
+ {
+ 	assert(NULL!=x);
+ 	assert(x_len&lt;=strlen(x));
+-	size_t i = C_KEYWORD_STRICT_UB-C_KEYWORD_NONSTRICT_LB;
+-	do	if (x_len==valid_keyword[C_KEYWORD_NONSTRICT_LB + --i].second &amp;&amp; !strncmp(valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+-			return valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first;
+-	while(0&lt;i);
+-	i = C_PREPROC_OP_STRICT_UB;
++	size_t i = C_PREPROC_OP_STRICT_UB;
+ 	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second &amp;&amp; !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+ 			return valid_pure_preprocessing_op_punc[i].first;
+ 	while(0&lt;i);
+@@ -579,11 +567,7 @@
+ {
+ 	assert(NULL!=x);
+ 	assert(x_len&lt;=strlen(x));
+-	size_t i = CPP_KEYWORD_STRICT_UB-CPP_KEYWORD_NONSTRICT_LB;
+-	do	if (x_len==valid_keyword[CPP_KEYWORD_NONSTRICT_LB + --i].second &amp;&amp; !strncmp(valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+-			return valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first;
+-	while(0&lt;i);
+-	i = CPP_PREPROC_OP_STRICT_UB;
++	size_t i = CPP_PREPROC_OP_STRICT_UB;
+ 	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second &amp;&amp; !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+ 			return valid_pure_preprocessing_op_punc[i].first;
+ 	while(0&lt;i);
+@@ -9690,6 +9674,7 @@
+ {
+ 	if (!x.is_atomic()) return false;
+ 	if (PARSE_PRIMARY_TYPE &amp; x.flags) return false;
++	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+ 	if (C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags) return true;
+ 	if (token_is_string&lt;2&gt;(x.index_tokens[0].token,&quot;::&quot;)) return true;
+ 	return false;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000032.html">[Zcplusplus-commits] r265 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000034.html">[Zcplusplus-commits] r267 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#33">[ date ]</a>
+              <a href="thread.html#33">[ thread ]</a>
+              <a href="subject.html#33">[ subject ]</a>
+              <a href="author.html#33">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

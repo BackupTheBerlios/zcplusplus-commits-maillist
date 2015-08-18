@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r467 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r467%20-%20trunk&In-Reply-To=%3C20100728045814.6C04948054C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000233.html">
+   <LINK REL="Next"  HREF="000235.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r467 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r467%20-%20trunk&In-Reply-To=%3C20100728045814.6C04948054C%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r467 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 28 06:58:14 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000233.html">[Zcplusplus-commits] r466 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000235.html">[Zcplusplus-commits] r468 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#234">[ date ]</a>
+              <a href="thread.html#234">[ thread ]</a>
+              <a href="subject.html#234">[ subject ]</a>
+              <a href="author.html#234">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-28 06:58:14 +0200 (Wed, 28 Jul 2010)
+New Revision: 467
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+object size reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 03:44:14 UTC (rev 466)
++++ trunk/CSupport.cpp	2010-07-28 04:58:14 UTC (rev 467)
+@@ -10716,74 +10716,85 @@
+ 		}
+ }
+ 
+-void C99_condense_const_volatile_onto_type(parse_tree&amp; src)
++static void _condense_const_volatile_onto_type(parse_tree&amp; src,size_t&amp; i,kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner,const char* const warn_const,const char* const warn_volatile)
+ {
+-	assert(src.is_raw_list());
+-	size_t i = 0;
+-	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+-	do	if (PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags)
+-			{
+-			size_t offset = 0;
+-			bool have_warned_too_many_types = false;
+-			bool have_warned_about_const = false;
+-			bool have_warned_about_volatile = false;
++	size_t offset = 0;
++	bool have_warned_too_many_types = false;
++	bool have_warned_about_const = false;
++	bool have_warned_about_volatile = false;
+ 
+-			while(0&lt;i-offset &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i- ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
++	while(0&lt;i-offset &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i- ++offset]))
++		switch(invariant_decl_scanner[offset-1])
++		{
++		case C99_CPP_CONST_IDX:
++			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
++			src.DeleteIdx&lt;0&gt;(i-- -offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		case C99_CPP_VOLATILE_IDX:
++			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
++			src.DeleteIdx&lt;0&gt;(i-- -offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		default:
++			if (invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
+ 				{
+-				case STATIC_SIZE(C99_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{
+-						message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx&lt;0&gt;(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
++				if (!have_warned_too_many_types)
++					{
++					message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
++					zcc_errors.inc_error();
++					have_warned_too_many_types = true;
++					}
++				src.DeleteIdx&lt;0&gt;(i-- -offset);
++				invariant_decl_scanner.DeleteIdx(--offset);
++				continue;
+ 				}
++		}
+ 
+-			invariant_decl_scanner.clear();
+-			offset = 0;
+-			while(src.size&lt;0&gt;()-i&gt;offset+1 &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i+ ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
++	invariant_decl_scanner.clear();
++	offset = 0;
++	while(src.size&lt;0&gt;()-i&gt;offset+1 &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i+ ++offset]))
++		switch(invariant_decl_scanner[offset-1])
++		{
++		case C99_CPP_CONST_IDX:
++			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
++			src.DeleteIdx&lt;0&gt;(i+offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		case C99_CPP_VOLATILE_IDX:
++			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
++			src.DeleteIdx&lt;0&gt;(i+offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		default:
++			if (invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
+ 				{
+-				case STATIC_SIZE(C99_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{
+-						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx&lt;0&gt;(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
++				if (!have_warned_too_many_types)
++					{
++					message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
++					zcc_errors.inc_error();
++					have_warned_too_many_types = true;
++					}
++				src.DeleteIdx&lt;0&gt;(i-- -offset);
++				invariant_decl_scanner.DeleteIdx(--offset);
++				continue;
+ 				}
+-			}
++		}
++
++	invariant_decl_scanner.clear();
++}
++
++void C99_condense_const_volatile_onto_type(parse_tree&amp; src)
++{
++	assert(src.is_raw_list());
++	size_t i = 0;
++	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
++	do	if (PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags)
++			_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+ 	while(src.size&lt;0&gt;()&gt; ++i);
+ }
+ 
+@@ -10793,68 +10804,7 @@
+ 	size_t i = 0;
+ 	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
+ 	do	if (PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags)
+-			{
+-			size_t offset = 0;
+-			bool have_warned_too_many_types = false;
+-			bool have_warned_about_const = false;
+-			bool have_warned_about_volatile = false;
+-
+-			while(0&lt;i-offset &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i- ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
+-				{
+-				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{	//! \bug need test case
+-						message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx&lt;0&gt;(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				}
+-
+-			invariant_decl_scanner.clear();
+-			offset = 0;
+-			while(src.size&lt;0&gt;()-i&gt;offset+1 &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i+ ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
+-				{
+-				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{	//! \bug need test case
+-						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx&lt;0&gt;(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-					src.DeleteIdx&lt;0&gt;(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				}
+-			}
++			_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+ 	while(src.size&lt;0&gt;()&gt; ++i);
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000233.html">[Zcplusplus-commits] r466 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000235.html">[Zcplusplus-commits] r468 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#234">[ date ]</a>
+              <a href="thread.html#234">[ thread ]</a>
+              <a href="subject.html#234">[ subject ]</a>
+              <a href="author.html#234">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

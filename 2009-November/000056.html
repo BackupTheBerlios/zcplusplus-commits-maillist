@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r289 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r289%20-%20trunk&In-Reply-To=%3C200911300239.nAU2dZVN011272%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000055.html">
+   <LINK REL="Next"  HREF="000057.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r289 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r289%20-%20trunk&In-Reply-To=%3C200911300239.nAU2dZVN011272%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r289 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 30 03:39:35 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000055.html">[Zcplusplus-commits] r288 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000057.html">[Zcplusplus-commits] r290 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#56">[ date ]</a>
+              <a href="thread.html#56">[ thread ]</a>
+              <a href="subject.html#56">[ subject ]</a>
+              <a href="author.html#56">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-30 03:39:30 +0100 (Mon, 30 Nov 2009)
+New Revision: 289
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+remove get_id and support functions (dead outside of type_system class, no foreseeable use)
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-11-29 17:52:41 UTC (rev 288)
++++ trunk/type_system.cpp	2009-11-30 02:39:30 UTC (rev 289)
+@@ -12,16 +12,6 @@
+ #define DYNAMIC_ENUMDEF 4
+ 
+ type_system::type_index
+-type_system::_get_id(const char* const x,size_t x_len) const
+-{
+-	errr tmp = linear_find_lencached(x,x_len,core_types,core_types_size);
+-	if (0&lt;=tmp) return tmp+1;
+-	tmp = linear_find_lencached(x,x_len,dynamic_types);
+-	if (0&lt;=tmp) return tmp+1+core_types_size;
+-	return 0;
+-}
+-
+-type_system::type_index
+ type_system::_get_id_union(const char* const x,size_t x_len) const
+ {
+ 	errr tmp = linear_find_lencached(x,x_len,dynamic_types);
+@@ -154,9 +144,6 @@
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_FUNCTYPE}};
+ 	tmp.third.first.first = src;
+ 
+-	type_index result = get_id(alias);
+-	if (result) return result;
+-
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+ 	if (	dynamic_types_max_size&lt;1+core_types_size
+@@ -174,9 +161,6 @@
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_STRUCTDECL}};
+ 	tmp.third.first.second = src;
+ 
+-	type_index result = get_id(alias);
+-	if (result) return result;
+-
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+ 	if (	dynamic_types_max_size&lt;2+core_types_size
+@@ -194,9 +178,6 @@
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_C_STRUCTDEF}};
+ 	tmp.third.first.third = src;
+ 
+-	type_index result = get_id(alias);
+-	if (result) return result;
+-
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+ 	if (	dynamic_types_max_size&lt;2+core_types_size
+@@ -214,9 +195,6 @@
+ 	dynamic_type_format tmp = {alias,strlen(alias),{{NULL},DYNAMIC_ENUMDEF}};
+ 	tmp.third.first.fourth = src;
+ 
+-	type_index result = get_id(alias);
+-	if (result) return result;
+-
+ 	const size_t dynamic_types_size = dynamic_types.size();
+ 	const size_t dynamic_types_max_size = dynamic_types.max_size();
+ 	if (	dynamic_types_max_size&lt;2+core_types_size
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-11-29 17:52:41 UTC (rev 288)
++++ trunk/type_system.hpp	2009-11-30 02:39:30 UTC (rev 289)
+@@ -36,18 +36,6 @@
+ 		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
+ 		int_priority_size((assert(0&lt;_int_priority_size),_int_priority_size)) {};
+ 
+-	type_index get_id(const char* x,size_t x_len) const
+-		{
+-		assert(x &amp;&amp; *x);
+-		assert(0&lt;x_len);
+-		assert(x_len&lt;=strlen(x));
+-		return _get_id(x,x_len);
+-		}
+-	type_index get_id(const char* x) const
+-		{
+-		assert(x &amp;&amp; *x);
+-		return _get_id(x,strlen(x));
+-		}
+ 	type_index get_id_union(const char* x,size_t x_len) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+@@ -124,7 +112,6 @@
+ 	const enum_def* get_enum_def(type_index i);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+ private:
+-	type_index _get_id(const char* const x,size_t x_len) const;
+ 	type_index _get_id_union(const char* const x,size_t x_len) const;
+ 	type_index _get_id_enum(const char* const x,size_t x_len) const;
+ 	type_index _get_id_struct_class(const char* const x,size_t x_len) const;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000055.html">[Zcplusplus-commits] r288 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000057.html">[Zcplusplus-commits] r290 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#56">[ date ]</a>
+              <a href="thread.html#56">[ thread ]</a>
+              <a href="subject.html#56">[ subject ]</a>
+              <a href="author.html#56">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

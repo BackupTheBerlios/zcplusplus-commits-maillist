@@ -1,0 +1,297 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r361 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r361%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201003262131.o2QLVFs5000281%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000127.html">
+   <LINK REL="Next"  HREF="000129.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r361 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r361%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201003262131.o2QLVFs5000281%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r361 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar 26 22:31:15 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000127.html">[Zcplusplus-commits] r360 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000129.html">[Zcplusplus-commits] r362 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#128">[ date ]</a>
+              <a href="thread.html#128">[ thread ]</a>
+              <a href="subject.html#128">[ subject ]</a>
+              <a href="author.html#128">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-26 22:31:06 +0100 (Fri, 26 Mar 2010)
+New Revision: 361
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+Log:
+bring up enumerators for *
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/CSupport.cpp	2010-03-26 21:31:06 UTC (rev 361)
+@@ -5551,7 +5551,7 @@
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES));
+-	
++
+ 	const size_t arg_unary_subtype 	= (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_NEG
+ 									: (is_C99_unary_operator_expression&lt;'+'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_PLUS : 0;
+ 	if (!arg_unary_subtype) return;
+@@ -6090,6 +6090,8 @@
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::NOT_VOID);	// defer to later
++			if (0==i)	// unless no predecessor possible
++				C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[0],types);
+ 			assert((C99_UNARY_SUBTYPE_PLUS==unary_subtype) ? is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i]) : is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i]));
+ 			return true;
+ 			};
+@@ -6116,6 +6118,8 @@
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::NOT_VOID);	// defer to later
++			if (0==i)	// unless no predecessor possible
++				CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[0],types);
+ 			assert((C99_UNARY_SUBTYPE_PLUS==unary_subtype) ? is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i]) : is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i]));
+ 			return true;
+ 			};
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/CSupport_pp.cpp	2010-03-26 21:31:06 UTC (rev 361)
+@@ -5048,7 +5048,7 @@
+ 	// can type if result is a primitive arithmetic type
+ 	if (converts_to_arithmeticlike(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+ 		src.type_code.set_type(default_promote_type(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES));
+-	
++
+ 	const size_t arg_unary_subtype 	= (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_NEG
+ 									: (is_C99_unary_operator_expression&lt;'+'&gt;(*src.data&lt;2&gt;())) ? C99_UNARY_SUBTYPE_PLUS : 0;
+ 	if (!arg_unary_subtype) return;
+@@ -5570,6 +5570,8 @@
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::NOT_VOID);	// defer to later
++			if (0==i)	// unless no predecessor possible
++				C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[0],types);
+ 			assert((C99_UNARY_SUBTYPE_PLUS==unary_subtype) ? is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i]) : is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i]));
+ 			return true;
+ 			};
+@@ -5596,6 +5598,8 @@
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+ 			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::NOT_VOID);	// defer to later
++			if (0==i)	// unless no predecessor possible
++				CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[0],types);
+ 			assert((C99_UNARY_SUBTYPE_PLUS==unary_subtype) ? is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i]) : is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i]));
+ 			return true;
+ 			};
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-26 21:31:06 UTC (rev 361)
+@@ -38,3 +38,20 @@
+ _Static_Assert(1/1,&quot;automatic success has failed&quot;);
+ _Static_Assert(!(1/2),&quot;automatic success has failed&quot;);
+ 
++// check *
++_Static_Assert(!(0*-1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(0*1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(0*2),&quot;automatic success has failed&quot;);
++_Static_Assert(!(-1*0),&quot;automatic success has failed&quot;);
++_Static_Assert(!(1*0),&quot;automatic success has failed&quot;);
++_Static_Assert(!(2*0),&quot;automatic success has failed&quot;);
++_Static_Assert(-1*-1,&quot;automatic success has failed&quot;);
++_Static_Assert(-1*1,&quot;automatic success has failed&quot;);
++_Static_Assert(-1*2,&quot;automatic success has failed&quot;);
++_Static_Assert(1*-1,&quot;automatic success has failed&quot;);
++_Static_Assert(1*1,&quot;automatic success has failed&quot;);
++_Static_Assert(1*2,&quot;automatic success has failed&quot;);
++_Static_Assert(2*-1,&quot;automatic success has failed&quot;);
++_Static_Assert(2*1,&quot;automatic success has failed&quot;);
++_Static_Assert(2*2,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-26 21:31:06 UTC (rev 361)
+@@ -38,3 +38,20 @@
+ static_assert(1/1,&quot;automatic success has failed&quot;);
+ static_assert(!(1/2),&quot;automatic success has failed&quot;);
+ 
++// check *
++static_assert(!(0*-1),&quot;automatic success has failed&quot;);
++static_assert(!(0*1),&quot;automatic success has failed&quot;);
++static_assert(!(0*2),&quot;automatic success has failed&quot;);
++static_assert(!(-1*0),&quot;automatic success has failed&quot;);
++static_assert(!(1*0),&quot;automatic success has failed&quot;);
++static_assert(!(2*0),&quot;automatic success has failed&quot;);
++static_assert(-1*-1,&quot;automatic success has failed&quot;);
++static_assert(-1*1,&quot;automatic success has failed&quot;);
++static_assert(-1*2,&quot;automatic success has failed&quot;);
++static_assert(1*-1,&quot;automatic success has failed&quot;);
++static_assert(1*1,&quot;automatic success has failed&quot;);
++static_assert(1*2,&quot;automatic success has failed&quot;);
++static_assert(2*-1,&quot;automatic success has failed&quot;);
++static_assert(2*1,&quot;automatic success has failed&quot;);
++static_assert(2*2,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-26 21:31:06 UTC (rev 361)
+@@ -33,3 +33,20 @@
+ _Static_Assert(one/one,&quot;automatic success has failed&quot;);
+ _Static_Assert(!(one/two),&quot;automatic success has failed&quot;);
+ 
++// check *
++_Static_Assert(!(zero*neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero*one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero*two),&quot;automatic success has failed&quot;);
++_Static_Assert(!(neg_one*zero),&quot;automatic success has failed&quot;);
++_Static_Assert(!(one*zero),&quot;automatic success has failed&quot;);
++_Static_Assert(!(two*zero),&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one*neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one*one,&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one*two,&quot;automatic success has failed&quot;);
++_Static_Assert(one*neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(one*one,&quot;automatic success has failed&quot;);
++_Static_Assert(one*two,&quot;automatic success has failed&quot;);
++_Static_Assert(two*neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(two*one,&quot;automatic success has failed&quot;);
++_Static_Assert(two*two,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-26 21:31:06 UTC (rev 361)
+@@ -33,3 +33,20 @@
+ static_assert(one/one,&quot;automatic success has failed&quot;);
+ static_assert(!(one/two),&quot;automatic success has failed&quot;);
+ 
++// check *
++static_assert(!(zero*neg_one),&quot;automatic success has failed&quot;);
++static_assert(!(zero*one),&quot;automatic success has failed&quot;);
++static_assert(!(zero*two),&quot;automatic success has failed&quot;);
++static_assert(!(neg_one*zero),&quot;automatic success has failed&quot;);
++static_assert(!(one*zero),&quot;automatic success has failed&quot;);
++static_assert(!(two*zero),&quot;automatic success has failed&quot;);
++static_assert(neg_one*neg_one,&quot;automatic success has failed&quot;);
++static_assert(neg_one*one,&quot;automatic success has failed&quot;);
++static_assert(neg_one*two,&quot;automatic success has failed&quot;);
++static_assert(one*neg_one,&quot;automatic success has failed&quot;);
++static_assert(one*one,&quot;automatic success has failed&quot;);
++static_assert(one*two,&quot;automatic success has failed&quot;);
++static_assert(two*neg_one,&quot;automatic success has failed&quot;);
++static_assert(two*one,&quot;automatic success has failed&quot;);
++static_assert(two*two,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-26 21:31:06 UTC (rev 361)
+@@ -39,3 +39,20 @@
+ STATIC_ASSERT(1/1,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(!(1/2),&quot;automatic success has failed&quot;);
+ 
++// check *
++STATIC_ASSERT(!(0*-1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0*1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0*2),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(-1*0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1*0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(2*0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1*-1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1*1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1*2,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1*-1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1*1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1*2,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(2*-1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(2*1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(2*2,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-03-26 08:42:03 UTC (rev 360)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-03-26 21:31:06 UTC (rev 361)
+@@ -34,3 +34,20 @@
+ STATIC_ASSERT(one/one,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(!(one/two),&quot;automatic success has failed&quot;);
+ 
++// check *
++STATIC_ASSERT(!(zero*neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero*one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero*two),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(neg_one*zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one*zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(two*zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one*neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one*one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one*two,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one*neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one*one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one*two,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(two*neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(two*one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(two*two,&quot;automatic success has failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000127.html">[Zcplusplus-commits] r360 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000129.html">[Zcplusplus-commits] r362 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#128">[ date ]</a>
+              <a href="thread.html#128">[ thread ]</a>
+              <a href="subject.html#128">[ subject ]</a>
+              <a href="author.html#128">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

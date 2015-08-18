@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r548 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r548%20-%20trunk&In-Reply-To=%3C20101128033646.48CD9480EFB%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000314.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r548 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r548%20-%20trunk&In-Reply-To=%3C20101128033646.48CD9480EFB%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r548 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 28 04:36:45 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000314.html">[Zcplusplus-commits] r547 - trunk
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#315">[ date ]</a>
+              <a href="thread.html#315">[ thread ]</a>
+              <a href="subject.html#315">[ subject ]</a>
+              <a href="author.html#315">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-28 04:36:45 +0100 (Sun, 28 Nov 2010)
+New Revision: 548
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+no need to invalidate parse structure when handling a redefined enum
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-11-28 02:55:02 UTC (rev 547)
++++ trunk/CSupport.cpp	2010-11-28 03:36:45 UTC (rev 548)
+@@ -13480,9 +13480,9 @@
+ 				message_header(*tmp2);
+ 				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+-				// now it's gone
+-				src.DeleteNSlotsAt&lt;0&gt;(1,i);
+-				continue;
++				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
++				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;));
++				goto reparse;
+ 				}
+ 			// C1X 6.7.2.3p2 states that conflicting union or struct must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
+@@ -14726,9 +14726,9 @@
+ 				message_header(*tmp2);
+ 				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+-				// now it's gone
+-				src.DeleteNSlotsAt&lt;0&gt;(1,i);
+-				continue;
++				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
++				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;));
++				goto reparse;
+ 				}
+ 			// One Definition Rule states that conflicting enum, struct, or class must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace))
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-11-28 02:55:02 UTC (rev 547)
++++ trunk/CSupport.cpp.in	2010-11-28 03:36:45 UTC (rev 548)
+@@ -13624,9 +13624,9 @@
+ 				message_header(*tmp2);
+ 				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+-				// now it's gone
+-				src.DeleteNSlotsAt&lt;0&gt;(1,i);
+-				continue;
++				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
++				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;));
++				goto reparse;
+ 				}
+ 			// C1X 6.7.2.3p2 states that conflicting union or struct must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
+@@ -14870,9 +14870,9 @@
+ 				message_header(*tmp2);
+ 				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+-				// now it's gone
+-				src.DeleteNSlotsAt&lt;0&gt;(1,i);
+-				continue;
++				src.c_array&lt;0&gt;()[i].DeleteIdx&lt;2&gt;(0);
++				assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;));
++				goto reparse;
+ 				}
+ 			// One Definition Rule states that conflicting enum, struct, or class must error
+ 			else if (const type_system::type_index fatal_def = parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace))
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000314.html">[Zcplusplus-commits] r547 - trunk
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#315">[ date ]</a>
+              <a href="thread.html#315">[ thread ]</a>
+              <a href="subject.html#315">[ subject ]</a>
+              <a href="author.html#315">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

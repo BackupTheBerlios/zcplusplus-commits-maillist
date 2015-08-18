@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r370 - in trunk: . tests/cpp/default/keywords
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r370%20-%20in%20trunk%3A%20.%20tests/cpp/default/keywords&In-Reply-To=%3C201004100403.o3A4339W027801%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000136.html">
+   <LINK REL="Next"  HREF="000138.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r370 - in trunk: . tests/cpp/default/keywords</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r370%20-%20in%20trunk%3A%20.%20tests/cpp/default/keywords&In-Reply-To=%3C201004100403.o3A4339W027801%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r370 - in trunk: . tests/cpp/default/keywords">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Apr 10 06:03:03 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000136.html">[Zcplusplus-commits] r369 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000138.html">[Zcplusplus-commits] r371 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-10 06:02:57 +0200 (Sat, 10 Apr 2010)
+New Revision: 370
+
+Added:
+   trunk/tests/cpp/default/keywords/Error_noexcept.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+C++0X n3090 keyword noexcept: preprocessor support
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-10 03:36:05 UTC (rev 369)
++++ trunk/CSupport.cpp	2010-04-10 04:02:57 UTC (rev 370)
+@@ -526,6 +526,7 @@
+ 			DICT_STRUCT(&quot;xor&quot;),
+ 			DICT_STRUCT(&quot;xor_eq&quot;),		// end C++98 alternate-operators
+ 			DICT_STRUCT(&quot;constexpr&quot;),	// C++0X keywords we pay attention to
++			DICT_STRUCT(&quot;noexcept&quot;),	// C++0X n3090
+ 			DICT_STRUCT(&quot;static_assert&quot;),
+ 			DICT_STRUCT(&quot;thread_local&quot;)
+ 		};
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-04-10 03:36:05 UTC (rev 369)
++++ trunk/CSupport_pp.cpp	2010-04-10 04:02:57 UTC (rev 370)
+@@ -516,6 +516,7 @@
+ 			DICT_STRUCT(&quot;xor&quot;),
+ 			DICT_STRUCT(&quot;xor_eq&quot;),		// end C++98 alternate-operators
+ 			DICT_STRUCT(&quot;constexpr&quot;),	// C++0X keywords we pay attention to
++			DICT_STRUCT(&quot;noexcept&quot;),	// C++0X n3090
+ 			DICT_STRUCT(&quot;static_assert&quot;),
+ 			DICT_STRUCT(&quot;thread_local&quot;)
+ 		};
+
+Added: trunk/tests/cpp/default/keywords/Error_noexcept.hpp
+===================================================================
+--- trunk/tests/cpp/default/keywords/Error_noexcept.hpp	2010-04-10 03:36:05 UTC (rev 369)
++++ trunk/tests/cpp/default/keywords/Error_noexcept.hpp	2010-04-10 04:02:57 UTC (rev 370)
+@@ -0,0 +1,4 @@
++// default\keywords\Error_noexcept.hpp
++// check that #define of noexcept errors
++// (C)2010 Kenneth Boyd, license: MIT.txt
++#define noexcept 1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000136.html">[Zcplusplus-commits] r369 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000138.html">[Zcplusplus-commits] r371 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#137">[ date ]</a>
+              <a href="thread.html#137">[ thread ]</a>
+              <a href="subject.html#137">[ subject ]</a>
+              <a href="author.html#137">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

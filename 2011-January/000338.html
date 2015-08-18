@@ -1,0 +1,378 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r571 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r571%20-%20trunk&In-Reply-To=%3C20110110055116.9073B480A3A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000337.html">
+   <LINK REL="Next"  HREF="000339.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r571 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r571%20-%20trunk&In-Reply-To=%3C20110110055116.9073B480A3A%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r571 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 10 06:51:15 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000337.html">[Zcplusplus-commits] r570 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000339.html">[Zcplusplus-commits] r572 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#338">[ date ]</a>
+              <a href="thread.html#338">[ thread ]</a>
+              <a href="subject.html#338">[ subject ]</a>
+              <a href="author.html#338">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-10 06:51:15 +0100 (Mon, 10 Jan 2011)
+New Revision: 571
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+C anonymous struct definitions: converge parsing towards standard
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-10 04:07:53 UTC (rev 570)
++++ trunk/CSupport.cpp	2011-01-10 05:51:15 UTC (rev 571)
+@@ -13080,6 +13080,7 @@
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+ 	size_t i = 0;
++restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
+@@ -13117,6 +13118,7 @@
+ 		}
+ 		if (!pre_invariant_decl_scanner.empty())
+ 			{
++			const bool semicolon_terminated_decl = robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+pre_invariant_decl_scanner.size()]); 
+ 			//! \todo naked identifier beyond could be an already-existing typedef which would trigger a rescan
+ 			//! \todo ; means decl terminates w/o identifier 
+ 			//! \todo if there are unparsed tags, scan for them and parse
+@@ -13158,6 +13160,9 @@
+ 					return;
+ 					}
+ 				}
++			//! \bug check for pre-existing typedefs if no types
++			if (0&gt;=typecount || 0&lt;pre_invariant_decl_scanner.count(STATIC_SIZE(CPP0X_nontype_decl_specifier_list)))
++				goto reparse;
+ 			}
+ 
+ 			size_t k = 0;
+@@ -13168,7 +13173,56 @@
+ 				case UNION_ANON_DEF: break;
+ 				case STRUCT_NAME: break;
+ 				case STRUCT_NAMED_DEF: break;
+-				case STRUCT_ANON_DEF: break;
++				case STRUCT_ANON_DEF:
++				{	// anonymous types cannot be matched
++				// tentatively forward-declare immediately
++				const type_system::type_index tmp = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i+k].index_tokens[0].logical_line,src.data&lt;0&gt;()[i+k].index_tokens[0].src_filename);
++				assert(tmp);
++				assert(parse_tree::types-&gt;get_structdecl(tmp));
++
++				{
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
++				tmp2.type_code.set_type(tmp);
++				tmp2.flags |= PARSE_CLASS_STRUCT_TYPE;
++				}
++				_condense_const_volatile_onto_type_preparsed(src,i,k,pre_invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
++
++				// parse the union and upgrade it to a full definition
++				const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(tmp);
++				assert(tmp3);
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
++				C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,tmp2.index_tokens[0].logical_line,tmp2.index_tokens[0].src_filename);
++				//! \todo record field structure, etc.
++				parse_tree::types-&gt;upgrade_decl_to_def(tmp,tmp4);
++				assert(parse_tree::types-&gt;get_C_structdef(tmp));
++
++				if (semicolon_terminated_decl)
++					{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \test decl.C99/Warn_struct_anon_def_const.h
++					//! \test decl.C99/Warn_struct_anon_def_const2.h
++					//! \test decl.C99/Warn_struct_anon_def_volatile.h
++					//! \test decl.C99/Warn_struct_anon_def_volatile2.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile2.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile3.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile4.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile5.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile6.h
++					C99_flush_const_volatile_without_object(tmp2);
++					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++					//! \test zcc/decl.C99/Warn_inaccessible_struct.h
++					message_header(tmp2.index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;unreferenceable anonymous struct declaration&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(1+pre_invariant_decl_scanner.size(),i);
++					goto restart_master_loop;
++					}
++				goto reparse;
++				}
++//				break;
+ 				//! \bug the enums aren't handling const/volatile qualification
+ 				case ENUM_NAME:
+ 				{	// C99 6.7.2.3: allowed only after name is defined
+@@ -13191,7 +13245,7 @@
+ 					};
+ 				goto reparse;
+ 				}
+-				break;
++//				break;
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+@@ -13715,52 +13769,7 @@
+ 				}
+ 			}
+ 			break;
+-			case STRUCT_ANON_DEF:
+-			{	// anonymous types cannot be matched
+-			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			assert(tmp2);
+-			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-			src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-			_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+-
+-			// parse the union and upgrade it to a full definition
+-			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(tmp2);
+-			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			//! \todo record field structure, etc.
+-			parse_tree::types-&gt;upgrade_decl_to_def(tmp2,tmp4);
+-			assert(parse_tree::types-&gt;get_C_structdef(tmp2));
+-
+-			if (   1&lt;src.size&lt;0&gt;()-i
+-				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+-				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
+-				//! \test decl.C99/Warn_struct_anon_def_const.h
+-				//! \test decl.C99/Warn_struct_anon_def_const2.h
+-				//! \test decl.C99/Warn_struct_anon_def_volatile.h
+-				//! \test decl.C99/Warn_struct_anon_def_volatile2.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile2.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile3.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile4.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile5.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile6.h
+-				C99_flush_const_volatile_without_object(src.c_array&lt;0&gt;()[i]);
+-				//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+-				//! \test zcc/decl.C99/Warn_inaccessible_struct.h
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(WARN_STR);
+-				INFORM(&quot;unreferenceable anonymous struct declaration&quot;);
+-				if (bool_options[boolopt::warnings_are_errors])
+-					zcc_errors.inc_error();
+-				// remove from parse
+-				src.DeleteNSlotsAt&lt;0&gt;(2,i);
+-				continue;
+-				}
+-			}
+-			break;
++			case STRUCT_ANON_DEF: break;	/* already handled */
+ 			case ENUM_NAME: break;	/* already handled */
+ 			case ENUM_NAMED_DEF: break;	/* already handled */
+ 			case ENUM_ANON_DEF: break;	/* already handled */
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-10 04:07:53 UTC (rev 570)
++++ trunk/CSupport.cpp.in	2011-01-10 05:51:15 UTC (rev 571)
+@@ -13224,6 +13224,7 @@
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+ 	size_t i = 0;
++restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
+@@ -13261,9 +13262,7 @@
+ 		}
+ 		if (!pre_invariant_decl_scanner.empty())
+ 			{
+-#/*cut-nocpp*/
+-			const bool semicolon_terminated_decl = robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+pre_invariant_decl_scanner.empty()]); 
+-#/*cut-nocpp*/
++			const bool semicolon_terminated_decl = robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+pre_invariant_decl_scanner.size()]); 
+ 			//! \todo naked identifier beyond could be an already-existing typedef which would trigger a rescan
+ 			//! \todo ; means decl terminates w/o identifier 
+ 			//! \todo if there are unparsed tags, scan for them and parse
+@@ -13305,6 +13304,9 @@
+ 					return;
+ 					}
+ 				}
++			//! \bug check for pre-existing typedefs if no types
++			if (0&gt;=typecount || 0&lt;pre_invariant_decl_scanner.count(STATIC_SIZE(CPP0X_nontype_decl_specifier_list)))
++				goto reparse;
+ 			}
+ 
+ 			size_t k = 0;
+@@ -13315,7 +13317,56 @@
+ 				case UNION_ANON_DEF: break;
+ 				case STRUCT_NAME: break;
+ 				case STRUCT_NAMED_DEF: break;
+-				case STRUCT_ANON_DEF: break;
++				case STRUCT_ANON_DEF:
++				{	// anonymous types cannot be matched
++				// tentatively forward-declare immediately
++				const type_system::type_index tmp = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i+k].index_tokens[0].logical_line,src.data&lt;0&gt;()[i+k].index_tokens[0].src_filename);
++				assert(tmp);
++				assert(parse_tree::types-&gt;get_structdecl(tmp));
++
++				{
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
++				tmp2.type_code.set_type(tmp);
++				tmp2.flags |= PARSE_CLASS_STRUCT_TYPE;
++				}
++				_condense_const_volatile_onto_type_preparsed(src,i,k,pre_invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
++
++				// parse the union and upgrade it to a full definition
++				const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(tmp);
++				assert(tmp3);
++				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k];
++				C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,tmp2.index_tokens[0].logical_line,tmp2.index_tokens[0].src_filename);
++				//! \todo record field structure, etc.
++				parse_tree::types-&gt;upgrade_decl_to_def(tmp,tmp4);
++				assert(parse_tree::types-&gt;get_C_structdef(tmp));
++
++				if (semicolon_terminated_decl)
++					{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \test decl.C99/Warn_struct_anon_def_const.h
++					//! \test decl.C99/Warn_struct_anon_def_const2.h
++					//! \test decl.C99/Warn_struct_anon_def_volatile.h
++					//! \test decl.C99/Warn_struct_anon_def_volatile2.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile2.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile3.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile4.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile5.h
++					//! \test decl.C99/Warn_struct_anon_def_const_volatile6.h
++					C99_flush_const_volatile_without_object(tmp2);
++					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++					//! \test zcc/decl.C99/Warn_inaccessible_struct.h
++					message_header(tmp2.index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;unreferenceable anonymous struct declaration&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(1+pre_invariant_decl_scanner.size(),i);
++					goto restart_master_loop;
++					}
++				goto reparse;
++				}
++//				break;
+ 				//! \bug the enums aren't handling const/volatile qualification
+ 				case ENUM_NAME:
+ 				{	// C99 6.7.2.3: allowed only after name is defined
+@@ -13338,7 +13389,7 @@
+ 					};
+ 				goto reparse;
+ 				}
+-				break;
++//				break;
+ 				case ENUM_NAMED_DEF:
+ 				{	// can only define once
+ 				parse_tree&amp; tmp2 = src.c_array&lt;0&gt;()[i+k]; 
+@@ -13862,52 +13913,7 @@
+ 				}
+ 			}
+ 			break;
+-			case STRUCT_ANON_DEF:
+-			{	// anonymous types cannot be matched
+-			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			assert(tmp2);
+-			assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-
+-			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-			src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-			_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+-
+-			// parse the union and upgrade it to a full definition
+-			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(tmp2);
+-			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			//! \todo record field structure, etc.
+-			parse_tree::types-&gt;upgrade_decl_to_def(tmp2,tmp4);
+-			assert(parse_tree::types-&gt;get_C_structdef(tmp2));
+-
+-			if (   1&lt;src.size&lt;0&gt;()-i
+-				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+-				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
+-				//! \test decl.C99/Warn_struct_anon_def_const.h
+-				//! \test decl.C99/Warn_struct_anon_def_const2.h
+-				//! \test decl.C99/Warn_struct_anon_def_volatile.h
+-				//! \test decl.C99/Warn_struct_anon_def_volatile2.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile2.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile3.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile4.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile5.h
+-				//! \test decl.C99/Warn_struct_anon_def_const_volatile6.h
+-				C99_flush_const_volatile_without_object(src.c_array&lt;0&gt;()[i]);
+-				//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+-				//! \test zcc/decl.C99/Warn_inaccessible_struct.h
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(WARN_STR);
+-				INFORM(&quot;unreferenceable anonymous struct declaration&quot;);
+-				if (bool_options[boolopt::warnings_are_errors])
+-					zcc_errors.inc_error();
+-				// remove from parse
+-				src.DeleteNSlotsAt&lt;0&gt;(2,i);
+-				continue;
+-				}
+-			}
+-			break;
++			case STRUCT_ANON_DEF: break;	/* already handled */
+ 			case ENUM_NAME: break;	/* already handled */
+ 			case ENUM_NAMED_DEF: break;	/* already handled */
+ 			case ENUM_ANON_DEF: break;	/* already handled */
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000337.html">[Zcplusplus-commits] r570 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000339.html">[Zcplusplus-commits] r572 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#338">[ date ]</a>
+              <a href="thread.html#338">[ thread ]</a>
+              <a href="subject.html#338">[ subject ]</a>
+              <a href="author.html#338">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

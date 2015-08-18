@@ -1,0 +1,183 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r570 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r570%20-%20trunk&In-Reply-To=%3C20110110040754.1EEA6480DFA%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000336.html">
+   <LINK REL="Next"  HREF="000338.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r570 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r570%20-%20trunk&In-Reply-To=%3C20110110040754.1EEA6480DFA%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r570 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 10 05:07:53 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000336.html">[Zcplusplus-commits] r569 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000338.html">[Zcplusplus-commits] r571 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#337">[ date ]</a>
+              <a href="thread.html#337">[ thread ]</a>
+              <a href="subject.html#337">[ subject ]</a>
+              <a href="author.html#337">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-10 05:07:53 +0100 (Mon, 10 Jan 2011)
+New Revision: 570
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+adjusting scope of a kleene_star variable, other conceptual cleanup
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-10 03:56:50 UTC (rev 569)
++++ trunk/CSupport.cpp	2011-01-10 04:07:53 UTC (rev 570)
+@@ -13079,7 +13079,6 @@
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+-	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1+9,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(C99_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -13094,7 +13093,7 @@
+ 		// pre-scan for declaration-like items
+ 		{
+ rescan:
+-		pre_invariant_decl_scanner.clear(); // there's a lot of rescanning paths, so conserve lines of code
++		kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1+9,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(C99_type_or_invariant_decl_specifier_or_tag);
+ 		{	// wouldn't work for unnamed function parameters
+ 		const size_t strict_ub = src.size&lt;0&gt;()-i;
+ 		const parse_tree* const origin = src.data&lt;0&gt;()+i;
+@@ -13190,7 +13189,7 @@
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// C: enums are int (although we'd like to extend this a bit)
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+ 					};
+-				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
++				goto reparse;
+ 				}
+ 				break;
+ 				case ENUM_NAMED_DEF:
+@@ -13262,9 +13261,9 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
++				goto reparse;
+ 				}
+-				break;
++//				break;
+ 				case ENUM_ANON_DEF:
+ 				{	// enum-specifier doesn't have a specific declaration mode
+ 					//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+@@ -13277,11 +13276,10 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
++				goto reparse;
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+-			pre_invariant_decl_scanner.clear();	// RAM efficiency
+ 			};
+ 		}
+ 		// check naked declarations first
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-10 03:56:50 UTC (rev 569)
++++ trunk/CSupport.cpp.in	2011-01-10 04:07:53 UTC (rev 570)
+@@ -13223,7 +13223,6 @@
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+-	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1+9,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(C99_type_or_invariant_decl_specifier_or_tag);
+ 	size_t i = 0;
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+@@ -13238,7 +13237,7 @@
+ 		// pre-scan for declaration-like items
+ 		{
+ rescan:
+-		pre_invariant_decl_scanner.clear(); // there's a lot of rescanning paths, so conserve lines of code
++		kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1+9,size_t (*)(const parse_tree&amp;)&gt; pre_invariant_decl_scanner(C99_type_or_invariant_decl_specifier_or_tag);
+ 		{	// wouldn't work for unnamed function parameters
+ 		const size_t strict_ub = src.size&lt;0&gt;()-i;
+ 		const parse_tree* const origin = src.data&lt;0&gt;()+i;
+@@ -13337,7 +13336,7 @@
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// C: enums are int (although we'd like to extend this a bit)
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+ 					};
+-				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
++				goto reparse;
+ 				}
+ 				break;
+ 				case ENUM_NAMED_DEF:
+@@ -13409,9 +13408,9 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
++				goto reparse;
+ 				}
+-				break;
++//				break;
+ 				case ENUM_ANON_DEF:
+ 				{	// enum-specifier doesn't have a specific declaration mode
+ 					//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+@@ -13424,11 +13423,10 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				pre_invariant_decl_scanner.reclassify(k,STATIC_SIZE(C99_nontype_decl_specifier_list));
++				goto reparse;
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+-			pre_invariant_decl_scanner.clear();	// RAM efficiency
+ 			};
+ 		}
+ 		// check naked declarations first
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000336.html">[Zcplusplus-commits] r569 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000338.html">[Zcplusplus-commits] r571 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#337">[ date ]</a>
+              <a href="thread.html#337">[ thread ]</a>
+              <a href="subject.html#337">[ subject ]</a>
+              <a href="author.html#337">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

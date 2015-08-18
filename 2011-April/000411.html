@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r644 - in trunk: . doc lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r644%20-%20in%20trunk%3A%20.%20doc%20lib&In-Reply-To=%3C20110428232103.DA9E9480F93%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000410.html">
+   <LINK REL="Next"  HREF="000412.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r644 - in trunk: . doc lib</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r644%20-%20in%20trunk%3A%20.%20doc%20lib&In-Reply-To=%3C20110428232103.DA9E9480F93%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r644 - in trunk: . doc lib">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 29 01:21:03 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000410.html">[Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+        <LI>Next message: <A HREF="000412.html">[Zcplusplus-commits] r645 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#411">[ date ]</a>
+              <a href="thread.html#411">[ thread ]</a>
+              <a href="subject.html#411">[ subject ]</a>
+              <a href="author.html#411">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-29 01:21:03 +0200 (Fri, 29 Apr 2011)
+New Revision: 644
+
+Added:
+   trunk/lib/zc++-0.0.8/
+Removed:
+   trunk/lib/zc++-0.0.7/
+Modified:
+   trunk/_version.h
+   trunk/doc/OPTIONS.txt
+Log:
+adjust version to 0.0.8
+
+Modified: trunk/_version.h
+===================================================================
+--- trunk/_version.h	2011-04-28 21:30:37 UTC (rev 643)
++++ trunk/_version.h	2011-04-28 23:21:03 UTC (rev 644)
+@@ -3,9 +3,9 @@
+ /* (C)2010,2011 Kenneth Boyd, license: MIT.txt */
+ 
+ #ifndef ZCC_VERSION
+-#define ZCC_VERSION &quot;0.0.7&quot;
++#define ZCC_VERSION &quot;0.0.8&quot;
+ #define ZCC_VERSION_MAJOR 0
+ #define ZCC_VERSION_MINOR 0
+-#define ZCC_VERSION_PATCH 7
++#define ZCC_VERSION_PATCH 8
+ #endif
+ 
+
+Modified: trunk/doc/OPTIONS.txt
+===================================================================
+--- trunk/doc/OPTIONS.txt	2011-04-28 21:30:37 UTC (rev 643)
++++ trunk/doc/OPTIONS.txt	2011-04-28 23:21:03 UTC (rev 644)
+@@ -1,4 +1,4 @@
+-Z.C++ 0.0.7 zcc
++Z.C++ 0.0.8 zcc
+ usage: zcc [options] infile
+ boolean options
+  --test: final internal state to stderr
+@@ -13,7 +13,8 @@
+  --int-neg-div-rounds-away-from-zero: make -3/-2==-2 contrary to C99 recommendation
+  -Wc-c++-compat: Warn when something legal in C/C++ would be an error in C++/C for C/C++
+  -Wbackport: Warn when something legal would be an error under an older standard
+-
++ --src-stdout: Modified source to stdout
++ -E: Only preprocess (should be equivalent to calling z_cpp).  Implies --src-stdout
+ override-default options
+  -x: language override
+  --system-include: unpreprocessed #include&lt;...&gt; to stdout
+@@ -25,7 +26,7 @@
+  --target-sizeof-long: target sizeof(long), sizeof(unsigned long)
+  --target-sizeof-long-long: target sizeof(long long), sizeof(unsigned long long)
+ 
+-Z.C++ 0.0.7 z_cpp
++Z.C++ 0.0.8 z_cpp
+ usage: z_cpp [options] infile
+ boolean options
+  --test: final internal state to stderr
+@@ -38,7 +39,6 @@
+  -fsigned-char: char acts like signed char
+  -funsigned-char: char acts like unsigned char (default)
+  --int-neg-div-rounds-away-from-zero: make -3/-2==-2 contrary to C99 recommendation
+-
+ override-default options
+  -x: language override
+  --system-include: unpreprocessed #include&lt;...&gt; to stdout
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000410.html">[Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+	<LI>Next message: <A HREF="000412.html">[Zcplusplus-commits] r645 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#411">[ date ]</a>
+              <a href="thread.html#411">[ thread ]</a>
+              <a href="subject.html#411">[ subject ]</a>
+              <a href="author.html#411">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

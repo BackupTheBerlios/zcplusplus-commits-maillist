@@ -1,0 +1,1227 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r413 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r413%20-%20trunk&In-Reply-To=%3C201005070952.o479qKUv018426%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000179.html">
+   <LINK REL="Next"  HREF="000181.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r413 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r413%20-%20trunk&In-Reply-To=%3C201005070952.o479qKUv018426%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r413 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri May  7 11:52:20 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000179.html">[Zcplusplus-commits] r412 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000181.html">[Zcplusplus-commits] r414 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#180">[ date ]</a>
+              <a href="thread.html#180">[ thread ]</a>
+              <a href="subject.html#180">[ subject ]</a>
+              <a href="author.html#180">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-07 11:52:16 +0200 (Fri, 07 May 2010)
+New Revision: 413
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/type_spec.cpp
+Log:
+memory loading stabilization changes
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-07 03:39:23 UTC (rev 412)
++++ trunk/CSupport.cpp	2010-05-07 09:52:16 UTC (rev 413)
+@@ -5063,9 +5063,9 @@
+ 	if (   (PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags)
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;1&gt;()
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;2&gt;()
+-		|| NULL==src.data&lt;0&gt;()[i].index_tokens[0].token.first) return;
++		|| !src.data&lt;0&gt;()[i].index_tokens[0].token.first) return;
+ 	
+-	if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first)
++	if (src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		{
+ 		if (terse_locate_array_deref(src,i))
+ 			{
+@@ -5143,7 +5143,7 @@
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;1&gt;()
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;2&gt;()) return;
+ 
+-	if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first)
++	if (src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		{
+ 		if (terse_locate_array_deref(src,i))
+ 			{	//! \todo handle operator [] overloading
+@@ -5273,6 +5273,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc
+ static void assemble_unary_postfix_arguments(parse_tree&amp; src, size_t&amp; i, const size_t _subtype)
+ {
+ 	assert(1&lt;src.size&lt;0&gt;()-i);
+@@ -5343,6 +5344,8 @@
+ 	return dest;
+ }
+ 
++//! usually want to use value_copy rather than MoveInto before this (easier to be ACID)
++//! \throw std::bad_alloc only if dest.type_code.pointer_power&lt;dest.data&lt;2&gt;()-&gt;type_code.pointer_power 
+ static void force_unary_positive_literal(parse_tree&amp; dest,const parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(0==dest.size&lt;0&gt;());
+@@ -5372,7 +5375,7 @@
+ 	dest.flags |= PARSE_STRICT_UNARY_EXPRESSION;
+ 	dest.subtype = C99_UNARY_SUBTYPE_NEG;
+ 	if (converts_to_arithmeticlike(dest.data&lt;2&gt;()-&gt;type_code ARG_TYPES))
+-		dest.type_code = dest.data&lt;2&gt;()-&gt;type_code;	//! \bug doesn't work for enumerators
++		value_copy(dest.type_code,dest.data&lt;2&gt;()-&gt;type_code);	//! \bug doesn't work for enumerators
+ 	// do not handle type here: C++ operator overloading risk
+ 	assert(dest.index_tokens[0].src_filename);
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(dest));
+@@ -5434,7 +5437,9 @@
+ 	return converts_to_integerlike(x.type_code ARG_TYPES) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; x.flags);
+ }
+ 
++#/*cut-cpp*/
+ //! \throw std::bad_alloc()
++#/*cut-cpp*/
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+@@ -5455,9 +5460,7 @@
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+ 		if (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+ 			{	// enumerator went negative: handle
+-			parse_tree tmp;
+-			src.c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+-			tmp.MoveInto(src);
++			src.eval_to_arg&lt;2&gt;(0);
+ 			return true;
+ 			}
+ 		}
+@@ -5465,7 +5468,7 @@
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
++		src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+ 		return true;
+ 		}
+@@ -5492,9 +5495,7 @@
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+ 		if (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+ 			{	// enumerator went negative: handle
+-			parse_tree tmp;
+-			src.c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+-			tmp.MoveInto(src);
++			src.eval_to_arg&lt;2&gt;(0);
+ 			return true;
+ 			}
+ 		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+@@ -5511,7 +5512,7 @@
+ 		POD_pair&lt;char*,lex_flags&gt; new_token;
+ 		VM_to_token(res_int,src.type_code.base_type_index,new_token);
+ 		src.c_array&lt;2&gt;()-&gt;grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+-		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
++		src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+ 		return true;
+ 		};
+@@ -5520,7 +5521,7 @@
+ 		assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+ 		parse_tree tmp;
+ 		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+-		src.type_code.OverwriteInto(tmp.type_code);
++		src.type_code.MoveInto(tmp.type_code);
+ 		tmp.MoveInto(src);
+ 		return true;		
+ 		}
+@@ -5797,6 +5798,7 @@
+ 		}
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_logical_NOT(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5812,6 +5814,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_logical_NOT(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5980,7 +5983,6 @@
+ 			return true;
+ 			}
+ 
+-		const type_spec old_type = src.type_code;
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);	// two's-complement non-trapping INT_MIN dies if it gets here
+ 
+@@ -6150,6 +6152,7 @@
+ #/*cut-cpp*/
+ 
+ // handle C++0X sizeof... elsewhere (context-free syntax checks should be fixed first, possibly consider sizeof... a psuedo-identifier)
++//! \throw std::bad_alloc
+ static bool terse_locate_C99_CPP_sizeof(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6727,7 +6730,7 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		src.type_code.MoveInto(tmp.type_code);
++		value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6763,7 +6766,7 @@
+ 				INFORM(&quot; optimized to valid 0&quot;);
+ 				tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 				}
+-			else src.type_code.MoveInto(tmp.type_code);
++			else value_copy(tmp.type_code,src.type_code);
+ 			src.DeleteIdx&lt;1&gt;(0);
+ 			force_unary_positive_literal(src,tmp ARG_TYPES);
+ 			return true;
+@@ -6809,7 +6812,7 @@
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				if (want_zero)
+ 					{
+-					src.type_code.MoveInto(tmp.type_code);
++					value_copy(tmp.type_code,src.type_code);
+ 					force_unary_positive_literal(src,tmp ARG_TYPES); // +0
+ 					}
+ 				else	
+@@ -6854,7 +6857,7 @@
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+ 
+-		src.type_code.MoveInto(tmp.type_code);
++		value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6867,7 +6870,6 @@
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code ARG_TYPES))
+ 		{
+@@ -6883,7 +6885,7 @@
+ 			{
+ 			// construct +0 to defuse 1-0%6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-			if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
++			if (C_TYPE::INTEGERLIKE==src.type_code.base_type_index)
+ 				{
+ 				message_header(src.index_tokens[0]);
+ 				INC_INFORM(&quot;invalid &quot;);
+@@ -6891,7 +6893,7 @@
+ 				INFORM(&quot; optimized to valid 0&quot;);
+ 				tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 				}
+-			else tmp.type_code = old_type;
++			else value_copy(tmp.type_code,src.type_code);
+ 			src.DeleteIdx&lt;1&gt;(0);
+ 			force_unary_positive_literal(src,tmp ARG_TYPES);
+ 			return true;
+@@ -6906,8 +6908,8 @@
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __%1 |-&gt; +0
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-		if (C_TYPE::INTEGERLIKE!=old_type.base_type_index)
+-			tmp.type_code = old_type;
++		if (C_TYPE::INTEGERLIKE!=src.type_code.base_type_index)
++			value_copy(tmp.type_code,src.type_code);
+ 		else
+ 			tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 		src.DeleteIdx&lt;1&gt;(0);
+@@ -6916,7 +6918,7 @@
+ 		};
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+-		const promote_aux old(old_type.base_type_index ARG_TYPES);
++		const promote_aux old(src.type_code.base_type_index ARG_TYPES);
+ 		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 		assert(old.bitcount&gt;=lhs.bitcount);
+ 		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+@@ -6949,7 +6951,6 @@
+ 
+ 					src.DeleteIdx&lt;1&gt;(0);
+ 					force_unary_negative_literal(src,tmp);
+-					src.type_code = old_type;
+ 					return true;
+ 					}
+ 				};
+@@ -6962,8 +6963,8 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		tmp.type_code = old_type;
+ 
++		value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6974,6 +6975,9 @@
+ BOOST_STATIC_ASSERT(1==C99_MULT_SUBTYPE_MOD-C99_MULT_SUBTYPE_DIV);
+ BOOST_STATIC_ASSERT(1==C99_MULT_SUBTYPE_MULT-C99_MULT_SUBTYPE_MOD);
+ 
++#/*cut-cpp*/
++//! \throw std::bad_alloc
++#/*cut-cpp*/
+ static bool _mod_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_MOD==src.subtype &amp;&amp; is_C99_mult_operator_expression&lt;'%'&gt;(src));
+@@ -7008,6 +7012,9 @@
+ 	return true;
+ }
+ 
++#/*cut-cpp*/
++//! \throw std::bad_alloc
++#/*cut-cpp*/
+ static bool _mult_div_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV==src.subtype || C99_MULT_SUBTYPE_MULT==src.subtype);
+@@ -7048,6 +7055,7 @@
+ 	return true;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_mult_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV&lt;=src.subtype &amp;&amp; C99_MULT_SUBTYPE_MULT&gt;=src.subtype);
+@@ -7067,6 +7075,7 @@
+ 		}
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_mult_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV&lt;=src.subtype &amp;&amp; C99_MULT_SUBTYPE_MULT&gt;=src.subtype);
+@@ -7093,6 +7102,7 @@
+ 	multiplicative-expression / cast-expression
+ 	multiplicative-expression % cast-expression
+ */
++//! \throw std::bad_alloc()
+ static void locate_C99_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7118,6 +7128,7 @@
+ 	multexpression / pmexpression
+ 	multexpression % pmexpression
+ */
++//! \throw std::bad_alloc()
+ static void locate_CPP_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7182,6 +7193,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_C99_augment_add_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7202,6 +7214,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_CPP_augment_add_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7222,6 +7235,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_add_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7274,18 +7288,14 @@
+ 			bool is_true = false;
+ 			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;2&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				};
+ 			umaxint res_int;
+@@ -7352,11 +7362,8 @@
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+ 
+-						type_spec old_type;
+-						src.type_code.OverwriteInto(old_type);
+ 						src.DeleteIdx&lt;1&gt;(0);
+ 						force_unary_negative_literal(src,tmp);
+-						old_type.MoveInto(src.type_code);
+ 						return true;
+ 						};
+ 					res_int = lhs_test;
+@@ -7367,7 +7374,7 @@
+ 				// convert to parsed + literal
+ 				parse_tree tmp;
+ 				VM_to_literal(tmp,res_int,src,types);
+-				src.type_code.MoveInto(tmp.type_code);
++				value_copy(tmp.type_code,src.type_code);
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_positive_literal(src,tmp ARG_TYPES);
+ 				return true;
+@@ -7379,10 +7386,8 @@
+ 			bool is_true = false;
+ 			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			break;
+@@ -7392,10 +7397,8 @@
+ 			bool is_true = false;
+ 			if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;2&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			break;
+@@ -7437,10 +7440,8 @@
+ 				}
+ 			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			umaxint res_int;
+@@ -7508,11 +7509,8 @@
+ 						// convert to parsed - literal
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+-						type_spec old_type;
+-						src.type_code.OverwriteInto(old_type);
+ 						src.DeleteIdx&lt;1&gt;(0);
+ 						force_unary_negative_literal(src,tmp);
+-						old_type.MoveInto(src.type_code);
+ 						return true;
+ 						};
+ 					res_int = lhs_test;
+@@ -7523,7 +7521,7 @@
+ 				// convert to parsed + literal
+ 				parse_tree tmp;
+ 				VM_to_literal(tmp,res_int,src,types);
+-				src.type_code.MoveInto(tmp.type_code);
++				value_copy(tmp.type_code,src.type_code);
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_positive_literal(src,tmp ARG_TYPES);
+ 				return true;
+@@ -7535,10 +7533,8 @@
+ 			bool is_true = false;
+ 			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			break;
+@@ -7859,7 +7855,6 @@
+ 	// __ &gt;&gt; 0 |-&gt; __
+ 	// two integer literals
+ 	// error if RHS is literal &quot;out of bounds&quot;
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 		{
+@@ -7870,8 +7865,8 @@
+ 			if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
+ 				enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types);
+ #/*cut-cpp*/
++			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+-			src.type_code = old_type;
+ 			return true;
+ 			}
+ 		};
+@@ -7879,7 +7874,7 @@
+ 	umaxint rhs_int;
+ 	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
++		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		const bool undefined_behavior = target_machine-&gt;C_bit(machine_type)&lt;=rhs_int;
+ 
+ 		//! \todo can't test with static test case (need to use bitcount of uintmax_t/intmax_t)
+@@ -7890,8 +7885,10 @@
+ 			{
+ 			if (!is_true)
+ 				{	// 0 &lt;&lt; __ or 0 &gt;&gt; __: zero out (note that we can do this even if we invoked undefined behavior)
++				type_spec tmp;
++				src.type_code.OverwriteInto(tmp);
+ 				force_decimal_literal(src,&quot;0&quot;,types);
+-				src.type_code = old_type;
++				tmp.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			};
+@@ -7905,7 +7902,7 @@
+ 				{
+ 				//! \todo but signed integers do go undefined in C if left-shifted too much; C++ accepts
+ #if 0
+-				if (0==(old_type.base_type_index-C_TYPE::INT)%2 &amp;&amp; target_machine-&gt;C_bit(machine_type)&lt;=rhs_int.to_uint()+lhs_int.int_log2()+1)
++				if (0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; target_machine-&gt;C_bit(machine_type)&lt;=rhs_int.to_uint()+lhs_int.int_log2()+1)
+ 					simple_error(src,&quot; : result does not fit in LHS type; undefined behavior (C99 6.5.7p3)&quot;);
+ #endif
+ 				res_int &lt;&lt;= rhs_int.to_uint();
+@@ -7925,15 +7922,17 @@
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_negative_literal(src,tmp);
+ 				}
+-			else	// convert to positive literal
+-				src = tmp;
+-			src.type_code = old_type;
++			else{	// convert to positive literal
++				src.type_code.MoveInto(tmp.type_code);
++				tmp.MoveInto(src);
++				}
+ 			return true;
+ 			}
+ 		}
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_shift_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_shift_expression(src));
+@@ -7944,6 +7943,7 @@
+ 	if (eval_shift(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_shift_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_shift_expression(src));
+@@ -7960,6 +7960,7 @@
+ 	shift-expression &lt;&lt; additive-expression
+ 	shift-expression &gt;&gt; additive-expression
+ */
++//! \throw std::bad_alloc()
+ static void locate_C99_shift_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7978,6 +7979,7 @@
+ 	shift-expression &lt;&lt; additive-expression
+ 	shift-expression &gt;&gt; additive-expression
+ */
++//! \throw std::bad_alloc()
+ static void locate_CPP_shift_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7991,6 +7993,7 @@
+ 		CPP_shift_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_relation_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8167,6 +8170,7 @@
+ 	relational-expression &lt;= shift-expression
+ 	relational-expression &gt;= shift-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_C99_relation_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8187,6 +8191,7 @@
+ 	relational-expression &lt;= shift-expression
+ 	relational-expression &gt;= shift-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_CPP_relation_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8200,6 +8205,7 @@
+ 		CPP_relation_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_C99_equality_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8230,6 +8236,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_CPP_equality_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8407,6 +8414,7 @@
+ 	equality-expression == relational-expression
+ 	equality-expression != relational-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_C99_equality_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8425,6 +8433,7 @@
+ 	equality-expression == relational-expression
+ 	equality-expression != relational-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_CPP_equality_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8438,6 +8447,7 @@
+ 		CPP_equality_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_C99_bitwise_AND(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -8465,6 +8475,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_CPP_bitwise_AND(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-07 03:39:23 UTC (rev 412)
++++ trunk/CSupport_pp.cpp	2010-05-07 09:52:16 UTC (rev 413)
+@@ -1,4 +1,4 @@
+-// CSupport_pp.cpp
++// CSupport.cpp
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+@@ -4603,9 +4603,9 @@
+ 	if (   (PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags)
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;1&gt;()
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;2&gt;()
+-		|| NULL==src.data&lt;0&gt;()[i].index_tokens[0].token.first) return;
++		|| !src.data&lt;0&gt;()[i].index_tokens[0].token.first) return;
+ 	
+-	if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first)
++	if (src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		{
+ 		if (terse_locate_array_deref(src,i))
+ 			{
+@@ -4683,7 +4683,7 @@
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;1&gt;()
+ 		|| !src.data&lt;0&gt;()[i].empty&lt;2&gt;()) return;
+ 
+-	if (NULL!=src.data&lt;0&gt;()[i].index_tokens[1].token.first)
++	if (src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		{
+ 		if (terse_locate_array_deref(src,i))
+ 			{	//! \todo handle operator [] overloading
+@@ -4803,6 +4803,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc
+ static void assemble_unary_postfix_arguments(parse_tree&amp; src, size_t&amp; i, const size_t _subtype)
+ {
+ 	assert(1&lt;src.size&lt;0&gt;()-i);
+@@ -4873,6 +4874,8 @@
+ 	return dest;
+ }
+ 
++//! usually want to use value_copy rather than MoveInto before this (easier to be ACID)
++//! \throw std::bad_alloc only if dest.type_code.pointer_power&lt;dest.data&lt;2&gt;()-&gt;type_code.pointer_power 
+ static void force_unary_positive_literal(parse_tree&amp; dest,const parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(0==dest.size&lt;0&gt;());
+@@ -4902,7 +4905,7 @@
+ 	dest.flags |= PARSE_STRICT_UNARY_EXPRESSION;
+ 	dest.subtype = C99_UNARY_SUBTYPE_NEG;
+ 	if (converts_to_arithmeticlike(dest.data&lt;2&gt;()-&gt;type_code ARG_TYPES))
+-		dest.type_code = dest.data&lt;2&gt;()-&gt;type_code;	//! \bug doesn't work for enumerators
++		value_copy(dest.type_code,dest.data&lt;2&gt;()-&gt;type_code);	//! \bug doesn't work for enumerators
+ 	// do not handle type here: C++ operator overloading risk
+ 	assert(dest.index_tokens[0].src_filename);
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(dest));
+@@ -4935,7 +4938,6 @@
+ 	return converts_to_integerlike(x.type_code ARG_TYPES) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; x.flags);
+ }
+ 
+-//! \throw std::bad_alloc()
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+@@ -4953,7 +4955,7 @@
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
++		src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+ 		return true;
+ 		}
+@@ -4985,7 +4987,7 @@
+ 		POD_pair&lt;char*,lex_flags&gt; new_token;
+ 		VM_to_token(res_int,src.type_code.base_type_index,new_token);
+ 		src.c_array&lt;2&gt;()-&gt;grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+-		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
++		src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+ 		return true;
+ 		};
+@@ -4994,7 +4996,7 @@
+ 		assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+ 		parse_tree tmp;
+ 		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+-		src.type_code.OverwriteInto(tmp.type_code);
++		src.type_code.MoveInto(tmp.type_code);
+ 		tmp.MoveInto(src);
+ 		return true;		
+ 		}
+@@ -5251,6 +5253,7 @@
+ 		}
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_logical_NOT(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5266,6 +5269,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_logical_NOT(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5427,7 +5431,6 @@
+ 			return true;
+ 			}
+ 
+-		const type_spec old_type = src.type_code;
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);	// two's-complement non-trapping INT_MIN dies if it gets here
+ 
+@@ -5942,7 +5945,7 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		src.type_code.MoveInto(tmp.type_code);
++		value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -5978,7 +5981,7 @@
+ 				INFORM(&quot; optimized to valid 0&quot;);
+ 				tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 				}
+-			else src.type_code.MoveInto(tmp.type_code);
++			else value_copy(tmp.type_code,src.type_code);
+ 			src.DeleteIdx&lt;1&gt;(0);
+ 			force_unary_positive_literal(src,tmp ARG_TYPES);
+ 			return true;
+@@ -6024,7 +6027,7 @@
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				if (want_zero)
+ 					{
+-					src.type_code.MoveInto(tmp.type_code);
++					value_copy(tmp.type_code,src.type_code);
+ 					force_unary_positive_literal(src,tmp ARG_TYPES); // +0
+ 					}
+ 				else	
+@@ -6069,7 +6072,7 @@
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+ 
+-		src.type_code.MoveInto(tmp.type_code);
++		value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6082,7 +6085,6 @@
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code ARG_TYPES))
+ 		{
+@@ -6098,7 +6100,7 @@
+ 			{
+ 			// construct +0 to defuse 1-0%6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-			if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
++			if (C_TYPE::INTEGERLIKE==src.type_code.base_type_index)
+ 				{
+ 				message_header(src.index_tokens[0]);
+ 				INC_INFORM(&quot;invalid &quot;);
+@@ -6106,7 +6108,7 @@
+ 				INFORM(&quot; optimized to valid 0&quot;);
+ 				tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 				}
+-			else tmp.type_code = old_type;
++			else value_copy(tmp.type_code,src.type_code);
+ 			src.DeleteIdx&lt;1&gt;(0);
+ 			force_unary_positive_literal(src,tmp ARG_TYPES);
+ 			return true;
+@@ -6121,8 +6123,8 @@
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __%1 |-&gt; +0
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-		if (C_TYPE::INTEGERLIKE!=old_type.base_type_index)
+-			tmp.type_code = old_type;
++		if (C_TYPE::INTEGERLIKE!=src.type_code.base_type_index)
++			value_copy(tmp.type_code,src.type_code);
+ 		else
+ 			tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 		src.DeleteIdx&lt;1&gt;(0);
+@@ -6131,7 +6133,7 @@
+ 		};
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+-		const promote_aux old(old_type.base_type_index ARG_TYPES);
++		const promote_aux old(src.type_code.base_type_index ARG_TYPES);
+ 		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 		assert(old.bitcount&gt;=lhs.bitcount);
+ 		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+@@ -6164,7 +6166,6 @@
+ 
+ 					src.DeleteIdx&lt;1&gt;(0);
+ 					force_unary_negative_literal(src,tmp);
+-					src.type_code = old_type;
+ 					return true;
+ 					}
+ 				};
+@@ -6177,8 +6178,8 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		tmp.type_code = old_type;
+ 
++		value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6234,6 +6235,7 @@
+ 	return true;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_mult_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV&lt;=src.subtype &amp;&amp; C99_MULT_SUBTYPE_MULT&gt;=src.subtype);
+@@ -6253,6 +6255,7 @@
+ 		}
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_mult_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_MULT_SUBTYPE_DIV&lt;=src.subtype &amp;&amp; C99_MULT_SUBTYPE_MULT&gt;=src.subtype);
+@@ -6279,6 +6282,7 @@
+ 	multiplicative-expression / cast-expression
+ 	multiplicative-expression % cast-expression
+ */
++//! \throw std::bad_alloc()
+ static void locate_C99_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6304,6 +6308,7 @@
+ 	multexpression / pmexpression
+ 	multexpression % pmexpression
+ */
++//! \throw std::bad_alloc()
+ static void locate_CPP_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6368,6 +6373,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_C99_augment_add_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6388,6 +6394,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_CPP_augment_add_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6408,6 +6415,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_add_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6460,18 +6468,14 @@
+ 			bool is_true = false;
+ 			if 		(literal_converts_to_bool(*src.data&lt;1&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;2&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				};
+ 			umaxint res_int;
+@@ -6538,11 +6542,8 @@
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+ 
+-						type_spec old_type;
+-						src.type_code.OverwriteInto(old_type);
+ 						src.DeleteIdx&lt;1&gt;(0);
+ 						force_unary_negative_literal(src,tmp);
+-						old_type.MoveInto(src.type_code);
+ 						return true;
+ 						};
+ 					res_int = lhs_test;
+@@ -6553,7 +6554,7 @@
+ 				// convert to parsed + literal
+ 				parse_tree tmp;
+ 				VM_to_literal(tmp,res_int,src,types);
+-				src.type_code.MoveInto(tmp.type_code);
++				value_copy(tmp.type_code,src.type_code);
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_positive_literal(src,tmp ARG_TYPES);
+ 				return true;
+@@ -6565,10 +6566,8 @@
+ 			bool is_true = false;
+ 			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ + 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			break;
+@@ -6578,10 +6577,8 @@
+ 			bool is_true = false;
+ 			if (literal_converts_to_bool(*src.data&lt;1&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// 0 + __ |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;2&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			break;
+@@ -6623,10 +6620,8 @@
+ 				}
+ 			else if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			umaxint res_int;
+@@ -6694,11 +6689,8 @@
+ 						// convert to parsed - literal
+ 						parse_tree tmp;
+ 						VM_to_literal(tmp,lhs_test,src,types);
+-						type_spec old_type;
+-						src.type_code.OverwriteInto(old_type);
+ 						src.DeleteIdx&lt;1&gt;(0);
+ 						force_unary_negative_literal(src,tmp);
+-						old_type.MoveInto(src.type_code);
+ 						return true;
+ 						};
+ 					res_int = lhs_test;
+@@ -6709,7 +6701,7 @@
+ 				// convert to parsed + literal
+ 				parse_tree tmp;
+ 				VM_to_literal(tmp,res_int,src,types);
+-				src.type_code.MoveInto(tmp.type_code);
++				value_copy(tmp.type_code,src.type_code);
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_positive_literal(src,tmp ARG_TYPES);
+ 				return true;
+@@ -6721,10 +6713,8 @@
+ 			bool is_true = false;
+ 			if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 				{	// __ - 0 |-&gt; __
+-				type_spec old_type;
+-				src.type_code.OverwriteInto(old_type);
++				src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 				src.eval_to_arg&lt;1&gt;(0);
+-				old_type.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			break;
+@@ -7015,14 +7005,13 @@
+ 	// __ &gt;&gt; 0 |-&gt; __
+ 	// two integer literals
+ 	// error if RHS is literal &quot;out of bounds&quot;
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 		{
+ 		if (!is_true)
+ 			{	// __ &lt;&lt; 0 or __ &gt;&gt; 0: lift
++			src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 			src.eval_to_arg&lt;1&gt;(0);
+-			src.type_code = old_type;
+ 			return true;
+ 			}
+ 		};
+@@ -7030,7 +7019,7 @@
+ 	umaxint rhs_int;
+ 	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
++		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		const bool undefined_behavior = target_machine-&gt;C_bit(machine_type)&lt;=rhs_int;
+ 
+ 		//! \todo can't test with static test case (need to use bitcount of uintmax_t/intmax_t)
+@@ -7041,8 +7030,10 @@
+ 			{
+ 			if (!is_true)
+ 				{	// 0 &lt;&lt; __ or 0 &gt;&gt; __: zero out (note that we can do this even if we invoked undefined behavior)
++				type_spec tmp;
++				src.type_code.OverwriteInto(tmp);
+ 				force_decimal_literal(src,&quot;0&quot;,types);
+-				src.type_code = old_type;
++				tmp.MoveInto(src.type_code);
+ 				return true;
+ 				}
+ 			};
+@@ -7056,7 +7047,7 @@
+ 				{
+ 				//! \todo but signed integers do go undefined in C if left-shifted too much; C++ accepts
+ #if 0
+-				if (0==(old_type.base_type_index-C_TYPE::INT)%2 &amp;&amp; target_machine-&gt;C_bit(machine_type)&lt;=rhs_int.to_uint()+lhs_int.int_log2()+1)
++				if (0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; target_machine-&gt;C_bit(machine_type)&lt;=rhs_int.to_uint()+lhs_int.int_log2()+1)
+ 					simple_error(src,&quot; : result does not fit in LHS type; undefined behavior (C99 6.5.7p3)&quot;);
+ #endif
+ 				res_int &lt;&lt;= rhs_int.to_uint();
+@@ -7076,15 +7067,17 @@
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_negative_literal(src,tmp);
+ 				}
+-			else	// convert to positive literal
+-				src = tmp;
+-			src.type_code = old_type;
++			else{	// convert to positive literal
++				src.type_code.MoveInto(tmp.type_code);
++				tmp.MoveInto(src);
++				}
+ 			return true;
+ 			}
+ 		}
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_shift_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_shift_expression(src));
+@@ -7095,6 +7088,7 @@
+ 	if (eval_shift(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_shift_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_shift_expression(src));
+@@ -7111,6 +7105,7 @@
+ 	shift-expression &lt;&lt; additive-expression
+ 	shift-expression &gt;&gt; additive-expression
+ */
++//! \throw std::bad_alloc()
+ static void locate_C99_shift_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7129,6 +7124,7 @@
+ 	shift-expression &lt;&lt; additive-expression
+ 	shift-expression &gt;&gt; additive-expression
+ */
++//! \throw std::bad_alloc()
+ static void locate_CPP_shift_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7142,6 +7138,7 @@
+ 		CPP_shift_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_relation_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7318,6 +7315,7 @@
+ 	relational-expression &lt;= shift-expression
+ 	relational-expression &gt;= shift-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_C99_relation_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7338,6 +7336,7 @@
+ 	relational-expression &lt;= shift-expression
+ 	relational-expression &gt;= shift-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_CPP_relation_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7351,6 +7350,7 @@
+ 		CPP_relation_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_C99_equality_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7381,6 +7381,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_CPP_equality_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7558,6 +7559,7 @@
+ 	equality-expression == relational-expression
+ 	equality-expression != relational-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_C99_equality_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7576,6 +7578,7 @@
+ 	equality-expression == relational-expression
+ 	equality-expression != relational-expression
+ */
++//! \throw std::bad_alloc
+ static void locate_CPP_equality_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7589,6 +7592,7 @@
+ 		CPP_equality_expression_easy_syntax_check(src.c_array&lt;0&gt;()[i],types);
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_C99_bitwise_AND(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -7616,6 +7620,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc
+ static bool terse_locate_CPP_bitwise_AND(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2010-05-07 03:39:23 UTC (rev 412)
++++ trunk/type_spec.cpp	2010-05-07 09:52:16 UTC (rev 413)
+@@ -115,6 +115,7 @@
+ 	return true;
+ }
+ 
++//! \throw std::bad_alloc only if pointer_power-1&gt;dest.pointer_power
+ bool type_spec::dereference(type_spec&amp; dest) const
+ {
+ #ifndef ZAIMONI_FORCE_ISO
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000179.html">[Zcplusplus-commits] r412 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000181.html">[Zcplusplus-commits] r414 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#180">[ date ]</a>
+              <a href="thread.html#180">[ thread ]</a>
+              <a href="subject.html#180">[ subject ]</a>
+              <a href="author.html#180">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

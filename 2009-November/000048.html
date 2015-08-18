@@ -1,0 +1,736 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r281 - in trunk: . tests/zcc	tests/zcc/backport tests/zcc/compat tests/zcc/decl.C99	tests/zcc.in tests/zcc.in/backport tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r281%20-%20in%20trunk%3A%20.%20tests/zcc%0A%09tests/zcc/backport%20tests/zcc/compat%20tests/zcc/decl.C99%0A%09tests/zcc.in%20tests/zcc.in/backport%20tests/zcc.in/decl.C99&In-Reply-To=%3C200911260545.nAQ5jf3x010582%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000047.html">
+   <LINK REL="Next"  HREF="000049.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r281 - in trunk: . tests/zcc	tests/zcc/backport tests/zcc/compat tests/zcc/decl.C99	tests/zcc.in tests/zcc.in/backport tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r281%20-%20in%20trunk%3A%20.%20tests/zcc%0A%09tests/zcc/backport%20tests/zcc/compat%20tests/zcc/decl.C99%0A%09tests/zcc.in%20tests/zcc.in/backport%20tests/zcc.in/decl.C99&In-Reply-To=%3C200911260545.nAQ5jf3x010582%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r281 - in trunk: . tests/zcc	tests/zcc/backport tests/zcc/compat tests/zcc/decl.C99	tests/zcc.in tests/zcc.in/backport tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov 26 06:45:41 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000047.html">[Zcplusplus-commits] r280 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000049.html">[Zcplusplus-commits] r282 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#48">[ date ]</a>
+              <a href="thread.html#48">[ thread ]</a>
+              <a href="subject.html#48">[ subject ]</a>
+              <a href="author.html#48">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-26 06:44:44 +0100 (Thu, 26 Nov 2009)
+New Revision: 281
+
+Added:
+   trunk/tests/zcc.in/backport/
+   trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_brace.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_type.in
+   trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in
+   trunk/tests/zcc/backport/
+   trunk/tests/zcc/backport/Warn_enum_trailing_comma.h
+   trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp
+   trunk/tests/zcc/compat/
+   trunk/tests/zcc/compat/Warn_enum_empty.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_brace.h
+   trunk/tests/zcc/decl.C99/Error_enum_brace.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_empty.h
+   trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h
+   trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_keyword.h
+   trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_no_init.h
+   trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_symbol.h
+   trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_type.h
+   trunk/tests/zcc/decl.C99/Error_enum_type.hpp
+   trunk/tests/zcc/decl.C99/Pass_enum_empty.hpp
+   trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h
+   trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/tests/zcc.in/run_tests.in
+   trunk/tests/zcc/run_tests.bat
+   trunk/tests/zcc/run_tests.sh
+Log:
+check errors in enumeration definitions that do not require evaluating expressions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/CSupport.cpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -10549,6 +10549,118 @@
+ 	src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
+ }
+ 
++static bool record_enum_values(parse_tree&amp; src, type_system&amp; types, const char* const enum_name, const char* const active_namespace,bool allow_empty,func_traits&lt;const char* (*)(const char*, size_t)&gt;::function_ref_type echo_reserved_keyword)
++{
++	assert(!enum_name || *enum_name);
++	assert(!active_namespace || *active_namespace);
++	assert(is_naked_brace_pair(src));
++	// enumeration idea:
++	// * identifer [= ...] ,
++	// terminal , is optional (and in fact should trigger a warning for -Wbackport)
++	// empty collection of enumerators is fine for C++, rejected by C (should be error in C and -Wc-c++-compat for C++)
++	// values would be unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;
++	if (src.empty&lt;0&gt;())
++		{
++		if (!allow_empty)
++			{	//! \test zcc/decl.C99/Error_enum_empty.h
++			message_header(src.index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(&quot;enumeration has no enumerators (C99 6.7.2.2p1)&quot;);
++			zcc_errors.inc_error();
++			return false;
++			}
++		else if (bool_options[boolopt::warn_crosslang_compatibility])
++			{	//! \test zcc/compat/Warn_enum_empty.hpp
++			message_header(src.index_tokens[0]);
++			INC_INFORM(WARN_STR);
++			INFORM(&quot;enumeration with no enumerators is an error in C90/C99/C1X&quot;);
++			if (bool_options[boolopt::warnings_are_errors])
++				{
++				zcc_errors.inc_error();
++				return false;
++				}
++			}
++		//! \test zcc/decl.C99/Pass_enum_empty.hpp
++		return true;
++		};
++	// determine if format generally there
++	// stage 1: top-level comma check
++	// * terminal comma is optional, zap it and warn if -Wbackport
++	// * one more enumerator possible than surviving commas; use this to construct buffers
++	size_t i = 0;
++	while(src.size&lt;0&gt;()&gt;i)
++		{	// require identifier that is neither keyword nor a primitive type
++			// C++ will have problems with enum/struct/class/union names, verify status of both of these (could be -Wc-c++-compat issue if legal in C)
++			// if identifier, verify next is = or ,
++			// if next is =, locate comma afterwards (do not do expression parsing yet)
++			//! \todo: enforce One Definition Rule for C++ vs types; determine how much of the effect is in C as well
++		if (   !src.data&lt;0&gt;()[i].is_atomic()
++			||  C_TESTFLAG_IDENTIFIER!=src.data&lt;0&gt;()[i].index_tokens[0].flags
++			|| (PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags)
++			|| echo_reserved_keyword(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].token.second))
++			{	//! \test zcc/decl.C99/Error_enum_brace.h, zcc/decl.C99/Error_enum_brace.hpp
++				//! \test zcc/decl.C99/Error_enum_symbol.h, zcc/decl.C99/Error_enum_symbol.hpp
++				//! \test zcc/decl.C99/Error_enum_type.h, zcc/decl.C99/Error_enum_type.hpp
++				//! \test zcc/decl.C99/Error_enum_keyword.h, zcc/decl.C99/Error_enum_keyword.hpp
++			message_header(0==i ? src.index_tokens[0] : src.data&lt;0&gt;()[i-i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(&quot;non-keyword identifier expected as enumerator (C99 6.4.4.3p1/C++0X 7.2p1)&quot;);
++			zcc_errors.inc_error();
++			return false;
++			}
++		if (1&gt;=src.size&lt;0&gt;()-i) break;	// fine, would default-update
++		if (robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1]))
++			{	// would default-update
++			i += 2;
++			continue;
++			};
++		if (!robust_token_is_char&lt;'='&gt;(src.data&lt;0&gt;()[i+1]))
++			{	//! \test zcc/decl.C99/Error_enum_no_init.h, zcc/decl.C99/Error_enum_no_init.hpp
++			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(&quot;enumerator neither explicitly initialized nor default-initialized (C99 6.4.4.3p1/C++0X 7.2p1)&quot;);
++			zcc_errors.inc_error();
++			return false;
++			};
++		i += 2;
++		if (src.size&lt;0&gt;()&lt;=i || robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i]))
++			{	//! \test zcc/decl.C99/Error_enum_init_truncated.h, zcc/decl.C99/Error_enum_init_truncated.hpp
++			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(&quot;enumerator initializer cut off by , (C99 6.4.4.3p1/C++0X 7.2p1)&quot;);
++			zcc_errors.inc_error();
++			return false;
++			};
++		while(++i &lt; src.size&lt;0&gt;())
++			{
++			if (robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i]))
++				{
++				++i;
++				break;
++				}
++			};
++		}
++	if (robust_token_is_char&lt;','&gt;(src.back&lt;0&gt;()))
++		{	// warn for -Wbackport
++			//! \test zcc/decl.C99/Pass_enum_trailing_comma.h, zcc/decl.C99/Pass_enum_trailing_comma.hpp
++			//! \test zcc/backport/Warn_enum_trailing_comma.h, zcc/backport/Warn_enum_trailing_comma.hpp
++		if (bool_options[boolopt::warn_backport])
++			{
++			message_header(src.back&lt;0&gt;().index_tokens[0]);
++			INC_INFORM(WARN_STR);
++			INFORM(&quot;trailing , in enumeration definition would be an error in C90/C++98&quot;);
++			if (bool_options[boolopt::warnings_are_errors])
++				{
++				zcc_errors.inc_error();
++				return false;
++				}
++			}
++		src.DeleteIdx&lt;0&gt;(src.size&lt;0&gt;()-1); // clean up anyway
++		}
++	//! \todo actually record enumerator matchings
++	return true;
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -10660,15 +10772,24 @@
+ 			// enum-specifier doesn't have a specific declaration mode
+ 			//! \test zcc\decl.C99\Pass_enum_def.h
+ 			enum_def* tmp = new enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+-			//! \todo record enum values
+ 			types.register_enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++			assert(types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,src.data&lt;0&gt;()[i].index_tokens[1].token.first,NULL,false,C99_echo_reserved_keyword))
++				{
++				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++				return;
++				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			enum_def* tmp = new enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			//! \todo record enum values
+ 			types.register_enum_def(&quot;&lt;unknown&gt;&quot;,tmp);
++			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,NULL,NULL,false,C99_echo_reserved_keyword))
++				{
++				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++				return;
++				}
+ 			}
+ 
+ 		if (	1&lt;src.size&lt;0&gt;()-i
+@@ -11138,15 +11259,23 @@
+ 				//! \test zcc\decl.C99\Pass_enum_def.hpp
+ 				// enum-specifier doesn't have a specific declaration mode
+ 				enum_def* tmp = new enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+-				//! \todo record enum values
+ 				types.register_enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++				if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,src.data&lt;0&gt;()[i].index_tokens[1].token.first,NULL,true,CPP_echo_reserved_keyword))
++					{
++					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++					return;
++					}
+ 				}
+ 			else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
+ 				{	// enum-specifier doesn't have a specific declaration mode
+ 					//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 				enum_def* tmp = new enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-				//! \todo record enum values
+ 				types.register_enum_def(&quot;&lt;unknown&gt;&quot;,tmp);
++				if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,src.data&lt;0&gt;()[i].index_tokens[1].token.first,NULL,true,CPP_echo_reserved_keyword))
++					{
++					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
++					return;
++					}
+ 				}
+ 
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+
+Added: trunk/tests/zcc/backport/Warn_enum_trailing_comma.h
+===================================================================
+--- trunk/tests/zcc/backport/Warn_enum_trailing_comma.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/backport/Warn_enum_trailing_comma.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// backport\Warn_enum_trailing_comma.h
++// trailing comma would fail in C89/C++98
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum weird_test {
++	x_factor = 1,
++}
++
+
+Added: trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp
+===================================================================
+--- trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// backport\Warn_enum_trailing_comma.hpp
++// trailing comma would fail in C89/C++98
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum weird_test {
++	x_factor = 1,
++}
++
+
+Added: trunk/tests/zcc/compat/Warn_enum_empty.hpp
+===================================================================
+--- trunk/tests/zcc/compat/Warn_enum_empty.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/compat/Warn_enum_empty.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,6 @@
++// decl.C99\Pass_enum_empty.hpp
++// no-enumerator enum fails in C, not in C++; warn with -Wc-c++-compat
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum good_test {
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_brace.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_brace.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_brace.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_brace.h
++// ZCC-specific check that non-atomic internal representation fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	{} = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_brace.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_brace.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_brace.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_brace.hpp
++// ZCC-specific check that non-atomic internal representation fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	{} = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_empty.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_empty.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_empty.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_empty.h
++// no-enumerator enum fails in C, not in C++
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++}
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,9 @@
++// decl.C99\Error_enum_init_truncated.h
++// comma-truncated initializer
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = ,
++	x_factor2 = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,9 @@
++// decl.C99\Error_enum_init_truncated.hpp
++// comma-truncated initializer
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = ,
++	x_factor2 = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_keyword.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_keyword.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_keyword.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_keyword.h
++// keyword as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	return = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_keyword.hpp
++// keyword as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	return = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_no_init.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_no_init.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_no_init.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_no_init.h
++// enum without initializer of any kind
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor &amp;
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_no_init.hpp
++// enum without initializer of any kind
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor &amp;
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_symbol.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_symbol.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_symbol.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_symbol.h
++// preprocessing punctuation as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	&amp; = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_symbol.hpp
++// preprocessing punctuation as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	&amp; = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_type.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_type.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_type.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_type.h
++// primitive type as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	unsigned int = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_type.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_type.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Error_enum_type.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Error_enum_type.hpp
++// primitive type as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	unsigned int = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_enum_empty.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_empty.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Pass_enum_empty.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,6 @@
++// decl.C99\Pass_enum_empty.hpp
++// no-enumerator enum fails in C, not in C++
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum good_test {
++}
+
+Added: trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_enum_trailing_comma.h
++// trailing comma would fail in C89/C++98
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum weird_test {
++	x_factor = 1,
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_enum_trailing_comma.hpp
++// trailing comma would fail in C89/C++98
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum weird_test {
++	x_factor = 1,
++}
++
+
+Modified: trunk/tests/zcc/run_tests.bat
+===================================================================
+--- trunk/tests/zcc/run_tests.bat	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/run_tests.bat	2009-11-26 05:44:44 UTC (rev 281)
+@@ -11,6 +11,8 @@
+ @set ACCEPT_TEST=0
+ @set CPP=..\..\zcc
+ @set CPP_ISO=..\..\zcc --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_BACKPORT=..\..\zcc -Wbackport
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_COMPAT=..\..\zcc -Wc-c++-compat
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+@@ -27,6 +29,15 @@
+ 
+ @echo Checking ZCC warnings on ISO-accepted code
+ @echo ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (backport\Warn*.h) do @echo %CPP_BACKPORT% -Werror %%f &amp; @%CPP_BACKPORT% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (backport\Warn*.h) do @echo %CPP_BACKPORT% %%f &amp; @%CPP_BACKPORT% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (backport\Warn*.h) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (backport\Warn*.hpp) do @echo %CPP_BACKPORT% -Werror %%f &amp; @%CPP_BACKPORT% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (backport\Warn*.hpp) do @echo %CPP_BACKPORT% %%f &amp; @%CPP_BACKPORT% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (backport\Warn*.hpp) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (compat\Warn*.hpp) do @echo %CPP_COMPAT% -Werror %%f &amp; @%CPP_COMPAT% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (compat\Warn*.hpp) do @echo %CPP_COMPAT% %%f &amp; @%CPP_COMPAT% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (compat\Warn*.hpp) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+ @for %%f in (decl.C99\Warn*.h) do @echo %CPP_ISO% -Werror %%f &amp; @%CPP_ISO% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (decl.C99\Warn*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (decl.C99\Warn*.h) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+
+Modified: trunk/tests/zcc/run_tests.sh
+===================================================================
+--- trunk/tests/zcc/run_tests.sh	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc/run_tests.sh	2009-11-26 05:44:44 UTC (rev 281)
+@@ -18,6 +18,8 @@
+ 	local ACCEPT_TEST=0
+ 	local CPP=../../zcc
+ 	local CPP_ISO=&quot;../../zcc --pedantic&quot;
++	local CPP_BACKPORT=&quot;../../zcc -Wbackport&quot;
++	local CPP_COMPAT=&quot;../../zcc -Wc-c++-compat&quot;
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+@@ -29,6 +31,12 @@
+ 
+ 	echo Checking ZCC warnings on ISO-accepted code
+ 	echo ====
++	for F in backport/Warn*.h; do let ++REJECT_TEST; echo $CPP_BACKPORT -Werror $F; if $CPP_BACKPORT -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in backport/Warn*.h; do let ++ACCEPT_TEST; echo $CPP_BACKPORT $F; if $CPP_BACKPORT $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in backport/Warn*.hpp; do let ++REJECT_TEST; echo $CPP_BACKPORT -Werror $F; if $CPP_BACKPORT -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in backport/Warn*.hpp; do let ++ACCEPT_TEST; echo $CPP_BACKPORT $F; if $CPP_BACKPORT $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in compat/Warn*.hpp; do let ++REJECT_TEST; echo $CPP_COMPAT -Werror $F; if $CPP_COMPAT -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in compat/Warn*.hpp; do let ++ACCEPT_TEST; echo $CPP_COMPAT $F; if $CPP_COMPAT $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in decl.C99/Warn*.h; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in decl.C99/Warn*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in decl.C99/Warn*.hpp; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+
+Added: trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in
+===================================================================
+--- trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// trailing comma would fail in C89/C++98
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum weird_test {
++	x_factor = 1,
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_brace.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_brace.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_brace.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// ZCC-specific check that non-atomic internal representation fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	{} = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,9 @@
++SUFFIXES h hpp
++// comma-truncated initializer
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = ,
++	x_factor2 = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// keyword as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	return = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// enum without initializer of any kind
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor &amp;
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// preprocessing punctuation as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	&amp; = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_type.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_type.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_type.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// primitive type as enumerator fails
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	unsigned int = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// trailing comma would fail in C89/C++98
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum weird_test {
++	x_factor = 1,
++}
++
+
+Modified: trunk/tests/zcc.in/run_tests.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests.in	2009-11-25 06:52:47 UTC (rev 280)
++++ trunk/tests/zcc.in/run_tests.in	2009-11-26 05:44:44 UTC (rev 281)
+@@ -5,6 +5,8 @@
+ PROLOG
+ VAR CPP ../../zcc
+ VAR CPP_ISO ../../zcc --pedantic
++VAR CPP_BACKPORT ../../zcc -Wbackport
++VAR CPP_COMPAT ../../zcc -Wc-c++-compat
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO decl.C99/Error*
+@@ -12,6 +14,8 @@
+ ERROR CPP_ISO staticassert.C1X/Error*
+ 
+ ECHO Checking ZCC warnings on ISO-accepted code
++WARN CPP_BACKPORT backport/Warn*
++WARN CPP_COMPAT compat/Warn*
+ WARN CPP_ISO decl.C99/Warn*
+ WARN CPP_ISO namespace.CPP/Warn*
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000047.html">[Zcplusplus-commits] r280 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000049.html">[Zcplusplus-commits] r282 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#48">[ date ]</a>
+              <a href="thread.html#48">[ thread ]</a>
+              <a href="subject.html#48">[ subject ]</a>
+              <a href="author.html#48">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

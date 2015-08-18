@@ -1,0 +1,266 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r272 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r272%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200911050444.nA54iGPa016331%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000040.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r272 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r272%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200911050444.nA54iGPa016331%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r272 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov  5 05:44:16 CET 2009</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000040.html">[Zcplusplus-commits] r273 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#39">[ date ]</a>
+              <a href="thread.html#39">[ thread ]</a>
+              <a href="subject.html#39">[ subject ]</a>
+              <a href="author.html#39">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-05 05:44:12 +0100 (Thu, 05 Nov 2009)
+New Revision: 272
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/Zaimoni.STL/POD.hpp
+Log:
+more reasonable Koenig lookup for typedefs; augment POD support in Zaimoni.STL
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-18 05:34:07 UTC (rev 271)
++++ trunk/CSupport.cpp	2009-11-05 04:44:12 UTC (rev 272)
+@@ -10043,8 +10043,21 @@
+ 		// handle typedefs
+ 		if (check_for_typedef(base_type,x.index_tokens[0].token.first,types)) return true;
+ 		//! \todo handle other known types
+-		// note: we have to handle typedefs of unions/structs, anonymous or otherwise ....
+-		// worse, the typedef need not be *before* the union/struct declaration
++#if 0
++		// we must accept any specifier here: C99 6.7.2p1
++		if (   is_C99_anonymous_specifier(x,&quot;enum&quot;)
++			|| is_C99_named_specifier(x,&quot;enum&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;enum&quot;))
++			return true;
++		if (   is_C99_anonymous_specifier(x,&quot;struct&quot;)
++			|| is_C99_named_specifier(x,&quot;struct&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;struct&quot;))
++			return true;
++		if (   is_C99_anonymous_specifier(x,&quot;union&quot;)
++			|| is_C99_named_specifier(x,&quot;union&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;union&quot;))
++			return true;
++#endif
+ 		return false;
+ 		};
+ 	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+@@ -10113,8 +10126,8 @@
+ //! \todo belongs elsewhere
+ size_t count_disjoint_substring_instances(const char* const src,const char* const match)
+ {
+-	assert(NULL!=src &amp;&amp; *src);
+-	assert(NULL!=match &amp;&amp; *match);
++	assert(src &amp;&amp; *src);
++	assert(match &amp;&amp; *match);
+ 	const size_t src_len = strlen(src);
+ 	const size_t match_len = strlen(match);
+ 	size_t n = 0;
+@@ -10128,7 +10141,7 @@
+ }
+ 
+ //! \todo belongs elsewhere
+-void report_disjoint_substring_instances(const char* const src,const char* const match,const char**&amp; namespace_break_stack,const size_t namespace_break_stack_size)
++void report_disjoint_substring_instances(const char* const src,const char* const match,const char** const namespace_break_stack,const size_t namespace_break_stack_size)
+ {
+ 	assert(NULL!=src &amp;&amp; *src);
+ 	assert(NULL!=match &amp;&amp; *match);
+@@ -10153,12 +10166,26 @@
+ 	uintmax_t flags;
+ 	type_spec base_type;
+ 	const type_system&amp; types;
++	// these two might belong in a koenig_lookup object
+ 	const char* const active_namespace;
++	autovalarray_ptr_throws&lt;char*&gt; koenig_lookup;
+ public:
+-	CPP0X_decl_specifier_scanner(const type_system&amp; _types,const char* const _active_namespace) : flags(0),types(_types),active_namespace(_active_namespace)
++	CPP0X_decl_specifier_scanner(const type_system&amp; _types,const char* const _active_namespace) : flags(0),types(_types),active_namespace(_active_namespace),koenig_lookup((_active_namespace &amp;&amp; *_active_namespace) ? count_disjoint_substring_instances(_active_namespace,&quot;::&quot;) : 0)
+ 		{
+ 		clear(decl_count);
+ 		base_type.clear();
++		if (!koenig_lookup.empty())
++			{
++			size_t namespace_break_stack_size = koenig_lookup.size();
++			weakautovalarray_ptr_throws&lt;const char*&gt; namespace_break_stack(namespace_break_stack_size);
++			report_disjoint_substring_instances(active_namespace,&quot;::&quot;,namespace_break_stack.c_array(),namespace_break_stack_size);
++			do	{
++				size_t offset = namespace_break_stack[--namespace_break_stack_size]-active_namespace;
++				koenig_lookup[namespace_break_stack_size] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(offset));
++				strncpy(koenig_lookup[namespace_break_stack_size],active_namespace,offset);
++				}
++			while(0&lt;namespace_break_stack_size);
++			}
+ 		}
+ 	// trivial destructor, copy constructor, assignment fine
+ 	bool operator()(parse_tree&amp; x,const size_t i)
+@@ -10203,7 +10230,7 @@
+ 				char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(active_namespace_len+2+x.data&lt;0&gt;()[i].index_tokens[0].token.second));
+ 				strcpy(tmp2,active_namespace);
+ 				strcpy(tmp2+active_namespace_len,&quot;::&quot;);
+-				strncpy(tmp2+active_namespace_len+2,x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second);
++				strcpy(tmp2+active_namespace_len+2,x.data&lt;0&gt;()[i].index_tokens[0].token.first);
+ 				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef(tmp2);
+ 				if (NULL!=tmp)
+ 					{	//! \todo check for access-control if source is a class or struct
+@@ -10211,29 +10238,24 @@
+ 					value_copy(base_type,tmp-&gt;first);
+ 					return true;
+ 					};
+-				size_t namespace_break_stack_size = count_disjoint_substring_instances(active_namespace,&quot;::&quot;);
+-				if (0&lt;namespace_break_stack_size)
+-					{	//! \todo this wastes a calloc/free, but odds are the code cost of special-casing is larger
+-					const char** namespace_break_stack = _new_buffer_nonNULL_throws&lt;const char*&gt;(namespace_break_stack_size);
+-					report_disjoint_substring_instances(active_namespace,&quot;::&quot;,namespace_break_stack,namespace_break_stack_size);
++				if (!koenig_lookup.empty())
++					{
++					size_t i = koenig_lookup.size();
+ 					do	{
+-						size_t offset = namespace_break_stack[--namespace_break_stack_size]-active_namespace;
+-						strncpy(tmp2,active_namespace,offset);
++						--i;
++						size_t offset = strlen(koenig_lookup[i]);
++						strcpy(tmp2,koenig_lookup[i]);
+ 						strcpy(tmp2+offset,&quot;::&quot;);
+-						offset += 2;
+-						strncpy(tmp2+offset,x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second);
+-						tmp2[offset+x.data&lt;0&gt;()[i].index_tokens[0].token.second] = '\0';
++						strcpy(tmp2+offset+2,x.data&lt;0&gt;()[i].index_tokens[0].token.first);
+ 						const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef(tmp2);
+ 						if (NULL!=tmp)
+ 							{	//! \todo check for access-control if source is a class or struct
+-							free(namespace_break_stack);
+ 							free(tmp2);
+ 							value_copy(base_type,tmp-&gt;first);
+ 							return true;
+ 							};
+ 						}
+-					while(0&lt;namespace_break_stack_size);
+-					free(namespace_break_stack);
++					while(0&lt;i);
+ 					};
+ 				free(tmp2);
+ 				}
+@@ -10242,6 +10264,25 @@
+ 			}
+ 		}
+ 		//! \todo handle other known types
++#if 0
++		// we must accept any specifier here: C++0X 7.1.6.2p1
++		if (   is_C99_anonymous_specifier(x,&quot;enum&quot;)
++			|| is_C99_named_specifier(x,&quot;enum&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;enum&quot;))
++			return true;
++		if (   is_C99_anonymous_specifier(x,&quot;struct&quot;)
++			|| is_C99_named_specifier(x,&quot;struct&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;struct&quot;))
++			return true;
++		if (   is_C99_anonymous_specifier(x,&quot;union&quot;)
++			|| is_C99_named_specifier(x,&quot;union&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;union&quot;))
++			return true;
++		if (   is_C99_anonymous_specifier(x,&quot;class&quot;)
++			|| is_C99_named_specifier(x,&quot;class&quot;)
++			|| is_C99_named_specifier_definition(x,&quot;class&quot;))
++			return true;
++#endif
+ 		return false;
+ 		};
+ 	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+
+Modified: trunk/Zaimoni.STL/POD.hpp
+===================================================================
+--- trunk/Zaimoni.STL/POD.hpp	2009-10-18 05:34:07 UTC (rev 271)
++++ trunk/Zaimoni.STL/POD.hpp	2009-11-05 04:44:12 UTC (rev 272)
+@@ -121,6 +121,16 @@
+ 	T4 fourth;
+ };
+ 
++template&lt;class T1, class T2, class T3, class T4, class T5&gt;
++union union_quintet
++{
++	T1 first;
++	T2 second;
++	T3 third;
++	T4 fourth;
++	T5 fifth;
++};
++
+ template&lt;class T1,class T2,class T3,class T4,class T5,class T6,class T7&gt;
+ union union_heptuple
+ {
+@@ -161,6 +171,24 @@
+ #undef ZAIMONI_CLASS_SPEC
+ #undef ZAIMONI_TEMPLATE_SPEC
+ 
++#define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2,typename _T3,typename _T4&gt;
++#define ZAIMONI_CLASS_SPEC zaimoni::union_quartet&lt;_T1,_T2,_T3,_T4&gt;
++ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
++#undef ZAIMONI_CLASS_SPEC
++#undef ZAIMONI_TEMPLATE_SPEC
++
++#define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2,typename _T3,typename _T4,typename _T5&gt;
++#define ZAIMONI_CLASS_SPEC zaimoni::union_quintet&lt;_T1,_T2,_T3,_T4,_T5&gt;
++ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
++#undef ZAIMONI_CLASS_SPEC
++#undef ZAIMONI_TEMPLATE_SPEC
++
++#define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2,typename _T3,typename _T4,typename _T5,typename _T6,typename _T7&gt;
++#define ZAIMONI_CLASS_SPEC zaimoni::union_heptuple&lt;_T1,_T2,_T3,_T4,_T5,_T6,_T7&gt;
++ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
++#undef ZAIMONI_CLASS_SPEC
++#undef ZAIMONI_TEMPLATE_SPEC
++
+ }
+ 
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000040.html">[Zcplusplus-commits] r273 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#39">[ date ]</a>
+              <a href="thread.html#39">[ thread ]</a>
+              <a href="subject.html#39">[ subject ]</a>
+              <a href="author.html#39">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

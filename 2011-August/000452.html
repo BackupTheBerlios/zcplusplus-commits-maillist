@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r685 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r685%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110831011035.083ED4811B9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000451.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r685 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r685%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110831011035.083ED4811B9%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r685 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug 31 03:10:34 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000451.html">[Zcplusplus-commits] r684 - trunk
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#452">[ date ]</a>
+              <a href="thread.html#452">[ thread ]</a>
+              <a href="subject.html#452">[ subject ]</a>
+              <a href="author.html#452">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-08-31 03:10:34 +0200 (Wed, 31 Aug 2011)
+New Revision: 685
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+Log:
+first testing of __zcc_linkage: enumerators of anonymous enumerations
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/CSupport.cpp	2011-08-31 01:10:34 UTC (rev 685)
+@@ -6953,6 +6953,15 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		if (   src.data&lt;0&gt;()[i+1].is_atomic()
++			&amp;&amp; C_TESTFLAG_IDENTIFIER==src.data&lt;0&gt;()[i+1].index_tokens[0].flags)
++			{
++			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
++			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::INT);	//! \todo would be nice to range-limit this
++			assert(is_ZCC_linkage_expression(src.c_array&lt;0&gt;()[i]));
++			return true;			
++			}
++		// we don't actually know how to evaluate these -- it could get messy
+ 		if (is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1]))
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/CSupport.cpp.in	2011-08-31 01:10:34 UTC (rev 685)
+@@ -7051,6 +7051,15 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		if (   src.data&lt;0&gt;()[i+1].is_atomic()
++			&amp;&amp; C_TESTFLAG_IDENTIFIER==src.data&lt;0&gt;()[i+1].index_tokens[0].flags)
++			{
++			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
++			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::INT);	//! \todo would be nice to range-limit this
++			assert(is_ZCC_linkage_expression(src.c_array&lt;0&gt;()[i]));
++			return true;			
++			}
++		// we don't actually know how to evaluate these -- it could get messy
+ 		if (is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1]))
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,ZCC_UNARY_SUBTYPE_LINKAGE);
+
+Modified: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2011-08-31 01:10:34 UTC (rev 685)
+@@ -1,8 +1,13 @@
+ // decl.C99\Pass_anonymous_enum_def.h
+ // using singly defined enum
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum {
+ 	x_factor = 1
+ };
+ 
++// check ZCC compiler extensions
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++_Static_assert(0&lt;=__zcc_linkage(x_factor),&quot;x_factor is not defined&quot;);
++_Static_assert(0&gt;=__zcc_linkage(x_factor),&quot;x_factor has linkage&quot;);
++#endif
+
+Modified: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2011-08-31 01:10:34 UTC (rev 685)
+@@ -1,8 +1,13 @@
+ // decl.C99\Pass_anonymous_enum_def.hpp
+ // using singly defined enum
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum {
+ 	x_factor = 1
+ };
+ 
++// check ZCC compiler extensions
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++static_assert(0&lt;=__zcc_linkage(x_factor),&quot;x_factor is not defined&quot;);
++static_assert(0&gt;=__zcc_linkage(x_factor),&quot;x_factor has linkage&quot;);
++#endif
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2011-08-30 19:22:38 UTC (rev 684)
++++ trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2011-08-31 01:10:34 UTC (rev 685)
+@@ -1,8 +1,14 @@
+ SUFFIXES h hpp
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_assert static_assert
+ // using singly defined enum
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ enum {
+ 	x_factor = 1
+ };
+ 
++// check ZCC compiler extensions
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++STATIC_ASSERT(0&lt;=__zcc_linkage(x_factor),&quot;x_factor is not defined&quot;);
++STATIC_ASSERT(0&gt;=__zcc_linkage(x_factor),&quot;x_factor has linkage&quot;);
++#endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000451.html">[Zcplusplus-commits] r684 - trunk
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#452">[ date ]</a>
+              <a href="thread.html#452">[ thread ]</a>
+              <a href="subject.html#452">[ subject ]</a>
+              <a href="author.html#452">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

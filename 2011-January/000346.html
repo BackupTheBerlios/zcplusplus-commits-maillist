@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r579 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r579%20-%20trunk&In-Reply-To=%3C20110122044218.03ABB480817%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000345.html">
+   <LINK REL="Next"  HREF="000347.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r579 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r579%20-%20trunk&In-Reply-To=%3C20110122044218.03ABB480817%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r579 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 22 05:42:17 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000345.html">[Zcplusplus-commits] r578 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000347.html">[Zcplusplus-commits] r580 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#346">[ date ]</a>
+              <a href="thread.html#346">[ thread ]</a>
+              <a href="subject.html#346">[ subject ]</a>
+              <a href="author.html#346">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-22 05:42:17 +0100 (Sat, 22 Jan 2011)
+New Revision: 579
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+remove unused variable
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-11 03:34:08 UTC (rev 578)
++++ trunk/CSupport.cpp	2011-01-22 04:42:17 UTC (rev 579)
+@@ -13080,7 +13080,6 @@
+ 	// note that typedefs and struct/union declarations/definitions create new types; if this happens we are no longer context-free (so second pass with context-based parsing)
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+-	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+@@ -14188,7 +14187,6 @@
+ 		return;
+ 		}
+ 
+-	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-11 03:34:08 UTC (rev 578)
++++ trunk/CSupport.cpp.in	2011-01-22 04:42:17 UTC (rev 579)
+@@ -13224,7 +13224,6 @@
+ 	// note that typedefs and struct/union declarations/definitions create new types; if this happens we are no longer context-free (so second pass with context-based parsing)
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+-	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+@@ -14332,7 +14331,6 @@
+ 		return;
+ 		}
+ 
+-	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
+ 	size_t i = 0;
+ restart_master_loop:
+ 	while(i&lt;src.size&lt;0&gt;())
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000345.html">[Zcplusplus-commits] r578 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000347.html">[Zcplusplus-commits] r580 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#346">[ date ]</a>
+              <a href="thread.html#346">[ thread ]</a>
+              <a href="subject.html#346">[ subject ]</a>
+              <a href="author.html#346">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

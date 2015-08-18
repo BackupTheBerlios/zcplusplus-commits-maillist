@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r646 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r646%20-%20trunk&In-Reply-To=%3C20110523023834.3FD02481405%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000414.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r646 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r646%20-%20trunk&In-Reply-To=%3C20110523023834.3FD02481405%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r646 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon May 23 04:38:34 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000414.html">[Zcplusplus-commits] r647 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#413">[ date ]</a>
+              <a href="thread.html#413">[ thread ]</a>
+              <a href="subject.html#413">[ subject ]</a>
+              <a href="author.html#413">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-05-23 04:38:33 +0200 (Mon, 23 May 2011)
+New Revision: 646
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system.hpp
+   trunk/type_system.hpp.in
+Log:
+infrastructure for planned __zcc_linkage compiler extension
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.cpp	2011-05-23 02:38:33 UTC (rev 646)
+@@ -385,6 +385,18 @@
+ 	return set_typedef(name,filename,lineno,src);
+ }
+ 
++const char* type_system::get_typedef_name(const type_index base_type_index) const
++{
++	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* iter = typedef_registry.begin();
++	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* const iter_end = typedef_registry.end();
++	while(iter!=iter_end)
++		{
++		if (base_type_index==iter-&gt;second.first.base_type_index &amp;&amp; 0==iter-&gt;second.first.pointer_power) return iter-&gt;first;
++		++iter;
++		};
++	return NULL;
++}
++
+ const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_typedef(const char* const alias) const
+ {
+ 	assert(alias &amp;&amp; *alias);
+@@ -942,3 +954,97 @@
+ 	src = NULL;
+ }
+ 
++int type_system::_C_linkage_code(const char* alias) const
++{
++/*
++* no linkage [C1X 6.2.2p6]
++** identifier that isn't an object or function
++** identifier that is a function parameter
++** block-scope identifier for an object not declared extern
++*/
++	if (  get_typedef(alias)
++	   || get_enumerator(alias)
++	   || get_id_enum(alias)
++	   || get_id_union(alias)
++	   || get_id_struct_class(alias))
++	   return 0;	// no linkage
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
++
++/*
++[C++0X 3.5p4]
++* unnamed namespaces, and all namespaces declared within them at any depth, have internal linkage.
++* other namespaces have external linkage
++*/
++static int _CPP_namespace_linkage(const char* x)
++{
++	return x &amp;&amp; *x &amp;&amp; strstr(x,&quot;&lt;unknown&gt;&quot;) ? 1	/* internal*/
++		: 2;	/* external (C++) */
++}
++
++static bool _CPP_unnamed_tag(const char* const x)
++{
++	if (!x) return true;
++	const size_t x_len = strlen(x);
++	if (sizeof(&quot;&lt;unknown&gt;&quot;)-1&gt;x_len) return false;
++	return !strcmp(x+(x_len-(sizeof(&quot;&lt;unknown&gt;&quot;)-1)),&quot;&lt;unknown&gt;&quot;);	
++}
++
++int type_system::_CPP_linkage_code(const char* alias,const char* active_namespace) const
++{
++	if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = get_typedef_CPP(alias,active_namespace))
++	{	// linkage is from namespace if we are the typedef of an unnamed enum/struct/class/union
++		// otherwise we have no linkage
++		if (0!=tmp-&gt;first.pointer_power) return 0;	// typedef of pointer or array has no linkage
++		if (core_types_size&gt;=tmp-&gt;first.base_type_index) return 0;	// the invariant types are not unnamed enum/struct/class/union
++		if (const union_struct_decl* const tmp2 = get_structdecl(tmp-&gt;first.base_type_index))
++			{
++			//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++			if (!_CPP_unnamed_tag(tmp2-&gt;tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		else if (const enum_def* const tmp2 = get_enum_def(tmp-&gt;first.base_type_index))
++			{
++			if (!_CPP_unnamed_tag(tmp2-&gt;tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		return 0;	// no linkage
++	};
++	if (const enumerator_info* const tmp = get_enumerator_CPP(alias,active_namespace))
++		{	// linkage is from named enumeration or typedef'ed unnamed enumeration
++		const enum_def* const tmp2 = get_enum_def(tmp-&gt;second.first.first);
++		assert(tmp2);
++		//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (!_CPP_unnamed_tag(tmp2-&gt;tag()))
++			return _CPP_namespace_linkage(tmp2-&gt;tag());	// named, so use namespace linkage
++		// see if there's a typedef targeting us; if so process the typedef
++		if (const char* const tmp3 = get_typedef_name(tmp-&gt;second.first.first))
++			// we need the typedef name to be returned
++			return _CPP_namespace_linkage(tmp3);
++		return 0;	// no linkage
++		}
++	if (get_id_enum_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_union_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++			//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_struct_class_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
++
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.cpp.in	2011-05-23 02:38:33 UTC (rev 646)
+@@ -400,6 +400,18 @@
+ 	return set_typedef(name,filename,lineno,src);
+ }
+ 
++const char* type_system::get_typedef_name(const type_index base_type_index) const
++{
++	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* iter = typedef_registry.begin();
++	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* const iter_end = typedef_registry.end();
++	while(iter!=iter_end)
++		{
++		if (base_type_index==iter-&gt;second.first.base_type_index &amp;&amp; 0==iter-&gt;second.first.pointer_power) return iter-&gt;first;
++		++iter;
++		};
++	return NULL;
++}
++
+ const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_typedef(const char* const alias) const
+ {
+ 	assert(alias &amp;&amp; *alias);
+@@ -956,5 +968,99 @@
+ 	tmp.third.first.third = src;
+ 	src = NULL;
+ }
++
++int type_system::_C_linkage_code(const char* alias) const
++{
++/*
++* no linkage [C1X 6.2.2p6]
++** identifier that isn't an object or function
++** identifier that is a function parameter
++** block-scope identifier for an object not declared extern
++*/
++	if (  get_typedef(alias)
++	   || get_enumerator(alias)
++	   || get_id_enum(alias)
++	   || get_id_union(alias)
++	   || get_id_struct_class(alias))
++	   return 0;	// no linkage
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
++
++/*
++[C++0X 3.5p4]
++* unnamed namespaces, and all namespaces declared within them at any depth, have internal linkage.
++* other namespaces have external linkage
++*/
++static int _CPP_namespace_linkage(const char* x)
++{
++	return x &amp;&amp; *x &amp;&amp; strstr(x,&quot;&lt;unknown&gt;&quot;) ? 1	/* internal*/
++		: 2;	/* external (C++) */
++}
++
++static bool _CPP_unnamed_tag(const char* const x)
++{
++	if (!x) return true;
++	const size_t x_len = strlen(x);
++	if (sizeof(&quot;&lt;unknown&gt;&quot;)-1&gt;x_len) return false;
++	return !strcmp(x+(x_len-(sizeof(&quot;&lt;unknown&gt;&quot;)-1)),&quot;&lt;unknown&gt;&quot;);	
++}
++
++int type_system::_CPP_linkage_code(const char* alias,const char* active_namespace) const
++{
++	if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = get_typedef_CPP(alias,active_namespace))
++	{	// linkage is from namespace if we are the typedef of an unnamed enum/struct/class/union
++		// otherwise we have no linkage
++		if (0!=tmp-&gt;first.pointer_power) return 0;	// typedef of pointer or array has no linkage
++		if (core_types_size&gt;=tmp-&gt;first.base_type_index) return 0;	// the invariant types are not unnamed enum/struct/class/union
++		if (const union_struct_decl* const tmp2 = get_structdecl(tmp-&gt;first.base_type_index))
++			{
++			//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++			if (!_CPP_unnamed_tag(tmp2-&gt;tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		else if (const enum_def* const tmp2 = get_enum_def(tmp-&gt;first.base_type_index))
++			{
++			if (!_CPP_unnamed_tag(tmp2-&gt;tag())) return 0;	// no linkage
++			if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++			return _CPP_namespace_linkage(alias);
++			}
++		return 0;	// no linkage
++	};
++	if (const enumerator_info* const tmp = get_enumerator_CPP(alias,active_namespace))
++		{	// linkage is from named enumeration or typedef'ed unnamed enumeration
++		const enum_def* const tmp2 = get_enum_def(tmp-&gt;second.first.first);
++		assert(tmp2);
++		//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (!_CPP_unnamed_tag(tmp2-&gt;tag()))
++			return _CPP_namespace_linkage(tmp2-&gt;tag());	// named, so use namespace linkage
++		// see if there's a typedef targeting us; if so process the typedef
++		if (const char* const tmp3 = get_typedef_name(tmp-&gt;second.first.first))
++			// we need the typedef name to be returned
++			return _CPP_namespace_linkage(tmp3);
++		return 0;	// no linkage
++		}
++	if (get_id_enum_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_union_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++			//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	if (get_id_struct_class_CPP(alias,active_namespace))
++		{	// named, so has linkage of enclosing namespace
++		//! \todo check for extern &quot;C&quot;, etc. (would require retaining id and checking record)
++		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
++		return _CPP_namespace_linkage(alias);
++		}
++	// we have to handle objects and functions correctly before replacing the -2 with -1	
++	return -2;	// not implemented yet
++}
+ #/*cut-cpp*/
+ 
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.hpp	2011-05-23 02:38:33 UTC (rev 646)
+@@ -106,6 +106,7 @@
+ 
+ 	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
+ 	void set_typedef_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
++	const char* get_typedef_name(const type_index base_type_index) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+@@ -129,6 +130,17 @@
+ 	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
+ 	void set_enum_underlying_type(type_index i,size_t new_type);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
++
++	int C_linkage_code(const char* alias) const
++		{
++		assert(alias &amp;&amp; *alias);
++		return _C_linkage_code(alias);
++		};
++	int CPP_linkage_code(const char* alias,const char* active_namespace) const
++		{
++		assert(alias &amp;&amp; *alias);
++		return _CPP_linkage_code(alias,active_namespace);
++		};
+ private:
+ 	const char* _name(type_index id) const;
+ 	type_index _get_id_union(const char* x) const;
+@@ -146,6 +158,9 @@
+ 	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
+ 	const char* construct_canonical_name_and_aliasing_CPP(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len);
+ 
++	int _C_linkage_code(const char* x) const;	
++	int _CPP_linkage_code(const char* x,const char* active_namespace) const;	
++	
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+ 	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+
+Modified: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	2011-04-29 23:11:29 UTC (rev 645)
++++ trunk/type_system.hpp.in	2011-05-23 02:38:33 UTC (rev 646)
+@@ -128,6 +128,7 @@
+ 
+ 	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
+ 	void set_typedef_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
++	const char* get_typedef_name(const type_index base_type_index) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+@@ -151,6 +152,17 @@
+ 	const enum_def* get_enum_def(type_index i) const {return _get_enum_def(i);};
+ 	void set_enum_underlying_type(type_index i,size_t new_type);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
++
++	int C_linkage_code(const char* alias) const
++		{
++		assert(alias &amp;&amp; *alias);
++		return _C_linkage_code(alias);
++		};
++	int CPP_linkage_code(const char* alias,const char* active_namespace) const
++		{
++		assert(alias &amp;&amp; *alias);
++		return _CPP_linkage_code(alias,active_namespace);
++		};
+ #/*cut-cpp*/
+ private:
+ 	const char* _name(type_index id) const;
+@@ -170,6 +182,9 @@
+ 	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
+ 	const char* construct_canonical_name_and_aliasing_CPP(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len);
+ 
++	int _C_linkage_code(const char* x) const;	
++	int _CPP_linkage_code(const char* x,const char* active_namespace) const;	
++	
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+ 	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000414.html">[Zcplusplus-commits] r647 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#413">[ date ]</a>
+              <a href="thread.html#413">[ thread ]</a>
+              <a href="subject.html#413">[ subject ]</a>
+              <a href="author.html#413">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

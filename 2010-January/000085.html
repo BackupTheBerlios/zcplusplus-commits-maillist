@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r318 - in trunk: . Zaimoni.STL tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r318%20-%20in%20trunk%3A%20.%20Zaimoni.STL%20tools&In-Reply-To=%3C201001020911.o029B5cp000614%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000086.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r318 - in trunk: . Zaimoni.STL tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r318%20-%20in%20trunk%3A%20.%20Zaimoni.STL%20tools&In-Reply-To=%3C201001020911.o029B5cp000614%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r318 - in trunk: . Zaimoni.STL tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan  2 10:11:05 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000086.html">[Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#85">[ date ]</a>
+              <a href="thread.html#85">[ thread ]</a>
+              <a href="subject.html#85">[ subject ]</a>
+              <a href="author.html#85">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-01-02 10:10:26 +0100 (Sat, 02 Jan 2010)
+New Revision: 318
+
+Modified:
+   trunk/CPreproc_autogen.cpp
+   trunk/MakeMake.cfg
+   trunk/Zaimoni.STL/AutoPtr.hpp
+   trunk/tools/MakeMake.py
+Log:
+ISO build fixes
+
+Modified: trunk/CPreproc_autogen.cpp
+===================================================================
+--- trunk/CPreproc_autogen.cpp	2009-12-30 21:18:48 UTC (rev 317)
++++ trunk/CPreproc_autogen.cpp	2010-01-02 09:10:26 UTC (rev 318)
+@@ -294,7 +294,11 @@
+ 		char* tmp2 = zaimoni::_new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(sizeof(&quot;#ifdef &quot;)-1+identifier_len));
+ 		strcpy(tmp2,&quot;#ifdef &quot;);
+ 		strcpy(tmp2+sizeof(&quot;#ifdef &quot;)-1,*identifiers);
+-		tmp[i] = new(std::nothrow) zaimoni::Token&lt;char&gt;(tmp2,NULL);
++#ifndef ZAIMONI_FORCE_ISO
++		tmp[i] = new zaimoni::Token&lt;char&gt;(tmp2,NULL);
++#else
++		tmp[i] = new zaimoni::Token&lt;char&gt;(tmp2,ZAIMONI_LEN_WITH_NULL(sizeof(&quot;#ifdef &quot;)-1+identifier_len),NULL);
++#endif
+ 		if (NULL==tmp[i])
+ 			{
+ 			free(tmp2);
+@@ -304,7 +308,11 @@
+ 		tmp2 = zaimoni::_new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(sizeof(&quot;#undef &quot;)-1+identifier_len));
+ 		strcpy(tmp2,&quot;#undef &quot;);
+ 		strcpy(tmp2+sizeof(&quot;#undef &quot;)-1,*identifiers);
++#ifndef ZAIMONI_FORCE_ISO
+ 		tmp[i+2] = new zaimoni::Token&lt;char&gt;(tmp2,NULL);
++#else
++		tmp[i+2] = new zaimoni::Token&lt;char&gt;(tmp2,ZAIMONI_LEN_WITH_NULL(sizeof(&quot;#undef &quot;)-1+identifier_len),NULL);
++#endif
+ 		if (NULL==tmp[i+2])
+ 			{
+ 			free(tmp2);
+@@ -315,7 +323,11 @@
+ 		strcpy(tmp2,&quot;#error Undefined Behavior: reserved identifier '&quot;);
+ 		strcpy(tmp2+sizeof(&quot;#error Undefined Behavior: reserved identifier '&quot;)-1,*identifiers);
+ 		strcpy(tmp2+sizeof(&quot;#error Undefined Behavior: reserved identifier '&quot;)-1+identifier_len,&quot;' defined as macro&quot;);
++#ifndef ZAIMONI_FORCE_ISO
+ 		tmp[i+1] = new zaimoni::Token&lt;char&gt;(tmp2,NULL);
++#else
++		tmp[i+1] = new zaimoni::Token&lt;char&gt;(tmp2,ZAIMONI_LEN_WITH_NULL(sizeof(&quot;#error Undefined Behavior: reserved identifier '&quot;)-1+identifier_len+sizeof(&quot;' defined as macro&quot;)-1),NULL);
++#endif
+ 		if (NULL==tmp[i+1])
+ 			{
+ 			free(tmp2);
+@@ -354,7 +366,11 @@
+ 		++identifiers;
+ 		--identifiers_len;
+ 		};
++#ifndef ZAIMONI_FORCE_ISO
+ 	zaimoni::Token&lt;char&gt;* relay = new(std::nothrow) zaimoni::Token&lt;char&gt;(tmp,NULL);
++#else
++	zaimoni::Token&lt;char&gt;* relay = new(std::nothrow) zaimoni::Token&lt;char&gt;(tmp,ZAIMONI_LEN_WITH_NULL(target_len),NULL);
++#endif
+ 	if (NULL==relay)
+ 		{
+ 		free(tmp);
+
+Modified: trunk/MakeMake.cfg
+===================================================================
+--- trunk/MakeMake.cfg	2009-12-30 21:18:48 UTC (rev 317)
++++ trunk/MakeMake.cfg	2010-01-02 09:10:26 UTC (rev 318)
+@@ -9,7 +9,6 @@
+ #object_strip = 'strip --preserve-dates --strip-unneeded $*.o'
+ 
+ # defines catalog
+-# NDEBUG: release mode
+ # ZAIMONI_FORCE_ISO: try to build as ISO C++ rather than with custom memory manager (pre-alpha)
+ C_defines = []
+ 
+@@ -19,7 +18,9 @@
+ CPP_override_libraries = {}
+ 
+ if 0==C_defines.count('ZAIMONI_FORCE_ISO'):
+-	CPP_libraries = '-lz_memory '+CPP_libraries
++	CPP_libraries = '-lz_langconf '+CPP_libraries+' -lz_memory'
++else:
++	CPP_libraries = '-lz_langconf_iso '+CPP_libraries
+ 
+ C_enabled = ''
+ C_hard_nonsystem_includedirs = []
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2009-12-30 21:18:48 UTC (rev 317)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2010-01-02 09:10:26 UTC (rev 318)
+@@ -302,7 +302,7 @@
+ #else
+ 	explicit _meta_autoarray_ptr() : _ptr(NULL),_size(0) {};
+ 	explicit _meta_autoarray_ptr(T*&amp; src,size_t src_size) : _ptr(src),_size(src_size) {src = NULL;};
+-	explicit _meta_autoarray_ptr(size_t n) : _ptr(_new_buffer&lt;T&gt;(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL)),_size(n) {};
++	explicit _meta_autoarray_ptr(size_t n) : _ptr(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL),_size(n) {};
+ 	explicit _meta_autoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
+ 	explicit _meta_autoarray_ptr(const _meta_autoarray_ptr&amp; src) : _ptr(NULL),_size(0) {*this=src;};
+ #endif
+
+Modified: trunk/tools/MakeMake.py
+===================================================================
+--- trunk/tools/MakeMake.py	2009-12-30 21:18:48 UTC (rev 317)
++++ trunk/tools/MakeMake.py	2010-01-02 09:10:26 UTC (rev 318)
+@@ -155,8 +155,8 @@
+ #		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_hard_nonsystem_includedirs),' ') +' -I- \\\n')
+ #	if C_soft_nonsystem_includedirs:
+ #		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_soft_nonsystem_includedirs),' ') +' \\\n')
+-#	if C_defines:
+-#		LineList.append('\t '+ join(map(lambda x: '-D'+x,C_defines),' ') +' \\\n')
++	if C_defines:
++		LineList.append('\t '+ join(map(lambda x: '-D'+x,C_defines),' ') +' \\\n')
+ 	if C_assembly_preprocessing:
+ 		LineList.append('\t -o $*.s -S -xc++ -pipe $&lt;\n')
+ 		LineList.append('\t'+C_assembly_preprocessing+'\n')
+@@ -171,8 +171,8 @@
+ #		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_hard_nonsystem_includedirs),' ') +' -I- \\\n')
+ #	if C_soft_nonsystem_includedirs:
+ #		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_soft_nonsystem_includedirs),' ') +' \\\n')
+-#	if C_defines:
+-#		LineList.append('\t '+ join(map(lambda x: '-D'+x,C_defines),' ') +' \\\n')
++	if C_defines:
++		LineList.append('\t '+ join(map(lambda x: '-D'+x,C_defines),' ') +' \\\n')
+ 	if C_assembly_preprocessing:
+ 		LineList.append('\t -o $*.s -S -xc -pipe $&lt;\n')
+ 		LineList.append('\t'+C_assembly_preprocessing+'\n')
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000086.html">[Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#85">[ date ]</a>
+              <a href="thread.html#85">[ thread ]</a>
+              <a href="subject.html#85">[ subject ]</a>
+              <a href="author.html#85">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

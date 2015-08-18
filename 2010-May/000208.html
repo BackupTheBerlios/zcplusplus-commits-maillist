@@ -1,0 +1,421 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r441 - trunk/tests/zcc/default/staticassert
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r441%20-%20trunk/tests/zcc/default/staticassert&In-Reply-To=%3C201005200805.o4K855Fv005486%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000207.html">
+   <LINK REL="Next"  HREF="000209.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r441 - trunk/tests/zcc/default/staticassert</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r441%20-%20trunk/tests/zcc/default/staticassert&In-Reply-To=%3C201005200805.o4K855Fv005486%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r441 - trunk/tests/zcc/default/staticassert">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu May 20 10:05:05 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000207.html">[Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000209.html">[Zcplusplus-commits] r442 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#208">[ date ]</a>
+              <a href="thread.html#208">[ thread ]</a>
+              <a href="subject.html#208">[ subject ]</a>
+              <a href="author.html#208">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-20 10:05:00 +0200 (Thu, 20 May 2010)
+New Revision: 441
+
+Modified:
+   trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+Log:
+complete baseline inequality testing for static assertions of typeid
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-19 09:51:00 UTC (rev 440)
++++ trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-20 08:05:00 UTC (rev 441)
+@@ -51,3 +51,345 @@
+ static_assert(typeid(void)!=typeid(double _Complex),&quot;automatic success failed&quot;);
+ static_assert(typeid(void)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
+ 
++static_assert(typeid(bool)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(bool)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(char)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(char)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(signed char)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(unsigned char)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(short)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(short)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(unsigned short)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(int)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(int)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(unsigned int)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(long)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(unsigned long)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(long long)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(unsigned long long)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(float)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(float)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(double)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(double)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(long double)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(float _Complex)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(float _Complex)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(double _Complex)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)!=typeid(long double _Complex),&quot;automatic success failed&quot;);
++
++static_assert(typeid(long double _Complex)!=typeid(void),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(long double),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)!=typeid(double _Complex),&quot;automatic success failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000207.html">[Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000209.html">[Zcplusplus-commits] r442 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#208">[ date ]</a>
+              <a href="thread.html#208">[ thread ]</a>
+              <a href="subject.html#208">[ subject ]</a>
+              <a href="author.html#208">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

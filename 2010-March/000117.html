@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r350 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r350%20-%20trunk&In-Reply-To=%3C201003110555.o2B5tkPq005326%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000116.html">
+   <LINK REL="Next"  HREF="000118.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r350 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r350%20-%20trunk&In-Reply-To=%3C201003110555.o2B5tkPq005326%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r350 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Mar 11 06:55:46 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000116.html">[Zcplusplus-commits] r349 - in trunk: tests/zcc tests/zcc/default	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in tests/zcc.in/default tests/zcc.in/default/staticassert	tests/zcc.in/staticassert.C1X tools
+</A></li>
+        <LI>Next message: <A HREF="000118.html">[Zcplusplus-commits] r351 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#117">[ date ]</a>
+              <a href="thread.html#117">[ thread ]</a>
+              <a href="subject.html#117">[ subject ]</a>
+              <a href="author.html#117">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-11 06:55:39 +0100 (Thu, 11 Mar 2010)
+New Revision: 350
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/type_system.cpp
+Log:
+let enumeration support actually cut in a bit
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-10 18:40:08 UTC (rev 349)
++++ trunk/CSupport.cpp	2010-03-11 05:55:39 UTC (rev 350)
+@@ -5208,7 +5208,9 @@
+ 	dest.clear();
+ 	dest.grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+ 	dest.grab_index_token_location_from&lt;0,0&gt;(src);
++	assert((C_TESTFLAG_CHAR_LITERAL | C_TESTFLAG_STRING_LITERAL | C_TESTFLAG_PP_NUMERAL) &amp; dest.index_tokens[0].flags);
+ 	_label_one_literal(dest,types);
++	assert(PARSE_EXPRESSION &amp; dest.flags);
+ 	return true;
+ }
+ 
+@@ -5253,7 +5255,8 @@
+ 
+ static void force_unary_negative_token(parse_tree&amp; dest,parse_tree* src,const parse_tree&amp; loc_src)
+ {
+-	assert(NULL!=src);
++	assert(src);
++	assert(PARSE_EXPRESSION &amp; src-&gt;flags);
+ 	dest.clear();
+ 	dest.grab_index_token_from_str_literal&lt;0&gt;(&quot;-&quot;,C_TESTFLAG_NONATOMIC_PP_OP_PUNC);
+ 	dest.grab_index_token_location_from&lt;0,0&gt;(loc_src);
+@@ -5275,6 +5278,7 @@
+ 		parse_tree* tmp = _new_buffer&lt;parse_tree&gt;(1);
+ 		if (NULL==tmp) return false;
+ 		if (!VM_to_literal(*tmp,src_int,src,types)) return false;
++		assert(PARSE_EXPRESSION &amp; tmp-&gt;flags);
+ 		force_unary_negative_token(x,tmp,*tmp);
+ 		}
+ 	else if (!VM_to_literal(x,src_int,src,types))
+@@ -5300,8 +5304,17 @@
+ 	{
+ 	umaxint res_int(tmp2-&gt;second.first.third);
+ 	const bool tmp_negative = dest_type.is_signed &amp;&amp; res_int.test(dest_type.bitcount-1);
+-	if (!VM_to_signed_literal(tmp3,tmp_negative,res_int,x,types)) return false;
++	if (tmp_negative) target_machine-&gt;signed_additive_inverse(res_int,dest_type.machine_type);
++	{	// pretend x is the type of the enumerator.
++	const type_system::type_index backup = x.type_code.base_type_index;
++	x.type_code.base_type_index = tmp2-&gt;second.first.second;
++	if (!VM_to_signed_literal(tmp3,tmp_negative,res_int,x,types))
++		{
++		x.type_code.base_type_index = backup;
++		return false;
++		}
+ 	}
++	}
+ 	x.destroy();
+ 	x = tmp3;
+ 	return true;
+@@ -10474,6 +10487,7 @@
+ 			{
+ 			x.set_index_token_from_str_literal&lt;0&gt;(tmp-&gt;first);
+ 			x.type_code.set_type(tmp-&gt;second.first.first);
++			x.flags |= PARSE_PRIMARY_EXPRESSION;
+ 			// XXX would be handy to keep the tmp around, consider as time optimization XXX
+ 			}
+ 		}
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-10 18:40:08 UTC (rev 349)
++++ trunk/CSupport_pp.cpp	2010-03-11 05:55:39 UTC (rev 350)
+@@ -4819,7 +4819,9 @@
+ 	dest.clear();
+ 	dest.grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+ 	dest.grab_index_token_location_from&lt;0,0&gt;(src);
++	assert((C_TESTFLAG_CHAR_LITERAL | C_TESTFLAG_STRING_LITERAL | C_TESTFLAG_PP_NUMERAL) &amp; dest.index_tokens[0].flags);
+ 	_label_one_literal(dest,types);
++	assert(PARSE_EXPRESSION &amp; dest.flags);
+ 	return true;
+ }
+ 
+@@ -4864,7 +4866,8 @@
+ 
+ static void force_unary_negative_token(parse_tree&amp; dest,parse_tree* src,const parse_tree&amp; loc_src)
+ {
+-	assert(NULL!=src);
++	assert(src);
++	assert(PARSE_EXPRESSION &amp; src-&gt;flags);
+ 	dest.clear();
+ 	dest.grab_index_token_from_str_literal&lt;0&gt;(&quot;-&quot;,C_TESTFLAG_NONATOMIC_PP_OP_PUNC);
+ 	dest.grab_index_token_location_from&lt;0,0&gt;(loc_src);
+@@ -4886,6 +4889,7 @@
+ 		parse_tree* tmp = _new_buffer&lt;parse_tree&gt;(1);
+ 		if (NULL==tmp) return false;
+ 		if (!VM_to_literal(*tmp,src_int,src,types)) return false;
++		assert(PARSE_EXPRESSION &amp; tmp-&gt;flags);
+ 		force_unary_negative_token(x,tmp,*tmp);
+ 		}
+ 	else if (!VM_to_literal(x,src_int,src,types))
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-03-10 18:40:08 UTC (rev 349)
++++ trunk/type_system.cpp	2010-03-11 05:55:39 UTC (rev 350)
+@@ -384,6 +384,7 @@
+ 	assert(alias &amp;&amp; *alias);
+ 	assert(src_filename &amp;&amp; *src_filename);
+ 	assert(type);
++	assert(get_enum_def(type));
+ 	errr tmp = binary_find(alias,strlen(alias),enumerator_registry.data(),enumerator_registry.size());
+ 	assert(0&gt;tmp);		// error to call with conflicting prior definition
+ 	if (0&lt;=tmp) return;	// conflicting prior definition
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000116.html">[Zcplusplus-commits] r349 - in trunk: tests/zcc tests/zcc/default	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in tests/zcc.in/default tests/zcc.in/default/staticassert	tests/zcc.in/staticassert.C1X tools
+</A></li>
+	<LI>Next message: <A HREF="000118.html">[Zcplusplus-commits] r351 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#117">[ date ]</a>
+              <a href="thread.html#117">[ thread ]</a>
+              <a href="subject.html#117">[ subject ]</a>
+              <a href="author.html#117">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r249 - in trunk/tests: zcc zcc.in
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r249%20-%20in%20trunk/tests%3A%20zcc%20zcc.in&In-Reply-To=%3C200909102358.n8ANwVoC017750%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000015.html">
+   <LINK REL="Next"  HREF="000017.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r249 - in trunk/tests: zcc zcc.in</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r249%20-%20in%20trunk/tests%3A%20zcc%20zcc.in&In-Reply-To=%3C200909102358.n8ANwVoC017750%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r249 - in trunk/tests: zcc zcc.in">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 11 01:58:31 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000015.html">[Zcplusplus-commits] r248 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000017.html">[Zcplusplus-commits] r250 - trunk/doc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#16">[ date ]</a>
+              <a href="thread.html#16">[ thread ]</a>
+              <a href="subject.html#16">[ subject ]</a>
+              <a href="author.html#16">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-11 01:58:25 +0200 (Fri, 11 Sep 2009)
+New Revision: 249
+
+Modified:
+   trunk/tests/zcc.in/run_tests_C99.in
+   trunk/tests/zcc/run_tests_C99.bat
+   trunk/tests/zcc/run_tests_C99.sh
+Log:
+ZCC C99 tests should actually test error cases
+
+Modified: trunk/tests/zcc/run_tests_C99.bat
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.bat	2009-09-06 21:25:37 UTC (rev 248)
++++ trunk/tests/zcc/run_tests_C99.bat	2009-09-10 23:58:25 UTC (rev 249)
+@@ -12,7 +12,7 @@
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">- at for</A> %%f in (decl.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (decl.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ 
+ @echo Checking ISO acceptance requirements
+
+Modified: trunk/tests/zcc/run_tests_C99.sh
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.sh	2009-09-06 21:25:37 UTC (rev 248)
++++ trunk/tests/zcc/run_tests_C99.sh	2009-09-10 23:58:25 UTC (rev 249)
+@@ -19,7 +19,7 @@
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+-	for F in decl.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in decl.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 
+ 	echo Checking ISO acceptance requirements
+ 	echo ====
+
+Modified: trunk/tests/zcc.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests_C99.in	2009-09-06 21:25:37 UTC (rev 248)
++++ trunk/tests/zcc.in/run_tests_C99.in	2009-09-10 23:58:25 UTC (rev 249)
+@@ -5,7 +5,7 @@
+ VAR CPP ../../zcc --pedantic
+ 
+ ECHO Checking ISO error requirements
+-ERROR CPP_ISO decl.C99/Error*
++ERROR CPP decl.C99/Error*
+ 
+ ECHO Checking ISO acceptance requirements
+ PASS CPP Pass*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000015.html">[Zcplusplus-commits] r248 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000017.html">[Zcplusplus-commits] r250 - trunk/doc
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#16">[ date ]</a>
+              <a href="thread.html#16">[ thread ]</a>
+              <a href="subject.html#16">[ subject ]</a>
+              <a href="author.html#16">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

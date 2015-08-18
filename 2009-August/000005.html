@@ -1,0 +1,255 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r238%20-%20in%20trunk/Zaimoni.STL%3A%20.%20LexParse%20OS&In-Reply-To=%3C200908242139.n7OLdquX027389%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000004.html">
+   <LINK REL="Next"  HREF="000006.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r238%20-%20in%20trunk/Zaimoni.STL%3A%20.%20LexParse%20OS&In-Reply-To=%3C200908242139.n7OLdquX027389%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug 24 23:39:52 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000004.html">[Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+        <LI>Next message: <A HREF="000006.html">[Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-24 23:39:42 +0200 (Mon, 24 Aug 2009)
+New Revision: 238
+
+Modified:
+   trunk/Zaimoni.STL/LexParse/LangConf.cpp
+   trunk/Zaimoni.STL/Logging.h
+   trunk/Zaimoni.STL/OS/stdio_log.cpp
+   trunk/Zaimoni.STL/flat_alg.h
+Log:
+object-file size tuneup (preparing for insourcing POSIX cmp utility)
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.cpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.cpp	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/LexParse/LangConf.cpp	2009-08-24 21:39:42 UTC (rev 238)
+@@ -241,13 +241,13 @@
+ 		};
+ 	if (0==leading_space)
+ 		{
+-		SEVERE_WARNING(msg);
++		INFORM(msg);
+ 		return;
+ 		};
+ 	char* target = reinterpret_cast&lt;char*&gt;(calloc(strlen(msg)+leading_space,1));
+ 	if (NULL==target)
+ 		{
+-		SEVERE_WARNING(msg);
++		INFORM(msg);
+ 		return;
+ 		};
+ 	char* tracking_target = target;
+@@ -266,7 +266,7 @@
+ 	strcpy(tracking_target,&quot;: error: &quot;);
+ 	tracking_target += sizeof(&quot;: error: &quot;)-1;
+ 	strcpy(tracking_target,msg);
+-	SEVERE_WARNING(target);
++	INFORM(target);
+ 	free(target);
+ }
+ 
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/Logging.h	2009-08-24 21:39:42 UTC (rev 238)
+@@ -38,6 +38,7 @@
+ EXTERN_C void _inc_inform(const char* const B, size_t len);	/* only C stdio */
+ EXTERN_C void _log(const char* const B, size_t len);		/* Windows GUI crippled (assumes len := strlen() */
+ 
++#ifdef __cplusplus
+ /* overloadable adapters for C++ and debug-mode code */
+ /* all-uppercased because we may use macro wrappers on these */
+ void FATAL(const char* const B) NO_RETURN;
+@@ -51,20 +52,6 @@
+ inline void INFORM(const char* const B) {_inform(B,strlen(B));}
+ inline void LOG(const char* const B) {_log(B,strlen(B));}
+ 
+-void SEVERE_WARNING(const char* const B);	// useful for Console class
+-void WARNING(const char* const B);			// useful for Console class
+-
+-inline bool WARN(bool A, const char* const B)
+-{
+-	if (A)
+-		{
+-		WARNING(B);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-#ifdef __cplusplus
+ /* have C++, so function overloading */
+ inline void INFORM(const char* const B, size_t len) {_inform(B,len);}
+ inline void INC_INFORM(const char* const B, size_t len) {_inc_inform(B,len);}
+@@ -144,7 +131,7 @@
+ #define ARG_TRACE_LOG INFORM_INC(_file); INFORM_INC(&quot;:&quot;); INFORM(_line)
+ 
+ #define AUDIT_IF_RETURN(A,B) if (A) {LOG(#A &quot;; returning &quot; #B); return B;}
+-#define AUDIT_STATEMENT(A) {LOG(#A); A;}
++#define AUDIT_STATEMENT(A) {A;}
+ #define DEBUG_STATEMENT(A) A
+ /* Interoperate with Microsoft: return code 3 */
+ #define DEBUG_FAIL_OR_LEAVE(A,B) if (A) FATAL_CODE(#A,3)
+
+Modified: trunk/Zaimoni.STL/OS/stdio_log.cpp
+===================================================================
+--- trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-24 21:39:42 UTC (rev 238)
+@@ -8,46 +8,38 @@
+ #include &lt;stdlib.h&gt;
+ #include &lt;stdio.h&gt;
+ #include &lt;string.h&gt;
+-#ifndef __cplusplus
+-#include &lt;stdbool.h&gt;
+-#endif
+ 
+ /* define this *first* */
+ #ifdef __cplusplus
+ extern &quot;C&quot; {
+ #endif
+-void
+-_fatal(const char* const B)
++void _fatal(const char* const B)
+ {
+ 	fwrite(B,strlen(B),1,stderr);
+ 	fwrite(&quot;\n&quot;,1,1,stderr);
+ 	exit(EXIT_FAILURE);
+ }
+ 
+-void
+-_fatal_code(const char* const B,int exit_code)
++void _fatal_code(const char* const B,int exit_code)
+ {
+ 	fwrite(B,strlen(B),1,stderr);
+ 	fwrite(&quot;\n&quot;,1,1,stderr);
+ 	exit(exit_code);
+ }
+ 
+-void
+-_inform(const char* const B, size_t len)
++void _inform(const char* const B, size_t len)
+ {
+ 	fwrite(B,len,1,stderr);
+ 	fwrite(&quot;\n&quot;,1,1,stderr);
+ }
+ 
+-void
+-_inc_inform(const char* const B, size_t len)
++void _inc_inform(const char* const B, size_t len)
+ {
+ 	fwrite(B,len,1,stderr);
+ }
+ 
+ /* this is going to be relocated later */
+-void
+-_log(const char* const B, size_t len)
++void _log(const char* const B, size_t len)
+ {
+ 	fwrite(B,len,1,stderr);
+ 	fwrite(&quot;\n&quot;,1,1,stderr);
+@@ -56,31 +48,4 @@
+ #ifdef __cplusplus
+ }	/* end extern &quot;C&quot; */
+ #endif
+-
+-bool
+-WARN(int A, const char* const B)
+-{
+-	if (A)
+-		{
+-		fwrite(B,strlen(B),1,stderr);
+-		fwrite(&quot;\n&quot;,1,1,stderr);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-void
+-SEVERE_WARNING(const char* const B)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite(&quot;\n&quot;,1,1,stderr);
+-}
+-
+-void
+-WARNING(const char* const B)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite(&quot;\n&quot;,1,1,stderr);
+-}
+-
+ #endif
+
+Modified: trunk/Zaimoni.STL/flat_alg.h
+===================================================================
+--- trunk/Zaimoni.STL/flat_alg.h	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/flat_alg.h	2009-08-24 21:39:42 UTC (rev 238)
+@@ -10,10 +10,12 @@
+ 
+ #ifdef __cplusplus
+ namespace zaimoni {
+-#endif
+ 
+ /* C string tests */
+-inline bool is_empty_string(const char* const LHS) {return NULL==LHS || '\x00'==LHS[0];}
++inline bool is_empty_string(const char* const x) {return NULL==x || '\0'==x[0];}
++#else
++#define is_empty_string(x) (NULL==x || '\0'==x[0])
++#endif
+ 
+ #ifdef __cplusplus
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000004.html">[Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+	<LI>Next message: <A HREF="000006.html">[Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#5">[ date ]</a>
+              <a href="thread.html#5">[ thread ]</a>
+              <a href="subject.html#5">[ subject ]</a>
+              <a href="author.html#5">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

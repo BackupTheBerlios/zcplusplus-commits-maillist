@@ -1,0 +1,688 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r590 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r590%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110124180008.85BB248129B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000356.html">
+   <LINK REL="Next"  HREF="000358.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r590 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r590%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110124180008.85BB248129B%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r590 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 24 19:00:08 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000356.html">[Zcplusplus-commits] r589 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000358.html">[Zcplusplus-commits] r591 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#357">[ date ]</a>
+              <a href="thread.html#357">[ thread ]</a>
+              <a href="subject.html#357">[ subject ]</a>
+              <a href="author.html#357">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-24 19:00:07 +0100 (Mon, 24 Jan 2011)
+New Revision: 590
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/tests/zcc.in/decl.C99/Pass_struct_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_union_def.in
+   trunk/tests/zcc/decl.C99/Pass_class_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_struct_def.h
+   trunk/tests/zcc/decl.C99/Pass_struct_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_union_def.h
+   trunk/tests/zcc/decl.C99/Pass_union_def.hpp
+Log:
+test case augmentation
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/CSupport.cpp	2011-01-24 18:00:07 UTC (rev 590)
+@@ -13038,7 +13038,7 @@
+ 
+ static void _forward_declare_C_union_preparsed(parse_tree&amp; src, size_t&amp; i, size_t&amp; k, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
+ {
+-	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i+k];
+ #ifdef NDEBUG
+ 	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(tmp.index_tokens[1].token.first,union_struct_decl::decl_union,tmp.index_tokens[1].logical_line,tmp.index_tokens[1].src_filename));
+ #else
+@@ -13056,7 +13056,7 @@
+ 
+ static void _forward_declare_C_struct_preparsed(parse_tree&amp; src, size_t&amp; i, size_t&amp; k, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
+ {
+-	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i+k];
+ #ifdef NDEBUG
+ 	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(tmp.index_tokens[1].token.first,union_struct_decl::decl_struct,tmp.index_tokens[1].logical_line,tmp.index_tokens[1].src_filename));
+ #else
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/CSupport.cpp.in	2011-01-24 18:00:07 UTC (rev 590)
+@@ -13182,7 +13182,7 @@
+ 
+ static void _forward_declare_C_union_preparsed(parse_tree&amp; src, size_t&amp; i, size_t&amp; k, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
+ {
+-	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i+k];
+ #ifdef NDEBUG
+ 	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(tmp.index_tokens[1].token.first,union_struct_decl::decl_union,tmp.index_tokens[1].logical_line,tmp.index_tokens[1].src_filename));
+ #else
+@@ -13200,7 +13200,7 @@
+ 
+ static void _forward_declare_C_struct_preparsed(parse_tree&amp; src, size_t&amp; i, size_t&amp; k, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
+ {
+-	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i];
++	parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i+k];
+ #ifdef NDEBUG
+ 	tmp.type_code.set_type(parse_tree::types-&gt;register_structdecl(tmp.index_tokens[1].token.first,union_struct_decl::decl_struct,tmp.index_tokens[1].logical_line,tmp.index_tokens[1].src_filename));
+ #else
+
+Modified: trunk/tests/zcc/decl.C99/Pass_class_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_class_def.hpp	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc/decl.C99/Pass_class_def.hpp	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,20 +1,65 @@
+ // decl.C99\Pass_class_def.hpp
+ // using singly defined struct
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010,2011 Kenneth Boyd, license: MIT.txt
+ 
+ class good_test {
+ 	int x_factor;
+ };
+ 
+-// exercise some declarations
+-class good_test x1;
+-const class good_test c1;
+-class good_test const c2;
+-volatile class good_test v1;
+-class good_test volatile v2;
+-const volatile class good_test cv1;
+-volatile const class good_test cv2;
+-const class good_test volatile cv3;
+-volatile class good_test const cv4;
+-class good_test const volatile cv5;
+-class good_test volatile const cv6;
++// ringing the changes on extern
++extern struct good_test x1;
++extern const struct good_test x2;
++extern volatile struct good_test x3;
++extern const volatile struct good_test x4;
++extern volatile const struct good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test x6;
++static volatile struct good_test x7;
++static const volatile struct good_test x8;
++static volatile const struct good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test x10;
++volatile extern struct good_test x11;
++const extern volatile struct good_test x12;
++const volatile extern struct good_test x13;
++volatile extern const struct good_test x14;
++volatile const extern struct good_test x15;
++
++volatile static struct good_test x16;
++const static volatile struct good_test x17;
++const volatile static struct good_test x18;
++volatile static const struct good_test x19;
++volatile const static struct good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern struct good_test2 { int x_factor2; } x21;
++extern const struct good_test3 { int x_factor3; } x22;
++extern volatile struct good_test4 { int x_factor4; } x23;
++extern const volatile struct good_test5 { int x_factor5; } x24;
++extern volatile const struct good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test7 { int x_factor7; } x26;
++static volatile struct good_test8 { int x_factor8; } x27;
++static const volatile struct good_test9 { int x_factor9; } x28;
++static volatile const struct good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test11 { int x_factor11; } x30;
++volatile extern struct good_test12 { int x_factor12; } x31;
++const extern volatile struct good_test13 { int x_factor13; } x32;
++const volatile extern struct good_test14 { int x_factor14; } x33;
++volatile extern const struct good_test15 { int x_factor15; } x34;
++volatile const extern struct good_test16 { int x_factor16; } x35;
++
++volatile static struct good_test17 { int x_factor17; } x16;
++const static volatile struct good_test18 { int x_factor18; } x37;
++const volatile static struct good_test19 { int x_factor19; } x38;
++volatile static const struct good_test20 { int x_factor20; } x39;
++volatile const static struct good_test21 { int x_factor21; } x40;
++
+
+Modified: trunk/tests/zcc/decl.C99/Pass_struct_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_def.h	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc/decl.C99/Pass_struct_def.h	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,20 +1,65 @@
+ // decl.C99\Pass_struct_def.h
+ // using singly defined struct
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ struct good_test {
+ 	int x_factor;
+ };
+ 
+-// exercise some declarations
+-struct good_test x1;
+-const struct good_test c1;
+-struct good_test const c2;
+-volatile struct good_test v1;
+-struct good_test volatile v2;
+-const volatile struct good_test cv1;
+-volatile const struct good_test cv2;
+-const struct good_test volatile cv3;
+-volatile struct good_test const cv4;
+-struct good_test const volatile cv5;
+-struct good_test volatile const cv6;
++// ringing the changes on extern
++extern struct good_test x1;
++extern const struct good_test x2;
++extern volatile struct good_test x3;
++extern const volatile struct good_test x4;
++extern volatile const struct good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test x6;
++static volatile struct good_test x7;
++static const volatile struct good_test x8;
++static volatile const struct good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test x10;
++volatile extern struct good_test x11;
++const extern volatile struct good_test x12;
++const volatile extern struct good_test x13;
++volatile extern const struct good_test x14;
++volatile const extern struct good_test x15;
++
++volatile static struct good_test x16;
++const static volatile struct good_test x17;
++const volatile static struct good_test x18;
++volatile static const struct good_test x19;
++volatile const static struct good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern struct good_test2 { int x_factor2; } x21;
++extern const struct good_test3 { int x_factor3; } x22;
++extern volatile struct good_test4 { int x_factor4; } x23;
++extern const volatile struct good_test5 { int x_factor5; } x24;
++extern volatile const struct good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test7 { int x_factor7; } x26;
++static volatile struct good_test8 { int x_factor8; } x27;
++static const volatile struct good_test9 { int x_factor9; } x28;
++static volatile const struct good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test11 { int x_factor11; } x30;
++volatile extern struct good_test12 { int x_factor12; } x31;
++const extern volatile struct good_test13 { int x_factor13; } x32;
++const volatile extern struct good_test14 { int x_factor14; } x33;
++volatile extern const struct good_test15 { int x_factor15; } x34;
++volatile const extern struct good_test16 { int x_factor16; } x35;
++
++volatile static struct good_test17 { int x_factor17; } x16;
++const static volatile struct good_test18 { int x_factor18; } x37;
++const volatile static struct good_test19 { int x_factor19; } x38;
++volatile static const struct good_test20 { int x_factor20; } x39;
++volatile const static struct good_test21 { int x_factor21; } x40;
++
+
+Modified: trunk/tests/zcc/decl.C99/Pass_struct_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_def.hpp	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc/decl.C99/Pass_struct_def.hpp	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,20 +1,65 @@
+ // decl.C99\Pass_struct_def.hpp
+ // using singly defined struct
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ struct good_test {
+ 	int x_factor;
+ };
+ 
+-// exercise some declarations
+-struct good_test x1;
+-const struct good_test c1;
+-struct good_test const c2;
+-volatile struct good_test v1;
+-struct good_test volatile v2;
+-const volatile struct good_test cv1;
+-volatile const struct good_test cv2;
+-const struct good_test volatile cv3;
+-volatile struct good_test const cv4;
+-struct good_test const volatile cv5;
+-struct good_test volatile const cv6;
++// ringing the changes on extern
++extern struct good_test x1;
++extern const struct good_test x2;
++extern volatile struct good_test x3;
++extern const volatile struct good_test x4;
++extern volatile const struct good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test x6;
++static volatile struct good_test x7;
++static const volatile struct good_test x8;
++static volatile const struct good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test x10;
++volatile extern struct good_test x11;
++const extern volatile struct good_test x12;
++const volatile extern struct good_test x13;
++volatile extern const struct good_test x14;
++volatile const extern struct good_test x15;
++
++volatile static struct good_test x16;
++const static volatile struct good_test x17;
++const volatile static struct good_test x18;
++volatile static const struct good_test x19;
++volatile const static struct good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern struct good_test2 { int x_factor2; } x21;
++extern const struct good_test3 { int x_factor3; } x22;
++extern volatile struct good_test4 { int x_factor4; } x23;
++extern const volatile struct good_test5 { int x_factor5; } x24;
++extern volatile const struct good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test7 { int x_factor7; } x26;
++static volatile struct good_test8 { int x_factor8; } x27;
++static const volatile struct good_test9 { int x_factor9; } x28;
++static volatile const struct good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test11 { int x_factor11; } x30;
++volatile extern struct good_test12 { int x_factor12; } x31;
++const extern volatile struct good_test13 { int x_factor13; } x32;
++const volatile extern struct good_test14 { int x_factor14; } x33;
++volatile extern const struct good_test15 { int x_factor15; } x34;
++volatile const extern struct good_test16 { int x_factor16; } x35;
++
++volatile static struct good_test17 { int x_factor17; } x16;
++const static volatile struct good_test18 { int x_factor18; } x37;
++const volatile static struct good_test19 { int x_factor19; } x38;
++volatile static const struct good_test20 { int x_factor20; } x39;
++volatile const static struct good_test21 { int x_factor21; } x40;
++
+
+Modified: trunk/tests/zcc/decl.C99/Pass_union_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_def.h	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc/decl.C99/Pass_union_def.h	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,20 +1,65 @@
+ // decl.C99\Pass_union_def.h
+ // using singly defined union
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ union good_test {
+ 	int x_factor;
+ };
+ 
+-// exercise some declarations
+-union good_test x1;
+-const union good_test c1;
+-union good_test const c2;
+-volatile union good_test v1;
+-union good_test volatile v2;
+-const volatile union good_test cv1;
+-volatile const union good_test cv2;
+-const union good_test volatile cv3;
+-volatile union good_test const cv4;
+-union good_test const volatile cv5;
+-union good_test volatile const cv6;
++// ringing the changes on extern
++extern union good_test x1;
++extern const union good_test x2;
++extern volatile union good_test x3;
++extern const volatile union good_test x4;
++extern volatile const union good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static union good_test x6;
++static volatile union good_test x7;
++static const volatile union good_test x8;
++static volatile const union good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern union good_test x10;
++volatile extern union good_test x11;
++const extern volatile union good_test x12;
++const volatile extern union good_test x13;
++volatile extern const union good_test x14;
++volatile const extern union good_test x15;
++
++volatile static union good_test x16;
++const static volatile union good_test x17;
++const volatile static union good_test x18;
++volatile static const union good_test x19;
++volatile const static union good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern union good_test2 { int x_factor2; } x21;
++extern const union good_test3 { int x_factor3; } x22;
++extern volatile union good_test4 { int x_factor4; } x23;
++extern const volatile union good_test5 { int x_factor5; } x24;
++extern volatile const union good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static union good_test7 { int x_factor7; } x26;
++static volatile union good_test8 { int x_factor8; } x27;
++static const volatile union good_test9 { int x_factor9; } x28;
++static volatile const union good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern union good_test11 { int x_factor11; } x30;
++volatile extern union good_test12 { int x_factor12; } x31;
++const extern volatile union good_test13 { int x_factor13; } x32;
++const volatile extern union good_test14 { int x_factor14; } x33;
++volatile extern const union good_test15 { int x_factor15; } x34;
++volatile const extern union good_test16 { int x_factor16; } x35;
++
++volatile static union good_test17 { int x_factor17; } x16;
++const static volatile union good_test18 { int x_factor18; } x37;
++const volatile static union good_test19 { int x_factor19; } x38;
++volatile static const union good_test20 { int x_factor20; } x39;
++volatile const static union good_test21 { int x_factor21; } x40;
++
+
+Modified: trunk/tests/zcc/decl.C99/Pass_union_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_def.hpp	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc/decl.C99/Pass_union_def.hpp	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,21 +1,65 @@
+ // decl.C99\Pass_union_def.hpp
+ // using singly defined union
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ union good_test {
+ 	int x_factor;
+ };
+ 
+-// exercise some declarations
+-union good_test x1;
+-const union good_test c1;
+-union good_test const c2;
+-volatile union good_test v1;
+-union good_test volatile v2;
+-const volatile union good_test cv1;
+-volatile const union good_test cv2;
+-const union good_test volatile cv3;
+-volatile union good_test const cv4;
+-union good_test const volatile cv5;
+-union good_test volatile const cv6;
++// ringing the changes on extern
++extern union good_test x1;
++extern const union good_test x2;
++extern volatile union good_test x3;
++extern const volatile union good_test x4;
++extern volatile const union good_test x5;
+ 
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static union good_test x6;
++static volatile union good_test x7;
++static const volatile union good_test x8;
++static volatile const union good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern union good_test x10;
++volatile extern union good_test x11;
++const extern volatile union good_test x12;
++const volatile extern union good_test x13;
++volatile extern const union good_test x14;
++volatile const extern union good_test x15;
++
++volatile static union good_test x16;
++const static volatile union good_test x17;
++const volatile static union good_test x18;
++volatile static const union good_test x19;
++volatile const static union good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern union good_test2 { int x_factor2; } x21;
++extern const union good_test3 { int x_factor3; } x22;
++extern volatile union good_test4 { int x_factor4; } x23;
++extern const volatile union good_test5 { int x_factor5; } x24;
++extern volatile const union good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static union good_test7 { int x_factor7; } x26;
++static volatile union good_test8 { int x_factor8; } x27;
++static const volatile union good_test9 { int x_factor9; } x28;
++static volatile const union good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern union good_test11 { int x_factor11; } x30;
++volatile extern union good_test12 { int x_factor12; } x31;
++const extern volatile union good_test13 { int x_factor13; } x32;
++const volatile extern union good_test14 { int x_factor14; } x33;
++volatile extern const union good_test15 { int x_factor15; } x34;
++volatile const extern union good_test16 { int x_factor16; } x35;
++
++volatile static union good_test17 { int x_factor17; } x16;
++const static volatile union good_test18 { int x_factor18; } x37;
++const volatile static union good_test19 { int x_factor19; } x38;
++volatile static const union good_test20 { int x_factor20; } x39;
++volatile const static union good_test21 { int x_factor21; } x40;
++
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_struct_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_struct_def.in	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc.in/decl.C99/Pass_struct_def.in	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,8 +1,65 @@
+ SUFFIXES h hpp
+ // using singly defined struct
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ struct good_test {
+ 	int x_factor;
+ };
+ 
++// ringing the changes on extern
++extern struct good_test x1;
++extern const struct good_test x2;
++extern volatile struct good_test x3;
++extern const volatile struct good_test x4;
++extern volatile const struct good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test x6;
++static volatile struct good_test x7;
++static const volatile struct good_test x8;
++static volatile const struct good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test x10;
++volatile extern struct good_test x11;
++const extern volatile struct good_test x12;
++const volatile extern struct good_test x13;
++volatile extern const struct good_test x14;
++volatile const extern struct good_test x15;
++
++volatile static struct good_test x16;
++const static volatile struct good_test x17;
++const volatile static struct good_test x18;
++volatile static const struct good_test x19;
++volatile const static struct good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern struct good_test2 { int x_factor2; } x21;
++extern const struct good_test3 { int x_factor3; } x22;
++extern volatile struct good_test4 { int x_factor4; } x23;
++extern const volatile struct good_test5 { int x_factor5; } x24;
++extern volatile const struct good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static struct good_test7 { int x_factor7; } x26;
++static volatile struct good_test8 { int x_factor8; } x27;
++static const volatile struct good_test9 { int x_factor9; } x28;
++static volatile const struct good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern struct good_test11 { int x_factor11; } x30;
++volatile extern struct good_test12 { int x_factor12; } x31;
++const extern volatile struct good_test13 { int x_factor13; } x32;
++const volatile extern struct good_test14 { int x_factor14; } x33;
++volatile extern const struct good_test15 { int x_factor15; } x34;
++volatile const extern struct good_test16 { int x_factor16; } x35;
++
++volatile static struct good_test17 { int x_factor17; } x16;
++const static volatile struct good_test18 { int x_factor18; } x37;
++const volatile static struct good_test19 { int x_factor19; } x38;
++volatile static const struct good_test20 { int x_factor20; } x39;
++volatile const static struct good_test21 { int x_factor21; } x40;
++
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_union_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_union_def.in	2011-01-24 17:39:07 UTC (rev 589)
++++ trunk/tests/zcc.in/decl.C99/Pass_union_def.in	2011-01-24 18:00:07 UTC (rev 590)
+@@ -1,8 +1,65 @@
+ SUFFIXES h hpp
+ // using singly defined union
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ union good_test {
+ 	int x_factor;
+ };
+ 
++// ringing the changes on extern
++extern union good_test x1;
++extern const union good_test x2;
++extern volatile union good_test x3;
++extern const volatile union good_test x4;
++extern volatile const union good_test x5;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static union good_test x6;
++static volatile union good_test x7;
++static const volatile union good_test x8;
++static volatile const union good_test x9;
++
++// extern/static not in first postion is deprecated, but legal
++const extern union good_test x10;
++volatile extern union good_test x11;
++const extern volatile union good_test x12;
++const volatile extern union good_test x13;
++volatile extern const union good_test x14;
++volatile const extern union good_test x15;
++
++volatile static union good_test x16;
++const static volatile union good_test x17;
++const volatile static union good_test x18;
++volatile static const union good_test x19;
++volatile const static union good_test x20;
++
++// define-declares
++// ringing the changes on extern
++extern union good_test2 { int x_factor2; } x21;
++extern const union good_test3 { int x_factor3; } x22;
++extern volatile union good_test4 { int x_factor4; } x23;
++extern const volatile union good_test5 { int x_factor5; } x24;
++extern volatile const union good_test6 { int x_factor6; } x25;
++
++// ringing the changes on static
++// (don't test static const -- no chance to initialize before use)
++static union good_test7 { int x_factor7; } x26;
++static volatile union good_test8 { int x_factor8; } x27;
++static const volatile union good_test9 { int x_factor9; } x28;
++static volatile const union good_test10 { int x_factor10; } x29;
++
++// extern/static not in first postion is deprecated, but legal
++const extern union good_test11 { int x_factor11; } x30;
++volatile extern union good_test12 { int x_factor12; } x31;
++const extern volatile union good_test13 { int x_factor13; } x32;
++const volatile extern union good_test14 { int x_factor14; } x33;
++volatile extern const union good_test15 { int x_factor15; } x34;
++volatile const extern union good_test16 { int x_factor16; } x35;
++
++volatile static union good_test17 { int x_factor17; } x16;
++const static volatile union good_test18 { int x_factor18; } x37;
++const volatile static union good_test19 { int x_factor19; } x38;
++volatile static const union good_test20 { int x_factor20; } x39;
++volatile const static union good_test21 { int x_factor21; } x40;
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000356.html">[Zcplusplus-commits] r589 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000358.html">[Zcplusplus-commits] r591 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#357">[ date ]</a>
+              <a href="thread.html#357">[ thread ]</a>
+              <a href="subject.html#357">[ subject ]</a>
+              <a href="author.html#357">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

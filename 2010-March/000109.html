@@ -1,0 +1,180 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r342 - in trunk: . tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r342%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C201003052031.o25KVuCU031109%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000108.html">
+   <LINK REL="Next"  HREF="000110.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r342 - in trunk: . tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r342%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C201003052031.o25KVuCU031109%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r342 - in trunk: . tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar  5 21:31:56 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000108.html">[Zcplusplus-commits] r341 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000110.html">[Zcplusplus-commits] r343 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-05 21:31:49 +0100 (Fri, 05 Mar 2010)
+New Revision: 342
+
+Added:
+   trunk/tools/suppress_cut.py
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/tools/selective_cut.py
+Log:
+#include cleanup; add suppress_cut.py
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-04 02:54:34 UTC (rev 341)
++++ trunk/CSupport.cpp	2010-03-05 20:31:49 UTC (rev 342)
+@@ -2,7 +2,10 @@
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
++#/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
++#/*cut-cpp*/
++#include &quot;CSupport_pp.hpp&quot;
+ #include &quot;_CSupport1.hpp&quot;
+ #include &quot;_CSupport2.hpp&quot;
+ 
+@@ -26,8 +29,10 @@
+ #include &quot;C_PPOctalInteger.hpp&quot;
+ #include &quot;C_PPDecimalFloat.hpp&quot;
+ #include &quot;C_PPHexFloat.hpp&quot;
++#/*cut-cpp*/
+ #include &quot;enum_type.hpp&quot;
+ #include &quot;struct_type.hpp&quot;
++#/*cut-cpp*/
+ #include &quot;CheckReturn.hpp&quot;
+ 
+ using namespace zaimoni;
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-04 02:54:34 UTC (rev 341)
++++ trunk/CSupport_pp.cpp	2010-03-05 20:31:49 UTC (rev 342)
+@@ -26,8 +26,6 @@
+ #include &quot;C_PPOctalInteger.hpp&quot;
+ #include &quot;C_PPDecimalFloat.hpp&quot;
+ #include &quot;C_PPHexFloat.hpp&quot;
+-#include &quot;enum_type.hpp&quot;
+-#include &quot;struct_type.hpp&quot;
+ #include &quot;CheckReturn.hpp&quot;
+ 
+ using namespace zaimoni;
+
+Modified: trunk/tools/selective_cut.py
+===================================================================
+--- trunk/tools/selective_cut.py	2010-03-04 02:54:34 UTC (rev 341)
++++ trunk/tools/selective_cut.py	2010-03-05 20:31:49 UTC (rev 342)
+@@ -12,6 +12,8 @@
+ # a null preprocessing directive which is removed by the preprocessor.
+ #   Languages with native shell comments just treat these lines as comments
+ 
++# flip-side: suppress_cut.py, which just suppresses these comments.
++
+ def SelectiveCut(cut_id,srcfile,destfile):
+ 	test_lines = []
+ 	old_line_ok = 1
+@@ -32,7 +34,7 @@
+ 	# online help
+ 	if 4!=len(argv):
+ 		print &quot;Usage: cut_id srcfile destfile&quot;
+-		print &quot;\texcises text lines contained between #cut-cut_id comments&quot;
++		print &quot;\texcises text lines contained between #/*cut-cut_id*/ comments&quot;
+ 		exit(0)
+ 
+ 	SelectiveCut(argv[1],argv[2],argv[3])
+
+Added: trunk/tools/suppress_cut.py
+===================================================================
+--- trunk/tools/suppress_cut.py	2010-03-04 02:54:34 UTC (rev 341)
++++ trunk/tools/suppress_cut.py	2010-03-05 20:31:49 UTC (rev 342)
+@@ -0,0 +1,36 @@
++#!/usr/bin/python
++# designed for Python 2.6, may work with other versions
++# (C)2010 Kenneth Boyd, license: MIT.txt
++
++from sys import argv,exit;
++
++# this suppresses the comments used by selective_cut.py
++
++#   This is inspired by Perl's Plain Old Documentation format, but 
++# works generically with languages that use shell one-line comments
++# (e.g.: Python, Perl, PHP, Ruby, C/C++
++#   Idea is that lines #/* cut-cut_id */ act like =cut in Perl.
++#   C,C++ are fine because the C-comment becomes whitespace, leaving behind 
++# a null preprocessing directive which is removed by the preprocessor.
++#   Languages with native shell comments just treat these lines as comments
++
++def SuppressCut(cut_id,srcfile,destfile):
++	test_lines = []
++	TargetFile = open(destfile,'w')	# *.sh
++	with open(srcfile,'r') as f:
++		for line in f:
++			line_proxy = line.strip()
++			if line_proxy!='#/*cut-'+cut_id+'*/':
++				TargetFile.write(line)
++	TargetFile.close()
++
++
++if __name__ == '__main__':
++	# online help
++	if 4!=len(argv):
++		print &quot;Usage: cut_id srcfile destfile&quot;
++		print &quot;\texcises #/*cut-cut_id*/ comments&quot;
++		exit(0)
++
++	SuppressCut(argv[1],argv[2],argv[3])
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000108.html">[Zcplusplus-commits] r341 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000110.html">[Zcplusplus-commits] r343 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#109">[ date ]</a>
+              <a href="thread.html#109">[ thread ]</a>
+              <a href="subject.html#109">[ subject ]</a>
+              <a href="author.html#109">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

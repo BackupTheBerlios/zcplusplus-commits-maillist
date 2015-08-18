@@ -1,0 +1,568 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r615 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r615%20-%20trunk&In-Reply-To=%3C20110214191007.EEA404813D5%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000381.html">
+   <LINK REL="Next"  HREF="000383.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r615 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r615%20-%20trunk&In-Reply-To=%3C20110214191007.EEA404813D5%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r615 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Feb 14 20:10:07 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000381.html">[Zcplusplus-commits] r614 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000383.html">[Zcplusplus-commits] r616 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#382">[ date ]</a>
+              <a href="thread.html#382">[ thread ]</a>
+              <a href="subject.html#382">[ subject ]</a>
+              <a href="author.html#382">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-14 20:10:07 +0100 (Mon, 14 Feb 2011)
+New Revision: 615
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+   trunk/ParseTree.cpp
+   trunk/ZParser.cpp
+Log:
+actually use C_make_string
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/CPreproc.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -1,5 +1,5 @@
+ // CPreproc.cpp
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;CPreproc.hpp&quot;
+ 
+@@ -19,6 +19,7 @@
+ #include &quot;langroute.hpp&quot;
+ #include &quot;load_src.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
++#include &quot;str_aux.h&quot;
+ #include &quot;type_system.hpp&quot;
+ #include &quot;weak_token.hpp&quot;
+ #include &quot;_version.h&quot;
+@@ -1194,9 +1195,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(TokenList[i]-&gt;data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -1243,10 +1242,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
++							
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token&lt;char&gt;;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+@@ -1320,10 +1317,8 @@
+ 								macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-								macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-								strncpy(macros_function[function_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-								ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
++								macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
++								
+ 								macros_function_arglist[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 								arglist.MoveInto(*macros_function_arglist[function_macro_insertion_index]);
+ 
+@@ -1365,10 +1360,8 @@
+ 							macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-							macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_function[function_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
+ 							macros_function_arglist[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 							macros_function_expansion[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 							macros_function_expansion_pre_eval[function_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+@@ -2176,8 +2169,7 @@
+ 				while(2&lt;j)
+ 					{
+ 					if (C_TESTFLAG_IDENTIFIER!=pretokenized[--j].third) continue;
+-					char* tmp = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].second));
+-					strncpy(tmp,x+pretokenized[j].first,pretokenized[j].second);
++					char* tmp = C_make_string(x+pretokenized[j].first,pretokenized[j].second);
+ 					if (!locked_macros.InsertSlotAt(locked_macros.size(),tmp))
+ 						{
+ 						free(tmp);
+@@ -3009,8 +3001,7 @@
+ 					}
+ 
+ 				char buf[FILENAME_MAX];
+-				char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
+-				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
+ 				if (strchr(look_for,'&quot;'))
+ 					{
+ 					message_header(x);
+@@ -3043,8 +3034,7 @@
+ 							continue;
+ 							}
+ 						char buf[FILENAME_MAX];
+-						char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
+-						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
+ 						if (strchr(look_for,'&lt;'))
+ 							{
+ 							message_header(x);
+@@ -3523,14 +3513,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr&lt;char*&gt; macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,&amp;macro_stack);
+ 			}
+ 		else{
+ 			used_macro_stack-&gt;insertNSlotsAt(1,used_macro_stack-&gt;size());
+-			used_macro_stack-&gt;back() = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(used_macro_stack-&gt;back(),x.data()+critical_offset,token_len);
++			used_macro_stack-&gt;back() = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+ 			used_macro_stack-&gt;DeleteIdx(used_macro_stack-&gt;size()-1);
+ 			}
+@@ -3622,16 +3610,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr&lt;char*&gt; macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
+-
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, &amp;macro_stack, formal_arguments, actual_arguments, Test);
+ 			}
+ 		else{
+ 			used_macro_stack-&gt;insertNSlotsAt(1,used_macro_stack-&gt;size());
+-			used_macro_stack-&gt;back() = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(used_macro_stack-&gt;back(),x.data()+critical_offset,token_len);
+-
++			used_macro_stack-&gt;back() = C_make_string(x.data()+critical_offset,token_len); 
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, used_macro_stack, formal_arguments, actual_arguments, Test);
+ 			used_macro_stack-&gt;DeleteIdx(used_macro_stack-&gt;size()-1);
+ 			}
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/CPreproc.cpp.in	2011-02-14 19:10:07 UTC (rev 615)
+@@ -4,7 +4,7 @@
+ #/*cut-nocpp*/
+ // CPreproc_pp.cpp
+ #/*cut-nocpp*/
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #/*cut-cpp*/
+ #include &quot;CPreproc.hpp&quot;
+@@ -34,6 +34,7 @@
+ #include &quot;langroute.hpp&quot;
+ #include &quot;load_src.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
++#include &quot;str_aux.h&quot;
+ #/*cut-cpp*/
+ #include &quot;type_system.hpp&quot;
+ #/*cut-cpp*/
+@@ -1221,9 +1222,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(TokenList[i]-&gt;data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -1270,10 +1269,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
++							
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token&lt;char&gt;;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+@@ -1347,10 +1344,8 @@
+ 								macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-								macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-								strncpy(macros_function[function_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-								ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
++								macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
++								
+ 								macros_function_arglist[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 								arglist.MoveInto(*macros_function_arglist[function_macro_insertion_index]);
+ 
+@@ -1392,10 +1387,8 @@
+ 							macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-							macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_function[function_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
+ 							macros_function_arglist[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 							macros_function_expansion[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 							macros_function_expansion_pre_eval[function_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+@@ -2217,8 +2210,7 @@
+ 				while(2&lt;j)
+ 					{
+ 					if (C_TESTFLAG_IDENTIFIER!=pretokenized[--j].third) continue;
+-					char* tmp = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].second));
+-					strncpy(tmp,x+pretokenized[j].first,pretokenized[j].second);
++					char* tmp = C_make_string(x+pretokenized[j].first,pretokenized[j].second);
+ 					if (!locked_macros.InsertSlotAt(locked_macros.size(),tmp))
+ 						{
+ 						free(tmp);
+@@ -3050,8 +3042,7 @@
+ 					}
+ 
+ 				char buf[FILENAME_MAX];
+-				char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
+-				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
+ 				if (strchr(look_for,'&quot;'))
+ 					{
+ 					message_header(x);
+@@ -3084,8 +3075,7 @@
+ 							continue;
+ 							}
+ 						char buf[FILENAME_MAX];
+-						char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
+-						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
+ 						if (strchr(look_for,'&lt;'))
+ 							{
+ 							message_header(x);
+@@ -3569,14 +3559,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr&lt;char*&gt; macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,&amp;macro_stack);
+ 			}
+ 		else{
+ 			used_macro_stack-&gt;insertNSlotsAt(1,used_macro_stack-&gt;size());
+-			used_macro_stack-&gt;back() = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(used_macro_stack-&gt;back(),x.data()+critical_offset,token_len);
++			used_macro_stack-&gt;back() = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+ 			used_macro_stack-&gt;DeleteIdx(used_macro_stack-&gt;size()-1);
+ 			}
+@@ -3668,16 +3656,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr&lt;char*&gt; macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
+-
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, &amp;macro_stack, formal_arguments, actual_arguments, Test);
+ 			}
+ 		else{
+ 			used_macro_stack-&gt;insertNSlotsAt(1,used_macro_stack-&gt;size());
+-			used_macro_stack-&gt;back() = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(used_macro_stack-&gt;back(),x.data()+critical_offset,token_len);
+-
++			used_macro_stack-&gt;back() = C_make_string(x.data()+critical_offset,token_len); 
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, used_macro_stack, formal_arguments, actual_arguments, Test);
+ 			used_macro_stack-&gt;DeleteIdx(used_macro_stack-&gt;size()-1);
+ 			}
+@@ -5119,9 +5103,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],inbound_lines[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(inbound_lines[i]-&gt;data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(inbound_lines[i]-&gt;data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -5168,10 +5150,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_object[object_macro_insertion_index] = C_make_string(inbound_lines[i]-&gt;data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_object[object_macro_insertion_index],inbound_lines[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token&lt;char&gt;;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/CPreproc_pp.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -1,5 +1,5 @@
+ // CPreproc_pp.cpp
+-// (C)2009,2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;CPreproc_pp.hpp&quot;
+ 
+@@ -18,6 +18,7 @@
+ #include &quot;langroute.hpp&quot;
+ #include &quot;load_src.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
++#include &quot;str_aux.h&quot;
+ #include &quot;type_system_pp.hpp&quot;
+ #include &quot;weak_token.hpp&quot;
+ #include &quot;_version.h&quot;
+@@ -1178,9 +1179,7 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
+ 							}
+ 						else if (lang.IsWS_NotFirst(TokenList[i]-&gt;data()[critical_offset+first_token_len]))
+ 							{	// object-like, not empty string
+@@ -1227,10 +1226,8 @@
+ 							macros_object.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion.insertNSlotsAt(1,object_macro_insertion_index);
+ 							macros_object_expansion_pre_eval.insertNSlotsAt(1,object_macro_insertion_index);
+-							macros_object[object_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-							strncpy(macros_object[object_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_object[object_macro_insertion_index][first_token_len]);
++							macros_object[object_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
++							
+ 							macros_object_expansion_pre_eval[object_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+ 							macros_object_expansion[object_macro_insertion_index] = new Token&lt;char&gt;;
+ 							expansion.MoveInto(*macros_object_expansion[object_macro_insertion_index]);
+@@ -1304,10 +1301,8 @@
+ 								macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 								macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-								macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
+-
+-								strncpy(macros_function[function_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-								ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
++								macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
++								
+ 								macros_function_arglist[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 								arglist.MoveInto(*macros_function_arglist[function_macro_insertion_index]);
+ 
+@@ -1349,10 +1344,8 @@
+ 							macros_function_arglist.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion.insertNSlotsAt(1,function_macro_insertion_index);
+ 							macros_function_expansion_pre_eval.insertNSlotsAt(1,function_macro_insertion_index);
+-							macros_function[function_macro_insertion_index] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(first_token_len));
++							macros_function[function_macro_insertion_index] = C_make_string(TokenList[i]-&gt;data()+critical_offset,first_token_len);
+ 
+-							strncpy(macros_function[function_macro_insertion_index],TokenList[i]-&gt;data()+critical_offset,first_token_len);
+-							ZAIMONI_NULL_TERMINATE(macros_function[function_macro_insertion_index][first_token_len]);
+ 							macros_function_arglist[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 							macros_function_expansion[function_macro_insertion_index] = new Token&lt;char&gt;;
+ 							macros_function_expansion_pre_eval[function_macro_insertion_index] = new Token&lt;char&gt;(expansion);
+@@ -2136,8 +2129,7 @@
+ 				while(2&lt;j)
+ 					{
+ 					if (C_TESTFLAG_IDENTIFIER!=pretokenized[--j].third) continue;
+-					char* tmp = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].second));
+-					strncpy(tmp,x+pretokenized[j].first,pretokenized[j].second);
++					char* tmp = C_make_string(x+pretokenized[j].first,pretokenized[j].second);
+ 					if (!locked_macros.InsertSlotAt(locked_macros.size(),tmp))
+ 						{
+ 						free(tmp);
+@@ -2969,8 +2961,7 @@
+ 					}
+ 
+ 				char buf[FILENAME_MAX];
+-				char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
+-				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
+ 				if (strchr(look_for,'&quot;'))
+ 					{
+ 					message_header(x);
+@@ -3003,8 +2994,7 @@
+ 							continue;
+ 							}
+ 						char buf[FILENAME_MAX];
+-						char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
+-						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						char* const look_for = C_make_string(x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
+ 						if (strchr(look_for,'&lt;'))
+ 							{
+ 							message_header(x);
+@@ -3483,14 +3473,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr&lt;char*&gt; macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,&amp;macro_stack);
+ 			}
+ 		else{
+ 			used_macro_stack-&gt;insertNSlotsAt(1,used_macro_stack-&gt;size());
+-			used_macro_stack-&gt;back() = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(used_macro_stack-&gt;back(),x.data()+critical_offset,token_len);
++			used_macro_stack-&gt;back() = C_make_string(x.data()+critical_offset,token_len);
+ 			intradirective_preprocess(Test,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+ 			used_macro_stack-&gt;DeleteIdx(used_macro_stack-&gt;size()-1);
+ 			}
+@@ -3582,16 +3570,12 @@
+ 		if (!used_macro_stack)
+ 			{
+ 			autovalarray_ptr&lt;char*&gt; macro_stack(1);
+-			macro_stack[0] = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(macro_stack[0],x.data()+critical_offset,token_len);
+-
++			macro_stack[0] = C_make_string(x.data()+critical_offset,token_len);
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, &amp;macro_stack, formal_arguments, actual_arguments, Test);
+ 			}
+ 		else{
+ 			used_macro_stack-&gt;insertNSlotsAt(1,used_macro_stack-&gt;size());
+-			used_macro_stack-&gt;back() = _new_buffer_nonNULL_throws&lt;char&gt;(token_len);
+-			memmove(used_macro_stack-&gt;back(),x.data()+critical_offset,token_len);
+-
++			used_macro_stack-&gt;back() = C_make_string(x.data()+critical_offset,token_len); 
+ 			dynamic_function_macro_prereplace_once(macros_object, macros_object_expansion, macros_function, macros_function_arglist, macros_function_expansion, used_macro_stack, formal_arguments, actual_arguments, Test);
+ 			used_macro_stack-&gt;DeleteIdx(used_macro_stack-&gt;size()-1);
+ 			}
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/ParseTree.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -3,6 +3,8 @@
+ 
+ #include &quot;ParseTree.hpp&quot;
+ 
++#include &quot;str_aux.h&quot;
++
+ using namespace zaimoni;
+ 
+ bool (*parse_tree::hook_INC_INFORM)(const parse_tree&amp;) = NULL;
+@@ -314,16 +316,12 @@
+ 	tmp.index_tokens[1] = src.index_tokens[1];
+ 	if (src.own_index_token&lt;0&gt;())
+ 		{
+-		char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(tmp.index_tokens[0].token.second));
+-		memmove(tmp2,src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+-		tmp.index_tokens[0].token.first = tmp2;
++		tmp.index_tokens[0].token.first = C_make_string(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+ 		tmp.control_index_token&lt;0&gt;(true);
+ 		};
+ 	if (src.own_index_token&lt;1&gt;())
+ 		{
+-		char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(tmp.index_tokens[1].token.second));
+-		memmove(tmp2,src.index_tokens[1].token.first,src.index_tokens[1].token.second);
+-		tmp.index_tokens[1].token.first = tmp2;
++		tmp.index_tokens[1].token.first = C_make_string(src.index_tokens[1].token.first,src.index_tokens[1].token.second);
+ 		tmp.control_index_token&lt;1&gt;(true);
+ 		};
+ 	tmp.flags = src.flags;
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2011-02-14 19:09:42 UTC (rev 614)
++++ trunk/ZParser.cpp	2011-02-14 19:10:07 UTC (rev 615)
+@@ -1,5 +1,5 @@
+ // ZParser.cpp
+-// (C)2009, 2010 Kenneth Boyd, license: MIT.txt
++// (C)2009-2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;ZParser.hpp&quot;
+ 
+@@ -10,6 +10,7 @@
+ #include &quot;errcount.hpp&quot;
+ #include &quot;langroute.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
++#include &quot;str_aux.h&quot;
+ #include &quot;type_system.hpp&quot;
+ 
+ #include &quot;Zaimoni.STL/AutoPtr.hpp&quot;
+@@ -145,9 +146,7 @@
+ 					POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; tmp3 = pretokenized[i];
+ 					if (!init_parse_tree_from_token(tmp,tmp_front,tmp3,lang))
+ 					    {
+-						char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(tmp3.second));
+-						memmove(tmp2,tmp_front.data()+tmp3.first,tmp3.second);
+-						tmp.index_tokens[0].token.first = tmp2;
++						tmp.index_tokens[0].token.first = C_make_string(tmp_front.data()+tmp3.first,tmp3.second);
+ 						tmp.control_index_token&lt;0&gt;(true);
+ 						}
+ 					}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000381.html">[Zcplusplus-commits] r614 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000383.html">[Zcplusplus-commits] r616 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#382">[ date ]</a>
+              <a href="thread.html#382">[ thread ]</a>
+              <a href="subject.html#382">[ subject ]</a>
+              <a href="author.html#382">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

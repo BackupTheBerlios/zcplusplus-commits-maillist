@@ -1,0 +1,1228 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r412 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r412%20-%20trunk&In-Reply-To=%3C201005070339.o473dRpW019248%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000178.html">
+   <LINK REL="Next"  HREF="000180.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r412 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r412%20-%20trunk&In-Reply-To=%3C201005070339.o473dRpW019248%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r412 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri May  7 05:39:27 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000178.html">[Zcplusplus-commits] r411 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000180.html">[Zcplusplus-commits] r413 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-07 05:39:23 +0200 (Fri, 07 May 2010)
+New Revision: 412
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+more code cleanup, documentation fixes, robustness tweaking
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-07 03:37:43 UTC (rev 411)
++++ trunk/CSupport.cpp	2010-05-07 03:39:23 UTC (rev 412)
+@@ -4850,18 +4850,18 @@
+ 				}
+ 			else if (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)
+ 				{	// normal expression that got parenthesized
++				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				src.flags &amp;= parse_tree::RESERVED_MASK;	// just in case
+ 				src.flags |= PARSE_PRIMARY_EXPRESSION;
+ 				src.flags |= (PARSE_PAREN_PRIMARY_PASSTHROUGH &amp; src.data&lt;0&gt;()-&gt;flags);
+-				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				return true;
+ 				}
+ #/*cut-cpp*/
+ 			else if (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags)
+ 				{	// abuse: handle parenthesized type-specifiers here
++				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				src.flags &amp;= parse_tree::RESERVED_MASK;	// just in case
+ 				src.flags |= (PARSE_TYPE &amp; src.data&lt;0&gt;()-&gt;flags);
+-				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				return false;	// not an expression 
+ 				}
+ #/*cut-cpp*/
+@@ -4999,10 +4999,7 @@
+ 			return;
+ 			}
+ 		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+-			{
+-			value_copy(src.type_code,src.data&lt;1&gt;()-&gt;type_code);
+-			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+-			}
++			ZAIMONI_PASSTHROUGH_ASSERT(src.data&lt;1&gt;()-&gt;type_code.dereference(src.type_code));
+ 		else{	// not testable from preprocessor yet (need floating-point literals as extension)
+ 			src.flags |= parse_tree::INVALID;
+ 			message_header(src.index_tokens[0]);
+@@ -5017,10 +5014,7 @@
+ 	else if (0&lt;effective_pointer_power_infix)
+ 		{
+ 		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+-			{
+-			value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+-			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+-			}
++			ZAIMONI_PASSTHROUGH_ASSERT(src.data&lt;0&gt;()-&gt;type_code.dereference(src.type_code));
+ 		else{	// autofails in C
+ 				// not testable from preprocessor yet (need floating-point literals, would be extension regardless)
+ 			src.flags |= parse_tree::INVALID;
+@@ -5431,8 +5425,7 @@
+ 		}
+ 	}
+ 	}
+-	x.destroy();
+-	x = tmp3;
++	tmp3.MoveInto(x);
+ }
+ #/*cut-cpp*/
+ 
+@@ -5472,10 +5465,8 @@
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		type_spec tmp;
+-		src.type_code.OverwriteInto(tmp);
++		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		}
+ 	return false;
+@@ -5520,10 +5511,8 @@
+ 		POD_pair&lt;char*,lex_flags&gt; new_token;
+ 		VM_to_token(res_int,src.type_code.base_type_index,new_token);
+ 		src.c_array&lt;2&gt;()-&gt;grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+-		type_spec tmp;
+-		src.type_code.OverwriteInto(tmp);
++		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+ 	if (converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES) &amp;&amp; is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+@@ -5531,10 +5520,8 @@
+ 		assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+ 		parse_tree tmp;
+ 		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+-		type_spec tmp2;
+-		src.type_code.OverwriteInto(tmp2);
++		src.type_code.OverwriteInto(tmp.type_code);
+ 		tmp.MoveInto(src);
+-		tmp2.MoveInto(src.type_code);
+ 		return true;		
+ 		}
+ 	return false;
+@@ -5693,6 +5680,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_deref_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
+@@ -5853,18 +5841,19 @@
+ 	return false;
+ }
+ 
++//! this doesn't do anything to dest's type
+ static void force_unary_negative_literal(parse_tree&amp; dest,const parse_tree&amp; src)
+ {
+ 	assert(0==dest.size&lt;0&gt;());
+ 	assert(0==dest.size&lt;1&gt;());
+ 	assert(1==dest.size&lt;2&gt;());
+-	assert(NULL==dest.index_tokens[1].token.first);
++	assert(!dest.index_tokens[1].token.first);
+ 	dest.grab_index_token_from_str_literal&lt;0&gt;(&quot;-&quot;,C_TESTFLAG_NONATOMIC_PP_OP_PUNC);
+ 	*dest.c_array&lt;2&gt;() = src;
+ 	dest.core_flag_update();
+ 	dest.flags |= PARSE_STRICT_UNARY_EXPRESSION;
+ 	dest.subtype = C99_UNARY_SUBTYPE_NEG;
+-	assert(NULL!=dest.index_tokens[0].src_filename);
++	assert(dest.index_tokens[0].src_filename);
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(dest));
+ }
+ 
+@@ -5916,57 +5905,38 @@
+ 	return false;
+ }
+ 
++// all three users of this want the resulting type to be the same as dest's type
+ //! \throw std::bad_alloc()
+ static void construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
+ {
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp2;
++	tmp2 = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp3;
++	tmp3 = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
++	{
+ 	umaxint tmp_int(target_machine-&gt;signed_max(machine_type));
+-	parse_tree* const tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+-	try {
+-		VM_to_literal(*tmp,tmp_int,src_loc,types);
+-		}
+-	catch(const std::bad_alloc&amp;)
+-		{
+-		_flush(tmp);
+-		throw;
+-		}
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp;
++	tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
++	VM_to_literal(*tmp,tmp_int,src_loc,types);
+ 
+ 	tmp_int = 1;
+-	parse_tree* const tmp2 = _new_buffer&lt;parse_tree&gt;(1);
+-	if (!tmp2)
+-		{
+-		tmp-&gt;destroy();
+-		_flush(tmp);
+-		throw std::bad_alloc();
+-		}
+ 	try {
+ 		VM_to_literal(*tmp2,tmp_int,src_loc,types);
+ 		}
+ 	catch(const std::bad_alloc&amp;)
+ 		{
+-		tmp2-&gt;destroy();
+-		_flush(tmp2);
+ 		tmp-&gt;destroy();
+-		_flush(tmp);
+ 		throw;
+ 		}
+ 
+-	parse_tree* const tmp3 = _new_buffer&lt;parse_tree&gt;(1);
+-	if (!tmp3)
+-		{
+-		tmp2-&gt;destroy();
+-		_flush(tmp2);
+-		tmp-&gt;destroy();
+-		_flush(tmp);
+-		throw std::bad_alloc();
+-		}
+-	force_unary_negative_token(*tmp3,tmp,src_loc ARG_TYPES);
+-
+-	parse_tree tmp4;
+-	tmp4.clear();
++	force_unary_negative_token(*tmp3,tmp.release(),src_loc ARG_TYPES);
++	}
++	
++	parse_tree_class tmp4;
+ 	tmp4.grab_index_token_from_str_literal&lt;0&gt;(&quot;-&quot;,C_TESTFLAG_NONATOMIC_PP_OP_PUNC);
+ 	tmp4.grab_index_token_location_from&lt;0,0&gt;(src_loc);
+-	tmp4.fast_set_arg&lt;1&gt;(tmp3);
+-	tmp4.fast_set_arg&lt;2&gt;(tmp2);
++	tmp4.fast_set_arg&lt;1&gt;(tmp3.release());
++	tmp4.fast_set_arg&lt;2&gt;(tmp2.release());
+ 
+ 	tmp4.core_flag_update();
+ 	tmp4.flags |= PARSE_STRICT_ADD_EXPRESSION;
+@@ -6001,38 +5971,26 @@
+ 
+ 		const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,machine_type);
+-		const type_spec old_type = src.type_code;
+ 		if (	virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation()
+ 			&amp;&amp; 	0==(src.type_code.base_type_index-C_TYPE::INT)%2
+ 			&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 			&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(machine_type))
+ 			{	// trap representation; need to get it into -INT_MAX-1 form
+-			try {
+-				construct_twos_complement_int_min(src,types,machine_type,src);
+-				}
+-			catch(const std::bad_alloc&amp;)
+-				{
+-				return false;
+-				}
+-			src.type_code = old_type;
++			construct_twos_complement_int_min(src,types,machine_type,src);
+ 			return true;
+ 			}
+ 
++		const type_spec old_type = src.type_code;
+ 		parse_tree tmp;
+-		try {
+-			VM_to_literal(tmp,res_int,src,types);	// two's-complement non-trapping INT_MIN dies if it gets here
+-			}
+-		catch(const std::bad_alloc&amp;)
+-			{
+-			return false;
+-			}
++		VM_to_literal(tmp,res_int,src,types);	// two's-complement non-trapping INT_MIN dies if it gets here
+ 
+ 		if (negative_signed_int)
+ 			// convert to parsed - literal
+ 			force_unary_negative_literal(src,tmp);
+-		else	// convert to positive literal
++		else{	// convert to positive literal
++			src.type_code.MoveInto(tmp.type_code);
+ 			tmp.MoveInto(src);
+-		src.type_code = old_type;
++			}
+ 		return true;
+ 		};
+ 	if (	is_bitwise_complement_expression(*src.data&lt;2&gt;())
+@@ -6046,6 +6004,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_bitwise_complement_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'~'&gt;(src));
+@@ -6060,6 +6019,7 @@
+ 	if (eval_bitwise_compl(src,types,false,is_C99_unary_operator_expression&lt;'~'&gt;,C99_intlike_literal_to_VM)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_bitwise_complement_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_CPP_bitwise_complement_expression(src));
+@@ -6074,6 +6034,7 @@
+ 	if (eval_bitwise_compl(src,types,false,is_CPP_bitwise_complement_expression,CPP_intlike_literal_to_VM)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6089,6 +6050,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6104,6 +6066,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_C99_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6132,6 +6095,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6160,6 +6124,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6171,6 +6136,7 @@
+ 	return terse_locate_C99_unary_plusminus(src,i,types);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6237,8 +6203,7 @@
+ 		{
+ 		src.type_code.set_type(size_t_type);
+ 		VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_short()),src,types);
+-		src.destroy();
+-		src = tmp;			
++		tmp.MoveInto(src);
+ 		break;
+ 		}
+ 	case C_TYPE::INT:
+@@ -6246,8 +6211,7 @@
+ 		{
+ 		src.type_code.set_type(size_t_type);
+ 		VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_int()),src,types);
+-		src.destroy();
+-		src = tmp;			
++		tmp.MoveInto(src);
+ 		break;
+ 		}
+ 	case C_TYPE::LONG:
+@@ -6255,8 +6219,7 @@
+ 		{
+ 		src.type_code.set_type(size_t_type);
+ 		VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_long()),src,types);
+-		src.destroy();
+-		src = tmp;			
++		tmp.MoveInto(src);
+ 		break;
+ 		}
+ 	case C_TYPE::LLONG:
+@@ -6264,8 +6227,7 @@
+ 		{
+ 		src.type_code.set_type(size_t_type);
+ 		VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_long_long()),src,types);
+-		src.destroy();
+-		src = tmp;			
++		tmp.MoveInto(src);
+ //		break;
+ 		}
+ 	}
+@@ -6297,8 +6259,7 @@
+ 		src.type_code.set_type(size_t_type);
+ 		//! \todo eventually, need to check for data vs function pointer when pointer_power is 1
+ 		VM_to_literal(tmp,umaxint(target_machine-&gt;C_sizeof_data_ptr()),src,types);
+-		src.destroy();
+-		src = tmp;			
++		tmp.MoveInto(src);
+ 		assert(size_t_type==src.type_code.base_type_index);
+ 		return true;
+ 		}
+@@ -6306,6 +6267,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_C99_sizeof(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_CPP_sizeof_expression(src));
+@@ -6331,6 +6293,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_CPP_sizeof(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_CPP_sizeof_expression(src));
+@@ -6362,6 +6325,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C99_sizeof_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_CPP_sizeof_expression(src));
+@@ -6369,6 +6333,7 @@
+ 	if (eval_C99_sizeof(src,types)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_sizeof_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_CPP_sizeof_expression(src));
+@@ -6376,6 +6341,7 @@
+ 	if (eval_CPP_sizeof(src,types)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_sizeof(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6391,6 +6357,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_sizeof(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6424,6 +6391,7 @@
+ 
+ Note that the binary operators *,+,- are effectively handled by first building the unary operator, then checking whether the left-hand-side qualifies for extension to binary operator
+ */
++//! \throw std::bad_alloc()
+ static void locate_C99_unary_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6503,6 +6471,7 @@
+ 
+ Note that the binary operators *,+,- are effectively handled by first building the unary operator, then checking whether the left-hand-side qualifies for extension to binary operator
+ */
++//! \throw std::bad_alloc()
+ static void locate_CPP_unary_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6539,21 +6508,21 @@
+ #endif
+ }
+ 
++//! \throw std::bad_alloc()
+ static void assemble_binary_infix_arguments(parse_tree&amp; src, size_t&amp; i, const lex_flags _flags)
+ {
+ 	assert(1&lt;=i &amp;&amp; 2&lt;=src.size&lt;0&gt;()-i);
+ 	{
+ 	parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
+-	parse_tree* const tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
+-	*tmp = tmp_c_array[0];
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp;
++	tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
+ 	parse_tree* const tmp2 = repurpose_inner_parentheses(tmp_c_array[2]);	// RAM conservation
+-	*tmp2 = tmp_c_array[2];
+-	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp);
++	tmp_c_array[0].OverwriteInto(*tmp);
++	tmp_c_array[2].OverwriteInto(*tmp2);
++	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp.release());
+ 	tmp_c_array[1].fast_set_arg&lt;2&gt;(tmp2);
+ 	tmp_c_array[1].core_flag_update();
+ 	tmp_c_array[1].flags |= _flags;
+-	tmp_c_array[0].clear();
+-	tmp_c_array[2].clear();
+ 	}
+ 	src.DeleteIdx&lt;0&gt;(i+1);
+ 	src.DeleteIdx&lt;0&gt;(--i);
+@@ -6563,23 +6532,24 @@
+ 	cancel_outermost_parentheses(tmp.c_array&lt;2&gt;()[0]);
+ }
+ 
++//! \throw std::bad_alloc()
+ static void merge_binary_infix_argument(parse_tree&amp; src, size_t&amp; i, const lex_flags _flags)
+ {
+ 	assert(1&lt;=i);
+-	{
++ 	{
+ 	parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
+ 	parse_tree* const tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
+-	*tmp = tmp_c_array[0];
++	tmp_c_array[0].MoveInto(*tmp);
+ 
+ 	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp);
+ 	tmp_c_array[1].core_flag_update();
+ 	tmp_c_array[1].flags |= _flags;
+-	tmp_c_array[0].clear();
+ 	}
+ 	src.DeleteIdx&lt;0&gt;(--i);
+ 	cancel_outermost_parentheses(src.c_array&lt;0&gt;()[i].c_array&lt;1&gt;()[0]);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_C99_augment_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6600,6 +6570,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_CPP_augment_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6621,6 +6592,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_mult_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -6659,7 +6631,6 @@
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 
+ 	// do this first to avoid unnecessary dynamic memory allocation
+@@ -6668,7 +6639,7 @@
+ 		{
+ 		// construct +0 to defuse 1-0*6
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-		if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
++		if (C_TYPE::INTEGERLIKE==src.type_code.base_type_index)
+ 			{
+ 			message_header(src.index_tokens[0]);
+ 			INC_INFORM(&quot;invalid &quot;);
+@@ -6676,7 +6647,7 @@
+ 			INFORM(&quot; optimized to valid 0&quot;);
+ 			tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 			}
+-		else tmp.type_code = old_type;
++		else value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6688,19 +6659,19 @@
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;() ARG_TYPES);
+ 	if (lhs_converted &amp;&amp; 1==res_int)
+ 		{
++		src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		src.type_code = old_type;
+ 		return true;
+ 		};
+ 	if (rhs_converted &amp;&amp; 1==rhs_int)
+ 		{
++		src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;1&gt;(0);
+-		src.type_code = old_type;
+ 		return true;
+ 		};
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+-		const promote_aux old(old_type.base_type_index ARG_TYPES);
++		const promote_aux old(src.type_code.base_type_index ARG_TYPES);
+ 		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 		assert(old.bitcount&gt;=lhs.bitcount);
+ 		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+@@ -6746,7 +6717,6 @@
+ 
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_negative_literal(src,tmp);
+-				src.type_code = old_type;
+ 				return true;
+ 				}
+ 			res_int = lhs_test;
+@@ -6757,7 +6727,7 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		tmp.type_code = old_type;
++		src.type_code.MoveInto(tmp.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -6770,7 +6740,6 @@
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code ARG_TYPES))
+ 		{
+@@ -6786,7 +6755,7 @@
+ 			{
+ 			// construct +0 to defuse 1-0/6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-			if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
++			if (C_TYPE::INTEGERLIKE==src.type_code.base_type_index)
+ 				{
+ 				message_header(src.index_tokens[0]);
+ 				INC_INFORM(&quot;invalid &quot;);
+@@ -6794,7 +6763,7 @@
+ 				INFORM(&quot; optimized to valid 0&quot;);
+ 				tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 				}
+-			else tmp.type_code = old_type;
++			else src.type_code.MoveInto(tmp.type_code);
+ 			src.DeleteIdx&lt;1&gt;(0);
+ 			force_unary_positive_literal(src,tmp ARG_TYPES);
+ 			return true;
+@@ -6808,16 +6777,15 @@
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;() ARG_TYPES);
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __/1 |-&gt; __
++		src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;1&gt;(0);
+-		src.type_code = old_type;
+ 		return true;
+ 		};
+-	//! \todo handle signed integer arithmetic
+ 	// two's complement can overflow: INT_MIN/-1
+ 	// implementation-defined whether negative results round away or to zero (standard prefers to zero, so default to that)
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+-		const promote_aux old(old_type.base_type_index ARG_TYPES);
++		const promote_aux old(src.type_code.base_type_index ARG_TYPES);
+ 		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 		assert(old.bitcount&gt;=lhs.bitcount);
+ 		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+@@ -6838,10 +6806,12 @@
+ 				{
+ 				const bool want_zero = rhs_negative==lhs_negative || !bool_options[boolopt::int_neg_div_rounds_away_from_zero];
+ 				parse_tree tmp = decimal_literal(want_zero ? &quot;0&quot; : &quot;1&quot;,src,types);
+-				tmp.type_code = old_type;
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				if (want_zero)
++					{
++					src.type_code.MoveInto(tmp.type_code);
+ 					force_unary_positive_literal(src,tmp ARG_TYPES); // +0
++					}
+ 				else	
+ 					force_unary_negative_literal(src,tmp); // -1
+ 				return true;
+@@ -6865,7 +6835,6 @@
+ 
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_negative_literal(src,tmp);
+-				src.type_code = old_type;
+ 				return true;
+ 				}
+ 			if (ub&lt;lhs_test)
+@@ -6884,8 +6853,8 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		tmp.type_code = old_type;
+ 
++		src.type_code.MoveInto(tmp.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-07 03:37:43 UTC (rev 411)
++++ trunk/CSupport_pp.cpp	2010-05-07 03:39:23 UTC (rev 412)
+@@ -4399,10 +4399,10 @@
+ 				}
+ 			else if (PARSE_EXPRESSION &amp; src.data&lt;0&gt;()-&gt;flags)
+ 				{	// normal expression that got parenthesized
++				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				src.flags &amp;= parse_tree::RESERVED_MASK;	// just in case
+ 				src.flags |= PARSE_PRIMARY_EXPRESSION;
+ 				src.flags |= (PARSE_PAREN_PRIMARY_PASSTHROUGH &amp; src.data&lt;0&gt;()-&gt;flags);
+-				value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+ 				return true;
+ 				}
+ 			};
+@@ -4539,10 +4539,7 @@
+ 			return;
+ 			}
+ 		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+-			{
+-			value_copy(src.type_code,src.data&lt;1&gt;()-&gt;type_code);
+-			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+-			}
++			ZAIMONI_PASSTHROUGH_ASSERT(src.data&lt;1&gt;()-&gt;type_code.dereference(src.type_code));
+ 		else{	// not testable from preprocessor yet (need floating-point literals as extension)
+ 			src.flags |= parse_tree::INVALID;
+ 			message_header(src.index_tokens[0]);
+@@ -4557,10 +4554,7 @@
+ 	else if (0&lt;effective_pointer_power_infix)
+ 		{
+ 		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES))
+-			{
+-			value_copy(src.type_code,src.data&lt;0&gt;()-&gt;type_code);
+-			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+-			}
++			ZAIMONI_PASSTHROUGH_ASSERT(src.data&lt;0&gt;()-&gt;type_code.dereference(src.type_code));
+ 		else{	// autofails in C
+ 				// not testable from preprocessor yet (need floating-point literals, would be extension regardless)
+ 			src.flags |= parse_tree::INVALID;
+@@ -4959,10 +4953,8 @@
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		type_spec tmp;
+-		src.type_code.OverwriteInto(tmp);
++		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		}
+ 	return false;
+@@ -4993,10 +4985,8 @@
+ 		POD_pair&lt;char*,lex_flags&gt; new_token;
+ 		VM_to_token(res_int,src.type_code.base_type_index,new_token);
+ 		src.c_array&lt;2&gt;()-&gt;grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
+-		type_spec tmp;
+-		src.type_code.OverwriteInto(tmp);
++		src.type_code.OverwriteInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+ 	if (converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES) &amp;&amp; is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+@@ -5004,10 +4994,8 @@
+ 		assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+ 		parse_tree tmp;
+ 		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
+-		type_spec tmp2;
+-		src.type_code.OverwriteInto(tmp2);
++		src.type_code.OverwriteInto(tmp.type_code);
+ 		tmp.MoveInto(src);
+-		tmp2.MoveInto(src.type_code);
+ 		return true;		
+ 		}
+ 	return false;
+@@ -5146,6 +5134,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_deref_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
+@@ -5306,18 +5295,19 @@
+ 	return false;
+ }
+ 
++//! this doesn't do anything to dest's type
+ static void force_unary_negative_literal(parse_tree&amp; dest,const parse_tree&amp; src)
+ {
+ 	assert(0==dest.size&lt;0&gt;());
+ 	assert(0==dest.size&lt;1&gt;());
+ 	assert(1==dest.size&lt;2&gt;());
+-	assert(NULL==dest.index_tokens[1].token.first);
++	assert(!dest.index_tokens[1].token.first);
+ 	dest.grab_index_token_from_str_literal&lt;0&gt;(&quot;-&quot;,C_TESTFLAG_NONATOMIC_PP_OP_PUNC);
+ 	*dest.c_array&lt;2&gt;() = src;
+ 	dest.core_flag_update();
+ 	dest.flags |= PARSE_STRICT_UNARY_EXPRESSION;
+ 	dest.subtype = C99_UNARY_SUBTYPE_NEG;
+-	assert(NULL!=dest.index_tokens[0].src_filename);
++	assert(dest.index_tokens[0].src_filename);
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(dest));
+ }
+ 
+@@ -5369,57 +5359,38 @@
+ 	return false;
+ }
+ 
++// all three users of this want the resulting type to be the same as dest's type
+ //! \throw std::bad_alloc()
+ static void construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
+ {
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp2;
++	tmp2 = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp3;
++	tmp3 = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
++	{
+ 	umaxint tmp_int(target_machine-&gt;signed_max(machine_type));
+-	parse_tree* const tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+-	try {
+-		VM_to_literal(*tmp,tmp_int,src_loc,types);
+-		}
+-	catch(const std::bad_alloc&amp;)
+-		{
+-		_flush(tmp);
+-		throw;
+-		}
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp;
++	tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
++	VM_to_literal(*tmp,tmp_int,src_loc,types);
+ 
+ 	tmp_int = 1;
+-	parse_tree* const tmp2 = _new_buffer&lt;parse_tree&gt;(1);
+-	if (!tmp2)
+-		{
+-		tmp-&gt;destroy();
+-		_flush(tmp);
+-		throw std::bad_alloc();
+-		}
+ 	try {
+ 		VM_to_literal(*tmp2,tmp_int,src_loc,types);
+ 		}
+ 	catch(const std::bad_alloc&amp;)
+ 		{
+-		tmp2-&gt;destroy();
+-		_flush(tmp2);
+ 		tmp-&gt;destroy();
+-		_flush(tmp);
+ 		throw;
+ 		}
+ 
+-	parse_tree* const tmp3 = _new_buffer&lt;parse_tree&gt;(1);
+-	if (!tmp3)
+-		{
+-		tmp2-&gt;destroy();
+-		_flush(tmp2);
+-		tmp-&gt;destroy();
+-		_flush(tmp);
+-		throw std::bad_alloc();
+-		}
+-	force_unary_negative_token(*tmp3,tmp,src_loc ARG_TYPES);
+-
+-	parse_tree tmp4;
+-	tmp4.clear();
++	force_unary_negative_token(*tmp3,tmp.release(),src_loc ARG_TYPES);
++	}
++	
++	parse_tree_class tmp4;
+ 	tmp4.grab_index_token_from_str_literal&lt;0&gt;(&quot;-&quot;,C_TESTFLAG_NONATOMIC_PP_OP_PUNC);
+ 	tmp4.grab_index_token_location_from&lt;0,0&gt;(src_loc);
+-	tmp4.fast_set_arg&lt;1&gt;(tmp3);
+-	tmp4.fast_set_arg&lt;2&gt;(tmp2);
++	tmp4.fast_set_arg&lt;1&gt;(tmp3.release());
++	tmp4.fast_set_arg&lt;2&gt;(tmp2.release());
+ 
+ 	tmp4.core_flag_update();
+ 	tmp4.flags |= PARSE_STRICT_ADD_EXPRESSION;
+@@ -5447,38 +5418,26 @@
+ 
+ 		const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,machine_type);
+-		const type_spec old_type = src.type_code;
+ 		if (	virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation()
+ 			&amp;&amp; 	0==(src.type_code.base_type_index-C_TYPE::INT)%2
+ 			&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 			&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(machine_type))
+ 			{	// trap representation; need to get it into -INT_MAX-1 form
+-			try {
+-				construct_twos_complement_int_min(src,types,machine_type,src);
+-				}
+-			catch(const std::bad_alloc&amp;)
+-				{
+-				return false;
+-				}
+-			src.type_code = old_type;
++			construct_twos_complement_int_min(src,types,machine_type,src);
+ 			return true;
+ 			}
+ 
++		const type_spec old_type = src.type_code;
+ 		parse_tree tmp;
+-		try {
+-			VM_to_literal(tmp,res_int,src,types);	// two's-complement non-trapping INT_MIN dies if it gets here
+-			}
+-		catch(const std::bad_alloc&amp;)
+-			{
+-			return false;
+-			}
++		VM_to_literal(tmp,res_int,src,types);	// two's-complement non-trapping INT_MIN dies if it gets here
+ 
+ 		if (negative_signed_int)
+ 			// convert to parsed - literal
+ 			force_unary_negative_literal(src,tmp);
+-		else	// convert to positive literal
++		else{	// convert to positive literal
++			src.type_code.MoveInto(tmp.type_code);
+ 			tmp.MoveInto(src);
+-		src.type_code = old_type;
++			}
+ 		return true;
+ 		};
+ 	if (	is_bitwise_complement_expression(*src.data&lt;2&gt;())
+@@ -5492,6 +5451,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_bitwise_complement_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'~'&gt;(src));
+@@ -5506,6 +5466,7 @@
+ 	if (eval_bitwise_compl(src,types,false,is_C99_unary_operator_expression&lt;'~'&gt;,C99_intlike_literal_to_VM)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_bitwise_complement_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(is_CPP_bitwise_complement_expression(src));
+@@ -5520,6 +5481,7 @@
+ 	if (eval_bitwise_compl(src,types,false,is_CPP_bitwise_complement_expression,CPP_intlike_literal_to_VM)) return;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5535,6 +5497,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5550,6 +5513,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_C99_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5578,6 +5542,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5606,6 +5571,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_C99_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5617,6 +5583,7 @@
+ 	return terse_locate_C99_unary_plusminus(src,i,types);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool locate_CPP_unary_plusminus(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5645,6 +5612,7 @@
+ 
+ Note that the binary operators *,+,- are effectively handled by first building the unary operator, then checking whether the left-hand-side qualifies for extension to binary operator
+ */
++//! \throw std::bad_alloc()
+ static void locate_C99_unary_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5721,6 +5689,7 @@
+ 
+ Note that the binary operators *,+,- are effectively handled by first building the unary operator, then checking whether the left-hand-side qualifies for extension to binary operator
+ */
++//! \throw std::bad_alloc()
+ static void locate_CPP_unary_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5754,21 +5723,21 @@
+ #endif
+ }
+ 
++//! \throw std::bad_alloc()
+ static void assemble_binary_infix_arguments(parse_tree&amp; src, size_t&amp; i, const lex_flags _flags)
+ {
+ 	assert(1&lt;=i &amp;&amp; 2&lt;=src.size&lt;0&gt;()-i);
+ 	{
+ 	parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
+-	parse_tree* const tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
+-	*tmp = tmp_c_array[0];
++	zaimoni::autoval_ptr&lt;parse_tree&gt; tmp;
++	tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
+ 	parse_tree* const tmp2 = repurpose_inner_parentheses(tmp_c_array[2]);	// RAM conservation
+-	*tmp2 = tmp_c_array[2];
+-	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp);
++	tmp_c_array[0].OverwriteInto(*tmp);
++	tmp_c_array[2].OverwriteInto(*tmp2);
++	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp.release());
+ 	tmp_c_array[1].fast_set_arg&lt;2&gt;(tmp2);
+ 	tmp_c_array[1].core_flag_update();
+ 	tmp_c_array[1].flags |= _flags;
+-	tmp_c_array[0].clear();
+-	tmp_c_array[2].clear();
+ 	}
+ 	src.DeleteIdx&lt;0&gt;(i+1);
+ 	src.DeleteIdx&lt;0&gt;(--i);
+@@ -5778,23 +5747,24 @@
+ 	cancel_outermost_parentheses(tmp.c_array&lt;2&gt;()[0]);
+ }
+ 
++//! \throw std::bad_alloc()
+ static void merge_binary_infix_argument(parse_tree&amp; src, size_t&amp; i, const lex_flags _flags)
+ {
+ 	assert(1&lt;=i);
+-	{
++ 	{
+ 	parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
+ 	parse_tree* const tmp = repurpose_inner_parentheses(tmp_c_array[0]);	// RAM conservation
+-	*tmp = tmp_c_array[0];
++	tmp_c_array[0].MoveInto(*tmp);
+ 
+ 	tmp_c_array[1].fast_set_arg&lt;1&gt;(tmp);
+ 	tmp_c_array[1].core_flag_update();
+ 	tmp_c_array[1].flags |= _flags;
+-	tmp_c_array[0].clear();
+ 	}
+ 	src.DeleteIdx&lt;0&gt;(--i);
+ 	cancel_outermost_parentheses(src.c_array&lt;0&gt;()[i].c_array&lt;1&gt;()[0]);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_C99_augment_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5815,6 +5785,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_CPP_augment_mult_expression(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5836,6 +5807,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_mult_expression(parse_tree&amp; src, size_t&amp; i)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5874,7 +5846,6 @@
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 
+ 	// do this first to avoid unnecessary dynamic memory allocation
+@@ -5883,7 +5854,7 @@
+ 		{
+ 		// construct +0 to defuse 1-0*6
+ 		parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-		if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
++		if (C_TYPE::INTEGERLIKE==src.type_code.base_type_index)
+ 			{
+ 			message_header(src.index_tokens[0]);
+ 			INC_INFORM(&quot;invalid &quot;);
+@@ -5891,7 +5862,7 @@
+ 			INFORM(&quot; optimized to valid 0&quot;);
+ 			tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 			}
+-		else tmp.type_code = old_type;
++		else value_copy(tmp.type_code,src.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -5903,19 +5874,19 @@
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;() ARG_TYPES);
+ 	if (lhs_converted &amp;&amp; 1==res_int)
+ 		{
++		src.type_code.MoveInto(src.c_array&lt;2&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		src.type_code = old_type;
+ 		return true;
+ 		};
+ 	if (rhs_converted &amp;&amp; 1==rhs_int)
+ 		{
++		src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;1&gt;(0);
+-		src.type_code = old_type;
+ 		return true;
+ 		};
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+-		const promote_aux old(old_type.base_type_index ARG_TYPES);
++		const promote_aux old(src.type_code.base_type_index ARG_TYPES);
+ 		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 		assert(old.bitcount&gt;=lhs.bitcount);
+ 		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+@@ -5961,7 +5932,6 @@
+ 
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_negative_literal(src,tmp);
+-				src.type_code = old_type;
+ 				return true;
+ 				}
+ 			res_int = lhs_test;
+@@ -5972,7 +5942,7 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		tmp.type_code = old_type;
++		src.type_code.MoveInto(tmp.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+@@ -5985,7 +5955,6 @@
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+-	const type_spec old_type = src.type_code;
+ 	bool is_true = false;
+ 	if (converts_to_integerlike(src.type_code ARG_TYPES))
+ 		{
+@@ -6001,7 +5970,7 @@
+ 			{
+ 			// construct +0 to defuse 1-0/6
+ 			parse_tree tmp = decimal_literal(&quot;0&quot;,src,types);
+-			if (C_TYPE::INTEGERLIKE==old_type.base_type_index)
++			if (C_TYPE::INTEGERLIKE==src.type_code.base_type_index)
+ 				{
+ 				message_header(src.index_tokens[0]);
+ 				INC_INFORM(&quot;invalid &quot;);
+@@ -6009,7 +5978,7 @@
+ 				INFORM(&quot; optimized to valid 0&quot;);
+ 				tmp.type_code.set_type(C_TYPE::LLONG);	// legalize
+ 				}
+-			else tmp.type_code = old_type;
++			else src.type_code.MoveInto(tmp.type_code);
+ 			src.DeleteIdx&lt;1&gt;(0);
+ 			force_unary_positive_literal(src,tmp ARG_TYPES);
+ 			return true;
+@@ -6023,16 +5992,15 @@
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;() ARG_TYPES);
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+ 		{	// __/1 |-&gt; __
++		src.type_code.MoveInto(src.c_array&lt;1&gt;()-&gt;type_code);
+ 		src.eval_to_arg&lt;1&gt;(0);
+-		src.type_code = old_type;
+ 		return true;
+ 		};
+-	//! \todo handle signed integer arithmetic
+ 	// two's complement can overflow: INT_MIN/-1
+ 	// implementation-defined whether negative results round away or to zero (standard prefers to zero, so default to that)
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+-		const promote_aux old(old_type.base_type_index ARG_TYPES);
++		const promote_aux old(src.type_code.base_type_index ARG_TYPES);
+ 		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 		assert(old.bitcount&gt;=lhs.bitcount);
+ 		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+@@ -6053,10 +6021,12 @@
+ 				{
+ 				const bool want_zero = rhs_negative==lhs_negative || !bool_options[boolopt::int_neg_div_rounds_away_from_zero];
+ 				parse_tree tmp = decimal_literal(want_zero ? &quot;0&quot; : &quot;1&quot;,src,types);
+-				tmp.type_code = old_type;
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				if (want_zero)
++					{
++					src.type_code.MoveInto(tmp.type_code);
+ 					force_unary_positive_literal(src,tmp ARG_TYPES); // +0
++					}
+ 				else	
+ 					force_unary_negative_literal(src,tmp); // -1
+ 				return true;
+@@ -6080,7 +6050,6 @@
+ 
+ 				src.DeleteIdx&lt;1&gt;(0);
+ 				force_unary_negative_literal(src,tmp);
+-				src.type_code = old_type;
+ 				return true;
+ 				}
+ 			if (ub&lt;lhs_test)
+@@ -6099,8 +6068,8 @@
+ 		// convert to parsed + literal
+ 		parse_tree tmp;
+ 		VM_to_literal(tmp,res_int,src,types);
+-		tmp.type_code = old_type;
+ 
++		src.type_code.MoveInto(tmp.type_code);
+ 		src.DeleteIdx&lt;1&gt;(0);
+ 		force_unary_positive_literal(src,tmp ARG_TYPES);
+ 		return true;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000178.html">[Zcplusplus-commits] r411 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000180.html">[Zcplusplus-commits] r413 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#179">[ date ]</a>
+              <a href="thread.html#179">[ thread ]</a>
+              <a href="subject.html#179">[ subject ]</a>
+              <a href="author.html#179">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

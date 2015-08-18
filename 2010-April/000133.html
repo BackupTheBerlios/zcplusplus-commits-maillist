@@ -1,0 +1,287 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r366 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r366%20-%20trunk&In-Reply-To=%3C201004090002.o3902Wv4013083%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000132.html">
+   <LINK REL="Next"  HREF="000134.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r366 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r366%20-%20trunk&In-Reply-To=%3C201004090002.o3902Wv4013083%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r366 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr  9 02:02:32 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000132.html">[Zcplusplus-commits] r365 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000134.html">[Zcplusplus-commits] r367 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#133">[ date ]</a>
+              <a href="thread.html#133">[ thread ]</a>
+              <a href="subject.html#133">[ subject ]</a>
+              <a href="author.html#133">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-09 02:02:28 +0200 (Fri, 09 Apr 2010)
+New Revision: 366
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+C99 compliance fix: use signed &lt; &lt;= &gt;= &gt; when required; fix sync error regarding C++ notion of logical negation
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-08 04:38:29 UTC (rev 365)
++++ trunk/CSupport.cpp	2010-04-09 00:02:28 UTC (rev 366)
+@@ -3598,7 +3598,8 @@
+ 			&amp;&amp;	NULL==src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
++//			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+ 
+ static bool is_CPP_bitwise_complement_expression(const parse_tree&amp; src)
+@@ -7795,25 +7796,73 @@
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+ 		const char* result 	= NULL;
+-		switch(src.subtype)
+-		{
+-		case C99_RELATION_SUBTYPE_LT:	{
+-										result = (lhs_int&lt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		case C99_RELATION_SUBTYPE_GT:	{
+-										result = (lhs_int&gt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		case C99_RELATION_SUBTYPE_LTE:	{
+-										result = (lhs_int&lt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		case C99_RELATION_SUBTYPE_GTE:	{
+-										result = (lhs_int&gt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		}
++		const promote_aux targ(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index, src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
++		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
++		assert(targ.bitcount&gt;=lhs.bitcount);
++		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
++		assert(targ.bitcount&gt;=rhs.bitcount);
++
++		// handle sign-extension of lhs, rhs
++		bool use_unsigned_compare = true;
++		const bool lhs_negative = target_machine-&gt;C_promote_integer(lhs_int,lhs,targ);
++		const bool rhs_negative = target_machine-&gt;C_promote_integer(rhs_int,rhs,targ);
++		if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_int,targ.machine_type);
++		if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_int,targ.machine_type);
++
++		//! \todo --do-what-i-mean redefines &lt; &gt; operators to handle cross-domain
++		if (targ.is_signed &amp;&amp; (lhs_negative || rhs_negative))
++			{	// repair switch to handle signed numerals
++			if (lhs_negative &amp;&amp; rhs_negative)
++				std::swap(lhs_int,rhs_int);
++			else{
++				const bool lhs_zero = target_machine-&gt;is_zero(lhs_int.data(),lhs_int.size(),targ);
++				const bool rhs_zero = target_machine-&gt;is_zero(rhs_int.data(),rhs_int.size(),targ);
++				const bool op_uses_less_than = (src.subtype%2);	// low-level, check with static assertions
++				// is above correct?
++				BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LT%2);
++				BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LTE%2);
++				BOOST_STATIC_ASSERT(!(C99_RELATION_SUBTYPE_GT%2));
++				BOOST_STATIC_ASSERT(!(C99_RELATION_SUBTYPE_GTE%2));
++				use_unsigned_compare = false;
++				if (!lhs_zero)
++					{
++					result = lhs_negative ? (op_uses_less_than ? &quot;1&quot; : &quot;0&quot;) : (op_uses_less_than ? &quot;0&quot; : &quot;1&quot;);
++					}
++				else if (rhs_zero)
++					{
++					result = (C99_RELATION_SUBTYPE_LTE&lt;=src.subtype) ? &quot;1&quot; : &quot;0&quot;; 	// low-level, check with static assertions
++					// is above correct?
++					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LTE&lt;=C99_RELATION_SUBTYPE_GTE);
++					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LT&lt;C99_RELATION_SUBTYPE_LTE);
++					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_GT&lt;C99_RELATION_SUBTYPE_LTE);
++					}
++				else{
++					result = rhs_negative ? (op_uses_less_than ? &quot;0&quot; : &quot;1&quot;) : (op_uses_less_than ? &quot;1&quot; : &quot;0&quot;);
++					}
++				}
++			};
++		if (use_unsigned_compare)
++			{
++			switch(src.subtype)
++			{
++			case C99_RELATION_SUBTYPE_LT:	{
++											result = (lhs_int&lt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			case C99_RELATION_SUBTYPE_GT:	{
++											result = (lhs_int&gt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			case C99_RELATION_SUBTYPE_LTE:	{
++											result = (lhs_int&lt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			case C99_RELATION_SUBTYPE_GTE:	{
++											result = (lhs_int&gt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			}
++			}
+ 		force_decimal_literal(src,result,types);
+ 		return true;
+ 		};
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-04-08 04:38:29 UTC (rev 365)
++++ trunk/CSupport_pp.cpp	2010-04-09 00:02:28 UTC (rev 366)
+@@ -3491,7 +3491,8 @@
+ 			&amp;&amp;	NULL==src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
++//			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+ 
+ static bool is_CPP_bitwise_complement_expression(const parse_tree&amp; src)
+@@ -7210,25 +7211,73 @@
+ 	if (lhs_converted &amp;&amp; rhs_converted)
+ 		{
+ 		const char* result 	= NULL;
+-		switch(src.subtype)
+-		{
+-		case C99_RELATION_SUBTYPE_LT:	{
+-										result = (lhs_int&lt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		case C99_RELATION_SUBTYPE_GT:	{
+-										result = (lhs_int&gt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		case C99_RELATION_SUBTYPE_LTE:	{
+-										result = (lhs_int&lt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		case C99_RELATION_SUBTYPE_GTE:	{
+-										result = (lhs_int&gt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
+-										break;
+-										}
+-		}
++		const promote_aux targ(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index, src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
++		const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
++		assert(targ.bitcount&gt;=lhs.bitcount);
++		const promote_aux rhs(src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
++		assert(targ.bitcount&gt;=rhs.bitcount);
++
++		// handle sign-extension of lhs, rhs
++		bool use_unsigned_compare = true;
++		const bool lhs_negative = target_machine-&gt;C_promote_integer(lhs_int,lhs,targ);
++		const bool rhs_negative = target_machine-&gt;C_promote_integer(rhs_int,rhs,targ);
++		if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_int,targ.machine_type);
++		if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_int,targ.machine_type);
++
++		//! \todo --do-what-i-mean redefines &lt; &gt; operators to handle cross-domain
++		if (targ.is_signed &amp;&amp; (lhs_negative || rhs_negative))
++			{	// repair switch to handle signed numerals
++			if (lhs_negative &amp;&amp; rhs_negative)
++				std::swap(lhs_int,rhs_int);
++			else{
++				const bool lhs_zero = target_machine-&gt;is_zero(lhs_int.data(),lhs_int.size(),targ);
++				const bool rhs_zero = target_machine-&gt;is_zero(rhs_int.data(),rhs_int.size(),targ);
++				const bool op_uses_less_than = (src.subtype%2);	// low-level, check with static assertions
++				// is above correct?
++				BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LT%2);
++				BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LTE%2);
++				BOOST_STATIC_ASSERT(!(C99_RELATION_SUBTYPE_GT%2));
++				BOOST_STATIC_ASSERT(!(C99_RELATION_SUBTYPE_GTE%2));
++				use_unsigned_compare = false;
++				if (!lhs_zero)
++					{
++					result = lhs_negative ? (op_uses_less_than ? &quot;1&quot; : &quot;0&quot;) : (op_uses_less_than ? &quot;0&quot; : &quot;1&quot;);
++					}
++				else if (rhs_zero)
++					{
++					result = (C99_RELATION_SUBTYPE_LTE&lt;=src.subtype) ? &quot;1&quot; : &quot;0&quot;; 	// low-level, check with static assertions
++					// is above correct?
++					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LTE&lt;=C99_RELATION_SUBTYPE_GTE);
++					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LT&lt;C99_RELATION_SUBTYPE_LTE);
++					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_GT&lt;C99_RELATION_SUBTYPE_LTE);
++					}
++				else{
++					result = rhs_negative ? (op_uses_less_than ? &quot;0&quot; : &quot;1&quot;) : (op_uses_less_than ? &quot;1&quot; : &quot;0&quot;);
++					}
++				}
++			};
++		if (use_unsigned_compare)
++			{
++			switch(src.subtype)
++			{
++			case C99_RELATION_SUBTYPE_LT:	{
++											result = (lhs_int&lt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			case C99_RELATION_SUBTYPE_GT:	{
++											result = (lhs_int&gt;rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			case C99_RELATION_SUBTYPE_LTE:	{
++											result = (lhs_int&lt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			case C99_RELATION_SUBTYPE_GTE:	{
++											result = (lhs_int&gt;=rhs_int) ? &quot;1&quot; : &quot;0&quot;;
++											break;
++											}
++			}
++			}
+ 		force_decimal_literal(src,result,types);
+ 		return true;
+ 		};
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000132.html">[Zcplusplus-commits] r365 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000134.html">[Zcplusplus-commits] r367 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#133">[ date ]</a>
+              <a href="thread.html#133">[ thread ]</a>
+              <a href="subject.html#133">[ subject ]</a>
+              <a href="author.html#133">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

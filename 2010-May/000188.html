@@ -1,0 +1,349 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r421 - in trunk: . Zaimoni.STL/LexParse
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r421%20-%20in%20trunk%3A%20.%20Zaimoni.STL/LexParse&In-Reply-To=%3C201005091956.o49JuTiY030470%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000187.html">
+   <LINK REL="Next"  HREF="000189.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r421 - in trunk: . Zaimoni.STL/LexParse</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r421%20-%20in%20trunk%3A%20.%20Zaimoni.STL/LexParse&In-Reply-To=%3C201005091956.o49JuTiY030470%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r421 - in trunk: . Zaimoni.STL/LexParse">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun May  9 21:56:29 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000187.html">[Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+        <LI>Next message: <A HREF="000189.html">[Zcplusplus-commits] r422 - in trunk: . tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#188">[ date ]</a>
+              <a href="thread.html#188">[ thread ]</a>
+              <a href="subject.html#188">[ subject ]</a>
+              <a href="author.html#188">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-09 21:56:23 +0200 (Sun, 09 May 2010)
+New Revision: 421
+
+Modified:
+   trunk/Flat_UNI.cpp
+   trunk/Flat_UNI.hpp
+   trunk/Trigraph.cpp
+   trunk/Trigraph.hpp
+   trunk/Zaimoni.STL/LexParse/LangConf.cpp
+   trunk/Zaimoni.STL/LexParse/LangConf.hpp
+   trunk/load_src.cpp
+Log:
+ISO build adjustments; prepare to allow filters to relay error messages (this simplifies load_sourcefile)
+
+Modified: trunk/Flat_UNI.cpp
+===================================================================
+--- trunk/Flat_UNI.cpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/Flat_UNI.cpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -1,5 +1,5 @@
+ // Flat_UNI.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;Flat_UNI.hpp&quot;
+ 
+@@ -27,7 +27,7 @@
+ [also see Appendix E for a validation list...probably should update against latest UNICODE references]
+ */
+ 
+-bool FlattenUNICODE(char*&amp; Text)
++bool FlattenUNICODE(char*&amp; Text, const char* filename)
+ {
+ 	if (NULL==Text) return true;
+ 
+
+Modified: trunk/Flat_UNI.hpp
+===================================================================
+--- trunk/Flat_UNI.hpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/Flat_UNI.hpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -1,5 +1,5 @@
+ // Flat_UNI.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef Z_CPLUSPLUS_FLAT_UNI_HPP
+ #define Z_CPLUSPLUS_FLAT_UNI_HPP 1
+@@ -11,7 +11,7 @@
+  *
+  * \return true, return value is only to glue into LangConf
+  */
+-bool FlattenUNICODE(char*&amp; Text);
++bool FlattenUNICODE(char*&amp; Text, const char* filename);
+ 
+ #endif
+ 
+
+Modified: trunk/Trigraph.cpp
+===================================================================
+--- trunk/Trigraph.cpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/Trigraph.cpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -1,5 +1,5 @@
+ // Trigraph.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;Trigraph.hpp&quot;
+ 
+@@ -49,8 +49,7 @@
+ /* Aside: ??? is not supported in C99 or C++0x; example in 4 may be a doc. error for C++97.  Given table row was in HTML version but not PDF version. */
+ /* C89 rationale suggest to omit ??? */
+ 
+-static size_t
+-EnforceTrigraphsAux(size_t&amp; Offset, char* const Text)
++static size_t EnforceTrigraphsAux(size_t&amp; Offset, char* const Text)
+ {	// FORMALLY CORRECT: Kenneth Boyd, 10/17/2004
+ 	// this returns how much to increment i by (not directly passed)
+ 	if ('?'!=Text[1]) return 2;	// total miss: increment by 2
+@@ -173,7 +172,7 @@
+ 	return 3;
+ }
+ 
+-bool EnforceCTrigraphs(char*&amp; Text)
++bool EnforceCTrigraphs(char*&amp; Text, const char* filename)
+ {	// FORMALLY CORRECT: Kenneth Boyd, 8/1/2002
+ 	// there are 10 C trigraphs of interest (?)
+ 	// We use a modified Boyer-Moore algorithm, and compact after 
+
+Modified: trunk/Trigraph.hpp
+===================================================================
+--- trunk/Trigraph.hpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/Trigraph.hpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -1,5 +1,5 @@
+ // Trigraph.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef Z_CPLUSPLUS_TRIGRAPH_HPP
+ #define Z_CPLUSPLUS_TRIGRAPH_HPP 1
+@@ -11,6 +11,6 @@
+  *
+  * \return true, return value is only to glue into LangConf
+  */
+-bool EnforceCTrigraphs(char*&amp; Text);
++bool EnforceCTrigraphs(char*&amp; Text, const char* filename);
+ 
+ #endif
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.cpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.cpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/Zaimoni.STL/LexParse/LangConf.cpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -26,11 +26,19 @@
+ //! &lt;br&gt;NOTE: we can pre-emptively break on newline outside of strings no matter what.
+ //! &lt;br&gt;NOTE: we can discard pure-whitespace lines no matter what
+ 
+-static bool _applyFilters(LangConf::Filter** FilterList, const size_t FilterSize, char*&amp; Target)
++#ifndef ZAIMONI_FORCE_ISO
++static bool _applyFilters(LangConf::Filter** FilterList, const size_t FilterSize, char*&amp; x, const char* filename)
++#else
++static bool _applyFilters(LangConf::Filter** FilterList, const size_t FilterSize, char*&amp; x, size_t&amp; x_len, const char* filename)
++#endif
+ {	//! \pre FilterList!=NULL
+-	//! \pre Target!=NULL
++	//! \pre x!=NULL
+ 	size_t i = 0;
+-	do	if (!FilterList[i](Target) || NULL==Target) return false;
++#ifndef ZAIMONI_FORCE_ISO
++	do	if (!FilterList[i](x,filename) || !x) return false;
++#else
++	do	if (!FilterList[i](x,x_len,filename) || !x) return false;
++#endif
+ 	while(FilterSize&gt; ++i);
+ 	return true;
+ }
+@@ -131,20 +139,36 @@
+ 		}	
+ }
+ 
+-bool LangConf::ApplyGlobalFilters(char*&amp; Target) const
++#ifndef ZAIMONI_FORCE_ISO
++bool LangConf::ApplyGlobalFilters(char*&amp; x, const char* filename) const
++#else
++bool LangConf::ApplyGlobalFilters(char*&amp; x, size_t&amp; x_len, const char* filename) const
++#endif
+ {
+-	if (NULL!=Target)
++	if (x)
+ 		{	// legal char set is a global filter, but should be fairly late (after comment-stripping)
+-		if (NULL!=GlobalFilters &amp;&amp; !_applyFilters(GlobalFilters,GlobalFilters.size(),Target))
+-			return NULL==Target;
++#ifndef ZAIMONI_FORCE_ISO
++		if (!GlobalFilters.empty() &amp;&amp; !_applyFilters(GlobalFilters,GlobalFilters.size(),x,filename))
++#else
++		if (!GlobalFilters.empty() &amp;&amp; !_applyFilters(GlobalFilters,GlobalFilters.size(),x,x_len,filename))
++#endif
++			return !x;
+ 		}
+ 	return true;
+ }
+ 
+-bool LangConf::ApplyTokenizingFilters(char*&amp; Target) const
++#ifndef ZAIMONI_FORCE_ISO
++bool LangConf::ApplyTokenizingFilters(char*&amp; x) const
++#else
++bool LangConf::ApplyTokenizingFilters(char*&amp; x, size_t&amp; x_len) const
++#endif
+ {
+-	if (NULL==TokenizingFilters || NULL==Target) return true;
+-	return _applyFilters(TokenizingFilters,TokenizingFilters.size(),Target);
++	if (TokenizingFilters.empty() || !x) return true;
++#ifndef ZAIMONI_FORCE_ISO
++	return _applyFilters(TokenizingFilters,TokenizingFilters.size(),x,NULL);
++#else
++	return _applyFilters(TokenizingFilters,TokenizingFilters.size(),x,x_len,NULL);
++#endif
+ }
+ 
+ size_t LangConf::TokenizeCore(const char* Target, lex_flags&amp; Flags) const
+@@ -189,20 +213,28 @@
+ 	return TokenizeCore(Target,Flags);
+ }
+ 
+-size_t LangConf::NextToken(char*&amp; Target, lex_flags&amp; Flags) const
++#ifndef ZAIMONI_FORCE_ISO
++size_t LangConf::NextToken(char*&amp; x, lex_flags&amp; Flags) const
++#else
++size_t LangConf::NextToken(char*&amp; x, size_t&amp; x_len, lex_flags&amp; Flags) const
++#endif
+ {
+-	if (NULL==Target) return 0;
+-	if (NULL!=TokenizingFilters &amp;&amp; !_applyFilters(TokenizingFilters,TokenizingFilters.size(),Target))
++	if (!x) return 0;
++#ifndef ZAIMONI_FORCE_ISO
++	if (!TokenizingFilters.empty() &amp;&amp; !_applyFilters(TokenizingFilters,TokenizingFilters.size(),x,NULL))
++#else
++	if (!TokenizingFilters.empty() &amp;&amp; !_applyFilters(TokenizingFilters,TokenizingFilters.size(),x,x_len,NULL))
++#endif
+ 		return 0;
+ 
+-	return TokenizeCore(Target,Flags);
++	return TokenizeCore(x,Flags);
+ }
+ 
+-bool LangConf::InstallTokenizer(Tokenizer* Source,lex_flags SourceFlags)
++bool LangConf::InstallTokenizer(Tokenizer* src,lex_flags src_flags)
+ {
+ 	const size_t StackSize = Tokenizers.size();
+-	if (!Tokenizers.InsertSlotAt(StackSize,Source)) return false;
+-	if (!TokenizerFlags.InsertSlotAt(StackSize,SourceFlags))
++	if (!Tokenizers.InsertSlotAt(StackSize,src)) return false;
++	if (!TokenizerFlags.InsertSlotAt(StackSize,src_flags))
+ 		{
+ 		Tokenizers.DeleteIdx(StackSize);
+ 		return false;
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.hpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.hpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/Zaimoni.STL/LexParse/LangConf.hpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -89,7 +89,11 @@
+ class LangConf
+ {
+ public:
+-	typedef bool Filter(char*&amp; Target);
++#ifndef ZAIMONI_FORCE_ISO
++	typedef bool Filter(char*&amp; x, const char* filename);
++#else
++	typedef bool Filter(char*&amp; x, size_t&amp; x_len, const char* filename);
++#endif
+ 	typedef size_t Tokenizer(const char* Target);
+ 	typedef size_t PredictTransform(const char* Target, size_t src_len);
+ 	typedef void Transform(char* dest, const char* src, size_t src_len);
+@@ -221,19 +225,28 @@
+ #endif
+ 		};
+ 
+-	bool ApplyGlobalFilters(char*&amp; Target) const;
+-	bool ApplyTokenizingFilters(char*&amp; Target) const;
++#ifndef ZAIMONI_FORCE_ISO
++	bool ApplyGlobalFilters(char*&amp; x, const char* filename) const;
++	bool ApplyTokenizingFilters(char*&amp; x) const;
++#else
++	bool ApplyGlobalFilters(char*&amp; x, size_t&amp; x_len, const char* filename) const;
++	bool ApplyTokenizingFilters(char*&amp; x, size_t&amp; x_len) const;
++#endif
+ private:
+ 	size_t TokenizeCore(const char* Target, lex_flags&amp; Flags) const;
+ 	size_t UnfilteredCommentHidingNextToken(const char* Target, lex_flags&amp; Flags) const;	// internal
+ public:
+ 	size_t UnfilteredNextToken(const char* Target, lex_flags&amp; Flags) const;
+-	size_t NextToken(char*&amp; Target, lex_flags&amp; Flags) const;
++#ifndef ZAIMONI_FORCE_ISO
++	size_t NextToken(char*&amp; x, lex_flags&amp; Flags) const;
++#else
++	size_t NextToken(char*&amp; x, size_t&amp; x_len, lex_flags&amp; Flags) const;
++#endif
++	
++	bool InstallGlobalFilter(Filter* src) { return GlobalFilters.InsertSlotAt(GlobalFilters.size(),src);	};
++	bool InstallTokenizingFilter(Filter* src)	{	return TokenizingFilters.InsertSlotAt(TokenizingFilters.size(),src);	};
++	bool InstallTokenizer(Tokenizer* src,lex_flags src_flags);
+ 
+-	bool InstallGlobalFilter(Filter* Source) { return GlobalFilters.InsertSlotAt(GlobalFilters.size(),Source);	};
+-	bool InstallTokenizingFilter(Filter* Source)	{	return TokenizingFilters.InsertSlotAt(TokenizingFilters.size(),Source);	};
+-	bool InstallTokenizer(Tokenizer* Source,lex_flags SourceFlags);
+-
+ 	size_t lex_find(const char* const x, const char* const target) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+
+Modified: trunk/load_src.cpp
+===================================================================
+--- trunk/load_src.cpp	2010-05-09 18:04:03 UTC (rev 420)
++++ trunk/load_src.cpp	2010-05-09 19:56:23 UTC (rev 421)
+@@ -99,10 +99,11 @@
+ 		Buffer = REALLOC(Buffer,--Buffer_size);
+ #endif
+ 		}
+-	if (!lang.ApplyGlobalFilters(Buffer)) exit(EXIT_FAILURE);
+ #ifndef ZAIMONI_FORCE_ISO
++	if (!lang.ApplyGlobalFilters(Buffer,filename)) exit(EXIT_FAILURE);
+ 	lang.FlattenComments(Buffer);
+ #else
++	if (!lang.ApplyGlobalFilters(Buffer,Buffer_size,filename)) exit(EXIT_FAILURE);
+ 	lang.FlattenComments(Buffer,Buffer_size);
+ #endif
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000187.html">[Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+	<LI>Next message: <A HREF="000189.html">[Zcplusplus-commits] r422 - in trunk: . tools
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#188">[ date ]</a>
+              <a href="thread.html#188">[ thread ]</a>
+              <a href="subject.html#188">[ subject ]</a>
+              <a href="author.html#188">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

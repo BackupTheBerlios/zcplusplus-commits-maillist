@@ -1,0 +1,2565 @@
+From zaimoni at mail.berlios.de  Wed Jun  2 02:46:57 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 2 Jun 2010 02:46:57 +0200
+Subject: [Zcplusplus-commits] r449 - trunk
+Message-ID: <201006020046.o520kvY3009792@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-02 02:46:54 +0200 (Wed, 02 Jun 2010)
+New Revision: 449
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+object size reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-31 17:03:49 UTC (rev 448)
++++ trunk/CSupport.cpp	2010-06-02 00:46:54 UTC (rev 449)
+@@ -4078,6 +4078,13 @@
+ #endif
+ 			&&	src.empty<1>() && src.empty<2>();
+ }
++
++static bool is_nonempty_naked_pair(const parse_tree& src)
++{
++	return !src.empty<0>()  && (is_naked_parentheses_pair(src) 
++		|| is_naked_brace_pair(src)
++		|| is_naked_bracket_pair(src));
++}
+ #/*cut-cpp*/
+ 
+ #ifndef NDEBUG
+@@ -4541,6 +4548,7 @@
+ 	return C_TESTFLAG_IDENTIFIER & x.index_tokens[0].flags;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void make_target_postfix_arg(parse_tree& src,size_t& offset,const size_t i,const size_t j)
+ {
+ 	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws<parse_tree>(1) :  _new_buffer<parse_tree>(1));
+@@ -4555,6 +4563,7 @@
+ 	src.c_array<0>()[j].clear();
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C99_notice_struct_union_enum(parse_tree& src)
+ {
+ 	assert(!src.empty<0>());
+@@ -4630,25 +4639,21 @@
+ 			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
+ 			continue;
+ 			}
+-		else if (   is_naked_parentheses_pair(src.data<0>()[i])
+-				 || is_naked_brace_pair(src.data<0>()[i])
+-				 || is_naked_bracket_pair(src.data<0>()[i]))
+-			{
+-			if (!src.data<0>()[i].empty<0>())
+-				{	// recurse into (...)
+-				if (0<offset)
+-					{
+-					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-					offset = 0;
+-					};
+-				C99_notice_struct_union_enum(src.c_array<0>()[i]);
+-				}
++		else if (is_nonempty_naked_pair(src.data<0>()[i])) 
++			{	// recurse into (...)/{...}/[...]
++			if (0<offset)
++				{
++				src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++				offset = 0;
++				};
++			C99_notice_struct_union_enum(src.c_array<0>()[i]);
+ 			}
+ 		++i;
+ 		};
+ 	if (0<offset) src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_notice_class_struct_union_enum(parse_tree& src)
+ {
+ 	assert(!src.empty<0>());
+@@ -4725,19 +4730,14 @@
+ 			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
+ 			continue;
+ 			}
+-		else if (   is_naked_parentheses_pair(src.data<0>()[i])
+-				 || is_naked_brace_pair(src.data<0>()[i])
+-				 || is_naked_bracket_pair(src.data<0>()[i]))
+-			{
+-			if (!src.data<0>()[i].empty<0>())
+-				{	// recurse into (...)/{...}/[...]
+-				if (0<offset)
+-					{
+-					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-					offset = 0;
+-					};
+-				CPP_notice_class_struct_union_enum(src.c_array<0>()[i]);
+-				}
++		else if (is_nonempty_naked_pair(src.data<0>()[i]))
++			{	// recurse into (...)/{...}/[...]
++			if (0<offset)
++				{
++				src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++				offset = 0;
++				};
++			CPP_notice_class_struct_union_enum(src.c_array<0>()[i]);
+ 			}
+ 		++i;
+ 		};
+@@ -10685,6 +10685,7 @@
+ 
+ #/*cut-cpp*/
+ //! \todo check that the fact all literals are already legal-form is used
++//! \throw std::bad_alloc()
+ static void C99_ContextFreeParse(parse_tree& src,const type_system& types)
+ {
+ 	assert(src.is_raw_list());
+@@ -10801,12 +10802,8 @@
+ 	while(i<src.size<0>())
+ 		{
+ 		parse_tree& tmp = src.c_array<0>()[i++];
+-		if (tmp.empty<0>()) continue;
+-		// recurse into ...
+-		if (   is_naked_parentheses_pair(tmp) // (...)
+-			|| is_naked_brace_pair(tmp) // {...}
+-			|| is_naked_bracket_pair(tmp)) // [...]
+-			CPP_notice_scope_glue(tmp);
++		// recurse into (...)/{...}/[...]
++		if (is_nonempty_naked_pair(tmp)) CPP_notice_scope_glue(tmp);
+ 		};
+ }
+ 
+
+
+
+From zaimoni at mail.berlios.de  Wed Jun  2 05:24:41 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 2 Jun 2010 05:24:41 +0200
+Subject: [Zcplusplus-commits] r450 - trunk
+Message-ID: <201006020324.o523OfAP017176@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-02 05:24:33 +0200 (Wed, 02 Jun 2010)
+New Revision: 450
+
+Added:
+   trunk/cond_act.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/POSIX.dep
+Log:
+try a slightly more functional approach
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-02 00:46:54 UTC (rev 449)
++++ trunk/CSupport.cpp	2010-06-02 03:24:33 UTC (rev 450)
+@@ -37,6 +37,7 @@
+ #include "enum_type.hpp"
+ #include "struct_type.hpp"
+ #include "kleene_star.hpp"
++#include "cond_act.hpp"
+ #/*cut-cpp*/
+ #include "CheckReturn.hpp"
+ 
+@@ -4558,9 +4559,8 @@
+ 		offset = 0;
+ 		tmp = _new_buffer_nonNULL_throws<parse_tree>(1);
+ 		}
+-	*tmp = src.data<0>()[j];
++	src.c_array<0>()[j].OverwriteInto(*tmp);
+ 	src.c_array<0>()[i].fast_set_arg<2>(tmp);
+-	src.c_array<0>()[j].clear();
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -4596,12 +4596,6 @@
+ 				src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data<0>()[i],tmp2));
+-				if (!src.data<0>()[i].data<2>()->empty<0>())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-					offset = 0;
+-					C99_notice_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
+-					};
+ 				continue;
+ 				};
+ 			if (!C99_looks_like_identifier(src.data<0>()[i+1]))
+@@ -4626,12 +4620,6 @@
+ 				src.DestroyNAtAndRotateTo<0>(2,i+1,src.size<0>()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data<0>()[i],tmp2));
+-				if (!src.data<0>()[i].data<2>()->empty<0>())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-					offset = 0;
+-					C99_notice_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
+-					};
+ 				continue;
+ 				};
+ 			src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
+@@ -4639,18 +4627,10 @@
+ 			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
+ 			continue;
+ 			}
+-		else if (is_nonempty_naked_pair(src.data<0>()[i])) 
+-			{	// recurse into (...)/{...}/[...]
+-			if (0<offset)
+-				{
+-				src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-				offset = 0;
+-				};
+-			C99_notice_struct_union_enum(src.c_array<0>()[i]);
+-			}
+ 		++i;
+ 		};
+ 	if (0<offset) src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++	std::for_each(src.begin<0>(),src.end<0>(),conditional_action<bool (*)(const parse_tree&),void (*)(parse_tree&)>(is_nonempty_naked_pair,C99_notice_struct_union_enum));
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -4687,12 +4667,6 @@
+ 				src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
+ 				offset += 1;
+ 				assert(is_C99_anonymous_specifier(src.data<0>()[i],tmp2));
+-				if (!src.data<0>()[i].data<2>()->empty<0>())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-					offset = 0;
+-					CPP_notice_class_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
+-					};
+ 				continue;
+ 				};
+ 			if (!CPP_looks_like_identifier(src.data<0>()[i+1]))
+@@ -4717,12 +4691,6 @@
+ 				src.DestroyNAtAndRotateTo<0>(2,i+1,src.size<0>()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data<0>()[i],tmp2));
+-				if (!src.data<0>()[i].data<2>()->empty<0>())
+-					{	// recurse into { ... }
+-					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-					offset = 0;
+-					CPP_notice_class_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
+-					};
+ 				continue;
+ 				};
+ 			src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
+@@ -4730,18 +4698,10 @@
+ 			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
+ 			continue;
+ 			}
+-		else if (is_nonempty_naked_pair(src.data<0>()[i]))
+-			{	// recurse into (...)/{...}/[...]
+-			if (0<offset)
+-				{
+-				src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
+-				offset = 0;
+-				};
+-			CPP_notice_class_struct_union_enum(src.c_array<0>()[i]);
+-			}
+ 		++i;
+ 		};
+ 	if (0<offset) src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++	std::for_each(src.begin<0>(),src.end<0>(),conditional_action<bool (*)(const parse_tree&),void (*)(parse_tree&)>(is_nonempty_naked_pair,CPP_notice_class_struct_union_enum));
+ }
+ #/*cut-cpp*/
+ 
+@@ -10798,13 +10758,7 @@
+ 
+ 	// efficiency tuning: we have to have no empty slots at top level before recursing,
+ 	// to mitigate risk of dynamic memory allocation failure
+-	i = 0;
+-	while(i<src.size<0>())
+-		{
+-		parse_tree& tmp = src.c_array<0>()[i++];
+-		// recurse into (...)/{...}/[...]
+-		if (is_nonempty_naked_pair(tmp)) CPP_notice_scope_glue(tmp);
+-		};
++	std::for_each(src.begin<0>(),src.end<0>(),conditional_action<bool (*)(const parse_tree&),void (*)(parse_tree&)>(is_nonempty_naked_pair,CPP_notice_scope_glue));
+ }
+ 
+ static void CPP_handle_pragma_relay(parse_tree& src)
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-06-02 00:46:54 UTC (rev 449)
++++ trunk/POSIX.dep	2010-06-02 03:24:33 UTC (rev 450)
+@@ -35,7 +35,7 @@
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+-CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/!
+ operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic!
+ _lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/l!
+ ogic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+
+Added: trunk/cond_act.hpp
+===================================================================
+--- trunk/cond_act.hpp	2010-06-02 00:46:54 UTC (rev 449)
++++ trunk/cond_act.hpp	2010-06-02 03:24:33 UTC (rev 450)
+@@ -0,0 +1,18 @@
++// cond_act.hpp
++
++#ifndef COND_ACT_HPP
++#define COND_ACT_HPP 1
++
++// from Prolog, etc.
++template<typename Guard,typename Action>
++class conditional_action 
++{
++private:
++	Guard _guard;
++	Action _action;
++public:
++	conditional_action(Guard guard, Action action) : _guard(guard),_action(action) {};
++	template<class T> void operator()(T& x) {if (_guard(x)) _action(x);} 
++};
++
++#endif
+
+
+
+From zaimoni at mail.berlios.de  Wed Jun  2 05:41:37 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 2 Jun 2010 05:41:37 +0200
+Subject: [Zcplusplus-commits] r451 - trunk
+Message-ID: <201006020341.o523fbJ3017846@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-02 05:41:34 +0200 (Wed, 02 Jun 2010)
+New Revision: 451
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+stabilize data integrity against dynamic memory shortage
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-02 03:24:33 UTC (rev 450)
++++ trunk/CSupport.cpp	2010-06-02 03:41:34 UTC (rev 451)
+@@ -4611,17 +4611,20 @@
+ 				offset += 1;
+ 				continue;
+ 				};
+-			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
+-			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
+-			src.c_array<0>()[i+1].clear();
+ 			if (2<src.size<0>()-(i+offset) && is_naked_brace_pair(src.data<0>()[i+2]))
+ 				{
+ 				make_target_postfix_arg(src,offset,i,i+2);
++				src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++				src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
++				src.c_array<0>()[i+1].clear();
+ 				src.DestroyNAtAndRotateTo<0>(2,i+1,src.size<0>()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data<0>()[i],tmp2));
+ 				continue;
+ 				};
++			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
++			src.c_array<0>()[i+1].clear();
+ 			src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
+ 			offset += 1;
+ 			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
+@@ -4682,17 +4685,20 @@
+ 				offset += 1;
+ 				continue;
+ 				};
+-			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
+-			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
+-			src.c_array<0>()[i+1].clear();
+ 			if (2<src.size<0>()-(i+offset) && is_naked_brace_pair(src.data<0>()[i+2]))
+ 				{
+ 				make_target_postfix_arg(src,offset,i,i+2);
++				src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++				src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
++				src.c_array<0>()[i+1].clear();
+ 				src.DestroyNAtAndRotateTo<0>(2,i+1,src.size<0>()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data<0>()[i],tmp2));
+ 				continue;
+ 				};
++			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
++			src.c_array<0>()[i+1].clear();
+ 			src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
+ 			offset += 1;
+ 			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
+
+
+
+From zaimoni at mail.berlios.de  Wed Jun  2 06:59:33 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 2 Jun 2010 06:59:33 +0200
+Subject: [Zcplusplus-commits] r452 - trunk
+Message-ID: <201006020459.o524xXqG013225@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-02 06:59:29 +0200 (Wed, 02 Jun 2010)
+New Revision: 452
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+doxygen warning suppression
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-02 03:41:34 UTC (rev 451)
++++ trunk/CSupport.cpp	2010-06-02 04:59:29 UTC (rev 452)
+@@ -12973,7 +12973,7 @@
+ 				type_system::type_index tmp = types.get_id_enum(src.data<0>()[i].index_tokens[1].token.first);
+ 				src.c_array<0>()[i].type_code.set_type(C_TYPE::INT);	// C: enums are int (although we'd like to extend this a bit)
+ 				if (!tmp)
+-					{	//! \test zcc\decl.C99\Error_enum_undef.h
++					{	//! \test zcc/decl.C99/Error_enum_undef.h
+ 					message_header(src.data<0>()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM("'enum ");
+@@ -12988,7 +12988,7 @@
+ 			{	// can only define once
+ 			const type_system::type_index tmp = types.get_id_enum(src.data<0>()[i].index_tokens[1].token.first);
+ 			if (tmp)
+-				{	//! \test zcc\decl.C99\Error_enum_multidef.h
++				{	//! \test zcc/decl.C99/Error_enum_multidef.h
+ 				message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM("'enum ");
+@@ -13004,7 +13004,7 @@
+ 				continue;
+ 				};
+ 			// enum-specifier doesn't have a specific declaration mode
+-			//! \test zcc\decl.C99\Pass_enum_def.h
++			//! \test zcc/decl.C99/Pass_enum_def.h
+ 			const type_system::type_index tmp2 = types.register_enum_def(src.data<0>()[i].index_tokens[1].token.first,src.data<0>()[i].index_tokens[1].logical_line,src.data<0>()[i].index_tokens[1].src_filename);
+ 			assert(types.get_id_enum(src.data<0>()[i].index_tokens[1].token.first)==tmp2);
+ 			if (!record_enum_values(*src.c_array<0>()[i].c_array<2>(),types,tmp2,NULL,false,C99_echo_reserved_keyword,C99_intlike_literal_to_VM,C99_CondenseParseTree,C99_EvalParseTree))
+@@ -13382,8 +13382,8 @@
+ 	// think we can handle this as "disallow conflicting definitions"
+ 	// should be able to disable this warning (it's about bloat)
+ 	if (src.empty<0>())
+-		{	//! \test zcc\namespace.CPP\Warn_emptybody1.hpp
+-			//! \test zcc\namespace.CPP\Warn_emptybody2.hpp
++		{	//! \test zcc/namespace.CPP/Warn_emptybody1.hpp
++			//! \test zcc/namespace.CPP/Warn_emptybody2.hpp
+ 			//! \todo -Wno-bloat turns off 
+ 		message_header(src.index_tokens[0]);
+ 		INC_INFORM(WARN_STR);
+@@ -13500,7 +13500,7 @@
+ 				src.c_array<0>()[i].type_code.set_type(tmp);	// C++: enums are own type
+ 				if (!tmp)
+ 					{	// this belongs elsewhere
+-						//! \test zcc\decl.C99\Error_enum_undef.hpp
++						//! \test zcc/decl.C99/Error_enum_undef.hpp
+ 					message_header(src.data<0>()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM("'enum ");
+@@ -13518,7 +13518,7 @@
+ 			const char* fullname = namespace_name ? namespace_name : src.data<0>()[i].index_tokens[1].token.first;
+ 			type_system::type_index tmp = types.get_id_enum(fullname);
+ 			if (tmp)
+-				{	//! \test zcc\decl.C99\Error_enum_multidef.hpp
++				{	//! \test zcc/decl.C99/Error_enum_multidef.hpp
+ 				message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM("'enum ");
+@@ -13535,7 +13535,7 @@
+ 				continue;
+ 				};
+ 			free(namespace_name);
+-			//! \test zcc\decl.C99\Pass_enum_def.hpp
++			//! \test zcc/decl.C99/Pass_enum_def.hpp
+ 			// enum-specifier doesn't have a specific declaration mode
+ 			const type_system::type_index tmp2 = types.register_enum_def_CPP(src.data<0>()[i].index_tokens[1].token.first,active_namespace,src.data<0>()[i].index_tokens[1].logical_line,src.data<0>()[i].index_tokens[1].src_filename);
+ 			assert(types.get_id_enum_CPP(src.data<0>()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -13776,7 +13776,7 @@
+ 				// accept if: next token is an identifier, and the token after that is {} (typical namespace)
+ 				// fail otherwise
+ 			if (1>=src.size<0>()-i)
+-				{	//! \test zcc\namespace.CPP\Error_premature1.hpp
++				{	//! \test zcc/namespace.CPP/Error_premature1.hpp
+ 				message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM("namespace declaration cut off by end of scope");
+@@ -13787,7 +13787,7 @@
+ 			if (	robust_token_is_char<'{'>(src.data<0>()[i+1].index_tokens[0].token)
+ 				&&	robust_token_is_char<'}'>(src.data<0>()[i+1].index_tokens[1].token))
+ 				{	//! handle unnamed namespace
+-					//! \test zcc\namespace.CPP\Warn_emptybody2.hpp
++					//! \test zcc/namespace.CPP/Warn_emptybody2.hpp
+ 					// regardless of official linkage, entities in anonymous namespaces aren't very accessible outside of the current translation unit;
+ 					// any reasonable linker thinks they have static linkage
+ 				src.c_array<0>()[i].resize<2>(2);
+@@ -13836,7 +13836,7 @@
+ 				continue;
+ 				};
+ 			if (!namespace_has_body)
+-				{	//! \test zcc\namespace.CPP\Error_premature2.hpp
++				{	//! \test zcc/namespace.CPP/Error_premature2.hpp
+ 				message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM("'namespace ");
+@@ -13846,7 +13846,7 @@
+ 				src.DeleteNSlotsAt<0>(2,i);
+ 				continue;
+ 				};
+-			//! \test zcc\namespace.CPP\Warn_emptybody1.hpp
++			//! \test zcc/namespace.CPP/Warn_emptybody1.hpp
+ 			// process namespace
+ 			// namespace name: postfix arg 1
+ 			// namespace definition body: postfix arg 2
+
+
+
+From zaimoni at mail.berlios.de  Thu Jun  3 05:14:00 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 3 Jun 2010 05:14:00 +0200
+Subject: [Zcplusplus-commits] r453 - trunk
+Message-ID: <201006030314.o533E03A009742@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-03 05:13:56 +0200 (Thu, 03 Jun 2010)
+New Revision: 453
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+reduce memory footprint for representing C++ namespaces; place for a formatting hook for ParseTree
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-02 04:59:29 UTC (rev 452)
++++ trunk/CSupport.cpp	2010-06-03 03:13:56 UTC (rev 453)
+@@ -13353,13 +13353,13 @@
+ static bool is_CPP_namespace(const parse_tree& src)
+ {
+ 	return		robust_token_is_string<9>(src.index_tokens[0].token,"namespace")
+-			&&	2==src.size<2>()
+-			&&	src.data<2>()[0].is_atomic()
++			&&	src.index_tokens[1].token.first
++			&&	1==src.size<2>()
+ #ifndef NDEBUG
+-			&&	C_TESTFLAG_IDENTIFIER==src.data<2>()[0].index_tokens[0].flags
++			&&	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
+ #endif
+-			&&	robust_token_is_char<'{'>(src.data<2>()[1].index_tokens[0].token)
+-			&&	robust_token_is_char<'}'>(src.data<2>()[1].index_tokens[1].token);
++			&&	robust_token_is_char<'{'>(src.data<2>()[0].index_tokens[0].token)
++			&&	robust_token_is_char<'}'>(src.data<2>()[0].index_tokens[1].token);
+ }
+ #endif
+ 
+@@ -13790,14 +13790,14 @@
+ 					//! \test zcc/namespace.CPP/Warn_emptybody2.hpp
+ 					// regardless of official linkage, entities in anonymous namespaces aren't very accessible outside of the current translation unit;
+ 					// any reasonable linker thinks they have static linkage
+-				src.c_array<0>()[i].resize<2>(2);
+-				src.c_array<0>()[i+1].OverwriteInto(src.c_array<0>()[i].c_array<2>()[1]);
++				src.c_array<0>()[i].resize<2>(1);
++				src.c_array<0>()[i+1].OverwriteInto(src.c_array<0>()[i].c_array<2>()[0]);
+ 				src.DeleteIdx<0>(i+1);
+ 
+ 				// anonymous namespace names are technically illegal
+ 				// GCC uses <unknown> and handles uniqueness at link time
+-				src.c_array<0>()[i].c_array<2>()[0].grab_index_token_from_str_literal<0>("<unknown>",C_TESTFLAG_IDENTIFIER);	// pretend it's an identifier
+-				src.c_array<0>()[i].c_array<2>()[0].grab_index_token_location_from<0,0>(src.data<0>()[i].data<2>()[1]);	// inject it at where the namespace body starts
++				src.c_array<0>()[i].grab_index_token_from_str_literal<1>("<unknown>",C_TESTFLAG_IDENTIFIER);	// pretend it's an identifier
++				src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i].data<2>()[0]);	// inject it at where the namespace body starts
+ 				src.c_array<0>()[i].flags |= parse_tree::GOOD_LINE_BREAK;
+ 				assert(is_CPP_namespace(src.data<0>()[i]));
+ 
+@@ -13807,11 +13807,11 @@
+ 					strcpy(new_active_namespace,active_namespace);
+ 					strcat(new_active_namespace,"::<unknown>");
+ 					strcat(new_active_namespace,"");
+-					CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[1],types,new_active_namespace);
++					CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[0],types,new_active_namespace);
+ 					free(new_active_namespace);
+ 					}
+ 				else{
+-					CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[1],types,"<unknown>");
++					CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[0],types,"<unknown>");
+ 					}
+ 				++i;
+ 				continue;
+@@ -13852,9 +13852,10 @@
+ 			// namespace definition body: postfix arg 2
+ 			// the namespace name is likely to be reused: atomic string target
+ 			register_token<0>(src.c_array<0>()[i+1]);
+-			src.c_array<0>()[i].resize<2>(2);
+-			src.c_array<0>()[i+1].OverwriteInto(src.c_array<0>()[i].c_array<2>()[0]);
+-			src.c_array<0>()[i+2].OverwriteInto(src.c_array<0>()[i].c_array<2>()[1]);
++			src.c_array<0>()[i].resize<2>(1);
++			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);	// inject it at where the namespace body starts
++			src.c_array<0>()[i+2].OverwriteInto(src.c_array<0>()[i].c_array<2>()[0]);
+ 			src.DeleteNSlotsAt<0>(2,i+1);
+ 			src.c_array<0>()[i].flags |= parse_tree::GOOD_LINE_BREAK;
+ 			assert(is_CPP_namespace(src.data<0>()[i]));
+@@ -13862,12 +13863,12 @@
+ 			if (NULL==active_namespace)
+ 				{	// global
+ 					//! \todo expand namespace aliases
+-				CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[1],types,src.c_array<0>()[i].c_array<2>()[0].index_tokens[0].token.first);
++				CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[0],types,src.c_array<0>()[i].index_tokens[1].token.first);
+ 				}
+ 			else{	// nested
+ 					//! \todo expand namespace aliases
+-				char* const new_active_namespace = type_system::namespace_concatenate(src.c_array<0>()[i].c_array<2>()[0].index_tokens[0].token.first,active_namespace,"::");
+-				CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[1],types,new_active_namespace);
++				char* const new_active_namespace = type_system::namespace_concatenate(src.c_array<0>()[i].index_tokens[1].token.first,active_namespace,"::");
++				CPP_ParseNamespace(src.c_array<0>()[i].c_array<2>()[0],types,new_active_namespace);
+ 				free(new_active_namespace);
+ 				}
+ 			++i;
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2010-06-02 04:59:29 UTC (rev 452)
++++ trunk/ParseTree.cpp	2010-06-03 03:13:56 UTC (rev 453)
+@@ -5,6 +5,8 @@
+ 
+ using namespace zaimoni;
+ 
++bool (*parse_tree::hook_INC_INFORM)(const parse_tree&) = NULL;
++
+ // in case we have to debug memory corruption
+ // #define IRRATIONAL_CAUTION 1
+ 
+@@ -452,6 +454,7 @@
+ 
+ void INC_INFORM(const parse_tree& src)
+ {	// generally...
++	if (parse_tree::hook_INC_INFORM && parse_tree::hook_INC_INFORM(src)) return;
+ 	// prefix data
+ #define USER_MASK (ULONG_MAX-((1U<<parse_tree::PREDEFINED_STRICT_UB)-1))
+ 	const lex_flags my_rank = src.flags & USER_MASK;
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-06-02 04:59:29 UTC (rev 452)
++++ trunk/ParseTree.hpp	2010-06-03 03:13:56 UTC (rev 453)
+@@ -49,6 +49,9 @@
+ 	// XXX synchronized against type_system.hpp
+     type_spec type_code;
+ 
++    // language-specific helper for INC_INFORM
++    static bool (*hook_INC_INFORM)(const parse_tree&); 
++    
+ 	void MoveInto(parse_tree& dest);
+ 	void OverwriteInto(parse_tree& dest);
+ 
+@@ -310,6 +313,7 @@
+ 		BOOST_STATIC_ASSERT(STATIC_SIZE(index_tokens)>src_idx);
+ 		if (own_index_token<dest_idx>()) free(const_cast<char*>(index_tokens[dest_idx].token.first));
+ 		index_tokens[dest_idx].token = tmp.index_tokens[src_idx].token;
++		index_tokens[dest_idx].flags = tmp.index_tokens[src_idx].flags;
+ 		control_index_token<dest_idx>(tmp.own_index_token<src_idx>());
+ 		tmp.control_index_token<src_idx>(false);
+ 		}
+
+
+
+From zaimoni at mail.berlios.de  Sun Jun  6 01:09:50 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 6 Jun 2010 01:09:50 +0200
+Subject: [Zcplusplus-commits] r454 - in trunk: . Zaimoni.STL
+Message-ID: <201006052309.o55N9ovE011338@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-06 01:09:38 +0200 (Sun, 06 Jun 2010)
+New Revision: 454
+
+Added:
+   trunk/Zaimoni.STL/Perl_localize.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/POSIX.dep
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+actually use that language-specific printing hook
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/CSupport.cpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -38,6 +38,7 @@
+ #include "struct_type.hpp"
+ #include "kleene_star.hpp"
+ #include "cond_act.hpp"
++#include "Zaimoni.STL/Perl_localize.hpp"
+ #/*cut-cpp*/
+ #include "CheckReturn.hpp"
+ 
+@@ -12882,6 +12883,113 @@
+ 	return true;
+ }
+ 
++// language-specific printing overrides
++static void render_type(const type_spec& src,const type_system& types, const char* const name)
++{	// function types will need a different naming scheme
++	const char* const type_name = types.name(src.base_type_index);
++	// each ptr to array transition needs a parentheses pair to group properly
++	size_t i = src.pointer_power;
++	size_t start_ptr_scan = src.pointer_power;
++	while(0<i)
++		{
++		if (type_spec::_array & src.qualifier(i--)) continue;
++		if (0<i && (type_spec::_array & src.qualifier(i)) && !(type_spec::_array & src.qualifier(i+1)))
++			{
++			while(--start_ptr_scan>i)
++				{
++				if (type_spec::_array & src.qualifier(start_ptr_scan+1)) continue;
++				INC_INFORM('*');
++				if (type_spec::_restrict & src.qualifier(start_ptr_scan+1))
++					INC_INFORM("restrict ");
++				if (type_spec::_const & src.qualifier(start_ptr_scan+1))
++					INC_INFORM("const ");
++				if (type_spec::_volatile & src.qualifier(start_ptr_scan+1))
++					INC_INFORM("volatile ");
++				};
++			INC_INFORM("(");
++			}
++		}
++		
++	if (type_spec::_const & src.qualifier<0>())
++		INC_INFORM("const ");
++	if (type_spec::_volatile & src.qualifier<0>())
++		INC_INFORM("volatile ");
++	INC_INFORM(type_name ? type_name : "<unresolved type>");
++
++	while(0<start_ptr_scan--)
++		{
++		if (type_spec::_array & src.qualifier(start_ptr_scan+1)) continue;
++		INC_INFORM('*');
++		if (type_spec::_restrict & src.qualifier(start_ptr_scan+1))
++			INC_INFORM("restrict ");
++		if (type_spec::_const & src.qualifier(start_ptr_scan+1))
++			INC_INFORM("const ");
++		if (type_spec::_volatile & src.qualifier(start_ptr_scan+1))
++			INC_INFORM("volatile ");		
++		}
++
++	if (name && *name) INC_INFORM(name);
++		
++	i = 0;
++	while(i<src.pointer_power)
++		{
++		if (!(type_spec::_array & src.qualifier(++i)))
++			{
++			if (type_spec::_array & src.qualifier(i-1))
++				INC_INFORM(")");
++			continue;
++			}
++		INC_INFORM("[");
++		if (src.extent_vector[i-1]) INC_INFORM(src.extent_vector[i-1]); 
++		INC_INFORM("]");
++		}
++	
++}
++
++static bool C99_hook_INC_INFORM(const parse_tree& src)
++{
++	if (PARSE_TYPE & src.flags)
++		{
++		assert(parse_tree::types);
++		render_type(src.type_code,*parse_tree::types,NULL);
++		return true;
++		}
++	return false;
++}
++
++static bool is_CPP_namespace(const parse_tree& src)
++{
++	return	robust_token_is_string<9>(src.index_tokens[0].token,"namespace")
++		&&	src.index_tokens[1].token.first
++		&&	1==src.size<2>()
++#ifndef NDEBUG
++		&&	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
++#endif
++		&&	robust_token_is_char<'{'>(src.data<2>()[0].index_tokens[0].token)
++		&&	robust_token_is_char<'}'>(src.data<2>()[0].index_tokens[1].token);
++}
++
++static bool CPP_hook_INC_INFORM(const parse_tree& src)
++{
++	if (PARSE_TYPE & src.flags)
++		{
++		assert(parse_tree::types);
++		render_type(src.type_code,*parse_tree::types,NULL);
++		return true;
++		}
++	if (is_CPP_namespace(src) && robust_token_is_string<9>(src.index_tokens[1].token,"<unknown>"))
++		{	// make anonymous namespaces look like authentic source code
++		// first index token
++		INC_INFORM(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
++		INC_INFORM(' ');
++		// postfix data
++		INC_INFORM(*src.data<2>());
++		if (src.flags & parse_tree::GOOD_LINE_BREAK) INC_INFORM('\n');
++		return true;
++		};
++	return false;
++}
++
+ // will need: "function-type vector"
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -12905,6 +13013,8 @@
+ 	// note that typedefs and struct/union declarations/definitions create new types; if this happens we are no longer context-free (so second pass with context-based parsing)
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as "disallow conflicting definitions"
++	zaimoni::Perl::localize<bool (*)(const parse_tree&)>(parse_tree::hook_INC_INFORM,C99_hook_INC_INFORM);
++	zaimoni::Perl::localize<type_system*>(parse_tree::types,&types);
+ 	size_t i = 0;
+ 	while(i<src.size<0>())
+ 		{
+@@ -13349,20 +13459,6 @@
+ 		}
+ }
+ 
+-#ifndef NDEBUG
+-static bool is_CPP_namespace(const parse_tree& src)
+-{
+-	return		robust_token_is_string<9>(src.index_tokens[0].token,"namespace")
+-			&&	src.index_tokens[1].token.first
+-			&&	1==src.size<2>()
+-#ifndef NDEBUG
+-			&&	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
+-#endif
+-			&&	robust_token_is_char<'{'>(src.data<2>()[0].index_tokens[0].token)
+-			&&	robust_token_is_char<'}'>(src.data<2>()[0].index_tokens[1].token);
+-}
+-#endif
+-
+ // handle namespaces or else
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc
+@@ -14098,6 +14194,8 @@
+ //! \throw std::bad_alloc
+ static void CPP_ContextParse(parse_tree& src,type_system& types)
+ {
++	zaimoni::Perl::localize<bool (*)(const parse_tree&)>(parse_tree::hook_INC_INFORM,CPP_hook_INC_INFORM);
++	zaimoni::Perl::localize<type_system*>(parse_tree::types,&types);
+ 	CPP_ParseNamespace(src,types,NULL);
+ }
+ #/*cut-cpp*/
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/POSIX.dep	2010-06-05 23:09:38 UTC (rev 454)
+@@ -35,7 +35,7 @@
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+-CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic!
+ _lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp Zaimoni.STL/Perl_localize.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio!
+ _autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/l!
+ ogic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/ParseTree.cpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -6,6 +6,7 @@
+ using namespace zaimoni;
+ 
+ bool (*parse_tree::hook_INC_INFORM)(const parse_tree&) = NULL;
++type_system* parse_tree::types = NULL;
+ 
+ // in case we have to debug memory corruption
+ // #define IRRATIONAL_CAUTION 1
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/ParseTree.hpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -13,6 +13,7 @@
+ // Unfortunately, new/delete and realloc don't mix -- and this type can have multiple lists of tokens underneath it....
+ 
+ struct parse_tree;
++class type_system;
+ 
+ namespace boost {
+ 
+@@ -49,8 +50,9 @@
+ 	// XXX synchronized against type_system.hpp
+     type_spec type_code;
+ 
+-    // language-specific helper for INC_INFORM
+-    static bool (*hook_INC_INFORM)(const parse_tree&); 
++    // language-specific helpers for INC_INFORM
++    static bool (*hook_INC_INFORM)(const parse_tree&);
++    static type_system* types;
+     
+ 	void MoveInto(parse_tree& dest);
+ 	void OverwriteInto(parse_tree& dest);
+
+Added: trunk/Zaimoni.STL/Perl_localize.hpp
+===================================================================
+--- trunk/Zaimoni.STL/Perl_localize.hpp	2010-06-03 03:13:56 UTC (rev 453)
++++ trunk/Zaimoni.STL/Perl_localize.hpp	2010-06-05 23:09:38 UTC (rev 454)
+@@ -0,0 +1,38 @@
++// Perl_localize.hpp
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++#ifndef ZAIMONI_STL_PERL_LOCALIZE_HPP
++#define ZAIMONI_STL_PERL_LOCALIZE_HPP 1
++
++/*
++ Perl's local operator pushes the current value of the target global variable 
++ onto the stack, then initializes the variable to the desired value.  When
++ the scope of the local operator ends, the original value is restored by 
++ popping from the stack.
++
++ We'd like other versions for when operator= can fail but something else
++ cannot fail.
++ */
++
++namespace zaimoni {
++namespace Perl {
++
++template<class T>
++class localize
++{
++private:
++	const T _backup;
++	T& _target;
++	// uncopyable
++	localize(const localize& src);
++	void operator=(const localize& src);
++public:
++	localize(T& target, const T& src)
++	:	_backup(target),_target(target) { target = src; };
++	~localize() { _target = _backup; };
++};
++
++}	// end namespace Perl
++}	// end namespace zaimoni
++
++#endif
+
+
+
+From zaimoni at mail.berlios.de  Mon Jun  7 02:54:59 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 7 Jun 2010 02:54:59 +0200
+Subject: [Zcplusplus-commits] r455 - trunk
+Message-ID: <201006070054.o570sxND019126@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-07 02:54:55 +0200 (Mon, 07 Jun 2010)
+New Revision: 455
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+minor code clean
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-05 23:09:38 UTC (rev 454)
++++ trunk/CSupport.cpp	2010-06-07 00:54:55 UTC (rev 455)
+@@ -1124,14 +1124,14 @@
+ {
+ 	const errr i = linear_find(x,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list));
+ 	if (STATIC_SIZE(C99_decl_specifier_list)>i) return i;
+-	return (size_t)(-1);
++	return SIZE_MAX;
+ }
+ 
+ size_t CPP0X_invariant_decl_specifier(const char* const x)
+ {
+ 	const errr i = linear_find(x,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list));
+ 	if (STATIC_SIZE(CPP0X_decl_specifier_list)>i) return i;
+-	return (size_t)(-1);
++	return SIZE_MAX;
+ }	
+ #/*cut-cpp*/
+ 
+@@ -3698,7 +3698,6 @@
+ 			while(!invariant_decl_scanner.empty());
+ 
+ 			// defer handling: _Thread_Local, typedef, other storage class issues
+-			invariant_decl_scanner.clear();
+ 			}
+ 		}
+ 	while(src.size<0>()> ++i);
+@@ -4028,7 +4027,6 @@
+ 			while(!invariant_decl_scanner.empty());
+ 
+ 			// defer handling thread_local, typedef restrictions 
+-			invariant_decl_scanner.clear();
+ 			}
+ 		}
+ 	while(src.size<0>()> ++i);
+
+
+
+From zaimoni at mail.berlios.de  Mon Jun  7 20:47:55 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 7 Jun 2010 20:47:55 +0200
+Subject: [Zcplusplus-commits] r456 - trunk
+Message-ID: <201006071847.o57IltRW022683@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-07 20:47:43 +0200 (Mon, 07 Jun 2010)
+New Revision: 456
+
+Added:
+   trunk/_CSupport4.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/POSIX.dep
+   trunk/ZParser.cpp
+   trunk/ZParser.hpp
+Log:
+make language-specific printing hooks actually work
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-07 00:54:55 UTC (rev 455)
++++ trunk/CSupport.cpp	2010-06-07 18:47:43 UTC (rev 456)
+@@ -5,6 +5,7 @@
+ #/*cut-cpp*/
+ #include "CSupport.hpp"
+ #include "_CSupport3.hpp"
++#include "_CSupport4.hpp"
+ #/*cut-cpp*/
+ #include "CSupport_pp.hpp"
+ #include "_CSupport1.hpp"
+@@ -38,7 +39,6 @@
+ #include "struct_type.hpp"
+ #include "kleene_star.hpp"
+ #include "cond_act.hpp"
+-#include "Zaimoni.STL/Perl_localize.hpp"
+ #/*cut-cpp*/
+ #include "CheckReturn.hpp"
+ 
+@@ -12881,113 +12881,6 @@
+ 	return true;
+ }
+ 
+-// language-specific printing overrides
+-static void render_type(const type_spec& src,const type_system& types, const char* const name)
+-{	// function types will need a different naming scheme
+-	const char* const type_name = types.name(src.base_type_index);
+-	// each ptr to array transition needs a parentheses pair to group properly
+-	size_t i = src.pointer_power;
+-	size_t start_ptr_scan = src.pointer_power;
+-	while(0<i)
+-		{
+-		if (type_spec::_array & src.qualifier(i--)) continue;
+-		if (0<i && (type_spec::_array & src.qualifier(i)) && !(type_spec::_array & src.qualifier(i+1)))
+-			{
+-			while(--start_ptr_scan>i)
+-				{
+-				if (type_spec::_array & src.qualifier(start_ptr_scan+1)) continue;
+-				INC_INFORM('*');
+-				if (type_spec::_restrict & src.qualifier(start_ptr_scan+1))
+-					INC_INFORM("restrict ");
+-				if (type_spec::_const & src.qualifier(start_ptr_scan+1))
+-					INC_INFORM("const ");
+-				if (type_spec::_volatile & src.qualifier(start_ptr_scan+1))
+-					INC_INFORM("volatile ");
+-				};
+-			INC_INFORM("(");
+-			}
+-		}
+-		
+-	if (type_spec::_const & src.qualifier<0>())
+-		INC_INFORM("const ");
+-	if (type_spec::_volatile & src.qualifier<0>())
+-		INC_INFORM("volatile ");
+-	INC_INFORM(type_name ? type_name : "<unresolved type>");
+-
+-	while(0<start_ptr_scan--)
+-		{
+-		if (type_spec::_array & src.qualifier(start_ptr_scan+1)) continue;
+-		INC_INFORM('*');
+-		if (type_spec::_restrict & src.qualifier(start_ptr_scan+1))
+-			INC_INFORM("restrict ");
+-		if (type_spec::_const & src.qualifier(start_ptr_scan+1))
+-			INC_INFORM("const ");
+-		if (type_spec::_volatile & src.qualifier(start_ptr_scan+1))
+-			INC_INFORM("volatile ");		
+-		}
+-
+-	if (name && *name) INC_INFORM(name);
+-		
+-	i = 0;
+-	while(i<src.pointer_power)
+-		{
+-		if (!(type_spec::_array & src.qualifier(++i)))
+-			{
+-			if (type_spec::_array & src.qualifier(i-1))
+-				INC_INFORM(")");
+-			continue;
+-			}
+-		INC_INFORM("[");
+-		if (src.extent_vector[i-1]) INC_INFORM(src.extent_vector[i-1]); 
+-		INC_INFORM("]");
+-		}
+-	
+-}
+-
+-static bool C99_hook_INC_INFORM(const parse_tree& src)
+-{
+-	if (PARSE_TYPE & src.flags)
+-		{
+-		assert(parse_tree::types);
+-		render_type(src.type_code,*parse_tree::types,NULL);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-static bool is_CPP_namespace(const parse_tree& src)
+-{
+-	return	robust_token_is_string<9>(src.index_tokens[0].token,"namespace")
+-		&&	src.index_tokens[1].token.first
+-		&&	1==src.size<2>()
+-#ifndef NDEBUG
+-		&&	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
+-#endif
+-		&&	robust_token_is_char<'{'>(src.data<2>()[0].index_tokens[0].token)
+-		&&	robust_token_is_char<'}'>(src.data<2>()[0].index_tokens[1].token);
+-}
+-
+-static bool CPP_hook_INC_INFORM(const parse_tree& src)
+-{
+-	if (PARSE_TYPE & src.flags)
+-		{
+-		assert(parse_tree::types);
+-		render_type(src.type_code,*parse_tree::types,NULL);
+-		return true;
+-		}
+-	if (is_CPP_namespace(src) && robust_token_is_string<9>(src.index_tokens[1].token,"<unknown>"))
+-		{	// make anonymous namespaces look like authentic source code
+-		// first index token
+-		INC_INFORM(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
+-		INC_INFORM(' ');
+-		// postfix data
+-		INC_INFORM(*src.data<2>());
+-		if (src.flags & parse_tree::GOOD_LINE_BREAK) INC_INFORM('\n');
+-		return true;
+-		};
+-	return false;
+-}
+-
+ // will need: "function-type vector"
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -13011,8 +12904,6 @@
+ 	// note that typedefs and struct/union declarations/definitions create new types; if this happens we are no longer context-free (so second pass with context-based parsing)
+ 	// ask GCC: struct/class/union/enum collides with each other (both C and C++), does not collide with namespace
+ 	// think we can handle this as "disallow conflicting definitions"
+-	zaimoni::Perl::localize<bool (*)(const parse_tree&)>(parse_tree::hook_INC_INFORM,C99_hook_INC_INFORM);
+-	zaimoni::Perl::localize<type_system*>(parse_tree::types,&types);
+ 	size_t i = 0;
+ 	while(i<src.size<0>())
+ 		{
+@@ -13457,6 +13348,113 @@
+ 		}
+ }
+ 
++// language-specific printing overrides
++static void render_type(const type_spec& src,const type_system& types, const char* const name)
++{	// function types will need a different naming scheme
++	const char* const type_name = types.name(src.base_type_index);
++	// each ptr to array transition needs a parentheses pair to group properly
++	size_t i = src.pointer_power;
++	size_t start_ptr_scan = src.pointer_power;
++	while(0<i)
++		{
++		if (type_spec::_array & src.qualifier(i--)) continue;
++		if (0<i && (type_spec::_array & src.qualifier(i)) && !(type_spec::_array & src.qualifier(i+1)))
++			{
++			while(--start_ptr_scan>i)
++				{
++				if (type_spec::_array & src.qualifier(start_ptr_scan+1)) continue;
++				INC_INFORM('*');
++				if (type_spec::_restrict & src.qualifier(start_ptr_scan+1))
++					INC_INFORM("restrict ");
++				if (type_spec::_const & src.qualifier(start_ptr_scan+1))
++					INC_INFORM("const ");
++				if (type_spec::_volatile & src.qualifier(start_ptr_scan+1))
++					INC_INFORM("volatile ");
++				};
++			INC_INFORM("(");
++			}
++		}
++		
++	if (type_spec::_const & src.qualifier<0>())
++		INC_INFORM("const ");
++	if (type_spec::_volatile & src.qualifier<0>())
++		INC_INFORM("volatile ");
++	INC_INFORM(type_name ? type_name : "<unresolved type>");
++
++	while(0<start_ptr_scan--)
++		{
++		if (type_spec::_array & src.qualifier(start_ptr_scan+1)) continue;
++		INC_INFORM('*');
++		if (type_spec::_restrict & src.qualifier(start_ptr_scan+1))
++			INC_INFORM("restrict ");
++		if (type_spec::_const & src.qualifier(start_ptr_scan+1))
++			INC_INFORM("const ");
++		if (type_spec::_volatile & src.qualifier(start_ptr_scan+1))
++			INC_INFORM("volatile ");		
++		}
++
++	if (name && *name) INC_INFORM(name);
++		
++	i = 0;
++	while(i<src.pointer_power)
++		{
++		if (!(type_spec::_array & src.qualifier(++i)))
++			{
++			if (type_spec::_array & src.qualifier(i-1))
++				INC_INFORM(")");
++			continue;
++			}
++		INC_INFORM("[");
++		if (src.extent_vector[i-1]) INC_INFORM(src.extent_vector[i-1]); 
++		INC_INFORM("]");
++		}
++	
++}
++
++bool C99_hook_INC_INFORM(const parse_tree& src)
++{
++	if (PARSE_TYPE & src.flags)
++		{
++		assert(parse_tree::types);
++		render_type(src.type_code,*parse_tree::types,NULL);
++		return true;
++		}
++	return false;
++}
++
++static bool is_CPP_namespace(const parse_tree& src)
++{
++	return	robust_token_is_string<9>(src.index_tokens[0].token,"namespace")
++		&&	src.index_tokens[1].token.first
++		&&	1==src.size<2>()
++#ifndef NDEBUG
++		&&	C_TESTFLAG_IDENTIFIER==src.index_tokens[1].flags
++#endif
++		&&	robust_token_is_char<'{'>(src.data<2>()[0].index_tokens[0].token)
++		&&	robust_token_is_char<'}'>(src.data<2>()[0].index_tokens[1].token);
++}
++
++bool CPP_hook_INC_INFORM(const parse_tree& src)
++{
++	if (PARSE_TYPE & src.flags)
++		{
++		assert(parse_tree::types);
++		render_type(src.type_code,*parse_tree::types,NULL);
++		return true;
++		}
++	if (is_CPP_namespace(src) && robust_token_is_string<9>(src.index_tokens[1].token,"<unknown>"))
++		{	// make anonymous namespaces look like authentic source code
++		// first index token
++		INC_INFORM(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
++		INC_INFORM(' ');
++		// postfix data
++		INC_INFORM(*src.data<2>());
++		if (src.flags & parse_tree::GOOD_LINE_BREAK) INC_INFORM('\n');
++		return true;
++		};
++	return false;
++}
++
+ // handle namespaces or else
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc
+@@ -14192,8 +14190,6 @@
+ //! \throw std::bad_alloc
+ static void CPP_ContextParse(parse_tree& src,type_system& types)
+ {
+-	zaimoni::Perl::localize<bool (*)(const parse_tree&)>(parse_tree::hook_INC_INFORM,CPP_hook_INC_INFORM);
+-	zaimoni::Perl::localize<type_system*>(parse_tree::types,&types);
+ 	CPP_ParseNamespace(src,types,NULL);
+ }
+ #/*cut-cpp*/
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-06-07 00:54:55 UTC (rev 455)
++++ trunk/POSIX.dep	2010-06-07 18:47:43 UTC (rev 456)
+@@ -34,8 +34,8 @@
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+-CSupport.o: CSupport.hpp _CSupport3.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp Zaimoni.STL/Perl_localize.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio!
+ _autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
++CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Za!
+ imoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/l!
+ ogic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+-ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2010-06-07 00:54:55 UTC (rev 455)
++++ trunk/ZParser.cpp	2010-06-07 18:47:43 UTC (rev 456)
+@@ -5,6 +5,7 @@
+ 
+ #include "CSupport.hpp"
+ #include "_CSupport3.hpp"
++#include "_CSupport4.hpp"
+ #include "errors.hpp"
+ #include "errcount.hpp"
+ #include "langroute.hpp"
+@@ -25,6 +26,9 @@
+ :	lang_code(lang_index(_lang)),
+ 	lang(lexer_from_lang(lang_code)),
+ 	target_machine(_target_machine),
++	types(Lang::C==lang_code ? C_atomic_types : CPP_atomic_types,Lang::C==lang_code ? C_TYPE_MAX : CPP_TYPE_MAX,C_int_priority,C_INT_PRIORITY_SIZE),
++	lock_types(parse_tree::types,&types),
++	lock_display_hook(parse_tree::hook_INC_INFORM,Lang::C==lang_code ? C99_hook_INC_INFORM : CPP_hook_INC_INFORM),
+ 	debug_mode(false)
+ {
+ }
+@@ -160,7 +164,6 @@
+ 	die_on_parse_errors();
+ 	if (ParsedList.empty()) return false;	// no-op, nothing to export to object file
+ 
+-	type_system types((Lang::C==lang_code) ? C_atomic_types : CPP_atomic_types,(Lang::C==lang_code) ? C_TYPE_MAX : CPP_TYPE_MAX,C_int_priority,C_INT_PRIORITY_SIZE);
+ 	// ok...now ready for LangConf (note that CSupport.hpp/CSupport.cpp may fork on whether z_cpp or zcc is being built
+ 	// 1) lexical absolute parsing: primary expressions and similar
+ #ifndef ZAIMONI_FORCE_ISO
+
+Modified: trunk/ZParser.hpp
+===================================================================
+--- trunk/ZParser.hpp	2010-06-07 00:54:55 UTC (rev 455)
++++ trunk/ZParser.hpp	2010-06-07 18:47:43 UTC (rev 456)
+@@ -4,7 +4,8 @@
+ #ifndef ZPARSER_HPP
+ #define ZPARSER_HPP 1
+ 
+-#include <stddef.h>
++#include "type_system.hpp"
++#include "Zaimoni.STL/Perl_localize.hpp"
+ 
+ struct parse_tree;
+ namespace virtual_machine {
+@@ -14,7 +15,6 @@
+ namespace zaimoni {
+ class LangConf;
+ 
+-template<class T> class autovalarray_ptr;
+ template<class T> class Token;
+ }
+ 
+@@ -31,6 +31,9 @@
+ 	size_t lang_code;
+ 	zaimoni::LangConf& lang;	//!< lexer corresponding to the language being preprocessed (need this to share expression evaluation)
+ 	const virtual_machine::CPUInfo& target_machine;	//!< target machine information
++	type_system types;
++	zaimoni::Perl::localize<type_system*> lock_types;
++	zaimoni::Perl::localize<bool (*)(const parse_tree&)> lock_display_hook;
+ 	bool debug_mode;		//!< triggers some diagnostics
+ 
+ 	void debug_to_stderr(const zaimoni::autovalarray_ptr<parse_tree*>& x) const;
+
+Added: trunk/_CSupport4.hpp
+===================================================================
+--- trunk/_CSupport4.hpp	2010-06-07 00:54:55 UTC (rev 455)
++++ trunk/_CSupport4.hpp	2010-06-07 18:47:43 UTC (rev 456)
+@@ -0,0 +1,9 @@
++// _CSupport4.hpp
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++class parse_tree;
++
++// defined in CSupport.cpp
++bool C99_hook_INC_INFORM(const parse_tree& src);
++bool CPP_hook_INC_INFORM(const parse_tree& src);
++
+
+
+
+From zaimoni at mail.berlios.de  Wed Jun  9 07:56:43 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 9 Jun 2010 07:56:43 +0200
+Subject: [Zcplusplus-commits] r457 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <201006090556.o595uhsJ024940@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-09 07:56:28 +0200 (Wed, 09 Jun 2010)
+New Revision: 457
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Warn_dup_const.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_volatile.in
+   trunk/tests/zcc/decl.C99/Warn_dup_const.h
+   trunk/tests/zcc/decl.C99/Warn_dup_const.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile.h
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile.hpp
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+doxygen cleanup; increase test case coverage slightly
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/CPreproc.cpp	2010-06-09 05:56:28 UTC (rev 457)
+@@ -2398,8 +2398,7 @@
+ /*! 
+  * finds a local include file
+  * 
+- * \param src : substring describing file to find
+- * \param src_len : length of substring
++ * \param src : string describing file to find
+  * \param filepath_buf : pointer to character buffer of length FILENAME_MAX
+  * 
+  * \return true if and only if a filepath was found.
+@@ -2456,8 +2455,7 @@
+ /*! 
+  * finds a system include file
+  * 
+- * \param src : substring describing file to find
+- * \param src_len : length of substring
++ * \param src : string describing file to find
+  * \param filepath_buf : pointer to character buffer of length FILENAME_MAX
+  * 
+  * \return true if and only if a filepath was found.
+@@ -3401,8 +3399,6 @@
+  * \param x token containing candidate for predefined macro
+  * \param critical_offset where the candidate is
+  * \param token_len length of candidate
+- * \param time_str __TIME__ value
+- * \param date_str __DATE__ value
+  * 
+  * \return true iff replaced a predefined macro.  Updates critical_offset when returning true
+  */
+@@ -4117,7 +4113,6 @@
+  * Discards leading and trailing ## operators in macro expansion lists; errors but continues.
+  * 
+  * \param x : macro expansion
+- * \param src : #define (for location info)
+  * 
+  * \return bool : true iff truncated to empty
+  */
+@@ -4538,7 +4533,7 @@
+ /*! 
+  * implements C preprocessor stringize operator.
+  * 
+- * \param stringized_actual valid C string representing src (postcondition)
++ * \param dest valid C string representing src (postcondition)
+  * \param src to be stringized
+  */
+ void
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/CPreproc_pp.cpp	2010-06-09 05:56:28 UTC (rev 457)
+@@ -2336,8 +2336,7 @@
+ /*! 
+  * finds a local include file
+  * 
+- * \param src : substring describing file to find
+- * \param src_len : length of substring
++ * \param src : string describing file to find
+  * \param filepath_buf : pointer to character buffer of length FILENAME_MAX
+  * 
+  * \return true if and only if a filepath was found.
+@@ -2394,8 +2393,7 @@
+ /*! 
+  * finds a system include file
+  * 
+- * \param src : substring describing file to find
+- * \param src_len : length of substring
++ * \param src : string describing file to find
+  * \param filepath_buf : pointer to character buffer of length FILENAME_MAX
+  * 
+  * \return true if and only if a filepath was found.
+@@ -3339,8 +3337,6 @@
+  * \param x token containing candidate for predefined macro
+  * \param critical_offset where the candidate is
+  * \param token_len length of candidate
+- * \param time_str __TIME__ value
+- * \param date_str __DATE__ value
+  * 
+  * \return true iff replaced a predefined macro.  Updates critical_offset when returning true
+  */
+@@ -4055,7 +4051,6 @@
+  * Discards leading and trailing ## operators in macro expansion lists; errors but continues.
+  * 
+  * \param x : macro expansion
+- * \param src : #define (for location info)
+  * 
+  * \return bool : true iff truncated to empty
+  */
+@@ -4472,7 +4467,7 @@
+ /*! 
+  * implements C preprocessor stringize operator.
+  * 
+- * \param stringized_actual valid C string representing src (postcondition)
++ * \param dest valid C string representing src (postcondition)
+  * \param src to be stringized
+  */
+ void
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/CSupport.cpp	2010-06-09 05:56:28 UTC (rev 457)
+@@ -3510,7 +3510,7 @@
+ 					}
+ 				// C1X 6.7.3p3: duplicate type-qualifiers should be cleaned (warn unless -Wno-OAOO or -Wno-DRY)
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_CONST_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Warn_dup_const.h
+ 					if (!have_warned_about_const)
+ 						{
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+@@ -3524,7 +3524,7 @@
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_VOLATILE_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Warn_dup_volatile.h
+ 					if (!have_warned_about_volatile)
+ 						{
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+@@ -3853,7 +3853,7 @@
+ 					}
+ 				// C++0X 7.1.6.1: duplicate cv-qualifiers should be cleaned (warn unless -Wno-OAOO or -Wno-DRY)
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_CONST_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Warn_dup_const.hpp
+ 					if (!have_warned_about_const)
+ 						{
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+@@ -3867,7 +3867,7 @@
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_VOLATILE_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Warn_dup_volatile.hpp
+ 					if (!have_warned_about_volatile)
+ 						{
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+@@ -5347,7 +5347,6 @@
+  * determines whether a context-driven primary expression is obviously one
+  * 
+  * \param src target to inspect
+- * \param err_count running error count
+  * 
+  * \return true iff ( ... ) expression was recognized
+  * \throw std::bad_alloc only if 1==src.size<0>() and src.type_code.pointer_power<src.data<0>()->type_code.pointer_power
+@@ -12754,7 +12753,7 @@
+ 						base_enum_type = C_TYPE::LLONG;
+ 						break;
+ 						}
+-				default:	//! \test decl.C99\Error_enum_nobase.hpp
++				default:	//! \test decl.C99/Error_enum_nobase.hpp
+ 					message_header(src.data<0>()[origin-2].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM("enumeration requires both negative values and values above INTMAX_MAX, underlying type doesn't exist (C++0X 7.2p6)");
+@@ -12793,7 +12792,7 @@
+ 						base_enum_type = C_TYPE::LLONG;
+ 					case C_TYPE::LLONG:
+ 						if (target_machine->signed_max<virtual_machine::std_int_long_long>()>=latest_value) break;
+-					default:	//! \test decl.C99\Error_enum_nobase2.hpp
++					default:	//! \test decl.C99/Error_enum_nobase2.hpp
+ 						message_header(src.data<0>()[origin-2].index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INFORM("enumeration requires both negative values and values above INTMAX_MAX, underlying type doesn't exist (C++0X 7.2p6)");
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/CSupport_pp.cpp	2010-06-09 05:56:28 UTC (rev 457)
+@@ -3979,7 +3979,6 @@
+  * determines whether a context-driven primary expression is obviously one
+  * 
+  * \param src target to inspect
+- * \param err_count running error count
+  * 
+  * \return true iff ( ... ) expression was recognized
+  * \throw std::bad_alloc only if 1==src.size<0>() and src.type_code.pointer_power<src.data<0>()->type_code.pointer_power
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const.h	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const.h	2010-06-09 05:56:28 UTC (rev 457)
+@@ -0,0 +1,6 @@
++// default\Warn_dup_const.h
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const.hpp	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const.hpp	2010-06-09 05:56:28 UTC (rev 457)
+@@ -0,0 +1,6 @@
++// default\Warn_dup_const.hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile.h	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile.h	2010-06-09 05:56:28 UTC (rev 457)
+@@ -0,0 +1,6 @@
++// default\Warn_dup_volatile.h
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile.hpp	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile.hpp	2010-06-09 05:56:28 UTC (rev 457)
+@@ -0,0 +1,6 @@
++// default\Warn_dup_volatile.hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile volatile int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_const.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_const.in	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_const.in	2010-06-09 05:56:28 UTC (rev 457)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const const volatile int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_volatile.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_volatile.in	2010-06-07 18:47:43 UTC (rev 456)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_volatile.in	2010-06-09 05:56:28 UTC (rev 457)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile volatile int i;
++
+
+
+
+From zaimoni at mail.berlios.de  Thu Jun 10 08:51:16 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 10 Jun 2010 08:51:16 +0200
+Subject: [Zcplusplus-commits] r458 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <201006100651.o5A6pGvH032638@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-10 08:51:00 +0200 (Thu, 10 Jun 2010)
+New Revision: 458
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_dup_extern.in
+   trunk/tests/zcc.in/decl.C99/Error_dup_static.in
+   trunk/tests/zcc/decl.C99/Error_dup_extern.h
+   trunk/tests/zcc/decl.C99/Error_dup_extern.hpp
+   trunk/tests/zcc/decl.C99/Error_dup_static.h
+   trunk/tests/zcc/decl.C99/Error_dup_static.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+duplicate storage classes should be an error; some test case coverage
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/CSupport.cpp	2010-06-10 06:51:00 UTC (rev 458)
+@@ -3427,40 +3427,37 @@
+ 				if (1<invariant_decl_scanner.count(C99_CPP_REGISTER_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_register)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated register storage class and continuing (C99 6.7.1p2)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_register = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_STATIC_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_static.h
+ 					if (!have_warned_about_static)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated static storage class and continuing (C99 6.7.1p2)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_static = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_extern.h
+ 					if (!have_warned_about_extern)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated extern storage class and continuing (C99 6.7.1p2)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_extern = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset);
+@@ -3469,12 +3466,11 @@
+ 				else if (1<invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_thread_local)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated _Thread_Local storage class and continuing (C1X 6.7.1p2)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_thread_local = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset);
+@@ -3483,12 +3479,11 @@
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_AUTO_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_auto)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated auto storage class and continuing (C99 6.7.1p2)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_auto = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset);
+@@ -3497,12 +3492,11 @@
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_typedef)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated typedef storage class and continuing (C99 6.7.1p2)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_typedef = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset);
+@@ -3770,40 +3764,37 @@
+ 				if (1<invariant_decl_scanner.count(C99_CPP_REGISTER_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_register)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated register storage class and continuing (C++0X 7.1.1p1)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_register = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				if (1<invariant_decl_scanner.count(C99_CPP_STATIC_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_static.hpp
+ 					if (!have_warned_about_static)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated static storage class and continuing (C++0X 7.1.1p1)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_static = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_extern.hpp
+ 					if (!have_warned_about_extern)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated extern storage class and continuing (C++0X 7.1.1p1)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_extern = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset+using_linkage);
+@@ -3812,12 +3803,11 @@
+ 				else if (1<invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_thread_local)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated thread_local storage class and continuing (C++0X 7.1.1p1)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_thread_local = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset+using_linkage);
+@@ -3826,12 +3816,11 @@
+ 				else if (1<invariant_decl_scanner.count(CPP_MUTABLE_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_mutable)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated mutable storage class and continuing (C++0X 7.1.1p1)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_mutable = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset+using_linkage);
+@@ -3840,12 +3829,11 @@
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_typedef)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM("removing prohibited duplicated typedef specifier and continuing (C++0X 7.1.3p1)");
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_typedef = true;
+ 						}
+ 					src.DeleteIdx<0>(i+offset+using_linkage);
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_extern.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_extern.h	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_extern.h	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_extern.h
++// check error for duplicate extern
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++extern extern const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_extern.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_extern.hpp	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_extern.hpp	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_extern.hpp
++// check error for duplicate extern
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++extern extern const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_static.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_static.h	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_static.h	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_static.h
++// check error for duplicate static
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static static const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_static.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_static.hpp	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_static.hpp	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_static.hpp
++// check error for duplicate static
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static static const volatile int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_dup_extern.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_dup_extern.in	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc.in/decl.C99/Error_dup_extern.in	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check error for duplicate extern
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++extern extern const volatile int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_dup_static.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_dup_static.in	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc.in/decl.C99/Error_dup_static.in	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check error for duplicate static
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static static const volatile int i;
++
+
+
+
+From zaimoni at mail.berlios.de  Sat Jun 12 00:28:51 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 12 Jun 2010 00:28:51 +0200
+Subject: [Zcplusplus-commits] r459 - trunk/Zaimoni.STL/core.RAM
+Message-ID: <201006112228.o5BMSpMw023424@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-12 00:28:48 +0200 (Sat, 12 Jun 2010)
+New Revision: 459
+
+Modified:
+   trunk/Zaimoni.STL/core.RAM/memory.cpp
+Log:
+use binary search rather than linear search when validating pointers for free/realloc
+
+Modified: trunk/Zaimoni.STL/core.RAM/memory.cpp
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/memory.cpp	2010-06-10 06:51:00 UTC (rev 458)
++++ trunk/Zaimoni.STL/core.RAM/memory.cpp	2010-06-11 22:28:48 UTC (rev 459)
+@@ -1,5 +1,5 @@
+ // memory.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)1998,1999,2000,2008,2009,2010 Kenneth Boyd, license: MIT.txt
+ // implementation of the following:
+ //	_msize
+ //	malloc
+@@ -205,18 +205,26 @@
+ 	return memblock;
+ }
+ 
++/*!
++ * \return 1 above index if found, 0 otherwise
++ */
+ static size_t
+-__IdxOfPointerInPtrList(const void* const Target, size_t Idx, const _track_pointer* const BasePtrIndex)
+-{	// FORMALLY CORRECT: Kenneth Boyd, 10/30/1999
+-	// this routine checks to see if Target was allocated by RAMManager, by scanning the
+-	// list pointed to by BasePtrIndex.  It 1 above the index if found, 0 otherwise
++__IdxOfPointerInPtrList(const void* const Target, size_t strict_ub, const _track_pointer* const BasePtrIndex)
++{	// FORMALLY CORRECT: Kenneth Boyd, 6/11/2010
++	// this routine checks to see if Target was allocated by RAMManager, by 
++	// binary-searching the array pointed to by BasePtrIndex.  
+ 	// Idx is a strict upper bound to the valid indices.
+-	// NOTE: this is unstable.  I should be using a binary search for
+-	// "sufficiently large tables".  On the other hand...recent pointers are likely to both
+-	// be deleted first, and to be near the end of the table.
+-	while(0<Idx)
+-		if (Target==BasePtrIndex[--Idx]._address)
+-			return Idx+1;
++	size_t lb = 0;
++	while(lb<=strict_ub)
++		{
++		const size_t midpoint = lb + (strict_ub-lb)/2;
++		if (Target==BasePtrIndex[midpoint]._address)
++			return midpoint+1;
++		else if ((const char*)Target<BasePtrIndex[midpoint]._address)
++			lb = midpoint+1;
++		else
++			strict_ub = midpoint;
++		};
+ 	return 0;
+ }
+ 
+
+
+
+From zaimoni at mail.berlios.de  Sat Jun 12 08:21:27 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 12 Jun 2010 08:21:27 +0200
+Subject: [Zcplusplus-commits] r460 - in trunk: . Zaimoni.STL
+Message-ID: <201006120621.o5C6LRKn029119@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-12 08:21:14 +0200 (Sat, 12 Jun 2010)
+New Revision: 460
+
+Modified:
+   trunk/CPreproc_autogen.cpp
+   trunk/CPreproc_autogen_pp.cpp
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/Zaimoni.STL/Compiler.h
+Log:
+promote DICT_STRUCT, DICT_STRUCT2 macros to Zaimoni.STL/Compiler.h; document test case existence
+
+Modified: trunk/CPreproc_autogen.cpp
+===================================================================
+--- trunk/CPreproc_autogen.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CPreproc_autogen.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -18,9 +18,6 @@
+ #undef VM_MAX_BIT_PLATFORM
+ #define VM_MAX_BIT_PLATFORM target_machine.C_bit<virtual_machine::std_int_long_long>()
+ 
+-//! \bug Once And Only Once violation
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-
+ //! \todo POSIX support as feasible
+ static const char* const limits_h_reserved[]
+ 	=	{	"CHAR_BIT",
+
+Modified: trunk/CPreproc_autogen_pp.cpp
+===================================================================
+--- trunk/CPreproc_autogen_pp.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CPreproc_autogen_pp.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -15,9 +15,6 @@
+ #undef VM_MAX_BIT_PLATFORM
+ #define VM_MAX_BIT_PLATFORM target_machine.C_bit<virtual_machine::std_int_long_long>()
+ 
+-//! \bug Once And Only Once violation
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-
+ //! \todo POSIX support as feasible
+ static const char* const limits_h_reserved[]
+ 	=	{	"CHAR_BIT",
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CSupport.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -377,10 +377,6 @@
+           xor  xor_eq
+ #endif
+ 
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-// regrettably, varadic macros are not C++98
+-#define DICT2_STRUCT(A,B) { (A), sizeof(A)-1, (B) }
+-
+ #define ATOMIC_PREPROC_PUNC "()[]{};~,?"
+ 
+ static const POD_triple<const char*,size_t,unsigned int> valid_pure_preprocessing_op_punc[]
+@@ -1135,9 +1131,6 @@
+ }	
+ #/*cut-cpp*/
+ 
+-#undef DICT2_STRUCT
+-#undef DICT_STRUCT
+-
+ const size_t C_int_priority[]
+ 	=	{
+ 		C_TYPE::INT,
+@@ -10770,7 +10763,7 @@
+ 					src.DeleteIdx<0>(i);
+ 					}
+ 				else if (!typeid_is_ok && token_is_string<6>(src.data<0>()[i].index_tokens[0].token,"typeid"))
+-					//! \bug need test case
++					//! \test staticassert.C1X/Error_typeid_no_typeinfo.hpp
+ 					simple_error(src.c_array<0>()[i]," requires #include <typeinfo> first (C++0X 5.2.8p6)");
+ 				}
+ 			}
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CSupport_pp.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -363,10 +363,6 @@
+           xor  xor_eq
+ #endif
+ 
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-// regrettably, varadic macros are not C++98
+-#define DICT2_STRUCT(A,B) { (A), sizeof(A)-1, (B) }
+-
+ #define ATOMIC_PREPROC_PUNC "()[]{};~,?"
+ 
+ static const POD_triple<const char*,size_t,unsigned int> valid_pure_preprocessing_op_punc[]
+@@ -913,9 +909,6 @@
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+ BOOST_STATIC_ASSERT(STATIC_SIZE(CPP_atomic_types)==CPP_TYPE_MAX);
+ 
+-#undef DICT2_STRUCT
+-#undef DICT_STRUCT
+-
+ const size_t C_int_priority[]
+ 	=	{
+ 		C_TYPE::INT,
+
+Modified: trunk/Zaimoni.STL/Compiler.h
+===================================================================
+--- trunk/Zaimoni.STL/Compiler.h	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/Zaimoni.STL/Compiler.h	2010-06-12 06:21:14 UTC (rev 460)
+@@ -27,8 +27,13 @@
+ /* this is meant to be lightweight */
+ #define ZAIMONI_STATIC_ASSERT(A) typedef char DEEP_CONCATENATE(static_assert_,__LINE__)[(A) ? 1 : -1]
+ 
++/* size of a static array */
+ #define STATIC_SIZE(A) (sizeof(A)/sizeof(*A))
+ 
++/* some macros to help with aggregate initialization */
++#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
++#define DICT2_STRUCT(A,B) { (A), sizeof(A)-1, (B) }
++
+ /* C strings to stdout; include stdio.h before using these */
+ /* including cstdio ok if not on a deathstation */
+ #define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
+
+
+
+From zaimoni at sheep.berlios.de  Mon Jun 28 22:35:54 2010
+From: zaimoni at sheep.berlios.de (zaimoni at sheep.berlios.de)
+Date: Mon, 28 Jun 2010 22:35:54 +0200
+Subject: [Zcplusplus-commits] r461 - trunk
+Message-ID: <20100628203554.E3C33480BFF@sheep2.berlios.de>
+
+Author: zaimoni
+Date: 2010-06-28 22:35:54 +0200 (Mon, 28 Jun 2010)
+New Revision: 461
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+augment context-free parsing; improve source code locality
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-12 06:21:14 UTC (rev 460)
++++ trunk/CSupport.cpp	2010-06-28 20:35:54 UTC (rev 461)
+@@ -1224,6 +1224,20 @@
+ #define CPP_SYS_HEADER_STRICT_UB STATIC_SIZE(system_headers)
+ #define C_SYS_HEADER_STRICT_UB 23
+ 
++static size_t LengthOfCSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
++	if (0<=i) return strlen(system_headers[i]);
++	return 0;
++}
++
++static size_t LengthOfCPPSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
++	if (0<=i) return strlen(system_headers[i]);
++	return 0;
++}
++
+ /* XXX this may belong with weak_token XXX */
+ static void message_header(const weak_token& src)
+ {
+@@ -2022,20 +2036,6 @@
+ 	return 1+linear_reverse_find_lencached(x,x_len,valid_pure_preprocessing_op_punc,CPP_PREPROC_OP_STRICT_UB);
+ }
+ 
+-static size_t LengthOfCSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
+-	if (0<=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+-static size_t LengthOfCPPSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
+-	if (0<=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+ static void _bad_syntax_tokenized(const char* const x, size_t x_len, lex_flags& flags, const char* const src_filename, size_t line_no, func_traits<signed int (*)(const char* const, size_t)>::function_type find_pp_code)
+ {
+ 	assert(NULL!=x);
+@@ -10629,6 +10629,235 @@
+ }
+ 
+ #/*cut-cpp*/
++static const POD_pair<const char*,size_t> C99_nontype_decl_specifier_list[] =
++	{	DICT_STRUCT("typedef"),
++		DICT_STRUCT("const"),
++		DICT_STRUCT("volatile"),
++		DICT_STRUCT("restrict"),
++		DICT_STRUCT("register"),
++		DICT_STRUCT("static"),
++		DICT_STRUCT("extern"),
++		DICT_STRUCT("inline"),
++		DICT_STRUCT("auto"),
++		DICT_STRUCT("_Thread_Local"),	// C1X, actually
++	};
++
++static const POD_pair<const char*,size_t> CPP0X_nontype_decl_specifier_list[] =
++	{	DICT_STRUCT("typedef"),
++		DICT_STRUCT("const"),
++		DICT_STRUCT("volatile"),
++		DICT_STRUCT("register"),
++		DICT_STRUCT("static"),
++		DICT_STRUCT("extern"),
++		DICT_STRUCT("inline"),
++		DICT_STRUCT("thread_local"),	// C1X _Thread_Local
++		DICT_STRUCT("constexpr"),
++		DICT_STRUCT("mutable"),
++		DICT_STRUCT("virtual"),
++		DICT_STRUCT("explicit"),
++		DICT_STRUCT("friend")
++	};
++
++size_t C99_type_or_invariant_decl_specifier(const parse_tree& x)
++{
++	if (PARSE_TYPE & x.flags)
++		return STATIC_SIZE(C99_nontype_decl_specifier_list);
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list));
++		if (STATIC_SIZE(C99_nontype_decl_specifier_list)>i) return i;
++		}
++	return SIZE_MAX;
++}
++
++size_t CPP0X_type_or_invariant_decl_specifier(const parse_tree& x)
++{
++	if (PARSE_TYPE & x.flags)
++		return STATIC_SIZE(CPP0X_nontype_decl_specifier_list); 
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
++		if (STATIC_SIZE(CPP0X_nontype_decl_specifier_list)>i) return i;
++		}
++	return SIZE_MAX;
++}	
++
++void record_qualifier(parse_tree* x, unsigned char qualify)
++{
++	assert(x);
++	assert(PARSE_TYPE & x->flags);
++tail_recurse:
++	x->type_code.q_vector.back() |= qualify;
++	if (is_naked_parentheses_pair(*x) && 1==x->size<0>() && (PARSE_TYPE & x->data<0>()->flags))
++		{	// discard nested parentheses
++		while(is_naked_parentheses_pair(*x->data<0>()) && 1==x->data<0>()->size<0>() && (PARSE_TYPE & x->data<0>()->data<0>()->flags))
++			x->c_array<0>()->eval_to_arg<0>(0);
++		// tail-recurse
++		x = x->c_array<0>();
++		goto tail_recurse;
++		}
++}
++
++void record_qualifier_or_warn(parse_tree& src,unsigned char qualify,size_t type_at,size_t qual_at,bool& have_warned,const char* const warning)
++{
++	assert(src.size<0>()>type_at);
++	assert(src.size<0>()>qual_at);
++	assert(PARSE_TYPE & src.data<0>()[type_at].flags);
++	if (!(qualify & src.data<0>()[type_at].type_code.q_vector.back()))
++		record_qualifier(src.c_array<0>()+type_at,qualify);
++	else if (!have_warned)
++		{	// already qualified, have not warned yet
++		message_header(src.data<0>()[qual_at].index_tokens[0]);
++		INC_INFORM(WARN_STR);
++		INFORM(warning);
++		if (bool_options[boolopt::warnings_are_errors])
++			zcc_errors.inc_error();
++		have_warned = true;
++		}
++}
++
++void C99_condense_const_volatile_onto_type(parse_tree& src)
++{
++	assert(src.is_raw_list());
++	size_t i = 0;
++	kleene_star<STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&)> invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
++	do	if (PARSE_TYPE & src.data<0>()[i].flags)
++			{
++			size_t offset = 0;
++			bool have_warned_too_many_types = false;
++			bool have_warned_about_const = false;
++			bool have_warned_about_volatile = false;
++
++			while(0<i-offset && invariant_decl_scanner(src.data<0>()[i- ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(C99_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{
++						message_header(src.data<0>()[i-offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("multiple types in decl-specifier sequence, discarding extra types");
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx<0>(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const type qualifier (C99 6.7.3p4)");
++					src.DeleteIdx<0>(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile type qualifier (C99 6.7.3p4)");
++					src.DeleteIdx<0>(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++
++			invariant_decl_scanner.clear();
++			offset = 0;
++			while(src.size<0>()-i>offset+1 && invariant_decl_scanner(src.data<0>()[i+ ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(C99_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{
++						message_header(src.data<0>()[i+offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("multiple types in decl-specifier sequence, discarding extra types");
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx<0>(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const type qualifier (C99 6.7.3p4)");
++					src.DeleteIdx<0>(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile type qualifier (C99 6.7.3p4)");
++					src.DeleteIdx<0>(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++			}
++	while(src.size<0>()> ++i);
++}
++
++void CPP0X_condense_const_volatile_onto_type(parse_tree& src)
++{
++	assert(src.is_raw_list());
++	size_t i = 0;
++	kleene_star<STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&)> invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
++	do	if (PARSE_TYPE & src.data<0>()[i].flags)
++			{
++			size_t offset = 0;
++			bool have_warned_too_many_types = false;
++			bool have_warned_about_const = false;
++			bool have_warned_about_volatile = false;
++
++			while(0<i-offset && invariant_decl_scanner(src.data<0>()[i- ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{	//! \bug need test case
++						message_header(src.data<0>()[i-offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("multiple types in decl-specifier sequence, discarding extra types");
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx<0>(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const cv-qualifier (C++0X 7.1.6.1p1)");
++					src.DeleteIdx<0>(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)");
++					src.DeleteIdx<0>(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++
++			invariant_decl_scanner.clear();
++			offset = 0;
++			while(src.size<0>()-i>offset+1 && invariant_decl_scanner(src.data<0>()[i+ ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{	//! \bug need test case
++						message_header(src.data<0>()[i+offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM("multiple types in decl-specifier sequence, discarding extra types");
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx<0>(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const cv-qualifier (C++0X 7.1.6.1p1)");
++					src.DeleteIdx<0>(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)");
++					src.DeleteIdx<0>(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++			}
++	while(src.size<0>()> ++i);
++}
++
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc()
+ static void C99_ContextFreeParse(parse_tree& src,const type_system& types)
+@@ -10637,6 +10866,7 @@
+ 	_label_literals(src,types);
+ 	// handle core type specifiers
+ 	C99_notice_primary_type(src);
++	C99_condense_const_volatile_onto_type(src);
+ 	if (!_match_pairs(src)) return;
+ 	// struct/union/enum specifiers can occur in all sorts of strange places
+ 	C99_notice_struct_union_enum(src);
+@@ -10781,6 +11011,7 @@
+ 	std::for_each(src.begin<0>(),src.end<0>(),_label_CPP_literal);	// intercepts: true, false, this
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	CPP0X_condense_const_volatile_onto_type(src);
+ 	if (!_match_pairs(src)) return;
+ 	// do context-free part of qualified-names
+ 	CPP_notice_scope_glue(src);
+@@ -14346,8 +14577,12 @@
+ 	assert(C99_CPP_TYPEDEF_IDX==linear_find("typedef",CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(C99_CPP_CONST_IDX==linear_find("const",C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_CONST_IDX==linear_find("const",CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
++	assert(C99_CPP_CONST_IDX==linear_find("const",C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list)));
++	assert(C99_CPP_CONST_IDX==linear_find("const",CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)));
+ 	assert(C99_CPP_VOLATILE_IDX==linear_find("volatile",C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_VOLATILE_IDX==linear_find("volatile",CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
++	assert(C99_CPP_VOLATILE_IDX==linear_find("volatile",C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list)));
++	assert(C99_CPP_VOLATILE_IDX==linear_find("volatile",CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)));
+ 	assert(C99_RESTRICT_IDX==linear_find("restrict",C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_REGISTER_IDX==linear_find("register",C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_REGISTER_IDX==linear_find("register",CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-06-12 06:21:14 UTC (rev 460)
++++ trunk/CSupport_pp.cpp	2010-06-28 20:35:54 UTC (rev 461)
+@@ -1002,6 +1002,20 @@
+ #define CPP_SYS_HEADER_STRICT_UB STATIC_SIZE(system_headers)
+ #define C_SYS_HEADER_STRICT_UB 23
+ 
++static size_t LengthOfCSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
++	if (0<=i) return strlen(system_headers[i]);
++	return 0;
++}
++
++static size_t LengthOfCPPSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
++	if (0<=i) return strlen(system_headers[i]);
++	return 0;
++}
++
+ /* XXX this may belong with weak_token XXX */
+ static void message_header(const weak_token& src)
+ {
+@@ -1785,20 +1799,6 @@
+ 	return 1+linear_reverse_find_lencached(x,x_len,valid_pure_preprocessing_op_punc,CPP_PREPROC_OP_STRICT_UB);
+ }
+ 
+-static size_t LengthOfCSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
+-	if (0<=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+-static size_t LengthOfCPPSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
+-	if (0<=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+ static void _bad_syntax_tokenized(const char* const x, size_t x_len, lex_flags& flags, const char* const src_filename, size_t line_no, func_traits<signed int (*)(const char* const, size_t)>::function_type find_pp_code)
+ {
+ 	assert(NULL!=x);
+
+
+

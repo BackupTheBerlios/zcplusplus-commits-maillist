@@ -1,0 +1,832 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r409 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r409%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201005060758.o467waxu003567%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000175.html">
+   <LINK REL="Next"  HREF="000177.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r409 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r409%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201005060758.o467waxu003567%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r409 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu May  6 09:58:36 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000175.html">[Zcplusplus-commits] r408 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000177.html">[Zcplusplus-commits] r410 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#176">[ date ]</a>
+              <a href="thread.html#176">[ thread ]</a>
+              <a href="subject.html#176">[ subject ]</a>
+              <a href="author.html#176">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-06 09:58:28 +0200 (Thu, 06 May 2010)
+New Revision: 409
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+memory management turning; converge auto*_ptr classes towards STL
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-05 22:17:30 UTC (rev 408)
++++ trunk/CSupport.cpp	2010-05-06 07:58:28 UTC (rev 409)
+@@ -5461,10 +5461,9 @@
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+ 		if (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+ 			{	// enumerator went negative: handle
+-			parse_tree tmp = *src.c_array&lt;2&gt;();
+-			src.c_array&lt;2&gt;()-&gt;clear();
+-			src.destroy();
+-			src = tmp;
++			parse_tree tmp;
++			src.c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++			tmp.MoveInto(src);
+ 			return true;
+ 			}
+ 		}
+@@ -5472,9 +5471,10 @@
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		const type_spec old_type = src.type_code;
++		type_spec tmp;
++		src.type_code.OverwriteInto(tmp);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		src.type_code = old_type;
++		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		}
+ 	return false;
+@@ -5488,9 +5488,10 @@
+ 	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true &amp;&amp; (1==(src.type_code.base_type_index-C_TYPE::INT)%2 || virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() || bool_options[boolopt::int_traps]))
+ 		{	// -0==0
+ 			// deal with unary - not being allowed to actually return -0 on these machines later
+-		const type_spec old_type = src.type_code;
++		type_spec tmp;
++		src.type_code.OverwriteInto(tmp);
+ 		force_decimal_literal(src,&quot;0&quot;,types);
+-		src.type_code = old_type;		
++		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+ #/*cut-cpp*/
+@@ -5499,45 +5500,46 @@
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+ 		if (is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+ 			{	// enumerator went negative: handle
+-			parse_tree tmp = *src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;();
+-			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-			src.destroy();
+-			src = tmp;
++			parse_tree tmp;
++			src.c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++			tmp.MoveInto(src);
+ 			return true;
+ 			}
+-		src.type_code = src.data&lt;2&gt;()-&gt;type_code;
++		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 		}
+ #/*cut-cpp*/
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES) &amp;&amp; 1==(src.type_code.base_type_index-C_TYPE::INT)%2)
+ 		{	// unsigned...we're fine
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+-		const type_spec old_type = src.type_code;
+ 		umaxint res_int;
+ 		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;() ARG_TYPES);
+ 		target_machine-&gt;unsigned_additive_inverse(res_int,machine_type);
+ 
+ 		//! \todo flag failures to reduce as RAM-stalled
+ 		POD_pair&lt;char*,lex_flags&gt; new_token;
+-		VM_to_token(res_int,old_type.base_type_index,new_token);
++		VM_to_token(res_int,src.type_code.base_type_index,new_token);
+ 		src.c_array&lt;2&gt;()-&gt;grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
++		type_spec tmp;
++		src.type_code.OverwriteInto(tmp);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		src.type_code = old_type;
++		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+ 	if (converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES) &amp;&amp; is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+ 		{	// - - __ |-&gt; __, trap-int machines fine as -0=0 for sign/magnitude and one's complement, and the offending literal for two's complement is an unsigned int
+ 		assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+-		const type_spec old_type = src.type_code;
+-		parse_tree tmp = *src.data&lt;2&gt;()-&gt;data&lt;2&gt;();
+-		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-		src.destroy();
+-		src = tmp;
+-		src.type_code = old_type;
++		parse_tree tmp;
++		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++		type_spec tmp2;
++		src.type_code.OverwriteInto(tmp2);
++		tmp.MoveInto(src);
++		tmp2.MoveInto(src.type_code);
+ 		return true;		
+ 		}
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_unary_plusminus_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_UNARY_SUBTYPE_NEG==src.subtype || C99_UNARY_SUBTYPE_PLUS==src.subtype);
+@@ -5584,6 +5586,7 @@
+ 		}
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_unary_plusminus_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_UNARY_SUBTYPE_NEG==src.subtype || C99_UNARY_SUBTYPE_PLUS==src.subtype);
+@@ -5641,6 +5644,7 @@
+ 
+ // no eval_deref because of &amp;* cancellation
+ // defer syntax check to after resolution of multiply-*, so no C/C++ fork
++//! \throw std::bad_alloc()
+ static bool terse_locate_C99_deref(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5664,6 +5668,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_deref(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5691,8 +5696,7 @@
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
+ 	//! \todo: handle *&amp; identity when we have &amp;
+-	//! \todo multidimensional array target
+-	//! \todo cv-qualified pointer target
++	// multi-dimensional arrays and cv-qualified pointers should be automatically handled
+ 	value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 	// handle lvalueness in indirection type building and/or the dereference stage
+ 	if (!src.type_code.dereference())
+@@ -5700,6 +5704,7 @@
+ 		simple_error(src,&quot; is not dereferencing a pointer (C99 6.5.3.2p2; C++98 5.3.1p1)&quot;);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_C_logical_NOT(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5723,6 +5728,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_logical_NOT(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5767,10 +5773,9 @@
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+ 			||	(C_TYPE::BOOL==src.data&lt;2&gt;()-&gt;type_code.base_type_index &amp;&amp; 0==src.data&lt;2&gt;()-&gt;type_code.pointer_power))
+ 			{
+-			parse_tree tmp = *src.data&lt;2&gt;()-&gt;data&lt;2&gt;();
+-			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-			src.destroy();
+-			src = tmp;
++			parse_tree tmp;
++			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++			tmp.MoveInto(src);
+ 			return true;
+ 			}
+ 		};
+@@ -5862,6 +5867,7 @@
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(dest));
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_C99_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5885,6 +5891,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5908,21 +5915,18 @@
+ 	return false;
+ }
+ 
+-// This is called from the eval_ family of functions.  Use a return value
+-// rather than throw std::bad_alloc because as we're hoping eval will 
+-// eventually recover enough memory for this to complete.
+-static bool construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
++//! \throw std::bad_alloc()
++static void construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
+ {
+ 	umaxint tmp_int(target_machine-&gt;signed_max(machine_type));
+-	parse_tree* const tmp = _new_buffer&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+-	if (!tmp) return false;
++	parse_tree* const tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+ 	try {
+ 		VM_to_literal(*tmp,tmp_int,src_loc,types);
+ 		}
+ 	catch(const std::bad_alloc&amp;)
+ 		{
+ 		_flush(tmp);
+-		return false;
++		throw;
+ 		}
+ 
+ 	tmp_int = 1;
+@@ -5931,7 +5935,7 @@
+ 		{
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+-		return false;
++		throw std::bad_alloc();
+ 		}
+ 	try {
+ 		VM_to_literal(*tmp2,tmp_int,src_loc,types);
+@@ -5942,7 +5946,7 @@
+ 		_flush(tmp2);
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+-		return false;
++		throw;
+ 		}
+ 
+ 	parse_tree* const tmp3 = _new_buffer&lt;parse_tree&gt;(1);
+@@ -5952,7 +5956,7 @@
+ 		_flush(tmp2);
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+-		return false;
++		throw std::bad_alloc();
+ 		}
+ 	force_unary_negative_token(*tmp3,tmp,src_loc ARG_TYPES);
+ 
+@@ -5968,10 +5972,9 @@
+ 	tmp4.subtype = C99_ADD_SUBTYPE_MINUS;
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(tmp4));
+ 
+-	dest.destroy();
+-	dest = tmp4;
++	dest.type_code.MoveInto(tmp4.type_code);
++	tmp4.MoveInto(dest);
+ 	// do not handle type here: C++ operator overloading risk
+-	return true;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -5983,14 +5986,13 @@
+ 	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types))
+ 		{
+ 		enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types);
+-		src.type_code = src.data&lt;2&gt;()-&gt;type_code;
++		value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 		}
+ #/*cut-cpp*/
+ 	umaxint res_int;
+ 	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;() ARG_TYPES)) 
+ 		{
+-		const type_spec old_type = src.type_code;
+-		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
++		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		res_int.auto_bitwise_complement();
+ 		res_int.mask_to(target_machine-&gt;C_bit(machine_type));
+ 
+@@ -5998,12 +6000,19 @@
+ 
+ 		const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,machine_type);
++		const type_spec old_type = src.type_code;
+ 		if (	virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation()
+-			&amp;&amp; 	0==(old_type.base_type_index-C_TYPE::INT)%2
++			&amp;&amp; 	0==(src.type_code.base_type_index-C_TYPE::INT)%2
+ 			&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 			&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(machine_type))
+ 			{	// trap representation; need to get it into -INT_MAX-1 form
+-			if (!construct_twos_complement_int_min(src,types,machine_type,src)) return false;
++			try {
++				construct_twos_complement_int_min(src,types,machine_type,src);
++				}
++			catch(const std::bad_alloc&amp;)
++				{
++				return false;
++				}
+ 			src.type_code = old_type;
+ 			return true;
+ 			}
+@@ -6020,20 +6029,17 @@
+ 		if (negative_signed_int)
+ 			// convert to parsed - literal
+ 			force_unary_negative_literal(src,tmp);
+-		else{	// convert to positive literal
+-			src.destroy();
+-			src = tmp;
+-			}
++		else	// convert to positive literal
++			tmp.MoveInto(src);
+ 		src.type_code = old_type;
+ 		return true;
+ 		};
+ 	if (	is_bitwise_complement_expression(*src.data&lt;2&gt;())
+ 		&amp;&amp;	is_bitwise_complement_expression(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;()))
+ 		{	// ~~~__ reduces to ~__ safely
+-		parse_tree tmp = *src.data&lt;2&gt;()-&gt;data&lt;2&gt;();
+-		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-		src.destroy();
+-		src = tmp;
++		parse_tree tmp;
++		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++		tmp.MoveInto(src);
+ 		return true;
+ 		}
+ 	return false;
+@@ -8587,7 +8593,13 @@
+ 				&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 				&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(old.machine_type))
+ 				{	// trap representation; need to get it into -INT_MAX-1 form
+-				if (!construct_twos_complement_int_min(src,types,old.machine_type,src)) return false;
++				try {
++					construct_twos_complement_int_min(src,types,old.machine_type,src);
++					}
++				catch(const std::bad_alloc&amp;)
++					{
++					return false;
++					}
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+@@ -8768,7 +8780,13 @@
+ 			&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 			&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(old.machine_type))
+ 			{	// trap representation; need to get it into -INT_MAX-1 form
+-			if (!construct_twos_complement_int_min(src,types,old.machine_type,src)) return false;
++			try {
++				construct_twos_complement_int_min(src,types,old.machine_type,src);
++				}
++			catch(const std::bad_alloc&amp;)
++				{
++				return false;
++				}
+ 			src.type_code = old_type;
+ 			return true;
+ 			}
+@@ -8976,7 +8994,7 @@
+ 				force_unary_negative_literal(src,tmp);
+ 				}
+ 			else	// convert to positive literal
+-				src = tmp;
++				tmp.MoveInto(src);
+ 			}
+ 		src.type_code = old_type;
+ 		return true;
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-05 22:17:30 UTC (rev 408)
++++ trunk/CSupport_pp.cpp	2010-05-06 07:58:28 UTC (rev 409)
+@@ -1,4 +1,4 @@
+-// CSupport_pp.cpp
++// CSupport.cpp
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+@@ -4958,9 +4958,10 @@
+  	// handle integer-like literals like a real integer literal
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES))
+ 		{
+-		const type_spec old_type = src.type_code;
++		type_spec tmp;
++		src.type_code.OverwriteInto(tmp);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		src.type_code = old_type;
++		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		}
+ 	return false;
+@@ -4974,41 +4975,44 @@
+ 	if (literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true &amp;&amp; (1==(src.type_code.base_type_index-C_TYPE::INT)%2 || virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() || bool_options[boolopt::int_traps]))
+ 		{	// -0==0
+ 			// deal with unary - not being allowed to actually return -0 on these machines later
+-		const type_spec old_type = src.type_code;
++		type_spec tmp;
++		src.type_code.OverwriteInto(tmp);
+ 		force_decimal_literal(src,&quot;0&quot;,types);
+-		src.type_code = old_type;		
++		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+ 	if (is_integerlike_literal(*src.data&lt;2&gt;() ARG_TYPES) &amp;&amp; 1==(src.type_code.base_type_index-C_TYPE::INT)%2)
+ 		{	// unsigned...we're fine
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+-		const type_spec old_type = src.type_code;
+ 		umaxint res_int;
+ 		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;() ARG_TYPES);
+ 		target_machine-&gt;unsigned_additive_inverse(res_int,machine_type);
+ 
+ 		//! \todo flag failures to reduce as RAM-stalled
+ 		POD_pair&lt;char*,lex_flags&gt; new_token;
+-		VM_to_token(res_int,old_type.base_type_index,new_token);
++		VM_to_token(res_int,src.type_code.base_type_index,new_token);
+ 		src.c_array&lt;2&gt;()-&gt;grab_index_token_from&lt;0&gt;(new_token.first,new_token.second);
++		type_spec tmp;
++		src.type_code.OverwriteInto(tmp);
+ 		src.eval_to_arg&lt;2&gt;(0);
+-		src.type_code = old_type;
++		tmp.MoveInto(src.type_code);
+ 		return true;
+ 		};
+ 	if (converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES) &amp;&amp; is_C99_unary_operator_expression&lt;'-'&gt;(*src.data&lt;2&gt;()))
+ 		{	// - - __ |-&gt; __, trap-int machines fine as -0=0 for sign/magnitude and one's complement, and the offending literal for two's complement is an unsigned int
+ 		assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+-		const type_spec old_type = src.type_code;
+-		parse_tree tmp = *src.data&lt;2&gt;()-&gt;data&lt;2&gt;();
+-		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-		src.destroy();
+-		src = tmp;
+-		src.type_code = old_type;
++		parse_tree tmp;
++		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++		type_spec tmp2;
++		src.type_code.OverwriteInto(tmp2);
++		tmp.MoveInto(src);
++		tmp2.MoveInto(src.type_code);
+ 		return true;		
+ 		}
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C_unary_plusminus_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_UNARY_SUBTYPE_NEG==src.subtype || C99_UNARY_SUBTYPE_PLUS==src.subtype);
+@@ -5045,6 +5049,7 @@
+ 		}
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_unary_plusminus_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(C99_UNARY_SUBTYPE_NEG==src.subtype || C99_UNARY_SUBTYPE_PLUS==src.subtype);
+@@ -5092,6 +5097,7 @@
+ 
+ // no eval_deref because of &amp;* cancellation
+ // defer syntax check to after resolution of multiply-*, so no C/C++ fork
++//! \throw std::bad_alloc()
+ static bool terse_locate_C99_deref(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5115,6 +5121,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_deref(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5142,8 +5149,7 @@
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
+ 	//! \todo: handle *&amp; identity when we have &amp;
+-	//! \todo multidimensional array target
+-	//! \todo cv-qualified pointer target
++	// multi-dimensional arrays and cv-qualified pointers should be automatically handled
+ 	value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+ 	// handle lvalueness in indirection type building and/or the dereference stage
+ 	if (!src.type_code.dereference())
+@@ -5151,6 +5157,7 @@
+ 		simple_error(src,&quot; is not dereferencing a pointer (C99 6.5.3.2p2; C++98 5.3.1p1)&quot;);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_C_logical_NOT(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5174,6 +5181,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_logical_NOT(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5218,10 +5226,9 @@
+ 		if (	is_logical_NOT(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;())
+ 			||	(C_TYPE::BOOL==src.data&lt;2&gt;()-&gt;type_code.base_type_index &amp;&amp; 0==src.data&lt;2&gt;()-&gt;type_code.pointer_power))
+ 			{
+-			parse_tree tmp = *src.data&lt;2&gt;()-&gt;data&lt;2&gt;();
+-			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-			src.destroy();
+-			src = tmp;
++			parse_tree tmp;
++			src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++			tmp.MoveInto(src);
+ 			return true;
+ 			}
+ 		};
+@@ -5313,6 +5320,7 @@
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(dest));
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_C99_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5336,6 +5344,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool terse_locate_CPP_bitwise_complement(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5359,21 +5368,18 @@
+ 	return false;
+ }
+ 
+-// This is called from the eval_ family of functions.  Use a return value
+-// rather than throw std::bad_alloc because as we're hoping eval will 
+-// eventually recover enough memory for this to complete.
+-static bool construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
++//! \throw std::bad_alloc()
++static void construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
+ {
+ 	umaxint tmp_int(target_machine-&gt;signed_max(machine_type));
+-	parse_tree* const tmp = _new_buffer&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+-	if (!tmp) return false;
++	parse_tree* const tmp = _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+ 	try {
+ 		VM_to_literal(*tmp,tmp_int,src_loc,types);
+ 		}
+ 	catch(const std::bad_alloc&amp;)
+ 		{
+ 		_flush(tmp);
+-		return false;
++		throw;
+ 		}
+ 
+ 	tmp_int = 1;
+@@ -5382,7 +5388,7 @@
+ 		{
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+-		return false;
++		throw std::bad_alloc();
+ 		}
+ 	try {
+ 		VM_to_literal(*tmp2,tmp_int,src_loc,types);
+@@ -5393,7 +5399,7 @@
+ 		_flush(tmp2);
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+-		return false;
++		throw;
+ 		}
+ 
+ 	parse_tree* const tmp3 = _new_buffer&lt;parse_tree&gt;(1);
+@@ -5403,7 +5409,7 @@
+ 		_flush(tmp2);
+ 		tmp-&gt;destroy();
+ 		_flush(tmp);
+-		return false;
++		throw std::bad_alloc();
+ 		}
+ 	force_unary_negative_token(*tmp3,tmp,src_loc ARG_TYPES);
+ 
+@@ -5419,10 +5425,9 @@
+ 	tmp4.subtype = C99_ADD_SUBTYPE_MINUS;
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(tmp4));
+ 
+-	dest.destroy();
+-	dest = tmp4;
++	dest.type_code.MoveInto(tmp4.type_code);
++	tmp4.MoveInto(dest);
+ 	// do not handle type here: C++ operator overloading risk
+-	return true;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -5433,8 +5438,7 @@
+ 	umaxint res_int;
+ 	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;() ARG_TYPES)) 
+ 		{
+-		const type_spec old_type = src.type_code;
+-		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
++		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		res_int.auto_bitwise_complement();
+ 		res_int.mask_to(target_machine-&gt;C_bit(machine_type));
+ 
+@@ -5442,12 +5446,19 @@
+ 
+ 		const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,machine_type);
++		const type_spec old_type = src.type_code;
+ 		if (	virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation()
+-			&amp;&amp; 	0==(old_type.base_type_index-C_TYPE::INT)%2
++			&amp;&amp; 	0==(src.type_code.base_type_index-C_TYPE::INT)%2
+ 			&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 			&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(machine_type))
+ 			{	// trap representation; need to get it into -INT_MAX-1 form
+-			if (!construct_twos_complement_int_min(src,types,machine_type,src)) return false;
++			try {
++				construct_twos_complement_int_min(src,types,machine_type,src);
++				}
++			catch(const std::bad_alloc&amp;)
++				{
++				return false;
++				}
+ 			src.type_code = old_type;
+ 			return true;
+ 			}
+@@ -5464,20 +5475,17 @@
+ 		if (negative_signed_int)
+ 			// convert to parsed - literal
+ 			force_unary_negative_literal(src,tmp);
+-		else{	// convert to positive literal
+-			src.destroy();
+-			src = tmp;
+-			}
++		else	// convert to positive literal
++			tmp.MoveInto(src);
+ 		src.type_code = old_type;
+ 		return true;
+ 		};
+ 	if (	is_bitwise_complement_expression(*src.data&lt;2&gt;())
+ 		&amp;&amp;	is_bitwise_complement_expression(*src.data&lt;2&gt;()-&gt;data&lt;2&gt;()))
+ 		{	// ~~~__ reduces to ~__ safely
+-		parse_tree tmp = *src.data&lt;2&gt;()-&gt;data&lt;2&gt;();
+-		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;clear();
+-		src.destroy();
+-		src = tmp;
++		parse_tree tmp;
++		src.c_array&lt;2&gt;()-&gt;c_array&lt;2&gt;()-&gt;OverwriteInto(tmp);
++		tmp.MoveInto(src);
+ 		return true;
+ 		}
+ 	return false;
+@@ -7718,7 +7726,13 @@
+ 				&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 				&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(old.machine_type))
+ 				{	// trap representation; need to get it into -INT_MAX-1 form
+-				if (!construct_twos_complement_int_min(src,types,old.machine_type,src)) return false;
++				try {
++					construct_twos_complement_int_min(src,types,old.machine_type,src);
++					}
++				catch(const std::bad_alloc&amp;)
++					{
++					return false;
++					}
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+@@ -7889,7 +7903,13 @@
+ 			&amp;&amp; 	!bool_options[boolopt::int_traps]
+ 			&amp;&amp;	res_int&gt;target_machine-&gt;signed_max(old.machine_type))
+ 			{	// trap representation; need to get it into -INT_MAX-1 form
+-			if (!construct_twos_complement_int_min(src,types,old.machine_type,src)) return false;
++			try {
++				construct_twos_complement_int_min(src,types,old.machine_type,src);
++				}
++			catch(const std::bad_alloc&amp;)
++				{
++				return false;
++				}
+ 			src.type_code = old_type;
+ 			return true;
+ 			}
+@@ -8069,7 +8089,7 @@
+ 				force_unary_negative_literal(src,tmp);
+ 				}
+ 			else	// convert to positive literal
+-				src = tmp;
++				tmp.MoveInto(src);
+ 			}
+ 		src.type_code = old_type;
+ 		return true;
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2010-05-05 22:17:30 UTC (rev 408)
++++ trunk/ParseTree.cpp	2010-05-06 07:58:28 UTC (rev 409)
+@@ -408,11 +408,7 @@
+ void parse_tree::MoveInto(parse_tree&amp; dest)
+ {
+ 	dest.destroy();
+-	memmove(dest.index_tokens,index_tokens,2*sizeof(*index_tokens));
+-	memmove(dest.args,args,3*sizeof(*args));
+-	dest.flags = flags;
+-	dest.subtype = subtype;
+-	dest.type_code = type_code;
++	dest = *this;
+ 	clear();
+ #ifdef IRRATIONAL_CAUTION
+ 	assert(dest.syntax_ok());
+@@ -420,6 +416,11 @@
+ #endif
+ }
+ 
++void parse_tree::OverwriteInto(parse_tree&amp; dest)
++{
++	dest = *this;
++	clear();
++}
+ 
+ void parse_tree::_eval_to_arg(size_t arg_idx, size_t i)
+ {
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-05-05 22:17:30 UTC (rev 408)
++++ trunk/ParseTree.hpp	2010-05-06 07:58:28 UTC (rev 409)
+@@ -50,6 +50,7 @@
+     type_spec type_code;
+ 
+ 	void MoveInto(parse_tree&amp; dest);
++	void OverwriteInto(parse_tree&amp; dest);
+ 
+ #ifdef ZAIMONI_FORCE_ISO
+ #define	ZCC_PARSETREE_CARRAY(I) args[I].first
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2010-05-05 22:17:30 UTC (rev 408)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2010-05-06 07:58:28 UTC (rev 409)
+@@ -39,7 +39,7 @@
+ 	void MoveInto(_meta_auto_ptr&lt;T&gt;&amp; dest) {dest.reset(_ptr);};
+ 
+ 	template&lt;typename U&gt; void TransferOutAndNULL(U*&amp; Target) {_single_flush(Target); Target = _ptr; _ptr = NULL;}
+-	template&lt;typename U&gt; void OverwriteAndNULL(U*&amp; Target) {Target = _ptr; _ptr = NULL;}
++	T* release() {T* tmp = _ptr; _ptr = NULL; return tmp;};
+ 	bool empty() const {return NULL==_ptr;};
+ 	void NULLPtr() {_ptr = NULL;};
+ 
+@@ -104,7 +104,6 @@
+ 	friend bool operator==&lt;&gt;(const c_var_array_CRTP&amp; lhs, const c_var_array_CRTP&amp; rhs);
+ 
+ 	// other support
+-	void OverwriteAndNULL(T*&amp; Target) {Target = static_cast&lt;Derived*&gt;(this)-&gt;_ptr; static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL;}
+ #ifndef ZAIMONI_FORCE_ISO
+ 	void NULLPtr() {static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL;};
+ 	size_t ArraySize() const {return zaimoni::ArraySize(static_cast&lt;const Derived*&gt;(this)-&gt;_ptr);};
+@@ -140,7 +139,12 @@
+ 	void rangecheck(size_t i) const { if (i&gt;=size()) FATAL(&quot;out-of-bounds array access&quot;); };
+ 
+ 	void swap(c_var_array_CRTP&amp; RHS) {std::swap(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,static_cast&lt;Derived&amp;&gt;(RHS)._ptr);};
+-
++#ifndef ZAIMONI_FORCE_ISO
++	T* release() {T* tmp = static_cast&lt;Derived*&gt;(this)-&gt;_ptr; static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL; return tmp;};
++#else
++	T* release() {T* tmp = static_cast&lt;Derived*&gt;(this)-&gt;_ptr; static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL; static_cast&lt;Derived*&gt;(this)-&gt;_size = 0; return tmp;};
++#endif
++	
+ 	// Perl grep
+ 	template&lt;typename U&gt; void destructive_grep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
+ 	template&lt;typename U&gt; void destructive_invgrep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000175.html">[Zcplusplus-commits] r408 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000177.html">[Zcplusplus-commits] r410 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#176">[ date ]</a>
+              <a href="thread.html#176">[ thread ]</a>
+              <a href="subject.html#176">[ subject ]</a>
+              <a href="author.html#176">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

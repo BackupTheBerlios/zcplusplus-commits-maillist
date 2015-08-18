@@ -1,0 +1,195 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r524 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r524%20-%20trunk&In-Reply-To=%3C20101031030335.BAC52480E7B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000290.html">
+   <LINK REL="Next"  HREF="000292.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r524 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r524%20-%20trunk&In-Reply-To=%3C20101031030335.BAC52480E7B%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r524 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Oct 31 04:03:35 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000290.html">[Zcplusplus-commits] r523 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000292.html">[Zcplusplus-commits] r525 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#291">[ date ]</a>
+              <a href="thread.html#291">[ thread ]</a>
+              <a href="subject.html#291">[ subject ]</a>
+              <a href="author.html#291">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-31 04:03:35 +0100 (Sun, 31 Oct 2010)
+New Revision: 524
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system.hpp
+   trunk/type_system.hpp.in
+Log:
+adjust use-counting part of type_system
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-10-30 20:45:04 UTC (rev 523)
++++ trunk/type_system.cpp	2010-10-31 03:03:35 UTC (rev 524)
+@@ -259,6 +259,23 @@
+ 	return _get_id_enum_CPP(alias);
+ }
+ 
++void type_system::use_type(type_index id)
++{
++	assert(core_types_size+dynamic_types.size()&gt;=id);
++	if (core_types_size&gt;=id) return;
++	if (SIZE_MAX==dynamic_types[id-=(core_types_size+1)].fourth) return;
++	++dynamic_types[id].fourth;
++}
++
++void type_system::unuse_type(type_index id)
++{
++	assert(core_types_size+dynamic_types.size()&gt;=id);
++	if (core_types_size&gt;=id) return;
++	if (SIZE_MAX==dynamic_types[id-=(core_types_size+1)].fourth) return;
++	assert(0&lt;dynamic_types[id].fourth);
++	--dynamic_types[id].fourth;
++}
++
+ const char* type_system::_name(size_t id) const
+ {
+ 	if (0==id) return &quot;(?)&quot;;
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2010-10-30 20:45:04 UTC (rev 523)
++++ trunk/type_system.cpp.in	2010-10-31 03:03:35 UTC (rev 524)
+@@ -269,6 +269,23 @@
+ 		}
+ 	return _get_id_enum_CPP(alias);
+ }
++
++void type_system::use_type(type_index id)
++{
++	assert(core_types_size+dynamic_types.size()&gt;=id);
++	if (core_types_size&gt;=id) return;
++	if (SIZE_MAX==dynamic_types[id-=(core_types_size+1)].fourth) return;
++	++dynamic_types[id].fourth;
++}
++
++void type_system::unuse_type(type_index id)
++{
++	assert(core_types_size+dynamic_types.size()&gt;=id);
++	if (core_types_size&gt;=id) return;
++	if (SIZE_MAX==dynamic_types[id-=(core_types_size+1)].fourth) return;
++	assert(0&lt;dynamic_types[id].fourth);
++	--dynamic_types[id].fourth;
++}
+ #/*cut-cpp*/
+ 
+ const char* type_system::_name(size_t id) const
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2010-10-30 20:45:04 UTC (rev 523)
++++ trunk/type_system.hpp	2010-10-31 03:03:35 UTC (rev 524)
+@@ -60,20 +60,14 @@
+ 		return _get_id_enum(x);
+ 		}
+ 	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
+-	void use_type(type_index id)
++	void use_type(type_index id);
++	void unuse_type(type_index id);
++	size_t use_count(type_index id) const
+ 		{
+ 		assert(core_types_size+dynamic_types.size()&gt;=id);
+-		if (core_types_size&gt;=id) return;
+-		if (SIZE_MAX==dynamic_types[id-=core_types_size].fourth) return;
+-		++dynamic_types[id].fourth;
+-		};
+-	void unuse_type(type_index id)
+-		{
+-		assert(core_types_size+dynamic_types.size()&gt;=id);
+-		if (core_types_size&gt;=id) return;
+-		if (SIZE_MAX==dynamic_types[id-=core_types_size].fourth) return;
+-		--dynamic_types[id].fourth;
+-		};
++		if (core_types_size&gt;=id) return SIZE_MAX;
++		return dynamic_types[id-core_types_size].fourth;
++		}
+ 	const char* name(type_index id) const
+ 		{
+ 		assert(core_types_size+dynamic_types.size()&gt;=id);
+
+Modified: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	2010-10-30 20:45:04 UTC (rev 523)
++++ trunk/type_system.hpp.in	2010-10-31 03:03:35 UTC (rev 524)
+@@ -75,20 +75,14 @@
+ 		return _get_id_enum(x);
+ 		}
+ 	type_index get_id_enum_CPP(const char* alias,const char* active_namespace) const;
+-	void use_type(type_index id)
++	void use_type(type_index id);
++	void unuse_type(type_index id);
++	size_t use_count(type_index id) const
+ 		{
+ 		assert(core_types_size+dynamic_types.size()&gt;=id);
+-		if (core_types_size&gt;=id) return;
+-		if (SIZE_MAX==dynamic_types[id-=core_types_size].fourth) return;
+-		++dynamic_types[id].fourth;
+-		};
+-	void unuse_type(type_index id)
+-		{
+-		assert(core_types_size+dynamic_types.size()&gt;=id);
+-		if (core_types_size&gt;=id) return;
+-		if (SIZE_MAX==dynamic_types[id-=core_types_size].fourth) return;
+-		--dynamic_types[id].fourth;
+-		};
++		if (core_types_size&gt;=id) return SIZE_MAX;
++		return dynamic_types[id-core_types_size].fourth;
++		}
+ #/*cut-cpp*/
+ 	const char* name(type_index id) const
+ 		{
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000290.html">[Zcplusplus-commits] r523 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000292.html">[Zcplusplus-commits] r525 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#291">[ date ]</a>
+              <a href="thread.html#291">[ thread ]</a>
+              <a href="subject.html#291">[ subject ]</a>
+              <a href="author.html#291">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

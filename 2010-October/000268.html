@@ -1,0 +1,371 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r501 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r501%20-%20trunk&In-Reply-To=%3C20101025184749.E16D74801BF%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000267.html">
+   <LINK REL="Next"  HREF="000269.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r501 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r501%20-%20trunk&In-Reply-To=%3C20101025184749.E16D74801BF%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r501 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Oct 25 20:47:49 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000267.html">[Zcplusplus-commits] r500 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000269.html">[Zcplusplus-commits] r502 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#268">[ date ]</a>
+              <a href="thread.html#268">[ thread ]</a>
+              <a href="subject.html#268">[ subject ]</a>
+              <a href="author.html#268">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-25 20:47:49 +0200 (Mon, 25 Oct 2010)
+New Revision: 501
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+actually record existence of anonymous union/struct/class
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-10-25 03:47:36 UTC (rev 500)
++++ trunk/CSupport.cpp	2010-10-25 18:47:49 UTC (rev 501)
+@@ -13273,9 +13273,7 @@
+ 				};
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
+-			{
+-#if 0
+-			// fix following: anonymous types are un-matchable
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union);
+ 			assert(tmp2);
+@@ -13288,14 +13286,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_union.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -13309,9 +13308,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
+-			{
+-#if 0
+-			// fix following: anonymous types are un-matchable
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct);
+ 			assert(tmp2);
+@@ -13324,14 +13321,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_struct.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14231,9 +14229,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
+-			{
+-#if 0
+-			// fix following
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union);
+ 			assert(tmp2);
+@@ -14247,14 +14243,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_union.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14268,9 +14265,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
+-			{
+-#if 0
+-			// fix following
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct);
+ 			assert(tmp2);
+@@ -14282,14 +14277,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_struct.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14303,9 +14299,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
+-			{
+-#if 0
+-			// fix following
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class);
+ 			assert(tmp2);
+@@ -14317,14 +14311,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_class.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-10-25 03:47:36 UTC (rev 500)
++++ trunk/CSupport.cpp.in	2010-10-25 18:47:49 UTC (rev 501)
+@@ -13412,9 +13412,7 @@
+ 				};
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
+-			{
+-#if 0
+-			// fix following: anonymous types are un-matchable
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union);
+ 			assert(tmp2);
+@@ -13427,14 +13425,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_union.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -13448,9 +13447,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
+-			{
+-#if 0
+-			// fix following: anonymous types are un-matchable
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct);
+ 			assert(tmp2);
+@@ -13463,14 +13460,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_struct.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14370,9 +14368,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
+-			{
+-#if 0
+-			// fix following
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union);
+ 			assert(tmp2);
+@@ -14386,14 +14382,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_union.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14407,9 +14404,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
+-			{
+-#if 0
+-			// fix following
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct);
+ 			assert(tmp2);
+@@ -14421,14 +14416,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_struct.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14442,9 +14438,7 @@
+ 				}
+ 			}
+ 		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
+-			{
+-#if 0
+-			// fix following
++			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = types.register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class);
+ 			assert(tmp2);
+@@ -14456,14 +14450,15 @@
+ 			// parse the union and upgrade it to a full definition
+ 			const union_struct_decl* tmp3 = types.get_structdecl(tmp2);
+ 			assert(tmp3);
+-			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++			C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+ 			//! \todo record field structure, etc.
+ 			types.upgrade_decl_to_def(tmp2,tmp4);
+ 			assert(types.get_C_structdef(tmp2));
+-#endif
++
+ 			if (	1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo handle useless const/volatile warning as well
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_class.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000267.html">[Zcplusplus-commits] r500 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000269.html">[Zcplusplus-commits] r502 - in trunk: . tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#268">[ date ]</a>
+              <a href="thread.html#268">[ thread ]</a>
+              <a href="subject.html#268">[ subject ]</a>
+              <a href="author.html#268">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

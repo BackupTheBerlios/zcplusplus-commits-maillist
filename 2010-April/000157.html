@@ -1,0 +1,304 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r390 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r390%20-%20trunk&In-Reply-To=%3C201004222026.o3MKQiuX001714%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000156.html">
+   <LINK REL="Next"  HREF="000158.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r390 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r390%20-%20trunk&In-Reply-To=%3C201004222026.o3MKQiuX001714%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r390 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 22 22:26:44 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000156.html">[Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C
+</A></li>
+        <LI>Next message: <A HREF="000158.html">[Zcplusplus-commits] r391 - in trunk: . Zaimoni.STL Zaimoni.STL/bits
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#157">[ date ]</a>
+              <a href="thread.html#157">[ thread ]</a>
+              <a href="subject.html#157">[ subject ]</a>
+              <a href="author.html#157">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-22 22:26:38 +0200 (Thu, 22 Apr 2010)
+New Revision: 390
+
+Modified:
+   trunk/README.txt
+   trunk/load_src.cpp
+   trunk/type_spec.cpp
+Log:
+code cleanup, review for realloc(x,0) behavior
+
+Modified: trunk/README.txt
+===================================================================
+--- trunk/README.txt	2010-04-22 07:06:59 UTC (rev 389)
++++ trunk/README.txt	2010-04-22 20:26:38 UTC (rev 390)
+@@ -19,9 +19,9 @@
+   for use with the Windows command processor, with mostly-comparable meaning.
+ * They do not have the assertion-count capability.
+ * They only list the last test case in each category that had unexpected behavior.
+-* They do not run the content-comparison tests.
++* You'll need a POSIX-like cmp.  MingW's is recommended, but you can build the one in POSIX/cmp.
+ 
+-4) make install [to be implemented]
++4) make install
+ 
+ Installation instructions with Microsoft NMake for Visual C++ 2008 Express, 32-bit
+ -1) Install the Boost libraries ( <A HREF="http://www.boost.org/">http://www.boost.org/</A> ) first.
+@@ -48,6 +48,6 @@
+   for use with the Windows command processor, with mostly-comparable meaning.
+ * They do not have the assertion-count capability.
+ * They only list the last test case in each category that had unexpected behavior.
+-* They do not run the content-comparison tests.
++* You'll need a POSIX-like cmp.  MingW's is recommended, but you can build the one in POSIX/cmp.
+ 
+ 4) nmake /F NMakefile install [to be implemented]
+
+Modified: trunk/load_src.cpp
+===================================================================
+--- trunk/load_src.cpp	2010-04-22 07:06:59 UTC (rev 389)
++++ trunk/load_src.cpp	2010-04-22 20:26:38 UTC (rev 390)
+@@ -30,16 +30,16 @@
+ 	assert(TokenList.size()&gt;v_idx);
+ 	bool want_to_zap_line = true;
+ 	if ('\\'==TokenList[v_idx]-&gt;data()[TokenList[v_idx]-&gt;size()-1])
+-	{	// line continue
++		{	// line continue
+ 		if (TokenList[v_idx]-&gt;logical_line.first+1==TokenList[v_idx+1]-&gt;logical_line.first)
+-		{
++			{
+ 			TokenList[v_idx]-&gt;append(1,*TokenList[v_idx+1]);
+ 			TokenList.DeleteIdx(v_idx+1);
+ 			want_to_zap_line = false;
+-		}
++			}
+ 		else
+ 			TokenList[v_idx]-&gt;rtrim(1);
+-	}
++		}
+ 	if (want_to_zap_line) clean_whitespace(TokenList,v_idx,lang);
+ }
+ 
+@@ -54,7 +54,7 @@
+ 	size_t Buffer_size = 0;
+ #endif
+ 
+-	assert(!zaimoni::is_empty_string(filename));
++	assert(filename &amp;&amp; *filename);
+ 
+ 	// XXX should return true for empty files XXX
+ #ifndef ZAIMONI_FORCE_ISO
+@@ -73,31 +73,32 @@
+ 	while(newline_count&lt;BufferSizeSub1 &amp;&amp; '\n'==Buffer[BufferSizeSub1-newline_count]) ++newline_count;
+ 	if (0&lt;newline_count)
+ 		{
++		if (Buffer_size&lt;=newline_count) return free(Buffer),true;
+ #ifndef ZAIMONI_FORCE_ISO
+ 		Buffer = REALLOC(Buffer,(ArraySize(Buffer)-newline_count));
+ #else
+ 		Buffer = REALLOC(Buffer,(Buffer_size -= newline_count));
+ #endif
+-		if (NULL==Buffer) return true;
+ 		}
+ 	else{	// works for C/C++
+ 		INC_INFORM(filename);
+ 		INFORM(&quot;: warning: did not end in \\n, undefined behavior.  Proceeding as if it was there.&quot;);
+-		if (bool_options[boolopt::warnings_are_errors]) zcc_errors.inc_error();
++		if (bool_options[boolopt::warnings_are_errors])
++			zcc_errors.inc_error();
+ 		}
+ 	}
+ 
+ 	if ('\\'==Buffer[Buffer_size-1])	// works for C/C++ and other line-continue languages
+-	{
++		{
+ 		INC_INFORM(filename);
+ 		INFORM(&quot;: warning: line continue \\ without a subsequent line, undefined behavior.  Proceeding as if subsequent line was empty.&quot;);
++		if (1==Buffer_size) return free(Buffer),true;
+ #ifndef ZAIMONI_FORCE_ISO
+ 		Buffer = REALLOC(Buffer,ArraySize(Buffer)-1);
+ #else
+ 		Buffer = REALLOC(Buffer,--Buffer_size);
+ #endif
+-		if (NULL==Buffer) return true;
+-	}
++		}
+ 	if (!lang.ApplyGlobalFilters(Buffer)) exit(EXIT_FAILURE);
+ 	lang.FlattenComments(Buffer);
+ 
+@@ -111,17 +112,13 @@
+ 
+ 	// next: split on newline, to simplify spotting preprocessing-directives vs file to be preprocessed
+ 	TokenList[0]-&gt;ltrim(strspn(TokenList[0]-&gt;data(),&quot;\n&quot;));
+-	if (TokenList[0]-&gt;empty())
+-	{
+-		TokenList.reset();
+-		return true;
+-	};
++	if (TokenList[0]-&gt;empty()) return TokenList.reset(),true;
+ 
+ 	if (lang.BreakTokenOnNewline)
+-	{
+-		char* newline_where = strchr(TokenList.back()-&gt;data(),'\n');
+-		while(NULL!=newline_where)
+ 		{
++		char* newline_where = strchr(TokenList.back()-&gt;data(),'\n');
++		while(newline_where)
++			{
+ 			const size_t offset = newline_where-TokenList.back()-&gt;data();
+ 			if (!TokenList.InsertNSlotsAt(1,TokenList.size()-1)) throw std::bad_alloc();
+ 			TokenList[TokenList.size()-2] = new Token&lt;char&gt;(*TokenList.back(),offset,0);
+@@ -129,29 +126,29 @@
+ 			if (3&lt;=TokenList.size()) clean_linesplice_whitespace(TokenList,TokenList.size()-3,lang);
+ 			TokenList.back()-&gt;ltrim(strspn(TokenList.back()-&gt;data(),&quot;\n&quot;));
+ 			if (TokenList.back()-&gt;empty())
+-			{
++				{
+ 				TokenList.DeleteIdx(TokenList.size()-1);
+ 				break;
+-			}
++				}
+ 			newline_where = strchr(TokenList.back()-&gt;data(),'\n');
+-		}
++			}
+ 
+ 		// final cleanup: works for line-continue languages that consider pure whitespace lines meaningless
+ 		if (2&lt;=TokenList.size()) clean_linesplice_whitespace(TokenList,TokenList.size()-2,lang);
+ 		if (!TokenList.empty()) clean_whitespace(TokenList,TokenList.size()-1,lang);
+-	}
++		}
+ 
+ 	// if the language approves, flush leading whitespace
+ 	// do not trim trailing whitespace at this time: this breaks error reporting for incomplete C [wide/narrow] character/string literals
+ 	//! \todo work out how to handle tab stops cleanly
+ 	{
+-		size_t i = TokenList.size();
+-		while(0&lt;i)
++	size_t i = TokenList.size();
++	while(0&lt;i)
+ 		{
+-			assert(NULL!=TokenList[i-1]);
+-			size_t LeadingWS = strspn(TokenList[--i]-&gt;data(),lang.WhiteSpace+1);
+-			TokenList[i]-&gt;ltrim(LeadingWS);
+-			assert(!TokenList[i]-&gt;empty());
++		assert(NULL!=TokenList[i-1]);
++		size_t LeadingWS = strspn(TokenList[--i]-&gt;data(),lang.WhiteSpace+1);
++		TokenList[i]-&gt;ltrim(LeadingWS);
++		assert(!TokenList[i]-&gt;empty());
+ 		}
+ 	}
+ 
+@@ -190,7 +187,7 @@
+ 	size_t Buffer_size = 0;
+ #endif
+ 
+-	assert(!zaimoni::is_empty_string(filename));
++	assert(filename &amp;&amp; *filename);
+ 
+ 	// XXX should return true for empty files XXX
+ #ifndef ZAIMONI_FORCE_ISO
+@@ -209,12 +206,12 @@
+ 	while(newline_count&lt;BufferSizeSub1 &amp;&amp; '\n'==Buffer[BufferSizeSub1-newline_count]) ++newline_count;
+ 	if (0&lt;newline_count)
+ 		{
++		if (Buffer_size&lt;=newline_count) return free(Buffer),true;
+ #ifndef ZAIMONI_FORCE_ISO
+ 		Buffer = REALLOC(Buffer,(ArraySize(Buffer)-newline_count));
+ #else
+ 		Buffer = REALLOC(Buffer,(Buffer_size -= newline_count));
+ #endif
+-		if (NULL==Buffer) return true;
+ 		}
+ 	else{	// works for C/C++
+ 		INC_INFORM(filename);
+@@ -238,20 +235,19 @@
+ 		}
+ 
+ 	char* newline_where = strchr(TokenList.back()-&gt;data(),'\n');
+-	while(NULL!=newline_where)
+-	{
++	while(newline_where)
++		{
+ 		const size_t offset = newline_where-TokenList.back()-&gt;data();
+ 		if (!TokenList.InsertNSlotsAt(1,TokenList.size()-1)) throw std::bad_alloc();
+ 		TokenList[TokenList.size()-2] = new Token&lt;char&gt;(*TokenList.back(),offset,0);
+ 		assert('\n'==TokenList.back()-&gt;data()[0]);
+ 		TokenList.back()-&gt;ltrim(strspn(TokenList.back()-&gt;data(),&quot;\n&quot;));
+ 		if (TokenList.back()-&gt;empty())
+-		{
++			{
+ 			TokenList.DeleteIdx(TokenList.size()-1);
+ 			break;
+-		}
++			}
+ 		newline_where = strchr(TokenList.back()-&gt;data(),'\n');
+-	}
++		}
+ 	return true;
+ }
+-
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2010-04-22 07:06:59 UTC (rev 389)
++++ trunk/type_spec.cpp	2010-04-22 20:26:38 UTC (rev 390)
+@@ -72,6 +72,9 @@
+ 	q_vector.resize(old_ptr_power);	// lost a level of indirection
+ 	if (0&lt;pointer_power)
+ 		{
++#if ZAIMONI_REALLOC_TO_ZERO_IS_NULL
++		extent_vector = REALLOC(extent_vector,--pointer_power*sizeof(*extent_vector));
++#else
+ 		if (0== --pointer_power)
+ 			{
+ 			FREE_AND_NULL(extent_vector);
+@@ -79,6 +82,7 @@
+ 		else{
+ 			extent_vector = REALLOC(extent_vector,pointer_power*sizeof(*extent_vector));
+ 			}
++#endif
+ 		return true;
+ 		}
+ 	assert(0&lt;static_array_size);	// other cause of non-zero pointer power after array decay
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000156.html">[Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C
+</A></li>
+	<LI>Next message: <A HREF="000158.html">[Zcplusplus-commits] r391 - in trunk: . Zaimoni.STL Zaimoni.STL/bits
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#157">[ date ]</a>
+              <a href="thread.html#157">[ thread ]</a>
+              <a href="subject.html#157">[ subject ]</a>
+              <a href="author.html#157">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

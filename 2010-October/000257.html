@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r490 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r490%20-%20trunk&In-Reply-To=%3C20101004204223.79A844810E7%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000258.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r490 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r490%20-%20trunk&In-Reply-To=%3C20101004204223.79A844810E7%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r490 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Oct  4 22:42:23 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000258.html">[Zcplusplus-commits] r491 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#257">[ date ]</a>
+              <a href="thread.html#257">[ thread ]</a>
+              <a href="subject.html#257">[ subject ]</a>
+              <a href="author.html#257">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-04 22:42:23 +0200 (Mon, 04 Oct 2010)
+New Revision: 490
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+declaration recognizer no longer plans to spot type definitions as well
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-09-12 04:57:14 UTC (rev 489)
++++ trunk/CSupport.cpp	2010-10-04 20:42:23 UTC (rev 490)
+@@ -11794,29 +11794,13 @@
+ 			};
+ 		// not a decl-specifier; bail out if we already have a type
+ 		if (base_type.base_type_index) return false;
+-		if (PARSE_PRIMARY_TYPE &amp; x.flags)
++		if (PARSE_TYPE &amp; x.flags)
+ 			{
+ 			value_copy(base_type,x.type_code);
+ 			return true;
+ 			}
+ 		// handle typedefs
+ 		if (check_for_typedef(base_type,x.index_tokens[0].token.first,types)) return true;
+-		//! \todo handle other known types
+-#if 0
+-		// we must accept any specifier here: C99 6.7.2p1
+-		if (   is_C99_anonymous_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;enum&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;struct&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;union&quot;))
+-			return true;
+-#endif
+ 		return false;
+ 		};
+ 	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+@@ -11914,7 +11898,7 @@
+ 			};
+ 		// not a decl-specifier; bail out if we already have a type
+ 		if (base_type.base_type_index) return false;
+-		if (PARSE_PRIMARY_TYPE &amp; x.data&lt;0&gt;()[i].flags)
++		if (PARSE_TYPE &amp; x.data&lt;0&gt;()[i].flags)
+ 			{
+ 			value_copy(base_type,x.data&lt;0&gt;()[i].type_code);
+ 			return true;
+@@ -11925,37 +11909,9 @@
+ 			&amp;&amp; !(PARSE_TYPE &amp; x.data&lt;0&gt;()[i].flags)
+ 			&amp;&amp; !CPP_echo_reserved_keyword(x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second)
+ 			&amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.data&lt;0&gt;()[i].index_tokens[0].flags))
+-			{	// shove Koenig lookup into type_system
+-#if 0
+-			if (check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,active_namespace,types)) return true;
+-			if (check_for_enum(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,active_namespace,types)) return true;
+-			if (check_for_class_struct_union(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,active_namespace,types)) return true;
+-			return false;
+-#else
++			// shove Koenig lookup into type_system
+ 			return check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,types);
+-#endif
+-			}
+ 		}
+-		//! \todo handle other known types
+-#if 0
+-		// we must accept any specifier here: C++0X 7.1.6.2p1
+-		if (   is_C99_anonymous_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier(x,&quot;enum&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;enum&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier(x,&quot;struct&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;struct&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier(x,&quot;union&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;union&quot;))
+-			return true;
+-		if (   is_C99_anonymous_specifier(x,&quot;class&quot;)
+-			|| is_C99_named_specifier(x,&quot;class&quot;)
+-			|| is_C99_named_specifier_definition(x,&quot;class&quot;))
+-			return true;
+-#endif
+ 		return false;
+ 		};
+ 	bool analyze_flags_global(parse_tree&amp; x, size_t i, size_t&amp; decl_count)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000258.html">[Zcplusplus-commits] r491 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#257">[ date ]</a>
+              <a href="thread.html#257">[ thread ]</a>
+              <a href="subject.html#257">[ subject ]</a>
+              <a href="author.html#257">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

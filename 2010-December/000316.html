@@ -1,0 +1,634 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r549 - in trunk/tests: zcc/backport	zcc/decl.C99 zcc/staticassert.C1X zcc.in/backport	zcc.in/decl.C99 zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r549%20-%20in%20trunk/tests%3A%20zcc/backport%0A%09zcc/decl.C99%20zcc/staticassert.C1X%20zcc.in/backport%0A%09zcc.in/decl.C99%20zcc.in/staticassert.C1X&In-Reply-To=%3C20101209093255.ADF14480E5F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000317.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r549 - in trunk/tests: zcc/backport	zcc/decl.C99 zcc/staticassert.C1X zcc.in/backport	zcc.in/decl.C99 zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r549%20-%20in%20trunk/tests%3A%20zcc/backport%0A%09zcc/decl.C99%20zcc/staticassert.C1X%20zcc.in/backport%0A%09zcc.in/decl.C99%20zcc.in/staticassert.C1X&In-Reply-To=%3C20101209093255.ADF14480E5F%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r549 - in trunk/tests: zcc/backport	zcc/decl.C99 zcc/staticassert.C1X zcc.in/backport	zcc.in/decl.C99 zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  9 10:32:55 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000317.html">[Zcplusplus-commits] r550 - in trunk/tests/zcc: compat decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#316">[ date ]</a>
+              <a href="thread.html#316">[ thread ]</a>
+              <a href="subject.html#316">[ subject ]</a>
+              <a href="author.html#316">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-12-09 10:32:55 +0100 (Thu, 09 Dec 2010)
+New Revision: 549
+
+Modified:
+   trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_brace.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_type.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_undef.in
+   trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+   trunk/tests/zcc/backport/Warn_enum_trailing_comma.h
+   trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_brace.h
+   trunk/tests/zcc/decl.C99/Error_enum_brace.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h
+   trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_keyword.h
+   trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_multidef.h
+   trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_no_init.h
+   trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_symbol.h
+   trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_type.h
+   trunk/tests/zcc/decl.C99/Error_enum_type.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_typedef.h
+   trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_undef.h
+   trunk/tests/zcc/decl.C99/Error_enum_undef.hpp
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_enum_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h
+   trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+Log:
+fix missing-comma errors in test cases
+
+Modified: trunk/tests/zcc/backport/Warn_enum_trailing_comma.h
+===================================================================
+--- trunk/tests/zcc/backport/Warn_enum_trailing_comma.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/backport/Warn_enum_trailing_comma.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum weird_test {
+ 	x_factor = 1,
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp
+===================================================================
+--- trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/backport/Warn_enum_trailing_comma.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum weird_test {
+ 	x_factor = 1,
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_brace.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_brace.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_brace.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	{} = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_brace.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_brace.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_brace.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	{} = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_init_truncated.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -5,5 +5,5 @@
+ enum bad_test {
+ 	x_factor = ,
+ 	x_factor2 = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_init_truncated.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -5,5 +5,5 @@
+ enum bad_test {
+ 	x_factor = ,
+ 	x_factor2 = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_keyword.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_keyword.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_keyword.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	return = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_keyword.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	return = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_multidef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_multidef.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_multidef.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,9 +4,9 @@
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,9 +4,9 @@
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_no_init.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_no_init.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_no_init.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	x_factor &amp;
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_no_init.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	x_factor &amp;
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_symbol.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_symbol.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_symbol.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	&amp; = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_symbol.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	&amp; = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_type.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_type.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_type.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	unsigned int = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_type.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_type.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_type.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	unsigned int = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -6,5 +6,5 @@
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -6,5 +6,5 @@
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_undef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_undef.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_undef.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -2,5 +2,5 @@
+ // using undefined enum
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-enum bad_test
++enum bad_test;
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Error_enum_undef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_undef.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Error_enum_undef.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -2,5 +2,5 @@
+ // using undefined enum
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-enum bad_test
++enum bad_test;
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Pass_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum good_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Pass_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum good_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum weird_test {
+ 	x_factor = 1,
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/decl.C99/Pass_enum_trailing_comma.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum weird_test {
+ 	x_factor = 1,
+-}
++};
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-12-09 09:32:55 UTC (rev 549)
+@@ -6,7 +6,7 @@
+ 	zero,
+ 	one,
+ 	two
+-}
++};
+ 
+ _Static_Assert(neg_one,&quot;automatic success has failed&quot;);
+ _Static_Assert(one,&quot;automatic success has failed&quot;);
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-12-09 09:32:55 UTC (rev 549)
+@@ -6,7 +6,7 @@
+ 	zero,
+ 	one,
+ 	two
+-}
++};
+ 
+ static_assert(neg_one,&quot;automatic success has failed&quot;);
+ static_assert(one,&quot;automatic success has failed&quot;);
+
+Modified: trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in
+===================================================================
+--- trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/backport/Warn_enum_trailing_comma.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum weird_test {
+ 	x_factor = 1,
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_brace.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_brace.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_brace.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	{} = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_init_truncated.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -5,5 +5,5 @@
+ enum bad_test {
+ 	x_factor = ,
+ 	x_factor2 = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_keyword.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	return = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,9 +4,9 @@
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_no_init.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	x_factor &amp;
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_symbol.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	&amp; = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_type.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_type.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_type.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum bad_test {
+ 	unsigned int = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -6,5 +6,5 @@
+ 
+ enum bad_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Error_enum_undef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_undef.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_undef.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -2,5 +2,5 @@
+ // using undefined enum
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-enum bad_test
++enum bad_test;
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum good_test {
+ 	x_factor = 1
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_trailing_comma.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -4,5 +4,5 @@
+ 
+ enum weird_test {
+ 	x_factor = 1,
+-}
++};
+ 
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-11-28 03:36:45 UTC (rev 548)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-12-09 09:32:55 UTC (rev 549)
+@@ -7,7 +7,7 @@
+ 	zero,
+ 	one,
+ 	two
+-}
++};
+ 
+ STATIC_ASSERT(neg_one,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(one,&quot;automatic success has failed&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000317.html">[Zcplusplus-commits] r550 - in trunk/tests/zcc: compat decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#316">[ date ]</a>
+              <a href="thread.html#316">[ thread ]</a>
+              <a href="subject.html#316">[ subject ]</a>
+              <a href="author.html#316">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

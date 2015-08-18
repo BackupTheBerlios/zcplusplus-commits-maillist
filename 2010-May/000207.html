@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r440%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X&In-Reply-To=%3C201005190951.o4J9p6mF005619%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000206.html">
+   <LINK REL="Next"  HREF="000208.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r440%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert%20tests/zcc/staticassert.C1X&In-Reply-To=%3C201005190951.o4J9p6mF005619%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r440 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed May 19 11:51:06 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000206.html">[Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert
+</A></li>
+        <LI>Next message: <A HREF="000208.html">[Zcplusplus-commits] r441 - trunk/tests/zcc/default/staticassert
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#207">[ date ]</a>
+              <a href="thread.html#207">[ thread ]</a>
+              <a href="subject.html#207">[ subject ]</a>
+              <a href="author.html#207">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-19 11:51:00 +0200 (Wed, 19 May 2010)
+New Revision: 440
+
+Added:
+   trunk/tests/zcc/staticassert.C1X/Error_typeid_no_typeinfo.hpp
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CSupport.cpp
+   trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+Log:
+make typeid fail without #include &lt;typeinfo&gt;
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-05-19 09:00:55 UTC (rev 439)
++++ trunk/CPreproc.cpp	2010-05-19 09:51:00 UTC (rev 440)
+@@ -1436,8 +1436,8 @@
+ 						--i;
+ 						continue;
+ #/*cut-cpp*/
+-						case RELAY_ZCC_ENABLE_TYPEID:
+-							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code].first,pragma_relay_keywords[pragma_code].second);
++						case RELAY_ZCC_ENABLE_TYPEID+1:
++							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code-1].first,pragma_relay_keywords[pragma_code-1].second);
+ 							continue;
+ 						}
+ #/*cut-cpp*/
+@@ -1693,8 +1693,8 @@
+ #/*cut-cpp*/
+ 						switch(pragma_code)
+ 						{
+-						case RELAY_ZCC_ENABLE_TYPEID:
+-							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code].first,pragma_relay_keywords[pragma_code].second);
++						case RELAY_ZCC_ENABLE_TYPEID+1:
++							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code-1].first,pragma_relay_keywords[pragma_code-1].second);
+ 							TokenList.DeleteNSlotsAt(3,i+1);
+ 							continue;
+ 						}
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-19 09:00:55 UTC (rev 439)
++++ trunk/CSupport.cpp	2010-05-19 09:51:00 UTC (rev 440)
+@@ -10285,7 +10285,7 @@
+ 					if (RELAY_ZCC_ENABLE_TYPEID==Idx) typeid_is_ok = true;
+ 					src.DeleteIdx&lt;0&gt;(i);
+ 					}
+-				else if (!typeid_is_ok &amp;&amp; token_is_string&lt;7&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;type_id&quot;))
++				else if (!typeid_is_ok &amp;&amp; token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;typeid&quot;))
+ 					//! \bug need test case
+ 					simple_error(src.c_array&lt;0&gt;()[i],&quot; requires #include &lt;typeinfo&gt; first (C++0X 5.2.8p6)&quot;);
+ 				}
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-19 09:00:55 UTC (rev 439)
++++ trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-19 09:51:00 UTC (rev 440)
+@@ -5,6 +5,8 @@
+ // (it's a std::typeinfo structure) -- but the result of == and != operators
+ // can be known at compile-time in simple cases.
+ 
++#include &lt;typeinfo&gt;
++
+ // identity checks
+ static_assert(typeid(void)==typeid(void),&quot;automatic success failed&quot;);
+ static_assert(typeid(bool)==typeid(bool),&quot;automatic success failed&quot;);
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_typeid_no_typeinfo.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_typeid_no_typeinfo.hpp	2010-05-19 09:00:55 UTC (rev 439)
++++ trunk/tests/zcc/staticassert.C1X/Error_typeid_no_typeinfo.hpp	2010-05-19 09:51:00 UTC (rev 440)
+@@ -0,0 +1,5 @@
++// Error_typeid_no_typeinfo.hpp
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static_assert(typeid(void)==typeid(void),&quot;automatic success failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000206.html">[Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert
+</A></li>
+	<LI>Next message: <A HREF="000208.html">[Zcplusplus-commits] r441 - trunk/tests/zcc/default/staticassert
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#207">[ date ]</a>
+              <a href="thread.html#207">[ thread ]</a>
+              <a href="subject.html#207">[ subject ]</a>
+              <a href="author.html#207">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

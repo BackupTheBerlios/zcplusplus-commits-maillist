@@ -1,0 +1,314 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r588 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r588%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110123234047.E72374812E1%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000354.html">
+   <LINK REL="Next"  HREF="000356.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r588 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r588%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20110123234047.E72374812E1%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r588 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 24 00:40:47 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000354.html">[Zcplusplus-commits] r587 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000356.html">[Zcplusplus-commits] r589 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#355">[ date ]</a>
+              <a href="thread.html#355">[ thread ]</a>
+              <a href="subject.html#355">[ subject ]</a>
+              <a href="author.html#355">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-24 00:40:47 +0100 (Mon, 24 Jan 2011)
+New Revision: 588
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_struct_runon_def.in
+   trunk/tests/zcc.in/decl.C99/Error_union_runon_def.in
+   trunk/tests/zcc/decl.C99/Error_class_runon_def.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_runon_def.h
+   trunk/tests/zcc/decl.C99/Error_struct_runon_def.hpp
+   trunk/tests/zcc/decl.C99/Error_union_runon_def.h
+   trunk/tests/zcc/decl.C99/Error_union_runon_def.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+verify error for run-on definitions of struct, class, union
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-23 20:34:08 UTC (rev 587)
++++ trunk/CSupport.cpp	2011-01-23 23:40:47 UTC (rev 588)
+@@ -10536,6 +10536,7 @@
+ 			//! \test decl.C99/Warn_dup_const2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i+k,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i-- +offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
+@@ -10545,10 +10546,11 @@
+ 			//! \test decl.C99/Warn_dup_volatile2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i+k,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i-- +offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		default:
+-			if (invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
++			if (0&lt;offset &amp;&amp; invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
+ 				{
+ 				if (!have_warned_too_many_types)
+ 					{
+@@ -10559,6 +10561,7 @@
+ 					have_warned_too_many_types = true;
+ 					}
+ 				src.DeleteIdx&lt;0&gt;(i-- +offset);
++				assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+ 				continue;
+ 				}
+@@ -10576,6 +10579,7 @@
+ 			//! \test decl.C99/Warn_dup_const3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i+k,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
+@@ -10585,6 +10589,7 @@
+ 			//! \test decl.C99/Warn_dup_volatile3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i+k,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		default:
+@@ -10599,6 +10604,7 @@
+ 					have_warned_too_many_types = true;
+ 					}
+ 				src.DeleteIdx&lt;0&gt;(i-- +offset);
++				assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+ 				continue;
+ 				}
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-23 20:34:08 UTC (rev 587)
++++ trunk/CSupport.cpp.in	2011-01-23 23:40:47 UTC (rev 588)
+@@ -10672,6 +10672,7 @@
+ 			//! \test decl.C99/Warn_dup_const2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i+k,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i-- +offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
+@@ -10681,10 +10682,11 @@
+ 			//! \test decl.C99/Warn_dup_volatile2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i+k,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i-- +offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		default:
+-			if (invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
++			if (0&lt;offset &amp;&amp; invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
+ 				{
+ 				if (!have_warned_too_many_types)
+ 					{
+@@ -10695,6 +10697,7 @@
+ 					have_warned_too_many_types = true;
+ 					}
+ 				src.DeleteIdx&lt;0&gt;(i-- +offset);
++				assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+ 				continue;
+ 				}
+@@ -10712,6 +10715,7 @@
+ 			//! \test decl.C99/Warn_dup_const3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i+k,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
+@@ -10721,6 +10725,7 @@
+ 			//! \test decl.C99/Warn_dup_volatile3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i+k,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
++			assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 			invariant_decl_scanner.DeleteIdx(offset);
+ 			continue;
+ 		default:
+@@ -10735,6 +10740,7 @@
+ 					have_warned_too_many_types = true;
+ 					}
+ 				src.DeleteIdx&lt;0&gt;(i-- +offset);
++				assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[i+k].flags);
+ 				invariant_decl_scanner.DeleteIdx(offset);
+ 				continue;
+ 				}
+
+Added: trunk/tests/zcc/decl.C99/Error_class_runon_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_runon_def.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_class_runon_def.hpp	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_class_runon_def.hpp
++// using singly defined class
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++class bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern class bad_test x1
++extern const class bad_test x2;
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_runon_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_runon_def.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_struct_runon_def.h	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_struct_runon_def.h
++// using singly defined struct
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++struct bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern struct bad_test x1
++extern const struct bad_test x2;
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_runon_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_runon_def.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_struct_runon_def.hpp	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_struct_runon_def.hpp
++// using singly defined struct
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++struct bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern struct bad_test x1
++extern const struct bad_test x2;
+
+Added: trunk/tests/zcc/decl.C99/Error_union_runon_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_runon_def.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_runon_def.h	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_runon_def.h
++// using singly defined union
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern union bad_test x1
++extern const union bad_test x2;
+
+Added: trunk/tests/zcc/decl.C99/Error_union_runon_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_runon_def.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_runon_def.hpp	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_runon_def.hpp
++// using singly defined union
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern union bad_test x1
++extern const union bad_test x2;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_struct_runon_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_struct_runon_def.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_struct_runon_def.in	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++SUFFIXES h hpp
++// using singly defined struct
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++struct bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern struct bad_test x1
++extern const struct bad_test x2;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_runon_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_runon_def.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_union_runon_def.in	2011-01-23 23:40:47 UTC (rev 588)
+@@ -0,0 +1,11 @@
++SUFFIXES h hpp
++// using singly defined union
++// (C)2011 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++// ringing the changes on extern
++extern union bad_test x1
++extern const union bad_test x2;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000354.html">[Zcplusplus-commits] r587 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000356.html">[Zcplusplus-commits] r589 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#355">[ date ]</a>
+              <a href="thread.html#355">[ thread ]</a>
+              <a href="subject.html#355">[ subject ]</a>
+              <a href="author.html#355">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

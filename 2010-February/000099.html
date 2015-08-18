@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r332 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r332%20-%20trunk&In-Reply-To=%3C201002132125.o1DLPrrC015668%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000100.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r332 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r332%20-%20trunk&In-Reply-To=%3C201002132125.o1DLPrrC015668%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r332 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Feb 13 22:25:53 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000100.html">[Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#99">[ date ]</a>
+              <a href="thread.html#99">[ thread ]</a>
+              <a href="subject.html#99">[ subject ]</a>
+              <a href="author.html#99">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-02-13 22:25:50 +0100 (Sat, 13 Feb 2010)
+New Revision: 332
+
+Modified:
+   trunk/AtomicString.cpp
+Log:
+make this actually implement binary search
+
+Modified: trunk/AtomicString.cpp
+===================================================================
+--- trunk/AtomicString.cpp	2010-01-27 08:15:17 UTC (rev 331)
++++ trunk/AtomicString.cpp	2010-02-13 21:25:50 UTC (rev 332)
+@@ -50,19 +50,10 @@
+ 		int test = strncmp(x,string_cache[midpoint],x_len);
+ 		if (0==test &amp;&amp; x_len&lt;strlen(string_cache[midpoint])) test = -1;
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0&lt;test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0&lt;test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0&lt;test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	char** Tmp = (char**)(realloc(string_cache,sizeof(char*)*(string_cache_size+1)));
+ 	if (NULL==Tmp) _fatal(RAM_FAIL);
+@@ -88,19 +79,10 @@
+ 		int test = strncmp(x,string_cache[midpoint],x_len);
+ 		if (0==test &amp;&amp; x_len&lt;strlen(string_cache[midpoint])) test = -1;
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0&lt;test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0&lt;test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0&lt;test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	return NULL;
+ }
+@@ -115,19 +97,10 @@
+ 		const size_t midpoint = LB + (StrictUB-LB)/2;
+ 		const int test = strcmp(x,string_cache[midpoint]);
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0&lt;test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0&lt;test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0&lt;test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	char** Tmp = reinterpret_cast&lt;char**&gt;(realloc(string_cache,sizeof(char*)*(string_cache_size+1)));
+ 	if (NULL==Tmp) _fatal(RAM_FAIL);
+@@ -152,19 +125,10 @@
+ 		const size_t midpoint = LB + (StrictUB-LB)/2;
+ 		const int test = strcmp(x,string_cache[midpoint]);
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0&lt;test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0&lt;test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0&lt;test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	return NULL;
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000100.html">[Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#99">[ date ]</a>
+              <a href="thread.html#99">[ thread ]</a>
+              <a href="subject.html#99">[ subject ]</a>
+              <a href="author.html#99">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

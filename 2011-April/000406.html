@@ -1,0 +1,396 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r639 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r639%20-%20trunk&In-Reply-To=%3C20110428104225.A2C3448082F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000405.html">
+   <LINK REL="Next"  HREF="000407.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r639 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r639%20-%20trunk&In-Reply-To=%3C20110428104225.A2C3448082F%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r639 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 28 12:42:25 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000405.html">[Zcplusplus-commits] r638 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000407.html">[Zcplusplus-commits] r640 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#406">[ date ]</a>
+              <a href="thread.html#406">[ thread ]</a>
+              <a href="subject.html#406">[ subject ]</a>
+              <a href="author.html#406">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-28 12:42:25 +0200 (Thu, 28 Apr 2011)
+New Revision: 639
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+Log:
+object size reduction, MingW32 4.3.3 release mode
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-04-27 13:28:06 UTC (rev 638)
++++ trunk/CPreproc.cpp	2011-04-28 10:42:25 UTC (rev 639)
+@@ -3703,25 +3703,26 @@
+ void
+ CPreprocessor::dynamic_function_macro_prereplace_once(const autovalarray_ptr&lt;char*&gt;&amp; macros_object, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_object_expansion, const autovalarray_ptr&lt;char*&gt;&amp; macros_function, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_arglist, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_expansion,autovalarray_ptr&lt;char*&gt;* const used_macro_stack, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; formal_arguments, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; actual_arguments, Token&lt;char&gt;&amp; x)
+ {
++	assert(!actual_arguments.empty());
+ 	// deal with # operators before macro-replacing arguments
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+ 	if (lang.line_lex_find(x.data(),x.size(),&quot;#&quot;,sizeof(&quot;#&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:&quot;,sizeof(&quot;%:&quot;)-1,pretokenized))
+ 		{
+ 		size_t i = pretokenized.size();
+ 		do	{
+-			--i;
+-			if (detect_C_stringize_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			const POD_triple&lt;size_t,size_t,lex_flags&gt;* const origin = pretokenized.data() + --i; 
++			if (detect_C_stringize_op(x.data()+origin[0].first,origin[0].second))
+ 				{
+ 				assert(pretokenized.size()&gt;i+1);
+-				assert(pretokenized[i].first+pretokenized[i].second==pretokenized[i+1].first);
+-				const errr j = (C_TESTFLAG_IDENTIFIER==pretokenized[i].third) ? linear_find_STL_deref2(x.data()+pretokenized[i+1].first,pretokenized[i+1].second,formal_arguments) : -1;
++				assert(origin[0].first+origin[0].second==origin[1].first);
++				const errr j = (C_TESTFLAG_IDENTIFIER==origin[0].third) ? linear_find_STL_deref2(x.data()+origin[1].first,origin[1].second,formal_arguments) : -1;
+ 				assert(0&lt;=j);
+ 
+ 				{
+ 				autovalarray_ptr&lt;char&gt; stringized_actual;	//! \todo inefficient, should stringize any parameter only once and reuse
+ 				stringize(stringized_actual,actual_arguments[j]);
+ 				// safe because narrow string
+-				x.replace_once(pretokenized[i].first,pretokenized[i+1].second+pretokenized[i].second,stringized_actual.data());
++				x.replace_once(origin[0].first,origin[1].second+origin[0].second,stringized_actual.data());
+ 				// XXX leave behind garbage in pretokenized
+ 				}
+ 				}
+@@ -3740,36 +3741,40 @@
+ 				size_t k = pretokenized.size();
+ 				if (3&lt;=k)
+ 					{
+-					do	if (C_TESTFLAG_NONATOMIC_PP_OP_PUNC==pretokenized[--k].third &amp;&amp; detect_C_concatenation_op(x.data()+pretokenized[k].first,pretokenized[k].second))
++					do	{
++						const POD_triple&lt;size_t,size_t,lex_flags&gt;* const origin = pretokenized.data() + --k; 
++						const char* const x_data = x.data();
++						if (C_TESTFLAG_NONATOMIC_PP_OP_PUNC==origin[0].third &amp;&amp; detect_C_concatenation_op(x_data+origin[0].first,origin[0].second))
+ 							{
+-							if (C_TESTFLAG_IDENTIFIER==pretokenized[k+1].third)
++							if (C_TESTFLAG_IDENTIFIER==origin[1].third)
+ 								{
+-								const errr j2 = linear_find_STL_deref2(x.data()+pretokenized[k+1].first,pretokenized[k+1].second,formal_arguments);
++								const errr j2 = linear_find_STL_deref2(x_data+origin[1].first,origin[1].second,formal_arguments);
+ 								if (0&lt;=j2 &amp;&amp; !actual_arguments[j2])
+ 									{	// we matched an empty parameter (concatenation identity)
+-									const size_t replace_start = pretokenized[k-1].first+pretokenized[k-1].second;
+-									size_t replace_len = (pretokenized[k+1].first-replace_start)+pretokenized[k+1].second;
++									const size_t replace_start = origin[-1].first+origin[-1].second;
++									size_t replace_len = (origin[1].first-replace_start)+origin[1].second;
+ 									if (x.size()&gt;replace_start+replace_len)
+-										replace_len += strspn(x.data()+replace_start+replace_len,lang.WhiteSpace+1);
++										replace_len += strspn(x_data+replace_start+replace_len,lang.WhiteSpace+1);
+ 									x.replace_once(replace_start,replace_len,' ');
+ 									continue;
+ 									}
+ 								};
+-							if (C_TESTFLAG_IDENTIFIER==pretokenized[k-1].third)
++							if (C_TESTFLAG_IDENTIFIER==origin[-1].third)
+ 								{	// don't need should_continue bypass for last check
+-								const errr j2 = linear_find_STL_deref2(x.data()+pretokenized[k-1].first,pretokenized[k-1].second,formal_arguments);
++								const errr j2 = linear_find_STL_deref2(x_data+origin[-1].first,origin[-1].second,formal_arguments);
+ 								if (0&lt;=j2 &amp;&amp; !actual_arguments[j2])
+ 									{
+-									const size_t replace_start = (0&lt;k) ? pretokenized[k-2].first+pretokenized[k-2].second : 0U;
+-									size_t replace_len = (pretokenized[k].first-replace_start)+pretokenized[k].second;
++									const size_t replace_start = (0&lt;k) ? origin[-2].first+origin[-2].second : 0U;
++									size_t replace_len = (origin[0].first-replace_start)+origin[0].second;
+ 									if (x.size()&gt;replace_start+replace_len)
+-										replace_len += strspn(x.data()+replace_start+replace_len,lang.WhiteSpace+1);
++										replace_len += strspn(x_data+replace_start+replace_len,lang.WhiteSpace+1);
+ 	
+-									x.replace_once(pretokenized[k-1].first,(pretokenized[k].first-pretokenized[k-1].first)+pretokenized[k].second,' ');
++									x.replace_once(origin[-1].first,(origin[0].first-origin[-1].first)+origin[0].second,' ');
+ //									continue;
+ 									}
+ 								};
+ 							}
++						}
+ 					while(0&lt;k);
+ 					};
+ 				}
+@@ -3778,10 +3783,13 @@
+ 	while(0&lt;j);
+ 
+ 	// macro-replace all arguments
+-	j = actual_arguments.size();
+-	do	if (actual_arguments[--j])
+-			intradirective_preprocess(*actual_arguments[j],0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+-	while(0&lt;j);
++	{
++	Token&lt;char&gt;* const * const actual_begin = actual_arguments.begin();
++	Token&lt;char&gt;* const * iter = actual_arguments.end();
++	do	if (*(--iter))
++			intradirective_preprocess(**iter,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
++	while(actual_begin!=iter);
++	}
+ 
+ 	lang.line_lex(x.data(),x.size(),pretokenized);
+ 	assert(!pretokenized.empty());
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-04-27 13:28:06 UTC (rev 638)
++++ trunk/CPreproc.cpp.in	2011-04-28 10:42:25 UTC (rev 639)
+@@ -3749,25 +3749,26 @@
+ void
+ CPreprocessor::dynamic_function_macro_prereplace_once(const autovalarray_ptr&lt;char*&gt;&amp; macros_object, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_object_expansion, const autovalarray_ptr&lt;char*&gt;&amp; macros_function, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_arglist, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_expansion,autovalarray_ptr&lt;char*&gt;* const used_macro_stack, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; formal_arguments, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; actual_arguments, Token&lt;char&gt;&amp; x)
+ {
++	assert(!actual_arguments.empty());
+ 	// deal with # operators before macro-replacing arguments
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+ 	if (lang.line_lex_find(x.data(),x.size(),&quot;#&quot;,sizeof(&quot;#&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:&quot;,sizeof(&quot;%:&quot;)-1,pretokenized))
+ 		{
+ 		size_t i = pretokenized.size();
+ 		do	{
+-			--i;
+-			if (detect_C_stringize_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			const POD_triple&lt;size_t,size_t,lex_flags&gt;* const origin = pretokenized.data() + --i; 
++			if (detect_C_stringize_op(x.data()+origin[0].first,origin[0].second))
+ 				{
+ 				assert(pretokenized.size()&gt;i+1);
+-				assert(pretokenized[i].first+pretokenized[i].second==pretokenized[i+1].first);
+-				const errr j = (C_TESTFLAG_IDENTIFIER==pretokenized[i].third) ? linear_find_STL_deref2(x.data()+pretokenized[i+1].first,pretokenized[i+1].second,formal_arguments) : -1;
++				assert(origin[0].first+origin[0].second==origin[1].first);
++				const errr j = (C_TESTFLAG_IDENTIFIER==origin[0].third) ? linear_find_STL_deref2(x.data()+origin[1].first,origin[1].second,formal_arguments) : -1;
+ 				assert(0&lt;=j);
+ 
+ 				{
+ 				autovalarray_ptr&lt;char&gt; stringized_actual;	//! \todo inefficient, should stringize any parameter only once and reuse
+ 				stringize(stringized_actual,actual_arguments[j]);
+ 				// safe because narrow string
+-				x.replace_once(pretokenized[i].first,pretokenized[i+1].second+pretokenized[i].second,stringized_actual.data());
++				x.replace_once(origin[0].first,origin[1].second+origin[0].second,stringized_actual.data());
+ 				// XXX leave behind garbage in pretokenized
+ 				}
+ 				}
+@@ -3786,36 +3787,40 @@
+ 				size_t k = pretokenized.size();
+ 				if (3&lt;=k)
+ 					{
+-					do	if (C_TESTFLAG_NONATOMIC_PP_OP_PUNC==pretokenized[--k].third &amp;&amp; detect_C_concatenation_op(x.data()+pretokenized[k].first,pretokenized[k].second))
++					do	{
++						const POD_triple&lt;size_t,size_t,lex_flags&gt;* const origin = pretokenized.data() + --k; 
++						const char* const x_data = x.data();
++						if (C_TESTFLAG_NONATOMIC_PP_OP_PUNC==origin[0].third &amp;&amp; detect_C_concatenation_op(x_data+origin[0].first,origin[0].second))
+ 							{
+-							if (C_TESTFLAG_IDENTIFIER==pretokenized[k+1].third)
++							if (C_TESTFLAG_IDENTIFIER==origin[1].third)
+ 								{
+-								const errr j2 = linear_find_STL_deref2(x.data()+pretokenized[k+1].first,pretokenized[k+1].second,formal_arguments);
++								const errr j2 = linear_find_STL_deref2(x_data+origin[1].first,origin[1].second,formal_arguments);
+ 								if (0&lt;=j2 &amp;&amp; !actual_arguments[j2])
+ 									{	// we matched an empty parameter (concatenation identity)
+-									const size_t replace_start = pretokenized[k-1].first+pretokenized[k-1].second;
+-									size_t replace_len = (pretokenized[k+1].first-replace_start)+pretokenized[k+1].second;
++									const size_t replace_start = origin[-1].first+origin[-1].second;
++									size_t replace_len = (origin[1].first-replace_start)+origin[1].second;
+ 									if (x.size()&gt;replace_start+replace_len)
+-										replace_len += strspn(x.data()+replace_start+replace_len,lang.WhiteSpace+1);
++										replace_len += strspn(x_data+replace_start+replace_len,lang.WhiteSpace+1);
+ 									x.replace_once(replace_start,replace_len,' ');
+ 									continue;
+ 									}
+ 								};
+-							if (C_TESTFLAG_IDENTIFIER==pretokenized[k-1].third)
++							if (C_TESTFLAG_IDENTIFIER==origin[-1].third)
+ 								{	// don't need should_continue bypass for last check
+-								const errr j2 = linear_find_STL_deref2(x.data()+pretokenized[k-1].first,pretokenized[k-1].second,formal_arguments);
++								const errr j2 = linear_find_STL_deref2(x_data+origin[-1].first,origin[-1].second,formal_arguments);
+ 								if (0&lt;=j2 &amp;&amp; !actual_arguments[j2])
+ 									{
+-									const size_t replace_start = (0&lt;k) ? pretokenized[k-2].first+pretokenized[k-2].second : 0U;
+-									size_t replace_len = (pretokenized[k].first-replace_start)+pretokenized[k].second;
++									const size_t replace_start = (0&lt;k) ? origin[-2].first+origin[-2].second : 0U;
++									size_t replace_len = (origin[0].first-replace_start)+origin[0].second;
+ 									if (x.size()&gt;replace_start+replace_len)
+-										replace_len += strspn(x.data()+replace_start+replace_len,lang.WhiteSpace+1);
++										replace_len += strspn(x_data+replace_start+replace_len,lang.WhiteSpace+1);
+ 	
+-									x.replace_once(pretokenized[k-1].first,(pretokenized[k].first-pretokenized[k-1].first)+pretokenized[k].second,' ');
++									x.replace_once(origin[-1].first,(origin[0].first-origin[-1].first)+origin[0].second,' ');
+ //									continue;
+ 									}
+ 								};
+ 							}
++						}
+ 					while(0&lt;k);
+ 					};
+ 				}
+@@ -3824,10 +3829,13 @@
+ 	while(0&lt;j);
+ 
+ 	// macro-replace all arguments
+-	j = actual_arguments.size();
+-	do	if (actual_arguments[--j])
+-			intradirective_preprocess(*actual_arguments[j],0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+-	while(0&lt;j);
++	{
++	Token&lt;char&gt;* const * const actual_begin = actual_arguments.begin();
++	Token&lt;char&gt;* const * iter = actual_arguments.end();
++	do	if (*(--iter))
++			intradirective_preprocess(**iter,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
++	while(actual_begin!=iter);
++	}
+ 
+ 	lang.line_lex(x.data(),x.size(),pretokenized);
+ 	assert(!pretokenized.empty());
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-04-27 13:28:06 UTC (rev 638)
++++ trunk/CPreproc_pp.cpp	2011-04-28 10:42:25 UTC (rev 639)
+@@ -3663,25 +3663,26 @@
+ void
+ CPreprocessor::dynamic_function_macro_prereplace_once(const autovalarray_ptr&lt;char*&gt;&amp; macros_object, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_object_expansion, const autovalarray_ptr&lt;char*&gt;&amp; macros_function, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_arglist, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_expansion,autovalarray_ptr&lt;char*&gt;* const used_macro_stack, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; formal_arguments, const autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; actual_arguments, Token&lt;char&gt;&amp; x)
+ {
++	assert(!actual_arguments.empty());
+ 	// deal with # operators before macro-replacing arguments
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+ 	if (lang.line_lex_find(x.data(),x.size(),&quot;#&quot;,sizeof(&quot;#&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:&quot;,sizeof(&quot;%:&quot;)-1,pretokenized))
+ 		{
+ 		size_t i = pretokenized.size();
+ 		do	{
+-			--i;
+-			if (detect_C_stringize_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			const POD_triple&lt;size_t,size_t,lex_flags&gt;* const origin = pretokenized.data() + --i; 
++			if (detect_C_stringize_op(x.data()+origin[0].first,origin[0].second))
+ 				{
+ 				assert(pretokenized.size()&gt;i+1);
+-				assert(pretokenized[i].first+pretokenized[i].second==pretokenized[i+1].first);
+-				const errr j = (C_TESTFLAG_IDENTIFIER==pretokenized[i].third) ? linear_find_STL_deref2(x.data()+pretokenized[i+1].first,pretokenized[i+1].second,formal_arguments) : -1;
++				assert(origin[0].first+origin[0].second==origin[1].first);
++				const errr j = (C_TESTFLAG_IDENTIFIER==origin[0].third) ? linear_find_STL_deref2(x.data()+origin[1].first,origin[1].second,formal_arguments) : -1;
+ 				assert(0&lt;=j);
+ 
+ 				{
+ 				autovalarray_ptr&lt;char&gt; stringized_actual;	//! \todo inefficient, should stringize any parameter only once and reuse
+ 				stringize(stringized_actual,actual_arguments[j]);
+ 				// safe because narrow string
+-				x.replace_once(pretokenized[i].first,pretokenized[i+1].second+pretokenized[i].second,stringized_actual.data());
++				x.replace_once(origin[0].first,origin[1].second+origin[0].second,stringized_actual.data());
+ 				// XXX leave behind garbage in pretokenized
+ 				}
+ 				}
+@@ -3700,36 +3701,40 @@
+ 				size_t k = pretokenized.size();
+ 				if (3&lt;=k)
+ 					{
+-					do	if (C_TESTFLAG_NONATOMIC_PP_OP_PUNC==pretokenized[--k].third &amp;&amp; detect_C_concatenation_op(x.data()+pretokenized[k].first,pretokenized[k].second))
++					do	{
++						const POD_triple&lt;size_t,size_t,lex_flags&gt;* const origin = pretokenized.data() + --k; 
++						const char* const x_data = x.data();
++						if (C_TESTFLAG_NONATOMIC_PP_OP_PUNC==origin[0].third &amp;&amp; detect_C_concatenation_op(x_data+origin[0].first,origin[0].second))
+ 							{
+-							if (C_TESTFLAG_IDENTIFIER==pretokenized[k+1].third)
++							if (C_TESTFLAG_IDENTIFIER==origin[1].third)
+ 								{
+-								const errr j2 = linear_find_STL_deref2(x.data()+pretokenized[k+1].first,pretokenized[k+1].second,formal_arguments);
++								const errr j2 = linear_find_STL_deref2(x_data+origin[1].first,origin[1].second,formal_arguments);
+ 								if (0&lt;=j2 &amp;&amp; !actual_arguments[j2])
+ 									{	// we matched an empty parameter (concatenation identity)
+-									const size_t replace_start = pretokenized[k-1].first+pretokenized[k-1].second;
+-									size_t replace_len = (pretokenized[k+1].first-replace_start)+pretokenized[k+1].second;
++									const size_t replace_start = origin[-1].first+origin[-1].second;
++									size_t replace_len = (origin[1].first-replace_start)+origin[1].second;
+ 									if (x.size()&gt;replace_start+replace_len)
+-										replace_len += strspn(x.data()+replace_start+replace_len,lang.WhiteSpace+1);
++										replace_len += strspn(x_data+replace_start+replace_len,lang.WhiteSpace+1);
+ 									x.replace_once(replace_start,replace_len,' ');
+ 									continue;
+ 									}
+ 								};
+-							if (C_TESTFLAG_IDENTIFIER==pretokenized[k-1].third)
++							if (C_TESTFLAG_IDENTIFIER==origin[-1].third)
+ 								{	// don't need should_continue bypass for last check
+-								const errr j2 = linear_find_STL_deref2(x.data()+pretokenized[k-1].first,pretokenized[k-1].second,formal_arguments);
++								const errr j2 = linear_find_STL_deref2(x_data+origin[-1].first,origin[-1].second,formal_arguments);
+ 								if (0&lt;=j2 &amp;&amp; !actual_arguments[j2])
+ 									{
+-									const size_t replace_start = (0&lt;k) ? pretokenized[k-2].first+pretokenized[k-2].second : 0U;
+-									size_t replace_len = (pretokenized[k].first-replace_start)+pretokenized[k].second;
++									const size_t replace_start = (0&lt;k) ? origin[-2].first+origin[-2].second : 0U;
++									size_t replace_len = (origin[0].first-replace_start)+origin[0].second;
+ 									if (x.size()&gt;replace_start+replace_len)
+-										replace_len += strspn(x.data()+replace_start+replace_len,lang.WhiteSpace+1);
++										replace_len += strspn(x_data+replace_start+replace_len,lang.WhiteSpace+1);
+ 	
+-									x.replace_once(pretokenized[k-1].first,(pretokenized[k].first-pretokenized[k-1].first)+pretokenized[k].second,' ');
++									x.replace_once(origin[-1].first,(origin[0].first-origin[-1].first)+origin[0].second,' ');
+ //									continue;
+ 									}
+ 								};
+ 							}
++						}
+ 					while(0&lt;k);
+ 					};
+ 				}
+@@ -3738,10 +3743,13 @@
+ 	while(0&lt;j);
+ 
+ 	// macro-replace all arguments
+-	j = actual_arguments.size();
+-	do	if (actual_arguments[--j])
+-			intradirective_preprocess(*actual_arguments[j],0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
+-	while(0&lt;j);
++	{
++	Token&lt;char&gt;* const * const actual_begin = actual_arguments.begin();
++	Token&lt;char&gt;* const * iter = actual_arguments.end();
++	do	if (*(--iter))
++			intradirective_preprocess(**iter,0,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,used_macro_stack);
++	while(actual_begin!=iter);
++	}
+ 
+ 	lang.line_lex(x.data(),x.size(),pretokenized);
+ 	assert(!pretokenized.empty());
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000405.html">[Zcplusplus-commits] r638 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000407.html">[Zcplusplus-commits] r640 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#406">[ date ]</a>
+              <a href="thread.html#406">[ thread ]</a>
+              <a href="subject.html#406">[ subject ]</a>
+              <a href="author.html#406">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

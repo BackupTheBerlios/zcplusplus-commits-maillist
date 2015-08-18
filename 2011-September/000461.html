@@ -1,0 +1,1608 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r694 - trunk/tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r694%20-%20trunk/tests/zcc/decl.C99&In-Reply-To=%3C20110903225947.02AFC481123%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000460.html">
+   <LINK REL="Next"  HREF="000462.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r694 - trunk/tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r694%20-%20trunk/tests/zcc/decl.C99&In-Reply-To=%3C20110903225947.02AFC481123%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r694 - trunk/tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep  4 00:59:46 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000460.html">[Zcplusplus-commits] r693 - trunk/tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000462.html">[Zcplusplus-commits] r695 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#461">[ date ]</a>
+              <a href="thread.html#461">[ thread ]</a>
+              <a href="subject.html#461">[ subject ]</a>
+              <a href="author.html#461">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-09-04 00:59:46 +0200 (Sun, 04 Sep 2011)
+New Revision: 694
+
+Modified:
+   trunk/tests/zcc/decl.C99/Pass_class_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_class_def2.hpp
+Log:
+omnibus linkage test case adjust
+
+Modified: trunk/tests/zcc/decl.C99/Pass_class_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_class_def.hpp	2011-09-03 22:59:14 UTC (rev 693)
++++ trunk/tests/zcc/decl.C99/Pass_class_def.hpp	2011-09-03 22:59:46 UTC (rev 694)
+@@ -1,4 +1,4 @@
+-// decl.C99\Pass_class_def.hpp
++// Pass_class_def.hpp
+ // (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined class
+ 
+@@ -14,108 +14,109 @@
+ extern volatile const class good_test x5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static class good_test x6;
+-static volatile class good_test x7;
+-static const volatile class good_test x8;
+-static volatile const class good_test x9;
++static const class good_test x7;
++static volatile class good_test x8;
++static const volatile class good_test x9;
++static volatile const class good_test x10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern class good_test x10;
+-volatile extern class good_test x11;
+-const extern volatile class good_test x12;
+-const volatile extern class good_test x13;
+-volatile extern const class good_test x14;
+-volatile const extern class good_test x15;
+-volatile static class good_test x16;
+-const static volatile class good_test x17;
+-const volatile static class good_test x18;
+-volatile static const class good_test x19;
+-volatile const static class good_test x20;
++// extern/static not in first position is deprecated, but legal
++const extern class good_test x11;
++volatile extern class good_test x12;
++const extern volatile class good_test x13;
++const volatile extern class good_test x14;
++volatile extern const class good_test x15;
++volatile const extern class good_test x16;
++const static class good_test x17;
++volatile static class good_test x18;
++const static volatile class good_test x19;
++const volatile static class good_test x20;
++volatile static const class good_test x21;
++volatile const static class good_test x22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local class good_test x21;
+-extern thread_local const class good_test x22;
+-extern thread_local volatile class good_test x23;
+-extern thread_local const volatile class good_test x24;
+-extern thread_local volatile const class good_test x25;
+-thread_local extern class good_test x26;
+-thread_local extern const class good_test x27;
+-thread_local extern volatile class good_test x28;
+-thread_local extern const volatile class good_test x29;
+-thread_local extern volatile const class good_test x30;
++extern thread_local class good_test x23;
++extern thread_local const class good_test x24;
++extern thread_local volatile class good_test x25;
++extern thread_local const volatile class good_test x26;
++extern thread_local volatile const class good_test x27;
++thread_local extern class good_test x28;
++thread_local extern const class good_test x29;
++thread_local extern volatile class good_test x30;
++thread_local extern const volatile class good_test x31;
++thread_local extern volatile const class good_test x32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local class good_test x31;
+-static thread_local const class good_test x32;
+-static thread_local volatile class good_test x33;
+-static thread_local const volatile class good_test x34;
+-static thread_local volatile const class good_test x35;
+-thread_local static class good_test x36;
+-thread_local static const class good_test x37;
+-thread_local static volatile class good_test x38;
+-thread_local static const volatile class good_test x39;
+-thread_local static volatile const class good_test x40;
++static thread_local class good_test x33;
++static thread_local const class good_test x34;
++static thread_local volatile class good_test x35;
++static thread_local const volatile class good_test x36;
++static thread_local volatile const class good_test x37;
++thread_local static class good_test x38;
++thread_local static const class good_test x39;
++thread_local static volatile class good_test x40;
++thread_local static const volatile class good_test x41;
++thread_local static volatile const class good_test x42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local class good_test x41;
+-const extern thread_local class good_test x42;
+-extern volatile thread_local class good_test x43;
+-volatile extern thread_local class good_test x44;
+-extern const thread_local volatile class good_test x45;
+-extern const volatile thread_local class good_test x46;
+-const extern thread_local volatile class good_test x47;
+-const extern volatile thread_local class good_test x48;
+-const volatile extern thread_local class good_test x49;
+-extern volatile thread_local const class good_test x50;
+-extern volatile const thread_local class good_test x51;
+-volatile extern thread_local const class good_test x52;
+-volatile extern const thread_local class good_test x53;
+-volatile const extern thread_local class good_test x54;
+-thread_local const extern class good_test x55;
+-const thread_local extern class good_test x56;
+-thread_local volatile extern class good_test x57;
+-volatile thread_local extern class good_test x58;
+-thread_local const extern volatile class good_test x59;
+-thread_local const volatile extern class good_test x60;
+-const thread_local extern volatile class good_test x61;
+-const thread_local volatile extern class good_test x62;
+-const volatile thread_local extern class good_test x63;
+-thread_local volatile extern const class good_test x64;
+-thread_local volatile const extern class good_test x65;
+-volatile thread_local extern const class good_test x66;
+-volatile thread_local const extern class good_test x67;
+-volatile const thread_local extern class good_test x68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local class good_test x43;
++const extern thread_local class good_test x44;
++extern volatile thread_local class good_test x45;
++volatile extern thread_local class good_test x46;
++extern const thread_local volatile class good_test x47;
++extern const volatile thread_local class good_test x48;
++const extern thread_local volatile class good_test x49;
++const extern volatile thread_local class good_test x50;
++const volatile extern thread_local class good_test x51;
++extern volatile thread_local const class good_test x52;
++extern volatile const thread_local class good_test x53;
++volatile extern thread_local const class good_test x54;
++volatile extern const thread_local class good_test x55;
++volatile const extern thread_local class good_test x56;
++thread_local const extern class good_test x57;
++const thread_local extern class good_test x58;
++thread_local volatile extern class good_test x59;
++volatile thread_local extern class good_test x60;
++thread_local const extern volatile class good_test x61;
++thread_local const volatile extern class good_test x62;
++const thread_local extern volatile class good_test x63;
++const thread_local volatile extern class good_test x64;
++const volatile thread_local extern class good_test x65;
++thread_local volatile extern const class good_test x66;
++thread_local volatile const extern class good_test x67;
++volatile thread_local extern const class good_test x68;
++volatile thread_local const extern class good_test x69;
++volatile const thread_local extern class good_test x70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local class good_test x69;
+-const static thread_local class good_test x70;
+-static volatile thread_local class good_test x71;
+-volatile static thread_local class good_test x72;
+-static const thread_local volatile class good_test x73;
+-static const volatile thread_local class good_test x74;
+-const static thread_local volatile class good_test x75;
+-const static volatile thread_local class good_test x76;
+-const volatile static thread_local class good_test x77;
+-static volatile thread_local const class good_test x78;
+-static volatile const thread_local class good_test x79;
+-volatile static thread_local const class good_test x80;
+-volatile static const thread_local class good_test x81;
+-volatile const static thread_local class good_test x82;
+-thread_local const static class good_test x83;
+-const thread_local static class good_test x84;
+-thread_local volatile static class good_test x85;
+-volatile thread_local static class good_test x86;
+-thread_local const static volatile class good_test x87;
+-thread_local const volatile static class good_test x88;
+-const thread_local static volatile class good_test x89;
+-const thread_local volatile static class good_test x90;
+-const volatile thread_local static class good_test x91;
+-thread_local volatile static const class good_test x92;
+-thread_local volatile const static class good_test x93;
+-volatile thread_local static const class good_test x94;
+-volatile thread_local const static class good_test x95;
+-volatile const thread_local static class good_test x96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local class good_test x71;
++const static thread_local class good_test x72;
++static volatile thread_local class good_test x73;
++volatile static thread_local class good_test x74;
++static const thread_local volatile class good_test x75;
++static const volatile thread_local class good_test x76;
++const static thread_local volatile class good_test x77;
++const static volatile thread_local class good_test x78;
++const volatile static thread_local class good_test x79;
++static volatile thread_local const class good_test x80;
++static volatile const thread_local class good_test x81;
++volatile static thread_local const class good_test x82;
++volatile static const thread_local class good_test x83;
++volatile const static thread_local class good_test x84;
++thread_local const static class good_test x85;
++const thread_local static class good_test x86;
++thread_local volatile static class good_test x87;
++volatile thread_local static class good_test x88;
++thread_local const static volatile class good_test x89;
++thread_local const volatile static class good_test x90;
++const thread_local static volatile class good_test x91;
++const thread_local volatile static class good_test x92;
++const volatile thread_local static class good_test x93;
++thread_local volatile static const class good_test x94;
++thread_local volatile const static class good_test x95;
++volatile thread_local static const class good_test x96;
++volatile thread_local const static class good_test x97;
++volatile const thread_local static class good_test x98;
+ 
+ // define-declares
+ // ringing the changes on extern
+@@ -126,106 +127,401 @@
+ extern volatile const class good_test5 { int x_factor5; } x_5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static class good_test6 { int x_factor6; } x_6;
+-static volatile class good_test7 { int x_factor7; } x_7;
+-static const volatile class good_test8 { int x_factor8; } x_8;
+-static volatile const class good_test9 { int x_factor9; } x_9;
++static const class good_test7 { int x_factor7; } x_7;
++static volatile class good_test8 { int x_factor8; } x_8;
++static const volatile class good_test9 { int x_factor9; } x_9;
++static volatile const class good_test10 { int x_factor10; } x_10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern class good_test10 { int x_factor10; } x_10;
+-volatile extern class good_test11 { int x_factor11; } x_11;
+-const extern volatile class good_test12 { int x_factor12; } x_12;
+-const volatile extern class good_test13 { int x_factor13; } x_13;
+-volatile extern const class good_test14 { int x_factor14; } x_14;
+-volatile const extern class good_test15 { int x_factor15; } x_15;
+-volatile static class good_test16 { int x_factor16; } x_16;
+-const static volatile class good_test17 { int x_factor17; } x_17;
+-const volatile static class good_test18 { int x_factor18; } x_18;
+-volatile static const class good_test19 { int x_factor19; } x_19;
+-volatile const static class good_test20 { int x_factor20; } x_20;
++// extern/static not in first position is deprecated, but legal
++const extern class good_test11 { int x_factor11; } x_11;
++volatile extern class good_test12 { int x_factor12; } x_12;
++const extern volatile class good_test13 { int x_factor13; } x_13;
++const volatile extern class good_test14 { int x_factor14; } x_14;
++volatile extern const class good_test15 { int x_factor15; } x_15;
++volatile const extern class good_test16 { int x_factor16; } x_16;
++const static class good_test17 { int x_factor17; } x_17;
++volatile static class good_test18 { int x_factor18; } x_18;
++const static volatile class good_test19 { int x_factor19; } x_19;
++const volatile static class good_test20 { int x_factor20; } x_20;
++volatile static const class good_test21 { int x_factor21; } x_21;
++volatile const static class good_test22 { int x_factor22; } x_22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local class good_test21 { int x_factor21; } x_21;
+-extern thread_local const class good_test22 { int x_factor22; } x_22;
+-extern thread_local volatile class good_test23 { int x_factor23; } x_23;
+-extern thread_local const volatile class good_test24 { int x_factor24; } x_24;
+-extern thread_local volatile const class good_test25 { int x_factor25; } x_25;
+-thread_local extern class good_test26 { int x_factor26; } x_26;
+-thread_local extern const class good_test27 { int x_factor27; } x_27;
+-thread_local extern volatile class good_test28 { int x_factor28; } x_28;
+-thread_local extern const volatile class good_test29 { int x_factor29; } x_29;
+-thread_local extern volatile const class good_test30 { int x_factor30; } x_30;
++extern thread_local class good_test23 { int x_factor23; } x_23;
++extern thread_local const class good_test24 { int x_factor24; } x_24;
++extern thread_local volatile class good_test25 { int x_factor25; } x_25;
++extern thread_local const volatile class good_test26 { int x_factor26; } x_26;
++extern thread_local volatile const class good_test27 { int x_factor27; } x_27;
++thread_local extern class good_test28 { int x_factor28; } x_28;
++thread_local extern const class good_test29 { int x_factor29; } x_29;
++thread_local extern volatile class good_test30 { int x_factor30; } x_30;
++thread_local extern const volatile class good_test31 { int x_factor31; } x_31;
++thread_local extern volatile const class good_test32 { int x_factor32; } x_32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local class good_test31 { int x_factor31; } x_31;
+-static thread_local const class good_test32 { int x_factor32; } x_32;
+-static thread_local volatile class good_test33 { int x_factor33; } x_33;
+-static thread_local const volatile class good_test34 { int x_factor34; } x_34;
+-static thread_local volatile const class good_test35 { int x_factor35; } x_35;
+-thread_local static class good_test36 { int x_factor36; } x_36;
+-thread_local static const class good_test37 { int x_factor37; } x_37;
+-thread_local static volatile class good_test38 { int x_factor38; } x_38;
+-thread_local static const volatile class good_test39 { int x_factor39; } x_39;
+-thread_local static volatile const class good_test40 { int x_factor40; } x_40;
++static thread_local class good_test33 { int x_factor33; } x_33;
++static thread_local const class good_test34 { int x_factor34; } x_34;
++static thread_local volatile class good_test35 { int x_factor35; } x_35;
++static thread_local const volatile class good_test36 { int x_factor36; } x_36;
++static thread_local volatile const class good_test37 { int x_factor37; } x_37;
++thread_local static class good_test38 { int x_factor38; } x_38;
++thread_local static const class good_test39 { int x_factor39; } x_39;
++thread_local static volatile class good_test40 { int x_factor40; } x_40;
++thread_local static const volatile class good_test41 { int x_factor41; } x_41;
++thread_local static volatile const class good_test42 { int x_factor42; } x_42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local class good_test41 { int x_factor41; } x_41;
+-const extern thread_local class good_test42 { int x_factor42; } x_42;
+-extern volatile thread_local class good_test43 { int x_factor43; } x_43;
+-volatile extern thread_local class good_test44 { int x_factor44; } x_44;
+-extern const thread_local volatile class good_test45 { int x_factor45; } x_45;
+-extern const volatile thread_local class good_test46 { int x_factor46; } x_46;
+-const extern thread_local volatile class good_test47 { int x_factor47; } x_47;
+-const extern volatile thread_local class good_test48 { int x_factor48; } x_48;
+-const volatile extern thread_local class good_test49 { int x_factor49; } x_49;
+-extern volatile thread_local const class good_test50 { int x_factor50; } x_50;
+-extern volatile const thread_local class good_test51 { int x_factor51; } x_51;
+-volatile extern thread_local const class good_test52 { int x_factor52; } x_52;
+-volatile extern const thread_local class good_test53 { int x_factor53; } x_53;
+-volatile const extern thread_local class good_test54 { int x_factor54; } x_54;
+-thread_local const extern class good_test55 { int x_factor55; } x_55;
+-const thread_local extern class good_test56 { int x_factor56; } x_56;
+-thread_local volatile extern class good_test57 { int x_factor57; } x_57;
+-volatile thread_local extern class good_test58 { int x_factor58; } x_58;
+-thread_local const extern volatile class good_test59 { int x_factor59; } x_59;
+-thread_local const volatile extern class good_test60 { int x_factor60; } x_60;
+-const thread_local extern volatile class good_test61 { int x_factor61; } x_61;
+-const thread_local volatile extern class good_test62 { int x_factor62; } x_62;
+-const volatile thread_local extern class good_test63 { int x_factor63; } x_63;
+-thread_local volatile extern const class good_test64 { int x_factor64; } x_64;
+-thread_local volatile const extern class good_test65 { int x_factor65; } x_65;
+-volatile thread_local extern const class good_test66 { int x_factor66; } x_66;
+-volatile thread_local const extern class good_test67 { int x_factor67; } x_67;
+-volatile const thread_local extern class good_test68 { int x_factor68; } x_68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local class good_test43 { int x_factor43; } x_43;
++const extern thread_local class good_test44 { int x_factor44; } x_44;
++extern volatile thread_local class good_test45 { int x_factor45; } x_45;
++volatile extern thread_local class good_test46 { int x_factor46; } x_46;
++extern const thread_local volatile class good_test47 { int x_factor47; } x_47;
++extern const volatile thread_local class good_test48 { int x_factor48; } x_48;
++const extern thread_local volatile class good_test49 { int x_factor49; } x_49;
++const extern volatile thread_local class good_test50 { int x_factor50; } x_50;
++const volatile extern thread_local class good_test51 { int x_factor51; } x_51;
++extern volatile thread_local const class good_test52 { int x_factor52; } x_52;
++extern volatile const thread_local class good_test53 { int x_factor53; } x_53;
++volatile extern thread_local const class good_test54 { int x_factor54; } x_54;
++volatile extern const thread_local class good_test55 { int x_factor55; } x_55;
++volatile const extern thread_local class good_test56 { int x_factor56; } x_56;
++thread_local const extern class good_test57 { int x_factor57; } x_57;
++const thread_local extern class good_test58 { int x_factor58; } x_58;
++thread_local volatile extern class good_test59 { int x_factor59; } x_59;
++volatile thread_local extern class good_test60 { int x_factor60; } x_60;
++thread_local const extern volatile class good_test61 { int x_factor61; } x_61;
++thread_local const volatile extern class good_test62 { int x_factor62; } x_62;
++const thread_local extern volatile class good_test63 { int x_factor63; } x_63;
++const thread_local volatile extern class good_test64 { int x_factor64; } x_64;
++const volatile thread_local extern class good_test65 { int x_factor65; } x_65;
++thread_local volatile extern const class good_test66 { int x_factor66; } x_66;
++thread_local volatile const extern class good_test67 { int x_factor67; } x_67;
++volatile thread_local extern const class good_test68 { int x_factor68; } x_68;
++volatile thread_local const extern class good_test69 { int x_factor69; } x_69;
++volatile const thread_local extern class good_test70 { int x_factor70; } x_70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local class good_test69 { int x_factor69; } x_69;
+-const static thread_local class good_test70 { int x_factor70; } x_70;
+-static volatile thread_local class good_test71 { int x_factor71; } x_71;
+-volatile static thread_local class good_test72 { int x_factor72; } x_72;
+-static const thread_local volatile class good_test73 { int x_factor73; } x_73;
+-static const volatile thread_local class good_test74 { int x_factor74; } x_74;
+-const static thread_local volatile class good_test75 { int x_factor75; } x_75;
+-const static volatile thread_local class good_test76 { int x_factor76; } x_76;
+-const volatile static thread_local class good_test77 { int x_factor77; } x_77;
+-static volatile thread_local const class good_test78 { int x_factor78; } x_78;
+-static volatile const thread_local class good_test79 { int x_factor79; } x_79;
+-volatile static thread_local const class good_test80 { int x_factor80; } x_80;
+-volatile static const thread_local class good_test81 { int x_factor81; } x_81;
+-volatile const static thread_local class good_test82 { int x_factor82; } x_82;
+-thread_local const static class good_test83 { int x_factor83; } x_83;
+-const thread_local static class good_test84 { int x_factor84; } x_84;
+-thread_local volatile static class good_test85 { int x_factor85; } x_85;
+-volatile thread_local static class good_test86 { int x_factor86; } x_86;
+-thread_local const static volatile class good_test87 { int x_factor87; } x_87;
+-thread_local const volatile static class good_test88 { int x_factor88; } x_88;
+-const thread_local static volatile class good_test89 { int x_factor89; } x_89;
+-const thread_local volatile static class good_test90 { int x_factor90; } x_90;
+-const volatile thread_local static class good_test91 { int x_factor91; } x_91;
+-thread_local volatile static const class good_test92 { int x_factor92; } x_92;
+-thread_local volatile const static class good_test93 { int x_factor93; } x_93;
+-volatile thread_local static const class good_test94 { int x_factor94; } x_94;
+-volatile thread_local const static class good_test95 { int x_factor95; } x_95;
+-volatile const thread_local static class good_test96 { int x_factor96; } x_96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local class good_test71 { int x_factor71; } x_71;
++const static thread_local class good_test72 { int x_factor72; } x_72;
++static volatile thread_local class good_test73 { int x_factor73; } x_73;
++volatile static thread_local class good_test74 { int x_factor74; } x_74;
++static const thread_local volatile class good_test75 { int x_factor75; } x_75;
++static const volatile thread_local class good_test76 { int x_factor76; } x_76;
++const static thread_local volatile class good_test77 { int x_factor77; } x_77;
++const static volatile thread_local class good_test78 { int x_factor78; } x_78;
++const volatile static thread_local class good_test79 { int x_factor79; } x_79;
++static volatile thread_local const class good_test80 { int x_factor80; } x_80;
++static volatile const thread_local class good_test81 { int x_factor81; } x_81;
++volatile static thread_local const class good_test82 { int x_factor82; } x_82;
++volatile static const thread_local class good_test83 { int x_factor83; } x_83;
++volatile const static thread_local class good_test84 { int x_factor84; } x_84;
++thread_local const static class good_test85 { int x_factor85; } x_85;
++const thread_local static class good_test86 { int x_factor86; } x_86;
++thread_local volatile static class good_test87 { int x_factor87; } x_87;
++volatile thread_local static class good_test88 { int x_factor88; } x_88;
++thread_local const static volatile class good_test89 { int x_factor89; } x_89;
++thread_local const volatile static class good_test90 { int x_factor90; } x_90;
++const thread_local static volatile class good_test91 { int x_factor91; } x_91;
++const thread_local volatile static class good_test92 { int x_factor92; } x_92;
++const volatile thread_local static class good_test93 { int x_factor93; } x_93;
++thread_local volatile static const class good_test94 { int x_factor94; } x_94;
++thread_local volatile const static class good_test95 { int x_factor95; } x_95;
++volatile thread_local static const class good_test96 { int x_factor96; } x_96;
++volatile thread_local const static class good_test97 { int x_factor97; } x_97;
++volatile const thread_local static class good_test98 { int x_factor98; } x_98;
+ 
++
++// check ZCC compiler extensions
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++// the type names should have no linkage in C, external linkage in C++
++static_assert(2==__zcc_linkage(good_test),&quot;good_test has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test1),&quot;good_test1 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test2),&quot;good_test2 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test3),&quot;good_test3 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test4),&quot;good_test4 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test5),&quot;good_test5 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test6),&quot;good_test6 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test7),&quot;good_test7 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test8),&quot;good_test8 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test9),&quot;good_test9 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test10),&quot;good_test10 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test11),&quot;good_test11 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test12),&quot;good_test12 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test13),&quot;good_test13 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test14),&quot;good_test14 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test15),&quot;good_test15 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test16),&quot;good_test16 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test17),&quot;good_test17 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test18),&quot;good_test18 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test19),&quot;good_test19 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test20),&quot;good_test20 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test21),&quot;good_test21 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test22),&quot;good_test22 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test23),&quot;good_test23 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test24),&quot;good_test24 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test25),&quot;good_test25 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test26),&quot;good_test26 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test27),&quot;good_test27 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test28),&quot;good_test28 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test29),&quot;good_test29 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test30),&quot;good_test30 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test31),&quot;good_test31 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test32),&quot;good_test32 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test33),&quot;good_test33 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test34),&quot;good_test34 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test35),&quot;good_test35 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test36),&quot;good_test36 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test37),&quot;good_test37 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test38),&quot;good_test38 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test39),&quot;good_test39 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test40),&quot;good_test40 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test41),&quot;good_test41 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test42),&quot;good_test42 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test43),&quot;good_test43 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test44),&quot;good_test44 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test45),&quot;good_test45 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test46),&quot;good_test46 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test47),&quot;good_test47 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test48),&quot;good_test48 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test49),&quot;good_test49 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test50),&quot;good_test50 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test51),&quot;good_test51 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test52),&quot;good_test52 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test53),&quot;good_test53 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test54),&quot;good_test54 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test55),&quot;good_test55 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test56),&quot;good_test56 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test57),&quot;good_test57 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test58),&quot;good_test58 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test59),&quot;good_test59 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test60),&quot;good_test60 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test61),&quot;good_test61 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test62),&quot;good_test62 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test63),&quot;good_test63 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test64),&quot;good_test64 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test65),&quot;good_test65 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test66),&quot;good_test66 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test67),&quot;good_test67 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test68),&quot;good_test68 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test69),&quot;good_test69 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test70),&quot;good_test70 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test71),&quot;good_test71 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test72),&quot;good_test72 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test73),&quot;good_test73 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test74),&quot;good_test74 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test75),&quot;good_test75 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test76),&quot;good_test76 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test77),&quot;good_test77 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test78),&quot;good_test78 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test79),&quot;good_test79 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test80),&quot;good_test80 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test81),&quot;good_test81 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test82),&quot;good_test82 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test83),&quot;good_test83 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test84),&quot;good_test84 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test85),&quot;good_test85 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test86),&quot;good_test86 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test87),&quot;good_test87 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(good_test88),&quot;good_test88 has incorrect linkage&quot;);
++
++// check external linkage of variables
++static_assert(2==__zcc_linkage(x1),&quot;x1 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_1),&quot;x_1 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x2),&quot;x2 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_2),&quot;x_2 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x3),&quot;x3 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_3),&quot;x_3 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x4),&quot;x4 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_4),&quot;x_4 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x5),&quot;x5 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_5),&quot;x_5 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x11),&quot;x11 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_11),&quot;x_11 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x12),&quot;x12 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_12),&quot;x_12 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x13),&quot;x13 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_13),&quot;x_13 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x14),&quot;x14 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_14),&quot;x_14 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x15),&quot;x15 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_15),&quot;x_15 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x16),&quot;x16 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_16),&quot;x_16 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x23),&quot;x23 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_23),&quot;x_23 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x24),&quot;x24 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_24),&quot;x_24 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x25),&quot;x25 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_25),&quot;x_25 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x26),&quot;x26 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_26),&quot;x_26 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x27),&quot;x27 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_27),&quot;x_27 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x28),&quot;x28 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_28),&quot;x_28 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x29),&quot;x29 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_29),&quot;x_29 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x30),&quot;x30 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_30),&quot;x_30 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x31),&quot;x31 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_31),&quot;x_31 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x32),&quot;x32 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_32),&quot;x_32 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x43),&quot;x43 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_43),&quot;x_43 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x44),&quot;x44 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_44),&quot;x_44 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x45),&quot;x45 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_45),&quot;x_45 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x46),&quot;x46 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_46),&quot;x_46 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x47),&quot;x47 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_47),&quot;x_47 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x48),&quot;x48 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_48),&quot;x_48 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x49),&quot;x49 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_49),&quot;x_49 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x50),&quot;x50 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_50),&quot;x_50 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x51),&quot;x51 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_51),&quot;x_51 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x52),&quot;x52 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_52),&quot;x_52 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x53),&quot;x53 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_53),&quot;x_53 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x54),&quot;x54 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_54),&quot;x_54 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x55),&quot;x55 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_55),&quot;x_55 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x56),&quot;x56 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_56),&quot;x_56 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x57),&quot;x57 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_57),&quot;x_57 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x58),&quot;x58 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_58),&quot;x_58 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x59),&quot;x59 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_59),&quot;x_59 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x60),&quot;x60 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_60),&quot;x_60 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x61),&quot;x61 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_61),&quot;x_61 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x62),&quot;x62 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_62),&quot;x_62 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x63),&quot;x63 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_63),&quot;x_63 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x64),&quot;x64 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_64),&quot;x_64 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x65),&quot;x65 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_65),&quot;x_65 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x66),&quot;x66 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_66),&quot;x_66 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x67),&quot;x67 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_67),&quot;x_67 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x68),&quot;x68 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_68),&quot;x_68 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x69),&quot;x69 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_69),&quot;x_69 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x70),&quot;x70 has incorrect linkage&quot;);
++static_assert(2==__zcc_linkage(x_70),&quot;x_70 has incorrect linkage&quot;);
++
++// check internal linkage of variables
++static_assert(1==__zcc_linkage(x6),&quot;x6 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_6),&quot;x_6 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x7),&quot;x7 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_7),&quot;x_7 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x8),&quot;x8 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_8),&quot;x_8 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x9),&quot;x9 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_9),&quot;x_9 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x10),&quot;x10 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_10),&quot;x_10 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x17),&quot;x17 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_17),&quot;x_17 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x18),&quot;x18 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_18),&quot;x_18 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x19),&quot;x19 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_19),&quot;x_19 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x20),&quot;x20 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_20),&quot;x_20 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x21),&quot;x21 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_21),&quot;x_21 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x22),&quot;x22 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_22),&quot;x_22 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x33),&quot;x33 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_33),&quot;x_33 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x34),&quot;x34 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_34),&quot;x_34 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x35),&quot;x35 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_35),&quot;x_35 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x36),&quot;x36 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_36),&quot;x_36 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x37),&quot;x37 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_37),&quot;x_37 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x38),&quot;x38 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_38),&quot;x_38 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x39),&quot;x39 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_39),&quot;x_39 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x40),&quot;x40 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_40),&quot;x_40 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x41),&quot;x41 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_41),&quot;x_41 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x42),&quot;x42 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_42),&quot;x_42 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x71),&quot;x71 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_71),&quot;x_71 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x72),&quot;x72 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_72),&quot;x_72 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x73),&quot;x73 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_73),&quot;x_73 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x74),&quot;x74 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_74),&quot;x_74 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x75),&quot;x75 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_75),&quot;x_75 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x76),&quot;x76 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_76),&quot;x_76 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x77),&quot;x77 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_77),&quot;x_77 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x78),&quot;x78 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_78),&quot;x_78 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x79),&quot;x79 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_79),&quot;x_79 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x80),&quot;x80 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_80),&quot;x_80 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x81),&quot;x81 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_81),&quot;x_81 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x82),&quot;x82 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_82),&quot;x_82 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x83),&quot;x83 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_83),&quot;x_83 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x84),&quot;x84 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_84),&quot;x_84 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x85),&quot;x85 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_85),&quot;x_85 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x86),&quot;x86 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_86),&quot;x_86 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x87),&quot;x87 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_87),&quot;x_87 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x88),&quot;x88 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_88),&quot;x_88 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x89),&quot;x89 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_89),&quot;x_89 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x90),&quot;x90 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_90),&quot;x_90 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x91),&quot;x91 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_91),&quot;x_91 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x92),&quot;x92 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_92),&quot;x_92 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x93),&quot;x93 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_93),&quot;x_93 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x94),&quot;x94 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_94),&quot;x_94 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x95),&quot;x95 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_95),&quot;x_95 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x96),&quot;x96 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_96),&quot;x_96 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x97),&quot;x97 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_97),&quot;x_97 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x98),&quot;x98 has incorrect linkage&quot;);
++static_assert(1==__zcc_linkage(x_98),&quot;x_98 has incorrect linkage&quot;);
++#endif
+
+Modified: trunk/tests/zcc/decl.C99/Pass_class_def2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_class_def2.hpp	2011-09-03 22:59:14 UTC (rev 693)
++++ trunk/tests/zcc/decl.C99/Pass_class_def2.hpp	2011-09-03 22:59:46 UTC (rev 694)
+@@ -1,4 +1,5 @@
+ // decl.C99/Pass_class_def2.hpp
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ // using singly defined class
+ 
+ class good_test {
+@@ -14,108 +15,109 @@
+ extern volatile const good_test x5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static good_test x6;
+-static volatile good_test x7;
+-static const volatile good_test x8;
+-static volatile const good_test x9;
++static const good_test x7;
++static volatile good_test x8;
++static const volatile good_test x9;
++static volatile const good_test x10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern good_test x10;
+-volatile extern good_test x11;
+-const extern volatile good_test x12;
+-const volatile extern good_test x13;
+-volatile extern const good_test x14;
+-volatile const extern good_test x15;
+-volatile static good_test x16;
+-const static volatile good_test x17;
+-const volatile static good_test x18;
+-volatile static const good_test x19;
+-volatile const static good_test x20;
++// extern/static not in first position is deprecated, but legal
++const extern good_test x11;
++volatile extern good_test x12;
++const extern volatile good_test x13;
++const volatile extern good_test x14;
++volatile extern const good_test x15;
++volatile const extern good_test x16;
++const static good_test x17;
++volatile static good_test x18;
++const static volatile good_test x19;
++const volatile static good_test x20;
++volatile static const good_test x21;
++volatile const static good_test x22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local good_test x21;
+-extern thread_local const good_test x22;
+-extern thread_local volatile good_test x23;
+-extern thread_local const volatile good_test x24;
+-extern thread_local volatile const good_test x25;
+-thread_local extern good_test x26;
+-thread_local extern const good_test x27;
+-thread_local extern volatile good_test x28;
+-thread_local extern const volatile good_test x29;
+-thread_local extern volatile const good_test x30;
++extern thread_local good_test x23;
++extern thread_local const good_test x24;
++extern thread_local volatile good_test x25;
++extern thread_local const volatile good_test x26;
++extern thread_local volatile const good_test x27;
++thread_local extern good_test x28;
++thread_local extern const good_test x29;
++thread_local extern volatile good_test x30;
++thread_local extern const volatile good_test x31;
++thread_local extern volatile const good_test x32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local good_test x31;
+-static thread_local const good_test x32;
+-static thread_local volatile good_test x33;
+-static thread_local const volatile good_test x34;
+-static thread_local volatile const good_test x35;
+-thread_local static good_test x36;
+-thread_local static const good_test x37;
+-thread_local static volatile good_test x38;
+-thread_local static const volatile good_test x39;
+-thread_local static volatile const good_test x40;
++static thread_local good_test x33;
++static thread_local const good_test x34;
++static thread_local volatile good_test x35;
++static thread_local const volatile good_test x36;
++static thread_local volatile const good_test x37;
++thread_local static good_test x38;
++thread_local static const good_test x39;
++thread_local static volatile good_test x40;
++thread_local static const volatile good_test x41;
++thread_local static volatile const good_test x42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local good_test x41;
+-const extern thread_local good_test x42;
+-extern volatile thread_local good_test x43;
+-volatile extern thread_local good_test x44;
+-extern const thread_local volatile good_test x45;
+-extern const volatile thread_local good_test x46;
+-const extern thread_local volatile good_test x47;
+-const extern volatile thread_local good_test x48;
+-const volatile extern thread_local good_test x49;
+-extern volatile thread_local const good_test x50;
+-extern volatile const thread_local good_test x51;
+-volatile extern thread_local const good_test x52;
+-volatile extern const thread_local good_test x53;
+-volatile const extern thread_local good_test x54;
+-thread_local const extern good_test x55;
+-const thread_local extern good_test x56;
+-thread_local volatile extern good_test x57;
+-volatile thread_local extern good_test x58;
+-thread_local const extern volatile good_test x59;
+-thread_local const volatile extern good_test x60;
+-const thread_local extern volatile good_test x61;
+-const thread_local volatile extern good_test x62;
+-const volatile thread_local extern good_test x63;
+-thread_local volatile extern const good_test x64;
+-thread_local volatile const extern good_test x65;
+-volatile thread_local extern const good_test x66;
+-volatile thread_local const extern good_test x67;
+-volatile const thread_local extern good_test x68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local good_test x43;
++const extern thread_local good_test x44;
++extern volatile thread_local good_test x45;
++volatile extern thread_local good_test x46;
++extern const thread_local volatile good_test x47;
++extern const volatile thread_local good_test x48;
++const extern thread_local volatile good_test x49;
++const extern volatile thread_local good_test x50;
++const volatile extern thread_local good_test x51;
++extern volatile thread_local const good_test x52;
++extern volatile const thread_local good_test x53;
++volatile extern thread_local const good_test x54;
++volatile extern const thread_local good_test x55;
++volatile const extern thread_local good_test x56;
++thread_local const extern good_test x57;
++const thread_local extern good_test x58;
++thread_local volatile extern good_test x59;
++volatile thread_local extern good_test x60;
++thread_local const extern volatile good_test x61;
++thread_local const volatile extern good_test x62;
++const thread_local extern volatile good_test x63;
++const thread_local volatile extern good_test x64;
++const volatile thread_local extern good_test x65;
++thread_local volatile extern const good_test x66;
++thread_local volatile const extern good_test x67;
++volatile thread_local extern const good_test x68;
++volatile thread_local const extern good_test x69;
++volatile const thread_local extern good_test x70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local good_test x69;
+-const static thread_local good_test x70;
+-static volatile thread_local good_test x71;
+-volatile static thread_local good_test x72;
+-static const thread_local volatile good_test x73;
+-static const volatile thread_local good_test x74;
+-const static thread_local volatile good_test x75;
+-const static volatile thread_local good_test x76;
+-const volatile static thread_local good_test x77;
+-static volatile thread_local const good_test x78;
+-static volatile const thread_local good_test x79;
+-volatile static thread_local const good_test x80;
+-volatile static const thread_local good_test x81;
+-volatile const static thread_local good_test x82;
+-thread_local const static good_test x83;
+-const thread_local static good_test x84;
+-thread_local volatile static good_test x85;
+-volatile thread_local static good_test x86;
+-thread_local const static volatile good_test x87;
+-thread_local const volatile static good_test x88;
+-const thread_local static volatile good_test x89;
+-const thread_local volatile static good_test x90;
+-const volatile thread_local static good_test x91;
+-thread_local volatile static const good_test x92;
+-thread_local volatile const static good_test x93;
+-volatile thread_local static const good_test x94;
+-volatile thread_local const static good_test x95;
+-volatile const thread_local static good_test x96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local good_test x71;
++const static thread_local good_test x72;
++static volatile thread_local good_test x73;
++volatile static thread_local good_test x74;
++static const thread_local volatile good_test x75;
++static const volatile thread_local good_test x76;
++const static thread_local volatile good_test x77;
++const static volatile thread_local good_test x78;
++const volatile static thread_local good_test x79;
++static volatile thread_local const good_test x80;
++static volatile const thread_local good_test x81;
++volatile static thread_local const good_test x82;
++volatile static const thread_local good_test x83;
++volatile const static thread_local good_test x84;
++thread_local const static good_test x85;
++const thread_local static good_test x86;
++thread_local volatile static good_test x87;
++volatile thread_local static good_test x88;
++thread_local const static volatile good_test x89;
++thread_local const volatile static good_test x90;
++const thread_local static volatile good_test x91;
++const thread_local volatile static good_test x92;
++const volatile thread_local static good_test x93;
++thread_local volatile static const good_test x94;
++thread_local volatile const static good_test x95;
++volatile thread_local static const good_test x96;
++volatile thread_local const static good_test x97;
++volatile const thread_local static good_test x98;
+ 
+ // check that things work properly in namespaces
+ namespace test {
+@@ -132,108 +134,109 @@
+ extern volatile const class good_test x5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static class good_test x6;
+-static volatile class good_test x7;
+-static const volatile class good_test x8;
+-static volatile const class good_test x9;
++static const class good_test x7;
++static volatile class good_test x8;
++static const volatile class good_test x9;
++static volatile const class good_test x10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern class good_test x10;
+-volatile extern class good_test x11;
+-const extern volatile class good_test x12;
+-const volatile extern class good_test x13;
+-volatile extern const class good_test x14;
+-volatile const extern class good_test x15;
+-volatile static class good_test x16;
+-const static volatile class good_test x17;
+-const volatile static class good_test x18;
+-volatile static const class good_test x19;
+-volatile const static class good_test x20;
++// extern/static not in first position is deprecated, but legal
++const extern class good_test x11;
++volatile extern class good_test x12;
++const extern volatile class good_test x13;
++const volatile extern class good_test x14;
++volatile extern const class good_test x15;
++volatile const extern class good_test x16;
++const static class good_test x17;
++volatile static class good_test x18;
++const static volatile class good_test x19;
++const volatile static class good_test x20;
++volatile static const class good_test x21;
++volatile const static class good_test x22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local class good_test x21;
+-extern thread_local const class good_test x22;
+-extern thread_local volatile class good_test x23;
+-extern thread_local const volatile class good_test x24;
+-extern thread_local volatile const class good_test x25;
+-thread_local extern class good_test x26;
+-thread_local extern const class good_test x27;
+-thread_local extern volatile class good_test x28;
+-thread_local extern const volatile class good_test x29;
+-thread_local extern volatile const class good_test x30;
++extern thread_local class good_test x23;
++extern thread_local const class good_test x24;
++extern thread_local volatile class good_test x25;
++extern thread_local const volatile class good_test x26;
++extern thread_local volatile const class good_test x27;
++thread_local extern class good_test x28;
++thread_local extern const class good_test x29;
++thread_local extern volatile class good_test x30;
++thread_local extern const volatile class good_test x31;
++thread_local extern volatile const class good_test x32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local class good_test x31;
+-static thread_local const class good_test x32;
+-static thread_local volatile class good_test x33;
+-static thread_local const volatile class good_test x34;
+-static thread_local volatile const class good_test x35;
+-thread_local static class good_test x36;
+-thread_local static const class good_test x37;
+-thread_local static volatile class good_test x38;
+-thread_local static const volatile class good_test x39;
+-thread_local static volatile const class good_test x40;
++static thread_local class good_test x33;
++static thread_local const class good_test x34;
++static thread_local volatile class good_test x35;
++static thread_local const volatile class good_test x36;
++static thread_local volatile const class good_test x37;
++thread_local static class good_test x38;
++thread_local static const class good_test x39;
++thread_local static volatile class good_test x40;
++thread_local static const volatile class good_test x41;
++thread_local static volatile const class good_test x42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local class good_test x41;
+-const extern thread_local class good_test x42;
+-extern volatile thread_local class good_test x43;
+-volatile extern thread_local class good_test x44;
+-extern const thread_local volatile class good_test x45;
+-extern const volatile thread_local class good_test x46;
+-const extern thread_local volatile class good_test x47;
+-const extern volatile thread_local class good_test x48;
+-const volatile extern thread_local class good_test x49;
+-extern volatile thread_local const class good_test x50;
+-extern volatile const thread_local class good_test x51;
+-volatile extern thread_local const class good_test x52;
+-volatile extern const thread_local class good_test x53;
+-volatile const extern thread_local class good_test x54;
+-thread_local const extern class good_test x55;
+-const thread_local extern class good_test x56;
+-thread_local volatile extern class good_test x57;
+-volatile thread_local extern class good_test x58;
+-thread_local const extern volatile class good_test x59;
+-thread_local const volatile extern class good_test x60;
+-const thread_local extern volatile class good_test x61;
+-const thread_local volatile extern class good_test x62;
+-const volatile thread_local extern class good_test x63;
+-thread_local volatile extern const class good_test x64;
+-thread_local volatile const extern class good_test x65;
+-volatile thread_local extern const class good_test x66;
+-volatile thread_local const extern class good_test x67;
+-volatile const thread_local extern class good_test x68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local class good_test x43;
++const extern thread_local class good_test x44;
++extern volatile thread_local class good_test x45;
++volatile extern thread_local class good_test x46;
++extern const thread_local volatile class good_test x47;
++extern const volatile thread_local class good_test x48;
++const extern thread_local volatile class good_test x49;
++const extern volatile thread_local class good_test x50;
++const volatile extern thread_local class good_test x51;
++extern volatile thread_local const class good_test x52;
++extern volatile const thread_local class good_test x53;
++volatile extern thread_local const class good_test x54;
++volatile extern const thread_local class good_test x55;
++volatile const extern thread_local class good_test x56;
++thread_local const extern class good_test x57;
++const thread_local extern class good_test x58;
++thread_local volatile extern class good_test x59;
++volatile thread_local extern class good_test x60;
++thread_local const extern volatile class good_test x61;
++thread_local const volatile extern class good_test x62;
++const thread_local extern volatile class good_test x63;
++const thread_local volatile extern class good_test x64;
++const volatile thread_local extern class good_test x65;
++thread_local volatile extern const class good_test x66;
++thread_local volatile const extern class good_test x67;
++volatile thread_local extern const class good_test x68;
++volatile thread_local const extern class good_test x69;
++volatile const thread_local extern class good_test x70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local class good_test x69;
+-const static thread_local class good_test x70;
+-static volatile thread_local class good_test x71;
+-volatile static thread_local class good_test x72;
+-static const thread_local volatile class good_test x73;
+-static const volatile thread_local class good_test x74;
+-const static thread_local volatile class good_test x75;
+-const static volatile thread_local class good_test x76;
+-const volatile static thread_local class good_test x77;
+-static volatile thread_local const class good_test x78;
+-static volatile const thread_local class good_test x79;
+-volatile static thread_local const class good_test x80;
+-volatile static const thread_local class good_test x81;
+-volatile const static thread_local class good_test x82;
+-thread_local const static class good_test x83;
+-const thread_local static class good_test x84;
+-thread_local volatile static class good_test x85;
+-volatile thread_local static class good_test x86;
+-thread_local const static volatile class good_test x87;
+-thread_local const volatile static class good_test x88;
+-const thread_local static volatile class good_test x89;
+-const thread_local volatile static class good_test x90;
+-const volatile thread_local static class good_test x91;
+-thread_local volatile static const class good_test x92;
+-thread_local volatile const static class good_test x93;
+-volatile thread_local static const class good_test x94;
+-volatile thread_local const static class good_test x95;
+-volatile const thread_local static class good_test x96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local class good_test x71;
++const static thread_local class good_test x72;
++static volatile thread_local class good_test x73;
++volatile static thread_local class good_test x74;
++static const thread_local volatile class good_test x75;
++static const volatile thread_local class good_test x76;
++const static thread_local volatile class good_test x77;
++const static volatile thread_local class good_test x78;
++const volatile static thread_local class good_test x79;
++static volatile thread_local const class good_test x80;
++static volatile const thread_local class good_test x81;
++volatile static thread_local const class good_test x82;
++volatile static const thread_local class good_test x83;
++volatile const static thread_local class good_test x84;
++thread_local const static class good_test x85;
++const thread_local static class good_test x86;
++thread_local volatile static class good_test x87;
++volatile thread_local static class good_test x88;
++thread_local const static volatile class good_test x89;
++thread_local const volatile static class good_test x90;
++const thread_local static volatile class good_test x91;
++const thread_local volatile static class good_test x92;
++const volatile thread_local static class good_test x93;
++thread_local volatile static const class good_test x94;
++thread_local volatile const static class good_test x95;
++volatile thread_local static const class good_test x96;
++volatile thread_local const static class good_test x97;
++volatile const thread_local static class good_test x98;
+ 
+ // define-declares
+ // ringing the changes on extern
+@@ -244,108 +247,109 @@
+ extern volatile const class good_test5 { int x_factor5; } x_5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static class good_test6 { int x_factor6; } x_6;
+-static volatile class good_test7 { int x_factor7; } x_7;
+-static const volatile class good_test8 { int x_factor8; } x_8;
+-static volatile const class good_test9 { int x_factor9; } x_9;
++static const class good_test7 { int x_factor7; } x_7;
++static volatile class good_test8 { int x_factor8; } x_8;
++static const volatile class good_test9 { int x_factor9; } x_9;
++static volatile const class good_test10 { int x_factor10; } x_10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern class good_test10 { int x_factor10; } x_10;
+-volatile extern class good_test11 { int x_factor11; } x_11;
+-const extern volatile class good_test12 { int x_factor12; } x_12;
+-const volatile extern class good_test13 { int x_factor13; } x_13;
+-volatile extern const class good_test14 { int x_factor14; } x_14;
+-volatile const extern class good_test15 { int x_factor15; } x_15;
+-volatile static class good_test16 { int x_factor16; } x_16;
+-const static volatile class good_test17 { int x_factor17; } x_17;
+-const volatile static class good_test18 { int x_factor18; } x_18;
+-volatile static const class good_test19 { int x_factor19; } x_19;
+-volatile const static class good_test20 { int x_factor20; } x_20;
++// extern/static not in first position is deprecated, but legal
++const extern class good_test11 { int x_factor11; } x_11;
++volatile extern class good_test12 { int x_factor12; } x_12;
++const extern volatile class good_test13 { int x_factor13; } x_13;
++const volatile extern class good_test14 { int x_factor14; } x_14;
++volatile extern const class good_test15 { int x_factor15; } x_15;
++volatile const extern class good_test16 { int x_factor16; } x_16;
++const static class good_test17 { int x_factor17; } x_17;
++volatile static class good_test18 { int x_factor18; } x_18;
++const static volatile class good_test19 { int x_factor19; } x_19;
++const volatile static class good_test20 { int x_factor20; } x_20;
++volatile static const class good_test21 { int x_factor21; } x_21;
++volatile const static class good_test22 { int x_factor22; } x_22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local class good_test21 { int x_factor21; } x_21;
+-extern thread_local const class good_test22 { int x_factor22; } x_22;
+-extern thread_local volatile class good_test23 { int x_factor23; } x_23;
+-extern thread_local const volatile class good_test24 { int x_factor24; } x_24;
+-extern thread_local volatile const class good_test25 { int x_factor25; } x_25;
+-thread_local extern class good_test26 { int x_factor26; } x_26;
+-thread_local extern const class good_test27 { int x_factor27; } x_27;
+-thread_local extern volatile class good_test28 { int x_factor28; } x_28;
+-thread_local extern const volatile class good_test29 { int x_factor29; } x_29;
+-thread_local extern volatile const class good_test30 { int x_factor30; } x_30;
++extern thread_local class good_test23 { int x_factor23; } x_23;
++extern thread_local const class good_test24 { int x_factor24; } x_24;
++extern thread_local volatile class good_test25 { int x_factor25; } x_25;
++extern thread_local const volatile class good_test26 { int x_factor26; } x_26;
++extern thread_local volatile const class good_test27 { int x_factor27; } x_27;
++thread_local extern class good_test28 { int x_factor28; } x_28;
++thread_local extern const class good_test29 { int x_factor29; } x_29;
++thread_local extern volatile class good_test30 { int x_factor30; } x_30;
++thread_local extern const volatile class good_test31 { int x_factor31; } x_31;
++thread_local extern volatile const class good_test32 { int x_factor32; } x_32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local class good_test31 { int x_factor31; } x_31;
+-static thread_local const class good_test32 { int x_factor32; } x_32;
+-static thread_local volatile class good_test33 { int x_factor33; } x_33;
+-static thread_local const volatile class good_test34 { int x_factor34; } x_34;
+-static thread_local volatile const class good_test35 { int x_factor35; } x_35;
+-thread_local static class good_test36 { int x_factor36; } x_36;
+-thread_local static const class good_test37 { int x_factor37; } x_37;
+-thread_local static volatile class good_test38 { int x_factor38; } x_38;
+-thread_local static const volatile class good_test39 { int x_factor39; } x_39;
+-thread_local static volatile const class good_test40 { int x_factor40; } x_40;
++static thread_local class good_test33 { int x_factor33; } x_33;
++static thread_local const class good_test34 { int x_factor34; } x_34;
++static thread_local volatile class good_test35 { int x_factor35; } x_35;
++static thread_local const volatile class good_test36 { int x_factor36; } x_36;
++static thread_local volatile const class good_test37 { int x_factor37; } x_37;
++thread_local static class good_test38 { int x_factor38; } x_38;
++thread_local static const class good_test39 { int x_factor39; } x_39;
++thread_local static volatile class good_test40 { int x_factor40; } x_40;
++thread_local static const volatile class good_test41 { int x_factor41; } x_41;
++thread_local static volatile const class good_test42 { int x_factor42; } x_42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local class good_test41 { int x_factor41; } x_41;
+-const extern thread_local class good_test42 { int x_factor42; } x_42;
+-extern volatile thread_local class good_test43 { int x_factor43; } x_43;
+-volatile extern thread_local class good_test44 { int x_factor44; } x_44;
+-extern const thread_local volatile class good_test45 { int x_factor45; } x_45;
+-extern const volatile thread_local class good_test46 { int x_factor46; } x_46;
+-const extern thread_local volatile class good_test47 { int x_factor47; } x_47;
+-const extern volatile thread_local class good_test48 { int x_factor48; } x_48;
+-const volatile extern thread_local class good_test49 { int x_factor49; } x_49;
+-extern volatile thread_local const class good_test50 { int x_factor50; } x_50;
+-extern volatile const thread_local class good_test51 { int x_factor51; } x_51;
+-volatile extern thread_local const class good_test52 { int x_factor52; } x_52;
+-volatile extern const thread_local class good_test53 { int x_factor53; } x_53;
+-volatile const extern thread_local class good_test54 { int x_factor54; } x_54;
+-thread_local const extern class good_test55 { int x_factor55; } x_55;
+-const thread_local extern class good_test56 { int x_factor56; } x_56;
+-thread_local volatile extern class good_test57 { int x_factor57; } x_57;
+-volatile thread_local extern class good_test58 { int x_factor58; } x_58;
+-thread_local const extern volatile class good_test59 { int x_factor59; } x_59;
+-thread_local const volatile extern class good_test60 { int x_factor60; } x_60;
+-const thread_local extern volatile class good_test61 { int x_factor61; } x_61;
+-const thread_local volatile extern class good_test62 { int x_factor62; } x_62;
+-const volatile thread_local extern class good_test63 { int x_factor63; } x_63;
+-thread_local volatile extern const class good_test64 { int x_factor64; } x_64;
+-thread_local volatile const extern class good_test65 { int x_factor65; } x_65;
+-volatile thread_local extern const class good_test66 { int x_factor66; } x_66;
+-volatile thread_local const extern class good_test67 { int x_factor67; } x_67;
+-volatile const thread_local extern class good_test68 { int x_factor68; } x_68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local class good_test43 { int x_factor43; } x_43;
++const extern thread_local class good_test44 { int x_factor44; } x_44;
++extern volatile thread_local class good_test45 { int x_factor45; } x_45;
++volatile extern thread_local class good_test46 { int x_factor46; } x_46;
++extern const thread_local volatile class good_test47 { int x_factor47; } x_47;
++extern const volatile thread_local class good_test48 { int x_factor48; } x_48;
++const extern thread_local volatile class good_test49 { int x_factor49; } x_49;
++const extern volatile thread_local class good_test50 { int x_factor50; } x_50;
++const volatile extern thread_local class good_test51 { int x_factor51; } x_51;
++extern volatile thread_local const class good_test52 { int x_factor52; } x_52;
++extern volatile const thread_local class good_test53 { int x_factor53; } x_53;
++volatile extern thread_local const class good_test54 { int x_factor54; } x_54;
++volatile extern const thread_local class good_test55 { int x_factor55; } x_55;
++volatile const extern thread_local class good_test56 { int x_factor56; } x_56;
++thread_local const extern class good_test57 { int x_factor57; } x_57;
++const thread_local extern class good_test58 { int x_factor58; } x_58;
++thread_local volatile extern class good_test59 { int x_factor59; } x_59;
++volatile thread_local extern class good_test60 { int x_factor60; } x_60;
++thread_local const extern volatile class good_test61 { int x_factor61; } x_61;
++thread_local const volatile extern class good_test62 { int x_factor62; } x_62;
++const thread_local extern volatile class good_test63 { int x_factor63; } x_63;
++const thread_local volatile extern class good_test64 { int x_factor64; } x_64;
++const volatile thread_local extern class good_test65 { int x_factor65; } x_65;
++thread_local volatile extern const class good_test66 { int x_factor66; } x_66;
++thread_local volatile const extern class good_test67 { int x_factor67; } x_67;
++volatile thread_local extern const class good_test68 { int x_factor68; } x_68;
++volatile thread_local const extern class good_test69 { int x_factor69; } x_69;
++volatile const thread_local extern class good_test70 { int x_factor70; } x_70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local class good_test69 { int x_factor69; } x_69;
+-const static thread_local class good_test70 { int x_factor70; } x_70;
+-static volatile thread_local class good_test71 { int x_factor71; } x_71;
+-volatile static thread_local class good_test72 { int x_factor72; } x_72;
+-static const thread_local volatile class good_test73 { int x_factor73; } x_73;
+-static const volatile thread_local class good_test74 { int x_factor74; } x_74;
+-const static thread_local volatile class good_test75 { int x_factor75; } x_75;
+-const static volatile thread_local class good_test76 { int x_factor76; } x_76;
+-const volatile static thread_local class good_test77 { int x_factor77; } x_77;
+-static volatile thread_local const class good_test78 { int x_factor78; } x_78;
+-static volatile const thread_local class good_test79 { int x_factor79; } x_79;
+-volatile static thread_local const class good_test80 { int x_factor80; } x_80;
+-volatile static const thread_local class good_test81 { int x_factor81; } x_81;
+-volatile const static thread_local class good_test82 { int x_factor82; } x_82;
+-thread_local const static class good_test83 { int x_factor83; } x_83;
+-const thread_local static class good_test84 { int x_factor84; } x_84;
+-thread_local volatile static class good_test85 { int x_factor85; } x_85;
+-volatile thread_local static class good_test86 { int x_factor86; } x_86;
+-thread_local const static volatile class good_test87 { int x_factor87; } x_87;
+-thread_local const volatile static class good_test88 { int x_factor88; } x_88;
+-const thread_local static volatile class good_test89 { int x_factor89; } x_89;
+-const thread_local volatile static class good_test90 { int x_factor90; } x_90;
+-const volatile thread_local static class good_test91 { int x_factor91; } x_91;
+-thread_local volatile static const class good_test92 { int x_factor92; } x_92;
+-thread_local volatile const static class good_test93 { int x_factor93; } x_93;
+-volatile thread_local static const class good_test94 { int x_factor94; } x_94;
+-volatile thread_local const static class good_test95 { int x_factor95; } x_95;
+-volatile const thread_local static class good_test96 { int x_factor96; } x_96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local class good_test71 { int x_factor71; } x_71;
++const static thread_local class good_test72 { int x_factor72; } x_72;
++static volatile thread_local class good_test73 { int x_factor73; } x_73;
++volatile static thread_local class good_test74 { int x_factor74; } x_74;
++static const thread_local volatile class good_test75 { int x_factor75; } x_75;
++static const volatile thread_local class good_test76 { int x_factor76; } x_76;
++const static thread_local volatile class good_test77 { int x_factor77; } x_77;
++const static volatile thread_local class good_test78 { int x_factor78; } x_78;
++const volatile static thread_local class good_test79 { int x_factor79; } x_79;
++static volatile thread_local const class good_test80 { int x_factor80; } x_80;
++static volatile const thread_local class good_test81 { int x_factor81; } x_81;
++volatile static thread_local const class good_test82 { int x_factor82; } x_82;
++volatile static const thread_local class good_test83 { int x_factor83; } x_83;
++volatile const static thread_local class good_test84 { int x_factor84; } x_84;
++thread_local const static class good_test85 { int x_factor85; } x_85;
++const thread_local static class good_test86 { int x_factor86; } x_86;
++thread_local volatile static class good_test87 { int x_factor87; } x_87;
++volatile thread_local static class good_test88 { int x_factor88; } x_88;
++thread_local const static volatile class good_test89 { int x_factor89; } x_89;
++thread_local const volatile static class good_test90 { int x_factor90; } x_90;
++const thread_local static volatile class good_test91 { int x_factor91; } x_91;
++const thread_local volatile static class good_test92 { int x_factor92; } x_92;
++const volatile thread_local static class good_test93 { int x_factor93; } x_93;
++thread_local volatile static const class good_test94 { int x_factor94; } x_94;
++thread_local volatile const static class good_test95 { int x_factor95; } x_95;
++volatile thread_local static const class good_test96 { int x_factor96; } x_96;
++volatile thread_local const static class good_test97 { int x_factor97; } x_97;
++volatile const thread_local static class good_test98 { int x_factor98; } x_98;
+ 
+ }	// end namespace test
+ 
+@@ -364,107 +368,108 @@
+ extern volatile const good_test x5;
+ 
+ // ringing the changes on static
+-// (don't test static const -- no chance to initialize before use)
+ static good_test x6;
+-static volatile good_test x7;
+-static const volatile good_test x8;
+-static volatile const good_test x9;
++static const good_test x7;
++static volatile good_test x8;
++static const volatile good_test x9;
++static volatile const good_test x10;
+ 
+-// extern/static not in first postion is deprecated, but legal
+-const extern good_test x10;
+-volatile extern good_test x11;
+-const extern volatile good_test x12;
+-const volatile extern good_test x13;
+-volatile extern const good_test x14;
+-volatile const extern good_test x15;
+-volatile static good_test x16;
+-const static volatile good_test x17;
+-const volatile static good_test x18;
+-volatile static const good_test x19;
+-volatile const static good_test x20;
++// extern/static not in first position is deprecated, but legal
++const extern good_test x11;
++volatile extern good_test x12;
++const extern volatile good_test x13;
++const volatile extern good_test x14;
++volatile extern const good_test x15;
++volatile const extern good_test x16;
++const static good_test x17;
++volatile static good_test x18;
++const static volatile good_test x19;
++const volatile static good_test x20;
++volatile static const good_test x21;
++volatile const static good_test x22;
+ 
+ // ringing the changes on thread_local extern
+-extern thread_local good_test x21;
+-extern thread_local const good_test x22;
+-extern thread_local volatile good_test x23;
+-extern thread_local const volatile good_test x24;
+-extern thread_local volatile const good_test x25;
+-thread_local extern good_test x26;
+-thread_local extern const good_test x27;
+-thread_local extern volatile good_test x28;
+-thread_local extern const volatile good_test x29;
+-thread_local extern volatile const good_test x30;
++extern thread_local good_test x23;
++extern thread_local const good_test x24;
++extern thread_local volatile good_test x25;
++extern thread_local const volatile good_test x26;
++extern thread_local volatile const good_test x27;
++thread_local extern good_test x28;
++thread_local extern const good_test x29;
++thread_local extern volatile good_test x30;
++thread_local extern const volatile good_test x31;
++thread_local extern volatile const good_test x32;
+ 
+ // ringing the changes on thread_local static
+-static thread_local good_test x31;
+-static thread_local const good_test x32;
+-static thread_local volatile good_test x33;
+-static thread_local const volatile good_test x34;
+-static thread_local volatile const good_test x35;
+-thread_local static good_test x36;
+-thread_local static const good_test x37;
+-thread_local static volatile good_test x38;
+-thread_local static const volatile good_test x39;
+-thread_local static volatile const good_test x40;
++static thread_local good_test x33;
++static thread_local const good_test x34;
++static thread_local volatile good_test x35;
++static thread_local const volatile good_test x36;
++static thread_local volatile const good_test x37;
++thread_local static good_test x38;
++thread_local static const good_test x39;
++thread_local static volatile good_test x40;
++thread_local static const volatile good_test x41;
++thread_local static volatile const good_test x42;
+ 
+-// thread_local extern not in first two postions is deprecated, but legal
+-extern const thread_local good_test x41;
+-const extern thread_local good_test x42;
+-extern volatile thread_local good_test x43;
+-volatile extern thread_local good_test x44;
+-extern const thread_local volatile good_test x45;
+-extern const volatile thread_local good_test x46;
+-const extern thread_local volatile good_test x47;
+-const extern volatile thread_local good_test x48;
+-const volatile extern thread_local good_test x49;
+-extern volatile thread_local const good_test x50;
+-extern volatile const thread_local good_test x51;
+-volatile extern thread_local const good_test x52;
+-volatile extern const thread_local good_test x53;
+-volatile const extern thread_local good_test x54;
+-thread_local const extern good_test x55;
+-const thread_local extern good_test x56;
+-thread_local volatile extern good_test x57;
+-volatile thread_local extern good_test x58;
+-thread_local const extern volatile good_test x59;
+-thread_local const volatile extern good_test x60;
+-const thread_local extern volatile good_test x61;
+-const thread_local volatile extern good_test x62;
+-const volatile thread_local extern good_test x63;
+-thread_local volatile extern const good_test x64;
+-thread_local volatile const extern good_test x65;
+-volatile thread_local extern const good_test x66;
+-volatile thread_local const extern good_test x67;
+-volatile const thread_local extern good_test x68;
++// thread_local extern not in first two positions is deprecated, but legal
++extern const thread_local good_test x43;
++const extern thread_local good_test x44;
++extern volatile thread_local good_test x45;
++volatile extern thread_local good_test x46;
++extern const thread_local volatile good_test x47;
++extern const volatile thread_local good_test x48;
++const extern thread_local volatile good_test x49;
++const extern volatile thread_local good_test x50;
++const volatile extern thread_local good_test x51;
++extern volatile thread_local const good_test x52;
++extern volatile const thread_local good_test x53;
++volatile extern thread_local const good_test x54;
++volatile extern const thread_local good_test x55;
++volatile const extern thread_local good_test x56;
++thread_local const extern good_test x57;
++const thread_local extern good_test x58;
++thread_local volatile extern good_test x59;
++volatile thread_local extern good_test x60;
++thread_local const extern volatile good_test x61;
++thread_local const volatile extern good_test x62;
++const thread_local extern volatile good_test x63;
++const thread_local volatile extern good_test x64;
++const volatile thread_local extern good_test x65;
++thread_local volatile extern const good_test x66;
++thread_local volatile const extern good_test x67;
++volatile thread_local extern const good_test x68;
++volatile thread_local const extern good_test x69;
++volatile const thread_local extern good_test x70;
+ 
+-// thread_local static not in first two postions is deprecated, but legal
+-static const thread_local good_test x69;
+-const static thread_local good_test x70;
+-static volatile thread_local good_test x71;
+-volatile static thread_local good_test x72;
+-static const thread_local volatile good_test x73;
+-static const volatile thread_local good_test x74;
+-const static thread_local volatile good_test x75;
+-const static volatile thread_local good_test x76;
+-const volatile static thread_local good_test x77;
+-static volatile thread_local const good_test x78;
+-static volatile const thread_local good_test x79;
+-volatile static thread_local const good_test x80;
+-volatile static const thread_local good_test x81;
+-volatile const static thread_local good_test x82;
+-thread_local const static good_test x83;
+-const thread_local static good_test x84;
+-thread_local volatile static good_test x85;
+-volatile thread_local static good_test x86;
+-thread_local const static volatile good_test x87;
+-thread_local const volatile static good_test x88;
+-const thread_local static volatile good_test x89;
+-const thread_local volatile static good_test x90;
+-const volatile thread_local static good_test x91;
+-thread_local volatile static const good_test x92;
+-thread_local volatile const static good_test x93;
+-volatile thread_local static const good_test x94;
+-volatile thread_local const static good_test x95;
+-volatile const thread_local static good_test x96;
++// thread_local static not in first two positions is deprecated, but legal
++static const thread_local good_test x71;
++const static thread_local good_test x72;
++static volatile thread_local good_test x73;
++volatile static thread_local good_test x74;
++static const thread_local volatile good_test x75;
++static const volatile thread_local good_test x76;
++const static thread_local volatile good_test x77;
++const static volatile thread_local good_test x78;
++const volatile static thread_local good_test x79;
++static volatile thread_local const good_test x80;
++static volatile const thread_local good_test x81;
++volatile static thread_local const good_test x82;
++volatile static const thread_local good_test x83;
++volatile const static thread_local good_test x84;
++thread_local const static good_test x85;
++const thread_local static good_test x86;
++thread_local volatile static good_test x87;
++volatile thread_local static good_test x88;
++thread_local const static volatile good_test x89;
++thread_local const volatile static good_test x90;
++const thread_local static volatile good_test x91;
++const thread_local volatile static good_test x92;
++const volatile thread_local static good_test x93;
++thread_local volatile static const good_test x94;
++thread_local volatile const static good_test x95;
++volatile thread_local static const good_test x96;
++volatile thread_local const static good_test x97;
++volatile const thread_local static good_test x98;
+ 
+ }	// end namespace test2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000460.html">[Zcplusplus-commits] r693 - trunk/tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000462.html">[Zcplusplus-commits] r695 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#461">[ date ]</a>
+              <a href="thread.html#461">[ thread ]</a>
+              <a href="subject.html#461">[ subject ]</a>
+              <a href="author.html#461">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

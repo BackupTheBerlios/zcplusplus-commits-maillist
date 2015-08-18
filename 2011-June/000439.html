@@ -1,0 +1,108 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r672%20-%20in%20trunk/tests/zcc.in%3A%0A%09default/staticassert%20staticassert.C1X&In-Reply-To=%3C20110611014033.743864803E5%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000438.html">
+   <LINK REL="Next"  HREF="000440.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r672%20-%20in%20trunk/tests/zcc.in%3A%0A%09default/staticassert%20staticassert.C1X&In-Reply-To=%3C20110611014033.743864803E5%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r672 - in trunk/tests/zcc.in:	default/staticassert staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Jun 11 03:40:33 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000438.html">[Zcplusplus-commits] r671 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000440.html">[Zcplusplus-commits] r673 - in trunk: . tests/cpp/default/keywords	tests/zcc tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#439">[ date ]</a>
+              <a href="thread.html#439">[ thread ]</a>
+              <a href="subject.html#439">[ subject ]</a>
+              <a href="author.html#439">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-11 03:40:33 +0200 (Sat, 11 Jun 2011)
+New Revision: 672
+
+Modified:
+   trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+Log:
+C keyword is _Static_assert not _Static_Assert #1
+
+Modified: trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2011-06-10 17:53:33 UTC (rev 671)
++++ trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2011-06-11 01:40:33 UTC (rev 672)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO STATIC_ASSERT _Static_Assert static_assert
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_assert static_assert
+ // ZCC-specific check on extended constant expressions common to C and C++
+ // (C)2010 Kenneth Boyd, license: MIT.txt
+ 
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2011-06-10 17:53:33 UTC (rev 671)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2011-06-11 01:40:33 UTC (rev 672)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO STATIC_ASSERT _Static_Assert static_assert
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_assert static_assert
+ // (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &lt;limits.h&gt;
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2011-06-10 17:53:33 UTC (rev 671)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2011-06-11 01:40:33 UTC (rev 672)
+@@ -1,5 +1,5 @@
+ SUFFIXES h hpp
+-OBJECTLIKE_MACRO STATIC_ASSERT _Static_Assert static_assert
++OBJECTLIKE_MACRO STATIC_ASSERT _Static_assert static_assert
+ // (C)2010 Kenneth Boyd, license: MIT.txt
+ 
+ enum test {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000438.html">[Zcplusplus-commits] r671 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000440.html">[Zcplusplus-commits] r673 - in trunk: . tests/cpp/default/keywords	tests/zcc tests/zcc/default/staticassert tests/zcc/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#439">[ date ]</a>
+              <a href="thread.html#439">[ thread ]</a>
+              <a href="subject.html#439">[ subject ]</a>
+              <a href="author.html#439">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

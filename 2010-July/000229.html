@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r462 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r462%20-%20trunk&In-Reply-To=%3C20100715062851.60021480BE5%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000230.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r462 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r462%20-%20trunk&In-Reply-To=%3C20100715062851.60021480BE5%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r462 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jul 15 08:28:51 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000230.html">[Zcplusplus-commits] r463 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#229">[ date ]</a>
+              <a href="thread.html#229">[ thread ]</a>
+              <a href="subject.html#229">[ subject ]</a>
+              <a href="author.html#229">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-15 08:28:51 +0200 (Thu, 15 Jul 2010)
+New Revision: 462
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/kleene_star.hpp
+Log:
+Change where the template bloat when using kleene_star is.  Redundant fields in kleene_star_core should be minor compared to being able to reduce template instantiations.
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-28 20:35:54 UTC (rev 461)
++++ trunk/CSupport.cpp	2010-07-15 06:28:51 UTC (rev 462)
+@@ -3313,15 +3313,15 @@
+ #undef C_ATOMIC_TYPE_IDENTIFIER_BITFLAG
+ }
+ 
+-template&lt;size_t strict_ub_valid_detect&gt; typename zaimoni::Loki::CheckReturnRequireRange&lt;0,2,int&gt;::value_type optional_keyword_choice(parse_tree&amp; src,size_t i,kleene_star&lt;strict_ub_valid_detect,size_t (*)(const char*)&gt;&amp; invariant_decl_scanner,size_t idx1,size_t idx2)
++zaimoni::Loki::CheckReturnRequireRange&lt;0,2,int&gt;::value_type optional_keyword_choice(parse_tree&amp; src,size_t i,kleene_star_core&lt;size_t (*)(const char*)&gt;&amp; invariant_decl_scanner,size_t idx1,size_t idx2)
+ {
+ 	size_t offset[2];
+ 	int tmp = 0;
+ 	assert(!invariant_decl_scanner.empty());
+ 	assert(src.size&lt;0&gt;()&gt;i);
+ 	assert(src.size&lt;0&gt;()-i&gt;=invariant_decl_scanner.size());
+-	assert(strict_ub_valid_detect&gt;idx1);
+-	assert(strict_ub_valid_detect&gt;idx2);
++	assert(invariant_decl_scanner.strict_ub()&gt;idx1);
++	assert(invariant_decl_scanner.strict_ub()&gt;idx2);
+ 	if ((idx1==invariant_decl_scanner[0])&lt;invariant_decl_scanner.count(idx1))
+ 		{
+ 		++tmp;
+@@ -3342,13 +3342,13 @@
+ 	return tmp;
+ }
+ 
+-template&lt;size_t ub,size_t strict_ub_valid_detect&gt; typename zaimoni::Loki::CheckReturnRequireRange&lt;0,ub,size_t&gt;::value_type optional_keyword_limit(parse_tree&amp; src,size_t i,kleene_star&lt;strict_ub_valid_detect,size_t (*)(const char*)&gt;&amp; invariant_decl_scanner,size_t idx1)
++template&lt;size_t ub&gt; typename zaimoni::Loki::CheckReturnRequireRange&lt;0,ub,size_t&gt;::value_type optional_keyword_limit(parse_tree&amp; src,size_t i,kleene_star_core&lt;size_t (*)(const char*)&gt;&amp; invariant_decl_scanner,size_t idx1)
+ {
+ 	size_t tmp = 0;
+ 	assert(!invariant_decl_scanner.empty());
+ 	assert(src.size&lt;0&gt;()&gt;i);
+ 	assert(src.size&lt;0&gt;()-i&gt;=invariant_decl_scanner.size());
+-	assert(strict_ub_valid_detect&gt;idx1);
++	assert(invariant_decl_scanner.strict_ub()&gt;idx1);
+ 	while(ub&gt;tmp &amp;&amp; (idx1==invariant_decl_scanner[0])&lt;invariant_decl_scanner.count(idx1))
+ 		{
+ 		size_t tmp2 = invariant_decl_scanner.scan_nofail(idx1,1);
+@@ -3359,12 +3359,12 @@
+ 	return tmp;
+ }
+ 
+-template&lt;size_t strict_ub_valid_detect&gt;  bool optional_keyword(parse_tree&amp; src,size_t i,kleene_star&lt;strict_ub_valid_detect,size_t (*)(const char*)&gt;&amp; invariant_decl_scanner,size_t idx1)
++bool optional_keyword(parse_tree&amp; src,size_t i,kleene_star_core&lt;size_t (*)(const char*)&gt;&amp; invariant_decl_scanner,size_t idx1)
+ {
+ 	assert(!invariant_decl_scanner.empty());
+ 	assert(src.size&lt;0&gt;()&gt;i);
+ 	assert(src.size&lt;0&gt;()-i&gt;=invariant_decl_scanner.size());
+-	assert(strict_ub_valid_detect&gt;idx1);
++	assert(invariant_decl_scanner.strict_ub()&gt;idx1);
+ 	if ((idx1==invariant_decl_scanner[0])&lt;invariant_decl_scanner.count(idx1))
+ 		{
+ 		size_t tmp = invariant_decl_scanner.scan_nofail(idx1,1);
+
+Modified: trunk/kleene_star.hpp
+===================================================================
+--- trunk/kleene_star.hpp	2010-06-28 20:35:54 UTC (rev 461)
++++ trunk/kleene_star.hpp	2010-07-15 06:28:51 UTC (rev 462)
+@@ -13,7 +13,9 @@
+ protected:
+ 	zaimoni::autovalarray_ptr&lt;size_t&gt; result_scan;	// XXX should be some sort of specialized array (limited range allows compression)
+ 	classifier _detector;
+-	kleene_star_core(classifier detector) : _detector(detector) {};
++	size_t* const _detect_count;	// slightly redundant, but allows controlling
++	const size_t _strict_ub;
++	kleene_star_core(classifier detector,size_t* detect_count,size_t strict_ub) : _detector(detector),_detect_count((assert(detect_count),detect_count)),_strict_ub((assert(0&lt;strict_ub),strict_ub)) {};
+ 	// default copy, assignment, destructor ok
+ 	size_t deleteIdx(size_t i)
+ 		{
+@@ -27,47 +29,48 @@
+ 	size_t operator[](size_t i) const {assert(size()&gt;i);return result_scan[i];};
+ 	size_t front() const {return result_scan.front();};
+ 	size_t back() const {return result_scan.back();};
++	void clear()
++		{
++		result_scan.reset();
++		memset(_detect_count,0,sizeof(size_t)*_strict_ub);
++		}
++
+ 	bool scan(const size_t target, size_t&amp; offset, const size_t origin = 0) const;
+ 	bool scan(const size_t target, const size_t target2, size_t&amp; offset, size_t&amp; offset2, const size_t origin = 0) const;
+ 	bool scan(size_t* target, size_t scan_len, size_t* offset, const size_t origin = 0) const;
+ 	size_t scan_nofail(const size_t target, const size_t origin = 0) const {size_t tmp; if (!scan(target,tmp,origin)) _fatal_code(&quot;kleene_star&lt;...&gt;::scan_nofail failed&quot;,3); return tmp;};
+ 	void scan_nofail(const size_t target, const size_t target2, size_t&amp; offset, size_t&amp; offset2, const size_t origin = 0) const{if (!scan(target,target2,offset,offset2,origin)) _fatal_code(&quot;kleene_star&lt;...&gt;::scan_nofail failed&quot;,3);};
+ 	void scan_nofail(size_t* target, size_t scan_len, size_t* offset, const size_t origin = 0) const{if (!scan(target,scan_len,offset,origin)) _fatal_code(&quot;kleene_star&lt;...&gt;::scan_nofail failed&quot;,3);};
+-};
+ 
+-template&lt;size_t strict_ub_valid_detect, typename classifier&gt;
+-class kleene_star : public kleene_star_core&lt;classifier&gt;
+-{
+-private:
+-	size_t detect_count[strict_ub_valid_detect];
+-public:
+-	kleene_star(classifier detector) : kleene_star_core&lt;classifier&gt;(detector) {memset(detect_count,0,sizeof(detect_count));};
+-	// default copy, assignment, destructor ok
+ 	template&lt;class T&gt; bool operator()(T&amp; x)
+ 		{
+ 		size_t result = _detector(x);
+-		if (strict_ub_valid_detect&lt;=result) return false;
++		if (_strict_ub&lt;=result) return false;
+ 		if (!this-&gt;result_scan.InsertSlotAt(this-&gt;result_scan.size(),result))
+ 			throw std::bad_alloc();
+-		++detect_count[result];
++		++_detect_count[result];
+ 		return true;
+ 		}
+ 
+-	size_t count(size_t i) const {assert(strict_ub_valid_detect&gt;i);return detect_count[i];};
++	size_t count(size_t i) const {assert(_strict_ub&gt;i);return _detect_count[i];};
++	size_t strict_ub() const {return _strict_ub;};
+ 	void DeleteIdx(size_t i)
+ 		{
+-		assert(this-&gt;size()&gt;i);
+-		--detect_count[this-&gt;deleteIdx(i)];
++		assert(size()&gt;i);
++		--_detect_count[deleteIdx(i)];
+ 		}
+-	
+-	// conventional glue
+-	void clear()
+-		{
+-		this-&gt;result_scan.reset();
+-		memset(detect_count,0,sizeof(detect_count));
+-		}
+ };
+ 
++template&lt;size_t strict_ub_valid_detect, typename classifier&gt;
++class kleene_star : public kleene_star_core&lt;classifier&gt;
++{
++private:
++	size_t detect_count[strict_ub_valid_detect];
++public:
++	kleene_star(classifier detector) : kleene_star_core&lt;classifier&gt;(detector,detect_count,strict_ub_valid_detect) {memset(detect_count,0,sizeof(detect_count));};
++	// default copy, assignment, destructor ok
++};
++
+ template&lt;typename classifier&gt;
+ bool kleene_star_core&lt;classifier&gt;::scan(const size_t target, size_t&amp; offset, const size_t origin) const
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000230.html">[Zcplusplus-commits] r463 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#229">[ date ]</a>
+              <a href="thread.html#229">[ thread ]</a>
+              <a href="subject.html#229">[ subject ]</a>
+              <a href="author.html#229">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

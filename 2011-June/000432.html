@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r665 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r665%20-%20trunk&In-Reply-To=%3C20110610015046.C4FF44813CC%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000431.html">
+   <LINK REL="Next"  HREF="000433.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r665 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r665%20-%20trunk&In-Reply-To=%3C20110610015046.C4FF44813CC%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r665 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jun 10 03:50:46 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000431.html">[Zcplusplus-commits] r664 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000433.html">[Zcplusplus-commits] r666 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#432">[ date ]</a>
+              <a href="thread.html#432">[ thread ]</a>
+              <a href="subject.html#432">[ subject ]</a>
+              <a href="author.html#432">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-10 03:50:46 +0200 (Fri, 10 Jun 2011)
+New Revision: 665
+
+Modified:
+   trunk/ParseTree.cpp
+Log:
+reduce code churn from planned big-bang patch
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-06-10 01:30:43 UTC (rev 664)
++++ trunk/ParseTree.cpp	2011-06-10 01:50:46 UTC (rev 665)
+@@ -47,9 +47,9 @@
+ #ifndef ZAIMONI_FORCE_ISO
+ bool parse_tree::syntax_ok() const
+ {
+-	if (args[0] &amp;&amp; !_memory_block_start_valid(args[0])) return false;
+-	if (args[1] &amp;&amp; !_memory_block_start_valid(args[1])) return false;
+-	if (args[2] &amp;&amp; !_memory_block_start_valid(args[2])) return false;
++	if (data&lt;0&gt;() &amp;&amp; !_memory_block_start_valid(data&lt;0&gt;())) return false;
++	if (data&lt;1&gt;() &amp;&amp; !_memory_block_start_valid(data&lt;1&gt;())) return false;
++	if (data&lt;2&gt;() &amp;&amp; !_memory_block_start_valid(data&lt;2&gt;())) return false;
+ 
+ 	if (own_index_token&lt;0&gt;())
+ 		{
+@@ -93,15 +93,15 @@
+ bool parse_tree::entangled_with(const parse_tree&amp; x) const
+ {
+ 	if (x.type_code.entangled_with(type_code)) return true;
+-	if (args[0] &amp;&amp; x.args[0] &amp;&amp; args[0]==x.args[0]) return true;
+-	if (args[0] &amp;&amp; x.args[1] &amp;&amp; args[0]==x.args[1]) return true;
+-	if (args[0] &amp;&amp; x.args[2] &amp;&amp; args[0]==x.args[2]) return true;
+-	if (args[1] &amp;&amp; x.args[0] &amp;&amp; args[1]==x.args[0]) return true;
+-	if (args[1] &amp;&amp; x.args[1] &amp;&amp; args[1]==x.args[1]) return true;
+-	if (args[1] &amp;&amp; x.args[2] &amp;&amp; args[1]==x.args[2]) return true;
+-	if (args[2] &amp;&amp; x.args[0] &amp;&amp; args[2]==x.args[0]) return true;
+-	if (args[2] &amp;&amp; x.args[1] &amp;&amp; args[2]==x.args[1]) return true;
+-	if (args[2] &amp;&amp; x.args[2] &amp;&amp; args[2]==x.args[2]) return true;
++	if (begin&lt;0&gt;() &amp;&amp; x.begin&lt;0&gt;() &amp;&amp; begin&lt;0&gt;()==x.begin&lt;0&gt;()) return true;
++	if (begin&lt;0&gt;() &amp;&amp; x.begin&lt;1&gt;() &amp;&amp; begin&lt;0&gt;()==x.begin&lt;1&gt;()) return true;
++	if (begin&lt;0&gt;() &amp;&amp; x.begin&lt;2&gt;() &amp;&amp; begin&lt;0&gt;()==x.begin&lt;2&gt;()) return true;
++	if (begin&lt;1&gt;() &amp;&amp; x.begin&lt;0&gt;() &amp;&amp; begin&lt;1&gt;()==x.begin&lt;0&gt;()) return true;
++	if (begin&lt;1&gt;() &amp;&amp; x.begin&lt;1&gt;() &amp;&amp; begin&lt;1&gt;()==x.begin&lt;1&gt;()) return true;
++	if (begin&lt;1&gt;() &amp;&amp; x.begin&lt;2&gt;() &amp;&amp; begin&lt;1&gt;()==x.begin&lt;2&gt;()) return true;
++	if (begin&lt;2&gt;() &amp;&amp; x.begin&lt;0&gt;() &amp;&amp; begin&lt;2&gt;()==x.begin&lt;0&gt;()) return true;
++	if (begin&lt;2&gt;() &amp;&amp; x.begin&lt;1&gt;() &amp;&amp; begin&lt;2&gt;()==x.begin&lt;1&gt;()) return true;
++	if (begin&lt;2&gt;() &amp;&amp; x.begin&lt;2&gt;() &amp;&amp; begin&lt;2&gt;()==x.begin&lt;2&gt;()) return true;
+ 
+ 	size_t i = 0;
+ 	while(size&lt;0&gt;()&gt;i)
+@@ -132,9 +132,9 @@
+ 
+ bool parse_tree::self_entangled() const
+ {
+-	if (args[0] &amp;&amp; args[1] &amp;&amp; args[0]==args[1]) return true;
+-	if (args[0] &amp;&amp; args[2] &amp;&amp; args[0]==args[2]) return true;
+-	if (args[1] &amp;&amp; args[2] &amp;&amp; args[1]==args[2]) return true;
++	if (data&lt;0&gt;() &amp;&amp; data&lt;1&gt;() &amp;&amp; data&lt;0&gt;()==data&lt;1&gt;()) return true;
++	if (data&lt;0&gt;() &amp;&amp; data&lt;2&gt;() &amp;&amp; data&lt;0&gt;()==data&lt;2&gt;()) return true;
++	if (data&lt;1&gt;() &amp;&amp; data&lt;2&gt;() &amp;&amp; data&lt;1&gt;()==data&lt;2&gt;()) return true;
+ 
+ 	size_t i = 0;
+ 	while(size&lt;0&gt;()&gt;i)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000431.html">[Zcplusplus-commits] r664 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000433.html">[Zcplusplus-commits] r666 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#432">[ date ]</a>
+              <a href="thread.html#432">[ thread ]</a>
+              <a href="subject.html#432">[ subject ]</a>
+              <a href="author.html#432">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

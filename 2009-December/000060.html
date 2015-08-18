@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r293 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r293%20-%20trunk&In-Reply-To=%3C200912030537.nB35bxVF022806%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000059.html">
+   <LINK REL="Next"  HREF="000061.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r293 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r293%20-%20trunk&In-Reply-To=%3C200912030537.nB35bxVF022806%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r293 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Dec  3 06:37:59 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000059.html">[Zcplusplus-commits] r292 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000061.html">[Zcplusplus-commits] r294 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#60">[ date ]</a>
+              <a href="thread.html#60">[ thread ]</a>
+              <a href="subject.html#60">[ subject ]</a>
+              <a href="author.html#60">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-03 06:37:51 +0100 (Thu, 03 Dec 2009)
+New Revision: 293
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+remove unused public interfaces in type_system that would otherwise need C++ namespace lookup variants
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-12-01 02:45:06 UTC (rev 292)
++++ trunk/type_system.cpp	2009-12-03 05:37:51 UTC (rev 293)
+@@ -14,9 +14,9 @@
+ #define DYNAMIC_C_STRUCTDEF 3
+ #define DYNAMIC_ENUMDEF 4
+ 
+-type_system::type_index
+-type_system::_get_id_union(const char* const x,size_t x_len) const
++type_system::type_index type_system::_get_id_union(const char* const x) const
+ {
++	const size_t x_len = strlen(x);
+ 	errr tmp = linear_find_lencached(x,x_len,dynamic_types);
+ 	while(0&lt;=tmp)
+ 		{
+@@ -42,8 +42,9 @@
+ }
+ 
+ type_system::type_index
+-type_system::_get_id_struct_class(const char* const x,size_t x_len) const
++type_system::_get_id_struct_class(const char* const x) const
+ {
++	const size_t x_len = strlen(x);
+ 	errr tmp = linear_find_lencached(x,x_len,dynamic_types);
+ 	while(0&lt;=tmp)
+ 		{
+@@ -68,9 +69,9 @@
+ 	return 0;
+ }
+ 
+-type_system::type_index
+-type_system::_get_id_enum(const char* const x,size_t x_len) const
++type_system::type_index type_system::_get_id_enum(const char* const x) const
+ {
++	const size_t x_len = strlen(x);
+ 	errr tmp = linear_find_lencached(x,x_len,dynamic_types);
+ 	while(0&lt;=tmp)
+ 		{
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-12-01 02:45:06 UTC (rev 292)
++++ trunk/type_system.hpp	2009-12-03 05:37:51 UTC (rev 293)
+@@ -38,41 +38,20 @@
+ 		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
+ 		int_priority_size((assert(0&lt;_int_priority_size),_int_priority_size)) {};
+ 
+-	type_index get_id_union(const char* x,size_t x_len) const
+-		{
+-		assert(x &amp;&amp; *x);
+-		assert(0&lt;x_len);
+-		assert(x_len&lt;=strlen(x));
+-		return _get_id_union(x,x_len);
+-		}
+ 	type_index get_id_union(const char* x) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+-		return _get_id_union(x,strlen(x));
++		return _get_id_union(x);
+ 		}
+-	type_index get_id_struct_class(const char* x,size_t x_len) const
+-		{
+-		assert(x &amp;&amp; *x);
+-		assert(0&lt;x_len);
+-		assert(x_len&lt;=strlen(x));
+-		return _get_id_struct_class(x,x_len);
+-		}
+ 	type_index get_id_struct_class(const char* x) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+-		return _get_id_struct_class(x,strlen(x));
++		return _get_id_struct_class(x);
+ 		}
+-	type_index get_id_enum(const char* x,size_t x_len) const
+-		{
+-		assert(x &amp;&amp; *x);
+-		assert(0&lt;x_len);
+-		assert(x_len&lt;=strlen(x));
+-		return _get_id_enum(x,x_len);
+-		}
+ 	type_index get_id_enum(const char* x) const
+ 		{
+ 		assert(x &amp;&amp; *x);
+-		return _get_id_enum(x,strlen(x));
++		return _get_id_enum(x);
+ 		}
+ 	const char* name(type_index id) const
+ 		{
+@@ -129,9 +108,9 @@
+ 	const enum_def* get_enum_def(type_index i);
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+ private:
+-	type_index _get_id_union(const char* const x,size_t x_len) const;
+-	type_index _get_id_enum(const char* const x,size_t x_len) const;
+-	type_index _get_id_struct_class(const char* const x,size_t x_len) const;
++	type_index _get_id_union(const char* const x) const;
++	type_index _get_id_enum(const char* const x) const;
++	type_index _get_id_struct_class(const char* const x) const;
+ 	const char* _name(type_index id) const;
+ 	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000059.html">[Zcplusplus-commits] r292 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000061.html">[Zcplusplus-commits] r294 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#60">[ date ]</a>
+              <a href="thread.html#60">[ thread ]</a>
+              <a href="subject.html#60">[ subject ]</a>
+              <a href="author.html#60">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

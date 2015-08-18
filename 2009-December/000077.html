@@ -1,0 +1,151 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r310 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r310%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200912200746.nBK7k1Oe005140%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000076.html">
+   <LINK REL="Next"  HREF="000078.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r310 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r310%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200912200746.nBK7k1Oe005140%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r310 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 20 08:46:01 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000076.html">[Zcplusplus-commits] r309 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/compile.test
+</A></li>
+        <LI>Next message: <A HREF="000078.html">[Zcplusplus-commits] r311 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#77">[ date ]</a>
+              <a href="thread.html#77">[ thread ]</a>
+              <a href="subject.html#77">[ subject ]</a>
+              <a href="author.html#77">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-20 08:45:57 +0100 (Sun, 20 Dec 2009)
+New Revision: 310
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/Zaimoni.STL/cstdio
+Log:
+object size reduction; trying to track down a self-hosting assert in the preprocessor
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-12-19 18:38:23 UTC (rev 309)
++++ trunk/CPreproc.cpp	2009-12-20 07:45:57 UTC (rev 310)
+@@ -2310,12 +2310,12 @@
+ 	if (0==ub)
+ 		{
+ 		if (!TokenList[i]-&gt;flags) TokenList[i]-&gt;flags = pretokenized[ub].third;
++		assert(ZAIMONI_LEN_WITH_NULL(pretokenized[ub].second)==TokenList[i]-&gt;size());
+ 		complete_string_character_literal(*TokenList[i]);
+ 		}
+ 	else{
+ 		size_t lb = 0;
+-		autovalarray_ptr&lt;Token&lt;char&gt;* &gt; TokenListAlt(ub+1);
+-		if (TokenListAlt.empty()) throw std::bad_alloc();
++		autovalarray_ptr_throws&lt;Token&lt;char&gt;* &gt; TokenListAlt(ub+1);
+ 		if (!TokenList.InsertNSlotsAt(ub,i+1)) throw std::bad_alloc();
+ 		{
+ 		const Token&lt;char&gt;&amp; tmp = *TokenList[i];
+
+Modified: trunk/Zaimoni.STL/cstdio
+===================================================================
+--- trunk/Zaimoni.STL/cstdio	2009-12-19 18:38:23 UTC (rev 309)
++++ trunk/Zaimoni.STL/cstdio	2009-12-20 07:45:57 UTC (rev 310)
+@@ -19,38 +19,39 @@
+ template&lt;class T&gt;
+ inline typename boost::enable_if&lt;boost::has_trivial_assign&lt;T&gt;, void&gt;::type
+ #ifndef ZAIMONI_FORCE_ISO
+-ConvertBinaryModeToTextMode(T*&amp; Buffer)
++ConvertBinaryModeToTextMode(T*&amp; buf)
+ #else
+-ConvertBinaryModeToTextMode(T*&amp; Buffer, size_t&amp; BufferLen)
++ConvertBinaryModeToTextMode(T*&amp; buf, size_t&amp; buf_len)
+ #endif
+-{	//! \todo VERIFY
+-	if (NULL!=Buffer)
++{
++	if (buf)
+ 		{
+ #ifndef ZAIMONI_FORCE_ISO 
+-		const size_t BufferLen = ArraySize(Buffer);
++		const size_t buf_len = ArraySize(buf);
+ #else
+-		assert(0&lt;BufferLen);
++		assert(0&lt;buf_len);
+ #endif
+ 		size_t Displace = 0;
+-		size_t ScanIdx = 0;
+-		do	if ('\r'==Buffer[ScanIdx])
++		size_t i = 0;
++		do	if ('\r'==buf[i])
+ 				{	// oops.  We're either Windows ['\r\n'] or wrong-platform ['\r': UNIX on Mac, or Mac on Unix; '\n\r': Windows on UNIX]
+-				const bool WindowsOnMac = (1&lt;=ScanIdx &amp;&amp; '\n'==Buffer[ScanIdx-1]);
+-				const bool Windows = BufferLen&gt;ScanIdx+1 &amp;&amp; '\n'==Buffer[ScanIdx+1];
++				const bool WindowsOnMac = (1&lt;=i &amp;&amp; '\n'==buf[i-1]);
++				const bool Windows = buf_len&gt;i+1 &amp;&amp; '\n'==buf[i+1];
+ 				const bool WrongPlatform = !WindowsOnMac &amp;&amp; !Windows;	// no problem if both
+ 				if (WrongPlatform)
+-					Buffer[ScanIdx]='\n';
++					buf[i]='\n';
+ 				else{
+-					if (BufferLen&gt;(ScanIdx+1)) memmove(&amp;Buffer[ScanIdx],&amp;Buffer[ScanIdx+1],BufferLen-(ScanIdx+1));
++					if (buf_len&gt;(i+1)) memmove(&amp;buf[i],&amp;buf[i+1],buf_len-(i+1));
+ 					++Displace;
++					--i;
+ 					}
+ 				}
+-		while(BufferLen-Displace&gt;++ScanIdx);
++		while(buf_len-Displace&gt; ++i);
+ 		if (0&lt;Displace)
+ #ifndef ZAIMONI_FORCE_ISO
+-			Buffer = zaimoni::REALLOC(Buffer,_msize(Buffer)-Displace);
++			buf = REALLOC(buf,_msize(buf)-Displace);
+ #else
+-			Buffer = zaimoni::REALLOC(Buffer,(BufferLen -= Displace));
++			buf = REALLOC(buf,(buf_len -= Displace));
+ #endif
+ 		}
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000076.html">[Zcplusplus-commits] r309 - in trunk: . POSIX/cmp Zaimoni.STL	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/compile.test
+</A></li>
+	<LI>Next message: <A HREF="000078.html">[Zcplusplus-commits] r311 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#77">[ date ]</a>
+              <a href="thread.html#77">[ thread ]</a>
+              <a href="subject.html#77">[ subject ]</a>
+              <a href="author.html#77">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

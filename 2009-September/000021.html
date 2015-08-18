@@ -1,0 +1,479 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r254 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r254%20-%20in%20trunk%3A%20.%20tests/zcc%0A%09tests/zcc/staticassert.C1X%20tests/zcc.in&In-Reply-To=%3C200909230441.n8N4fsW6032069%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000020.html">
+   <LINK REL="Next"  HREF="000022.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r254 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r254%20-%20in%20trunk%3A%20.%20tests/zcc%0A%09tests/zcc/staticassert.C1X%20tests/zcc.in&In-Reply-To=%3C200909230441.n8N4fsW6032069%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r254 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Sep 23 06:41:54 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000020.html">[Zcplusplus-commits] r253 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000022.html">[Zcplusplus-commits] r255 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#21">[ date ]</a>
+              <a href="thread.html#21">[ thread ]</a>
+              <a href="subject.html#21">[ subject ]</a>
+              <a href="author.html#21">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-23 06:41:31 +0200 (Wed, 23 Sep 2009)
+New Revision: 254
+
+Added:
+   trunk/tests/zcc/staticassert.C1X/
+   trunk/tests/zcc/staticassert.C1X/Error_badarg1.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg1.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_badarg2.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg2.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_badarg3.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg3.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_badarg4.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg4.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_badarg5.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg5.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_badarg6.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg6.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_badarg7.h
+   trunk/tests/zcc/staticassert.C1X/Error_badarg7.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_scope1.h
+   trunk/tests/zcc/staticassert.C1X/Error_scope1.hpp
+   trunk/tests/zcc/staticassert.C1X/Error_scope2.h
+   trunk/tests/zcc/staticassert.C1X/Error_scope2.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/tests/zcc.in/run_tests.in
+   trunk/tests/zcc/run_tests.bat
+   trunk/tests/zcc/run_tests.sh
+Log:
+first part of handling _Static_Assert/static_assert
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/CSupport.cpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -436,6 +436,7 @@
+ 
+ static const POD_pair&lt;const char*,size_t&gt; valid_keyword[]
+ 	=	{	DICT_STRUCT(&quot;__asm&quot;),		// reserved to the implementation, so OK to make a keyword for C only
++			DICT_STRUCT(&quot;_Static_Assert&quot;),	// C1X keyword not in C++0X
+ 			DICT_STRUCT(&quot;restrict&quot;),	// C99 keywords not in C++98
+ 			DICT_STRUCT(&quot;_Bool&quot;),
+ 			DICT_STRUCT(&quot;_Complex&quot;),
+@@ -514,15 +515,16 @@
+ 			DICT_STRUCT(&quot;xor&quot;),
+ 			DICT_STRUCT(&quot;xor_eq&quot;),		// end C++98 alternate-operators
+ 			DICT_STRUCT(&quot;constexpr&quot;),	// C++0X keywords we pay attention to
+-			DICT_STRUCT(&quot;thread_local&quot;)		
++			DICT_STRUCT(&quot;static_assert&quot;),
++			DICT_STRUCT(&quot;thread_local&quot;)
+ 		};
+ 
+ //! \todo some way to test that constexpr, thread_local are locked only for C++0X mode
+ 
+ // think about C++0x keywords later.
+ #define C_KEYWORD_NONSTRICT_LB 0
+-#define CPP_KEYWORD_NONSTRICT_LB 5
+-#define C_KEYWORD_STRICT_UB 38
++#define CPP_KEYWORD_NONSTRICT_LB 6
++#define C_KEYWORD_STRICT_UB 39
+ #define CPP_KEYWORD_STRICT_UB STATIC_SIZE(valid_keyword)
+ 
+ BOOST_STATIC_ASSERT(C_KEYWORD_NONSTRICT_LB&lt;C_KEYWORD_STRICT_UB);
+@@ -9416,6 +9418,55 @@
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
++		// C static assertion scanner
++		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;_Static_Assert&quot;))
++			{	// _Static_Assert ( constant-expression , string-literal ) ;
++			// find the next ';'
++			size_t j = i;
++			while(src.size&lt;0&gt;()&gt; ++j
++				  &amp;&amp; (!src.data&lt;0&gt;()[j].is_atomic() || !robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)));
++			if (src.size&lt;0&gt;()==j)
++				{	//! \test zcc/staticassert.C99/Error_scope1.h
++					//! \test zcc/staticassert.C99/Error_scope2.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;static assertion cut off by end of scope&quot;);
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt&lt;0&gt;(j-i,i);
++				continue;
++				};
++			if (   !is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1])
++				|| 3&gt;src.data&lt;0&gt;()[i+1].size&lt;0&gt;()
++				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].is_atomic()
++				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].is_atomic()
++				|| !robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].index_tokens[0].token)
++				|| C_TESTFLAG_STRING_LITERAL!=src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].index_tokens[0].flags)
++				{	//! \test zcc/staticassert.C99/Error_badarg1.h
++					//! \test zcc/staticassert.C99/Error_badarg2.h
++					//! \test zcc/staticassert.C99/Error_badarg3.h
++					//! \test zcc/staticassert.C99/Error_badarg5.h
++					//! \test zcc/staticassert.C99/Error_badarg6.h
++					//! \test zcc/staticassert.C99/Error_badarg7.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;malformed static assertion&quot;);
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
++				continue;
++				};
++			if (2!=j-i)
++				{	//! \test zcc/staticassert.C99/Error_badarg4.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;garbage between static assertion arguments and terminating ;&quot;);
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
++				continue;
++				};
++			//! \todo actually use the static assertion correctly.
++			src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
++			continue;
++			};
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+ 		// intercept declarations as follows
+@@ -9652,6 +9703,55 @@
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
++		// C++ static assertion scanner
++		if (robust_token_is_string&lt;13&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;static_assert&quot;))
++			{	// static_assert ( constant-expression , string-literal ) ;
++			// find the next ';'
++			size_t j = i;
++			while(src.size&lt;0&gt;()&gt; ++j
++				  &amp;&amp; (!src.data&lt;0&gt;()[j].is_atomic() || !robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[j].index_tokens[0].token)));
++			if (src.size&lt;0&gt;()==j)
++				{	//! \test zcc/staticassert.C99/Error_scope1.hpp
++					//! \test zcc/staticassert.C99/Error_scope2.hpp
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;static assertion cut off by end of scope&quot;);
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt&lt;0&gt;(j-i,i);
++				continue;
++				};
++			if (   !is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1])
++				|| 3&gt;src.data&lt;0&gt;()[i+1].size&lt;0&gt;()
++				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].is_atomic()
++				|| !src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].is_atomic()
++				|| !robust_token_is_char&lt;','&gt;(src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-2].index_tokens[0].token)
++				|| C_TESTFLAG_STRING_LITERAL!=src.data&lt;0&gt;()[i+1].data&lt;0&gt;()[src.data&lt;0&gt;()[i+1].size&lt;0&gt;()-1].index_tokens[0].flags)
++				{	//! \test zcc/staticassert.C99/Error_badarg1.hpp
++					//! \test zcc/staticassert.C99/Error_badarg2.hpp
++					//! \test zcc/staticassert.C99/Error_badarg3.hpp
++					//! \test zcc/staticassert.C99/Error_badarg5.hpp
++					//! \test zcc/staticassert.C99/Error_badarg6.hpp
++					//! \test zcc/staticassert.C99/Error_badarg7.hpp
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;malformed static assertion&quot;);
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
++				continue;
++				};
++			if (2!=j-i)
++				{	//! \test zcc/staticassert.C99/Error_badarg4.hpp
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;garbage between static assertion arguments and terminating ;&quot;);
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
++				continue;
++				};
++			//! \todo actually use the static assertion correctly.
++			src.DeleteNSlotsAt&lt;0&gt;(j-i+1,i);
++			continue;
++			};
+ 		// namespace scanner
+ 		// need some scheme to handle unnamed namespaces (probably alphabetical counter after something illegal so unmatchable)
+ 		// C++0X has inline namespaces; ignore these for now (well, maybe not: consuming the inline will prevent problems)
+
+Modified: trunk/tests/zcc/run_tests.bat
+===================================================================
+--- trunk/tests/zcc/run_tests.bat	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/run_tests.bat	2009-09-23 04:41:31 UTC (rev 254)
+@@ -20,6 +20,10 @@
+ @for %%f in (decl.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (namespace.CPP\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (namespace.CPP\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (staticassert.C1X\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (staticassert.C1X\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (staticassert.C1X\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (staticassert.C1X\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+ 
+ @echo Checking ZCC warnings on ISO-accepted code
+ @echo ====
+
+Modified: trunk/tests/zcc/run_tests.sh
+===================================================================
+--- trunk/tests/zcc/run_tests.sh	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/run_tests.sh	2009-09-23 04:41:31 UTC (rev 254)
+@@ -24,6 +24,8 @@
+ 	for F in decl.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in decl.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in namespace.CPP/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in staticassert.C1X/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in staticassert.C1X/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 
+ 	echo Checking ZCC warnings on ISO-accepted code
+ 	echo ====
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg1.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg1.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg1.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg1.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert();
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg1.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg1.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg1.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg1.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert();
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg2.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg2.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg2.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg2.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert(,);
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg2.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg2.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg2.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg2.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert(,);
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg3.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg3.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg3.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg3.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert(,&quot;bad form&quot;);
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg3.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg3.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg3.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg3.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert(,&quot;bad form&quot;);
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg4.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg4.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg4.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg4.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert(1,&quot;good form&quot;) intercalating junk;
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg4.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg4.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg4.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg4.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert(1,&quot;good form&quot;) intercalating junk;
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg5.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg5.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg5.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg5.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert;
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg5.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg5.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg5.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg5.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert;
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg6.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg6.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg6.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg6.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert(1()&quot;bad form&quot;);
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg6.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg6.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg6.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg6.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert(1()&quot;bad form&quot;);
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg7.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg7.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg7.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg7.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert(1,());
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_badarg7.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_badarg7.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_badarg7.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_badarg7.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert(1,());
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_scope1.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_scope1.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_scope1.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_scope1.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_scope1.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_scope1.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_scope1.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_scope1.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_scope2.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_scope2.h	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_scope2.h	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_scope2.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++_Static_Assert(1,&quot;bad form&quot;)
++
+
+Added: trunk/tests/zcc/staticassert.C1X/Error_scope2.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Error_scope2.hpp	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc/staticassert.C1X/Error_scope2.hpp	2009-09-23 04:41:31 UTC (rev 254)
+@@ -0,0 +1,5 @@
++// tests/zcc/staticassert.C99/Error_scope2.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static_assert(1,&quot;bad form&quot;)
++
+
+Modified: trunk/tests/zcc.in/run_tests.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests.in	2009-09-22 18:09:46 UTC (rev 253)
++++ trunk/tests/zcc.in/run_tests.in	2009-09-23 04:41:31 UTC (rev 254)
+@@ -9,6 +9,7 @@
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO decl.C99/Error*
+ ERROR CPP_ISO namespace.CPP/Error*
++ERROR CPP_ISO staticassert.C1X/Error*
+ 
+ ECHO Checking ZCC warnings on ISO-accepted code
+ WARN CPP_ISO namespace.CPP/Warn*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000020.html">[Zcplusplus-commits] r253 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000022.html">[Zcplusplus-commits] r255 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#21">[ date ]</a>
+              <a href="thread.html#21">[ thread ]</a>
+              <a href="subject.html#21">[ subject ]</a>
+              <a href="author.html#21">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

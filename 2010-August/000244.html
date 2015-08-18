@@ -1,0 +1,492 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r477 - in trunk: . tests/zcc/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r477%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20100814042454.15DB5480F08%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000243.html">
+   <LINK REL="Next"  HREF="000245.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r477 - in trunk: . tests/zcc/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r477%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99&In-Reply-To=%3C20100814042454.15DB5480F08%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r477 - in trunk: . tests/zcc/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Aug 14 06:24:53 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000243.html">[Zcplusplus-commits] r476 - trunk/tests/zcc/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000245.html">[Zcplusplus-commits] r478 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#244">[ date ]</a>
+              <a href="thread.html#244">[ thread ]</a>
+              <a href="subject.html#244">[ subject ]</a>
+              <a href="author.html#244">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-08-14 06:24:53 +0200 (Sat, 14 Aug 2010)
+New Revision: 477
+
+Added:
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const2.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const3.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const4.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile10.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile11.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile12.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile2.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile3.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile4.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile5.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile6.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile7.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile8.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile9.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile2.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile3.hpp
+   trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile4.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+Verify C++ error for const/volatile forward-declared union
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-08-14 04:24:15 UTC (rev 476)
++++ trunk/CSupport.cpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -13189,7 +13189,26 @@
+ 				{	// check for forward-declaration here (C99 6.7.2.3)
+ 				//! \todo even if we use -Wno-OAOO/-Wno-DRY, -Wc-c++-compat should advise that const/volatile qualification of a forward-declaration is an error in C++
+ 				if ((type_spec::_const | type_spec::_volatile) &amp; src.data&lt;0&gt;()[i].type_code.q_vector.back())
+-					{	//! \bug need test cases
++					{	//! \test decl.C99/Warn_struct_forward_def_const1.h
++						//! \test decl.C99/Warn_struct_forward_def_const2.h
++						//! \test decl.C99/Warn_struct_forward_def_const3.h
++						//! \test decl.C99/Warn_struct_forward_def_const4.h
++						//! \test decl.C99/Warn_struct_forward_def_volatile1.h
++						//! \test decl.C99/Warn_struct_forward_def_volatile2.h
++						//! \test decl.C99/Warn_struct_forward_def_volatile3.h
++						//! \test decl.C99/Warn_struct_forward_def_volatile4.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile1.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile2.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile3.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile4.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile5.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile6.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile7.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile8.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile9.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile10.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile11.h
++						//! \test decl.C99/Warn_struct_forward_def_const_volatile12.h
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(WARN_STR);
+ 					INFORM(&quot;useless const/volatile qualification of a forward-declaration (C99 6.7.3p3)&quot;);
+@@ -13788,7 +13807,26 @@
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+ 				if ((type_spec::_const | type_spec::_volatile) &amp; src.data&lt;0&gt;()[i].type_code.q_vector.back())
+-					{	//! \bug need test cases
++					{	//! \test decl.C99/Error_union_forward_def_const1.hpp
++						//! \test decl.C99/Error_union_forward_def_const2.hpp
++						//! \test decl.C99/Error_union_forward_def_const3.hpp
++						//! \test decl.C99/Error_union_forward_def_const4.hpp
++						//! \test decl.C99/Error_union_forward_def_volatile1.hpp
++						//! \test decl.C99/Error_union_forward_def_volatile2.hpp
++						//! \test decl.C99/Error_union_forward_def_volatile3.hpp
++						//! \test decl.C99/Error_union_forward_def_volatile4.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile1.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile2.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile3.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile4.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile5.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile6.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile7.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile8.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile9.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile10.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile11.hpp
++						//! \test decl.C99/Error_union_forward_def_const_volatile12.hpp
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM(&quot;const/volatile qualification must apply to an object (C++0X 7.1.6.1p1)&quot;);
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const2.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const2.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test const;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const3.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const3.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++const union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const4.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const4.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const4.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const4.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test const;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile10.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile10.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile10.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile10.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++volatile union good_test const;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile11.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile11.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile11.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile11.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test const volatile;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile12.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile12.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile12.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile12.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test const volatile;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile2.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile2.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile const union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile3.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile3.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const union good_test volatile;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile4.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile4.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile4.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile4.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile union good_test const;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile5.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile5.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile5.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile5.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test const volatile;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile6.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile6.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile6.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile6.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test const volatile;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile7.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile7.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile7.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile7.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++const volatile union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile8.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile8.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile8.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile8.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile const union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile9.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile9.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_const_volatile9.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_const_volatile9.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++const union good_test volatile;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_volatile.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile2.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_volatile2.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test volatile;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile3.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_volatile3.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++volatile union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile4.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile4.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_union_forward_def_volatile4.hpp	2010-08-14 04:24:53 UTC (rev 477)
+@@ -0,0 +1,11 @@
++// decl.C99\Error_union_forward_def_volatile4.hpp
++// using singly defined union
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test volatile;
++
++union good_test {
++	int x_factor;
++};
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000243.html">[Zcplusplus-commits] r476 - trunk/tests/zcc/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000245.html">[Zcplusplus-commits] r478 - trunk/tests/zcc/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#244">[ date ]</a>
+              <a href="thread.html#244">[ thread ]</a>
+              <a href="subject.html#244">[ subject ]</a>
+              <a href="author.html#244">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

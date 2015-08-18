@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r654 - trunk/tests/zcc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r654%20-%20trunk/tests/zcc&In-Reply-To=%3C20110607174432.40FFC480EB1%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000420.html">
+   <LINK REL="Next"  HREF="000422.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r654 - trunk/tests/zcc</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r654%20-%20trunk/tests/zcc&In-Reply-To=%3C20110607174432.40FFC480EB1%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r654 - trunk/tests/zcc">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Jun  7 19:44:32 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000420.html">[Zcplusplus-commits] r653 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000422.html">[Zcplusplus-commits] r655 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#421">[ date ]</a>
+              <a href="thread.html#421">[ thread ]</a>
+              <a href="subject.html#421">[ subject ]</a>
+              <a href="author.html#421">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-07 19:44:32 +0200 (Tue, 07 Jun 2011)
+New Revision: 654
+
+Modified:
+   trunk/tests/zcc/Pass_cstddef.hpp
+   trunk/tests/zcc/Pass_stddef_h.h
+   trunk/tests/zcc/Pass_stddef_h.hpp
+Log:
+test linkage for typedefs in stddef.h/cstddef
+
+Modified: trunk/tests/zcc/Pass_cstddef.hpp
+===================================================================
+--- trunk/tests/zcc/Pass_cstddef.hpp	2011-06-07 17:43:38 UTC (rev 653)
++++ trunk/tests/zcc/Pass_cstddef.hpp	2011-06-07 17:44:32 UTC (rev 654)
+@@ -1,5 +1,5 @@
+ // zcc/Pass_cstddef.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &lt;cstddef&gt;
+ 
+@@ -95,3 +95,10 @@
+ extern const volatile std::ptrdiff_t j13;
+ extern const volatile std::size_t k13;
+ 
++// following is guarded to be run only by ZCC and impersonators
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++// ZC++ 0.0.9 supports __zcc_linkage
++// typedefs have no linkage in C
++static_assert(0==__zcc_linkage(std::ptrdiff_t),&quot;std::ptrdiff_t should be defined with no linkage&quot;);
++static_assert(0==__zcc_linkage(std::size_t),&quot;std::size_t should be defined with no linkage&quot;);
++#endif
+
+Modified: trunk/tests/zcc/Pass_stddef_h.h
+===================================================================
+--- trunk/tests/zcc/Pass_stddef_h.h	2011-06-07 17:43:38 UTC (rev 653)
++++ trunk/tests/zcc/Pass_stddef_h.h	2011-06-07 17:44:32 UTC (rev 654)
+@@ -1,5 +1,5 @@
+ // zcc/Pass_stddef_h.h
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &lt;stddef.h&gt;
+ 
+@@ -114,3 +114,11 @@
+ extern const volatile size_t k13;
+ extern const volatile wchar_t m13;
+ 
++// following is guarded to be run only by ZCC and impersonators
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++// ZC++ 0.0.9 supports __zcc_linkage
++// typedefs have no linkage in C
++_Static_Assert(0==__zcc_linkage(ptrdiff_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
++_Static_Assert(0==__zcc_linkage(size_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
++_Static_Assert(0==__zcc_linkage(wchar_t),&quot;wchar_t should be defined with no linkage&quot;);
++#endif
+
+Modified: trunk/tests/zcc/Pass_stddef_h.hpp
+===================================================================
+--- trunk/tests/zcc/Pass_stddef_h.hpp	2011-06-07 17:43:38 UTC (rev 653)
++++ trunk/tests/zcc/Pass_stddef_h.hpp	2011-06-07 17:44:32 UTC (rev 654)
+@@ -1,5 +1,5 @@
+ // zcc/Pass_stddef_h.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2011 Kenneth Boyd, license: MIT.txt
+ 
+ #include &lt;stddef.h&gt;
+ 
+@@ -169,3 +169,11 @@
+ extern const volatile ptrdiff_t m13;
+ extern const volatile size_t n13;
+ 
++// following is guarded to be run only by ZCC and impersonators
++#if 9&lt;=10000*__ZCC__+100*__ZCC_MINOR__+__ZCC_PATCHLEVEL__
++// ZC++ 0.0.9 supports __zcc_linkage
++// typedefs have no linkage in C
++static_assert(0==__zcc_linkage(ptrdiff_t),&quot;ptrdiff_t should be defined with no linkage&quot;);
++static_assert(0==__zcc_linkage(size_t),&quot;size_t should be defined with no linkage&quot;);
++static_assert(-1==__zcc_linkage(wchar_t),&quot;wchar_t is a keyword, should not be defined at all&quot;);
++#endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000420.html">[Zcplusplus-commits] r653 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000422.html">[Zcplusplus-commits] r655 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#421">[ date ]</a>
+              <a href="thread.html#421">[ thread ]</a>
+              <a href="subject.html#421">[ subject ]</a>
+              <a href="author.html#421">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

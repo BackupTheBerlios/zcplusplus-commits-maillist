@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r268 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r268%20-%20trunk&In-Reply-To=%3C200910171840.n9HIe2PW017505%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000034.html">
+   <LINK REL="Next"  HREF="000036.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r268 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r268%20-%20trunk&In-Reply-To=%3C200910171840.n9HIe2PW017505%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r268 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Oct 17 20:40:02 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000034.html">[Zcplusplus-commits] r267 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000036.html">[Zcplusplus-commits] r269 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-10-17 20:39:59 +0200 (Sat, 17 Oct 2009)
+New Revision: 268
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+minor strengthening of token testing for parse_tree
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 06:28:15 UTC (rev 267)
++++ trunk/CSupport.cpp	2009-10-17 18:39:59 UTC (rev 268)
+@@ -1526,6 +1526,28 @@
+ 	return targ_len==x.second &amp;&amp; !strncmp(x.first,target,targ_len);
+ }
+ 
++static inline bool
++token_is_string(const POD_pair&lt;const char*,size_t&gt;&amp; x,const char* const target)
++{
++	assert(NULL!=target);
++	assert(NULL!=x.first);
++	const size_t targ_len = strlen(target);
++	return targ_len==x.second &amp;&amp; !strncmp(x.first,target,targ_len);
++}
++
++template&lt;size_t targ_len&gt;
++static inline bool
++robust_token_is_string(const parse_tree&amp; x,const char* const target)
++{
++	return x.is_atomic() &amp;&amp; token_is_string&lt;targ_len&gt;(x.index_tokens[0].token,target);
++}
++
++static inline bool
++robust_token_is_string(const parse_tree&amp; x,const char* const target)
++{
++	return x.is_atomic() &amp;&amp; token_is_string(x.index_tokens[0].token,target);
++}
++
+ template&lt;char c&gt;
+ static inline bool
+ token_is_char(const POD_pair&lt;const char*,size_t&gt;&amp; x)
+@@ -2976,9 +2998,10 @@
+ 
+ /* strict type categories of parsing */
+ #define PARSE_PRIMARY_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-19))
++#define PARSE_UNION_TYPE ((lex_flags)(1)&lt;&lt;(sizeof(lex_flags)*CHAR_BIT-20))
+ 
+ // check for collision with lowest three bits
+-BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=19);
++BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB&gt;=20);
+ 
+ /* nonstrict expression types */
+ #define PARSE_POSTFIX_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION)
+@@ -3000,7 +3023,7 @@
+ #define PARSE_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION | PARSE_STRICT_UNARY_EXPRESSION | PARSE_STRICT_CAST_EXPRESSION | PARSE_STRICT_PM_EXPRESSION | PARSE_STRICT_MULT_EXPRESSION | PARSE_STRICT_ADD_EXPRESSION | PARSE_STRICT_SHIFT_EXPRESSION | PARSE_STRICT_RELATIONAL_EXPRESSION | PARSE_STRICT_EQUALITY_EXPRESSION | PARSE_STRICT_BITAND_EXPRESSION | PARSE_STRICT_BITXOR_EXPRESSION | PARSE_STRICT_BITOR_EXPRESSION | PARSE_STRICT_LOGICAND_EXPRESSION | PARSE_STRICT_LOGICOR_EXPRESSION | PARSE_STRICT_CONDITIONAL_EXPRESSION | PARSE_STRICT_ASSIGNMENT_EXPRESSION | PARSE_STRICT_COMMA_EXPRESSION)
+ 
+ /* nonstrict type categories */
+-#define PARSE_TYPE PARSE_PRIMARY_TYPE
++#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE)
+ 
+ /* already-parsed */
+ #define PARSE_OBVIOUS (PARSE_EXPRESSION | PARSE_TYPE | parse_tree::INVALID)
+@@ -9548,14 +9571,14 @@
+ }
+ 
+ //! \todo does this need to be in ParseTree.hpp?
+-size_t 
++static size_t 
+ flush_token(parse_tree&amp; x, const size_t i, const size_t n, const char* const target)
+ {
+ 	assert(x.size&lt;0&gt;()&gt;i);
+ 	assert(x.size&lt;0&gt;()-i&gt;=n);
+ 	size_t offset = 0;
+ 	size_t j = 0;
+-	do	if (robust_token_is_string(x.data&lt;0&gt;()[i+j].index_tokens[0].token,target))
++	do	if (robust_token_is_string(x.data&lt;0&gt;()[i+j],target))
+ 			++offset;
+ 		else if (0&lt;offset)
+ 			x.c_array&lt;0&gt;()[i+j-offset] = x.data&lt;0&gt;()[i+j];
+@@ -10140,7 +10163,7 @@
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
+ 		// C static assertion scanner
+-		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;_Static_Assert&quot;))
++		if (robust_token_is_string&lt;14&gt;(src.data&lt;0&gt;()[i],&quot;_Static_Assert&quot;))
+ 			{	// _Static_Assert ( constant-expression , string-literal ) ;
+ 			C99_CPP_handle_static_assertion(src,types,*CLexer-&gt;pp_support,i,&quot; : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;);
+ 			continue;
+@@ -10381,7 +10404,7 @@
+ 		{
+ 		conserve_tokens(src.c_array&lt;0&gt;()[i]);
+ 		// C++ static assertion scanner
+-		if (robust_token_is_string&lt;13&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;static_assert&quot;))
++		if (robust_token_is_string&lt;13&gt;(src.data&lt;0&gt;()[i],&quot;static_assert&quot;))
+ 			{	// static_assert ( constant-expression , string-literal ) ;
+ 			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer-&gt;pp_support,i,&quot; : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)&quot;);
+ 			continue;
+@@ -10391,7 +10414,7 @@
+ 		// C++0X has inline namespaces; ignore these for now (well, maybe not: consuming the inline will prevent problems)
+ 		// C++0X has more complicated using namespace directives: ignore these for now
+ 		// basic namespace; C++98 and C++0X agree on what this is
+-		if (robust_token_is_string&lt;9&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;namespace&quot;))
++		if (robust_token_is_string&lt;9&gt;(src.data&lt;0&gt;()[i],&quot;namespace&quot;))
+ 			{	// fail if: end of token stream
+ 				// fail if: next token is a type
+ 				// accept if: next token is {} (unnamed namespace)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000034.html">[Zcplusplus-commits] r267 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000036.html">[Zcplusplus-commits] r269 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#35">[ date ]</a>
+              <a href="thread.html#35">[ thread ]</a>
+              <a href="subject.html#35">[ subject ]</a>
+              <a href="author.html#35">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

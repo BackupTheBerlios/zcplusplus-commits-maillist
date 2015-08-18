@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r566 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r566%20-%20trunk&In-Reply-To=%3C20110110010215.9C395480DB9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000332.html">
+   <LINK REL="Next"  HREF="000334.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r566 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r566%20-%20trunk&In-Reply-To=%3C20110110010215.9C395480DB9%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r566 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan 10 02:02:15 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000332.html">[Zcplusplus-commits] r565 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000334.html">[Zcplusplus-commits] r567 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#333">[ date ]</a>
+              <a href="thread.html#333">[ thread ]</a>
+              <a href="subject.html#333">[ subject ]</a>
+              <a href="author.html#333">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-10 02:02:15 +0100 (Mon, 10 Jan 2011)
+New Revision: 566
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+efficiency tuning; use correct metaphor for successful conversion
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-10 00:53:03 UTC (rev 565)
++++ trunk/CSupport.cpp	2011-01-10 01:02:15 UTC (rev 566)
+@@ -14265,11 +14265,8 @@
+ 					}
+ 				}
+ 			//! \bug check for pre-existing typedefs if no types
+-			if (0&gt;=typecount)
+-				{
+-				pre_invariant_decl_scanner.clear();	// RAM efficiency
++			if (0&gt;=typecount || 0&lt;pre_invariant_decl_scanner.count(STATIC_SIZE(CPP0X_nontype_decl_specifier_list)))
+ 				goto reparse;
+-				}
+ 			}
+ 
+ 			size_t k = 0;
+@@ -14325,8 +14322,7 @@
+ 					src.DeleteNSlotsAt&lt;0&gt;(1+pre_invariant_decl_scanner.size(),i);
+ 					goto restart_master_loop;
+ 					}
+-				i += pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case STRUCT_NAME:
+@@ -14423,8 +14419,7 @@
+ 					INFORM(&quot;used without at least forward-declaring&quot;);
+ 					zcc_errors.inc_error();
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case STRUCT_NAMED_DEF:
+@@ -14523,8 +14518,7 @@
+ 					// accept definition
+ 					//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case STRUCT_ANON_DEF:
+@@ -14573,8 +14567,7 @@
+ 					src.DeleteNSlotsAt&lt;0&gt;(1+pre_invariant_decl_scanner.size(),i);
+ 					goto restart_master_loop;
+ 					}
+-				i += pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case CLASS_NAME:
+@@ -14672,8 +14665,7 @@
+ 					INFORM(&quot;used without at least forward-declaring&quot;);
+ 					zcc_errors.inc_error();
+ 					}
+-				i += pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case CLASS_NAMED_DEF:
+@@ -14772,8 +14764,7 @@
+ 					// accept definition
+ 					//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case CLASS_ANON_DEF:
+@@ -14848,8 +14839,7 @@
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// fail over to int, like C
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+ 					};
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case ENUM_NAMED_DEF:
+@@ -14926,8 +14916,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case ENUM_ANON_DEF:
+@@ -14942,12 +14931,10 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+-			pre_invariant_decl_scanner.clear();	// RAM efficiency
+ 			};
+ 		}
+ 		// check naked declarations first; handle namespaces later
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-10 00:53:03 UTC (rev 565)
++++ trunk/CSupport.cpp.in	2011-01-10 01:02:15 UTC (rev 566)
+@@ -14412,11 +14412,8 @@
+ 					}
+ 				}
+ 			//! \bug check for pre-existing typedefs if no types
+-			if (0&gt;=typecount)
+-				{
+-				pre_invariant_decl_scanner.clear();	// RAM efficiency
++			if (0&gt;=typecount || 0&lt;pre_invariant_decl_scanner.count(STATIC_SIZE(CPP0X_nontype_decl_specifier_list)))
+ 				goto reparse;
+-				}
+ 			}
+ 
+ 			size_t k = 0;
+@@ -14472,8 +14469,7 @@
+ 					src.DeleteNSlotsAt&lt;0&gt;(1+pre_invariant_decl_scanner.size(),i);
+ 					goto restart_master_loop;
+ 					}
+-				i += pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case STRUCT_NAME:
+@@ -14570,8 +14566,7 @@
+ 					INFORM(&quot;used without at least forward-declaring&quot;);
+ 					zcc_errors.inc_error();
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case STRUCT_NAMED_DEF:
+@@ -14670,8 +14665,7 @@
+ 					// accept definition
+ 					//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case STRUCT_ANON_DEF:
+@@ -14720,8 +14714,7 @@
+ 					src.DeleteNSlotsAt&lt;0&gt;(1+pre_invariant_decl_scanner.size(),i);
+ 					goto restart_master_loop;
+ 					}
+-				i += pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case CLASS_NAME:
+@@ -14819,8 +14812,7 @@
+ 					INFORM(&quot;used without at least forward-declaring&quot;);
+ 					zcc_errors.inc_error();
+ 					}
+-				i += pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case CLASS_NAMED_DEF:
+@@ -14919,8 +14911,7 @@
+ 					// accept definition
+ 					//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case CLASS_ANON_DEF:
+@@ -14995,8 +14986,7 @@
+ 					tmp2.type_code.set_type(C_TYPE::INT);	// fail over to int, like C
+ 					tmp2.flags |= (parse_tree::INVALID | PARSE_PRIMARY_TYPE);
+ 					};
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case ENUM_NAMED_DEF:
+@@ -15073,8 +15063,7 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ //				break;
+ 				case ENUM_ANON_DEF:
+@@ -15089,12 +15078,10 @@
+ 					INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 					return;
+ 					}
+-				i += semicolon_terminated_decl+pre_invariant_decl_scanner.size();
+-				goto restart_master_loop;
++				goto reparse;
+ 				}
+ 				}
+ 			while(pre_invariant_decl_scanner.size()&gt; ++k);
+-			pre_invariant_decl_scanner.clear();	// RAM efficiency
+ 			};
+ 		}
+ 		// check naked declarations first; handle namespaces later
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000332.html">[Zcplusplus-commits] r565 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000334.html">[Zcplusplus-commits] r567 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#333">[ date ]</a>
+              <a href="thread.html#333">[ thread ]</a>
+              <a href="subject.html#333">[ subject ]</a>
+              <a href="author.html#333">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

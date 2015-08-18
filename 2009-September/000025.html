@@ -1,0 +1,377 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r258 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r258%20-%20trunk&In-Reply-To=%3C200909250437.n8P4bjD7026876%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000024.html">
+   <LINK REL="Next"  HREF="000026.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r258 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r258%20-%20trunk&In-Reply-To=%3C200909250437.n8P4bjD7026876%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r258 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Sep 25 06:37:45 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000024.html">[Zcplusplus-commits] r257 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000026.html">[Zcplusplus-commits] r259 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#25">[ date ]</a>
+              <a href="thread.html#25">[ thread ]</a>
+              <a href="subject.html#25">[ subject ]</a>
+              <a href="author.html#25">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-25 06:37:35 +0200 (Fri, 25 Sep 2009)
+New Revision: 258
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.hpp
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+recover from V0.0.0 design error: type_system isn't using the zaimoni::lex_flags data at all
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-09-24 20:54:14 UTC (rev 257)
++++ trunk/CSupport.cpp	2009-09-25 04:37:35 UTC (rev 258)
+@@ -877,55 +877,55 @@
+ 
+ /* reference arrays for instantiating type_system class with */
+ /* typenames starting with $ are internal, as $ is not a legal C-source character */
+-const POD_triple&lt;const char* const,size_t,lex_flags&gt; C_atomic_types[]
++const POD_pair&lt;const char* const,size_t&gt; C_atomic_types[]
+ 	=	{
+-		DICT2_STRUCT(&quot;void&quot;,0),
+-		DICT2_STRUCT(&quot;$not-void&quot;,0),
+-		DICT2_STRUCT(&quot;_Bool&quot;,0),
+-		DICT2_STRUCT(&quot;char&quot;,0),
+-		DICT2_STRUCT(&quot;signed char&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned char&quot;,0),
+-		DICT2_STRUCT(&quot;short&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned short&quot;,0),
+-		DICT2_STRUCT(&quot;int&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned int&quot;,0),
+-		DICT2_STRUCT(&quot;long&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned long&quot;,0),
+-		DICT2_STRUCT(&quot;long long&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned long long&quot;,0),
+-		DICT2_STRUCT(&quot;$integer-like&quot;,0),
+-		DICT2_STRUCT(&quot;float&quot;,0),
+-		DICT2_STRUCT(&quot;double&quot;,0),
+-		DICT2_STRUCT(&quot;long double&quot;,0),
+-		DICT2_STRUCT(&quot;float _Complex&quot;,0),		/* start C++ extension support: C99 _Complex in C++ (we can do this as _Complex is reserved to the implementation) */
+-		DICT2_STRUCT(&quot;double _Complex&quot;,0),
+-		DICT2_STRUCT(&quot;long double _Complex&quot;,0)
++		DICT_STRUCT(&quot;void&quot;),
++		DICT_STRUCT(&quot;$not-void&quot;),
++		DICT_STRUCT(&quot;_Bool&quot;),
++		DICT_STRUCT(&quot;char&quot;),
++		DICT_STRUCT(&quot;signed char&quot;),
++		DICT_STRUCT(&quot;unsigned char&quot;),
++		DICT_STRUCT(&quot;short&quot;),
++		DICT_STRUCT(&quot;unsigned short&quot;),
++		DICT_STRUCT(&quot;int&quot;),
++		DICT_STRUCT(&quot;unsigned int&quot;),
++		DICT_STRUCT(&quot;long&quot;),
++		DICT_STRUCT(&quot;unsigned long&quot;),
++		DICT_STRUCT(&quot;long long&quot;),
++		DICT_STRUCT(&quot;unsigned long long&quot;),
++		DICT_STRUCT(&quot;$integer-like&quot;),
++		DICT_STRUCT(&quot;float&quot;),
++		DICT_STRUCT(&quot;double&quot;),
++		DICT_STRUCT(&quot;long double&quot;),
++		DICT_STRUCT(&quot;float _Complex&quot;),		/* start C++ extension support: C99 _Complex in C++ (we can do this as _Complex is reserved to the implementation) */
++		DICT_STRUCT(&quot;double _Complex&quot;),
++		DICT_STRUCT(&quot;long double _Complex&quot;)
+ 		};
+ 
+-const POD_triple&lt;const char* const,size_t,lex_flags&gt; CPP_atomic_types[]
++const POD_pair&lt;const char* const,size_t&gt; CPP_atomic_types[]
+ 	=	{
+-		DICT2_STRUCT(&quot;void&quot;,0),
+-		DICT2_STRUCT(&quot;$not-void&quot;,0),
+-		DICT2_STRUCT(&quot;bool&quot;,0),
+-		DICT2_STRUCT(&quot;char&quot;,0),
+-		DICT2_STRUCT(&quot;signed char&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned char&quot;,0),
+-		DICT2_STRUCT(&quot;short&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned short&quot;,0),
+-		DICT2_STRUCT(&quot;int&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned int&quot;,0),
+-		DICT2_STRUCT(&quot;long&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned long&quot;,0),
+-		DICT2_STRUCT(&quot;long long&quot;,0),
+-		DICT2_STRUCT(&quot;unsigned long long&quot;,0),
+-		DICT2_STRUCT(&quot;$integer-like&quot;,0),
+-		DICT2_STRUCT(&quot;float&quot;,0),
+-		DICT2_STRUCT(&quot;double&quot;,0),
+-		DICT2_STRUCT(&quot;long double&quot;,0),
+-		DICT2_STRUCT(&quot;float _Complex&quot;,0),		/* start C++ extension support: C99 _Complex in C++ (we can do this as _Complex is reserved to the implementation) */
+-		DICT2_STRUCT(&quot;double _Complex&quot;,0),
+-		DICT2_STRUCT(&quot;long double _Complex&quot;,0),
+-		DICT2_STRUCT(&quot;wchar_t&quot;,0)
++		DICT_STRUCT(&quot;void&quot;),
++		DICT_STRUCT(&quot;$not-void&quot;),
++		DICT_STRUCT(&quot;bool&quot;),
++		DICT_STRUCT(&quot;char&quot;),
++		DICT_STRUCT(&quot;signed char&quot;),
++		DICT_STRUCT(&quot;unsigned char&quot;),
++		DICT_STRUCT(&quot;short&quot;),
++		DICT_STRUCT(&quot;unsigned short&quot;),
++		DICT_STRUCT(&quot;int&quot;),
++		DICT_STRUCT(&quot;unsigned int&quot;),
++		DICT_STRUCT(&quot;long&quot;),
++		DICT_STRUCT(&quot;unsigned long&quot;),
++		DICT_STRUCT(&quot;long long&quot;),
++		DICT_STRUCT(&quot;unsigned long long&quot;),
++		DICT_STRUCT(&quot;$integer-like&quot;),
++		DICT_STRUCT(&quot;float&quot;),
++		DICT_STRUCT(&quot;double&quot;),
++		DICT_STRUCT(&quot;long double&quot;),
++		DICT_STRUCT(&quot;float _Complex&quot;),		/* start C++ extension support: C99 _Complex in C++ (we can do this as _Complex is reserved to the implementation) */
++		DICT_STRUCT(&quot;double _Complex&quot;),
++		DICT_STRUCT(&quot;long double _Complex&quot;),
++		DICT_STRUCT(&quot;wchar_t&quot;)
+ 		};
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+@@ -3892,13 +3892,8 @@
+ 
+ 	if (!(C_TESTFLAG_INTEGER &amp; src.index_tokens[0].flags)) return false;
+ 	C_PPIntCore tmp;
+-#ifdef NDEBUG
+-	C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,tmp);
+-	convert_to(dest,tmp);
+-#else
+-	assert(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,tmp));
+-	assert(convert_to(dest,tmp));
+-#endif
++	ZAIMONI_PASSTHROUGH_ASSERT(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,tmp));
++	ZAIMONI_PASSTHROUGH_ASSERT(convert_to(dest,tmp));
+ 	return true;
+ }
+ 
+@@ -4023,11 +4018,7 @@
+ 			{
+ 			src.type_code.set_type(C_TYPE::INTEGERLIKE);
+ 			C_PPIntCore parse_tmp;
+-#ifdef NDEBUG
+-			C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,parse_tmp);
+-#else
+-			assert(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,parse_tmp));
+-#endif
++			ZAIMONI_PASSTHROUGH_ASSERT(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,parse_tmp));
+ 			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp;
+ 			const unsigned char type_hint = parse_tmp.hinted_type;
+ 			const bool no_signed = 1==type_hint%2;
+@@ -4585,11 +4576,7 @@
+ 		else if (converts_to_integerlike(src.data&lt;0&gt;()-&gt;type_code.base_type_index))
+ 			{
+ 			src.type_code.value_copy(src.data&lt;1&gt;()-&gt;type_code);
+-#ifndef NDEBUG
+-			assert(src.type_code.dereference());
+-#else
+-			src.type_code.dereference();
+-#endif
++			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+ 			}
+ 		else{	// not testable from preprocessor yet (need floating-point literals as extension)
+ 			src.flags |= parse_tree::INVALID;
+@@ -4607,11 +4594,7 @@
+ 		if (converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code.base_type_index))
+ 			{
+ 			src.type_code.value_copy(src.data&lt;0&gt;()-&gt;type_code);
+-#ifndef NDEBUG
+-			assert(src.type_code.dereference());
+-#else
+-			src.type_code.dereference();
+-#endif
++			ZAIMONI_PASSTHROUGH_ASSERT(src.type_code.dereference());
+ 			}
+ 		else{	// autofails in C
+ 				// not testable from preprocessor yet (need floating-point literals, would be extension regardless)
+@@ -8930,31 +8913,19 @@
+ 	case C_BASE_OCTAL:
+ 		{	// all-zeros is zero, ok with leading 0 prefix
+ 		C_PPOctalInteger test_oct;
+-#ifdef NDEBUG
+-		C_PPOctalInteger::is(x,x_len,test_oct);
+-#else
+-		assert(C_PPOctalInteger::is(x,x_len,test_oct));
+-#endif
++		ZAIMONI_PASSTHROUGH_ASSERT(C_PPOctalInteger::is(x,x_len,test_oct));
+ 		return strspn(test_oct.ptr,&quot;0&quot;) == test_oct.digit_span;
+ 		};
+ 	case C_BASE_DECIMAL:
+ 		{	// decimal is easy
+ 		C_PPDecimalInteger test_dec;
+-#ifdef NDEBUG
+-		C_PPDecimalInteger::is(x,x_len,test_dec);
+-#else
+-		assert(C_PPDecimalInteger::is(x,x_len,test_dec));
+-#endif
++		ZAIMONI_PASSTHROUGH_ASSERT(C_PPDecimalInteger::is(x,x_len,test_dec));
+ 		return 1==test_dec.digit_span &amp;&amp; '0'==test_dec.ptr[0];
+ 		};
+ 	case C_BASE_HEXADECIMAL:
+ 		{	// all-zeros is zero, but ignore the leading 0x prefix
+ 		C_PPHexInteger test_hex;
+-#ifdef NDEBUG
+-		C_PPHexInteger::is(x,x_len,test_hex);
+-#else
+-		assert(C_PPHexInteger::is(x,x_len,test_hex));
+-#endif
++		ZAIMONI_PASSTHROUGH_ASSERT(C_PPHexInteger::is(x,x_len,test_hex));
+ 		return strspn(test_hex.ptr+2,&quot;0&quot;)+2 == test_hex.digit_span;
+ 		};
+ 	}
+
+Modified: trunk/CSupport.hpp
+===================================================================
+--- trunk/CSupport.hpp	2009-09-24 20:54:14 UTC (rev 257)
++++ trunk/CSupport.hpp	2009-09-25 04:37:35 UTC (rev 258)
+@@ -80,7 +80,7 @@
+ namespace zaimoni {
+ 
+ class LangConf;
+-template&lt;class T1,class T2,class T3&gt; struct POD_triple;
++template&lt;class T1,class T2&gt; struct POD_pair;
+ 
+ // C preprocessor class has to know about this type
+ struct PP_auxfunc
+@@ -138,8 +138,8 @@
+ 
+ extern zaimoni::LangConf* CLexer;			// C99
+ extern zaimoni::LangConf* CPlusPlusLexer;	// C++0x
+-extern const zaimoni::POD_triple&lt;const char* const,size_t,zaimoni::lex_flags&gt; C_atomic_types[];	// to help out the preprocessor, etc.
+-extern const zaimoni::POD_triple&lt;const char* const,size_t,zaimoni::lex_flags&gt; CPP_atomic_types[];	// to help out the preprocessor, etc.
++extern const zaimoni::POD_pair&lt;const char* const,size_t&gt; C_atomic_types[];	// to help out the preprocessor, etc.
++extern const zaimoni::POD_pair&lt;const char* const,size_t&gt; CPP_atomic_types[];	// to help out the preprocessor, etc.
+ extern const size_t C_int_priority[];
+ 
+ #define C_TYPE_MAX 21
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-09-24 20:54:14 UTC (rev 257)
++++ trunk/type_system.cpp	2009-09-25 04:37:35 UTC (rev 258)
+@@ -17,16 +17,6 @@
+ 	return 0;
+ }
+ 
+-type_system::type_data type_system::_get_flags(size_t id) const
+-{
+-	if (0==id) return 0;
+-	if (core_types_size&gt; --id)
+-		return core_types[id].third;
+-	if (dynamic_types.size() &gt; (id -= core_types_size))
+-		return dynamic_types[id].third;
+-	return 0;
+-}
+-
+ const char* type_system::_name(size_t id) const
+ {
+ 	if (0==id) return &quot;(?)&quot;;
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-09-24 20:54:14 UTC (rev 257)
++++ trunk/type_system.hpp	2009-09-25 04:37:35 UTC (rev 258)
+@@ -4,7 +4,6 @@
+ #ifndef TYPE_SYSTEM_HPP
+ #define TYPE_SYSTEM_HPP 1
+ 
+-#include &quot;Zaimoni.STL/LexParse/std.h&quot;
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+ #include &quot;Zaimoni.STL/AutoPtr.hpp&quot;
+ #include &quot;type_spec.hpp&quot;
+@@ -12,21 +11,20 @@
+ class type_system
+ {
+ public:
+-	typedef zaimoni::lex_flags type_data;
+ 	typedef size_t type_index;
+ 
+-	const zaimoni::POD_triple&lt;const char* const,size_t,zaimoni::lex_flags&gt;* const core_types;
++	const zaimoni::POD_pair&lt;const char* const,size_t&gt;* const core_types;
+ 	const type_index* const int_priority;
+ 	const size_t core_types_size;
+ 	const size_t int_priority_size;
+ private:
+-	zaimoni::autovalarray_ptr&lt;zaimoni::POD_triple&lt;char*,size_t,zaimoni::lex_flags&gt; &gt; dynamic_types;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;char*,size_t&gt; &gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+ 	// uncopyable
+ 	type_system(const type_system&amp; src);
+ 	void operator=(const type_system&amp; src);
+ public:
+-	type_system(const zaimoni::POD_triple&lt;const char* const,size_t,zaimoni::lex_flags&gt;* _core_types,size_t _core_types_size,const type_index* _int_priority,size_t _int_priority_size)
++	type_system(const zaimoni::POD_pair&lt;const char* const,size_t&gt;* _core_types,size_t _core_types_size,const type_index* _int_priority,size_t _int_priority_size)
+ 	:	core_types((assert(NULL!=_core_types),_core_types)),
+ 		int_priority((assert(NULL!=_int_priority),_int_priority)),
+ 		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
+@@ -44,11 +42,6 @@
+ 		assert(NULL!=x &amp;&amp; '\0'!= *x);
+ 		return _get_id(x,strlen(x));
+ 		}
+-	type_data get_flags(type_index id) const
+-		{
+-		assert(core_types_size+dynamic_types.size()&gt;=id);
+-		return _get_flags(id);
+-		}
+ 	const char* name(type_index id) const
+ 		{
+ 		assert(core_types_size+dynamic_types.size()&gt;=id);
+@@ -59,10 +52,6 @@
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
+ private:
+ 	type_index _get_id(const char* const x,size_t x_len) const;
+-	type_data _get_flags(size_t id) const;
+ 	const char* _name(type_index id) const;
+ };
+-
+-
+-
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000024.html">[Zcplusplus-commits] r257 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000026.html">[Zcplusplus-commits] r259 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#25">[ date ]</a>
+              <a href="thread.html#25">[ thread ]</a>
+              <a href="subject.html#25">[ subject ]</a>
+              <a href="author.html#25">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

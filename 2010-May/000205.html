@@ -1,0 +1,409 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r438 - in trunk: .	tests/zcc/default/staticassert
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r438%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert&In-Reply-To=%3C201005190821.o4J8Lr6c028263%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000204.html">
+   <LINK REL="Next"  HREF="000206.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r438 - in trunk: .	tests/zcc/default/staticassert</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r438%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert&In-Reply-To=%3C201005190821.o4J8Lr6c028263%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r438 - in trunk: .	tests/zcc/default/staticassert">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed May 19 10:21:53 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000204.html">[Zcplusplus-commits] r437 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000206.html">[Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#205">[ date ]</a>
+              <a href="thread.html#205">[ thread ]</a>
+              <a href="subject.html#205">[ subject ]</a>
+              <a href="author.html#205">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-19 10:21:44 +0200 (Wed, 19 May 2010)
+New Revision: 438
+
+Added:
+   trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.hpp
+   trunk/CSupport_pp.cpp
+   trunk/CSupport_pp.hpp
+   trunk/type_spec.cpp
+   trunk/type_spec.hpp
+Log:
+first testing of typeid in extended integer constant expressions for C++
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/CSupport.cpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -615,7 +615,8 @@
+ 	FLOAT__COMPLEX,
+ 	DOUBLE__COMPLEX,
+ 	LDOUBLE__COMPLEX,
+-	WCHAR_T
++	WCHAR_T,	// C++-specific
++	TYPEINFO	// C++-specific
+ };
+ 
+ }
+@@ -983,7 +984,8 @@
+ 		DICT_STRUCT(&quot;float _Complex&quot;),		/* start C++ extension support: C99 _Complex in C++ (we can do this as _Complex is reserved to the implementation) */
+ 		DICT_STRUCT(&quot;double _Complex&quot;),
+ 		DICT_STRUCT(&quot;long double _Complex&quot;),
+-		DICT_STRUCT(&quot;wchar_t&quot;)
++		DICT_STRUCT(&quot;wchar_t&quot;),			// C++-specific
++		DICT_STRUCT(&quot;std::typeinfo&quot;)	// C++-specific
+ 		};
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+@@ -3452,7 +3454,7 @@
+ {
+ 	if (NULL!=src.index_tokens[0].token.first)
+ 		{
+-		if (token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;_Bool&quot;))
++		if (token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;bool&quot;))
+ 			{
+ 			src.type_code.set_type(C_TYPE::BOOL);
+ 			src.flags |= PARSE_PRIMARY_TYPE;
+@@ -3614,7 +3616,22 @@
+ }
+ #/*cut-cpp*/
+ 
++static bool is_CPP0X_typeid_expression(const parse_tree&amp; src)
++{
++	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;typeid&quot;))
+ #ifndef NDEBUG
++			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++#endif
++			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;()
++			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags)
++			&amp;&amp;	C_TYPE::TYPEINFO==src.type_code.base_type_index
++			&amp;&amp;	0==src.type_code.pointer_power
++			&amp;&amp;	(src.type_code.qualifier&lt;0&gt;() &amp; (type_spec::lvalue | type_spec::_const))==(type_spec::lvalue | type_spec::_const);
++}
++
++#ifndef NDEBUG
+ static bool is_C99_CPP_sizeof_expression(const parse_tree&amp; src)
+ {
+ 	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;sizeof&quot;))
+@@ -5120,6 +5137,58 @@
+ 		}
+ }
+ 
++#/*cut-cpp*/
++
++// if #include &lt;typeinfo&gt; hasn't happened, context-free error stops this
++//! \throw std::bad_alloc
++static bool terse_locate_CPP0X_typeid(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
++{
++	assert(!src.empty&lt;0&gt;());
++	assert(i&lt;src.size&lt;0&gt;());
++	assert(!(PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags));
++	assert(src.data&lt;0&gt;()[i].is_atomic());
++
++	if (token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;typeid&quot;)
++		&amp;&amp; 1&lt;src.size&lt;0&gt;()-i
++		&amp;&amp; is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1]))
++		{
++		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
++		if ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;0&gt;()[i+1].flags)
++			{
++			{
++			parse_tree* const tmp = repurpose_inner_parentheses(src.c_array&lt;0&gt;()[i+1]);	// RAM conservation
++			src.c_array&lt;0&gt;()[i+1].OverwriteInto(*tmp);
++			src.c_array&lt;0&gt;()[i].fast_set_arg&lt;2&gt;(tmp);
++			src.c_array&lt;0&gt;()[i].core_flag_update();
++			src.c_array&lt;0&gt;()[i].flags |= PARSE_STRICT_POSTFIX_EXPRESSION;
++			src.DeleteIdx&lt;0&gt;(i+1);
++			cancel_outermost_parentheses(src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0]);
++			}
++			src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::TYPEINFO);
++			src.c_array&lt;0&gt;()[i].type_code.qualifier&lt;0&gt;() |= (type_spec::lvalue | type_spec::_const);
++			assert(is_CPP0X_typeid_expression(src.c_array&lt;0&gt;()[i]));
++			return true;			
++			}
++		}
++	return false;
++}
++
++// We can't eval typeid itself at compile-time, but we *can* eval == and != of
++// typeid.  Most other operators should error, through.
++
++//! \throw std::bad_alloc()
++static bool locate_CPP0X_typeid(parse_tree&amp; src, size_t&amp; i, const type_system&amp; types)
++{
++	assert(!src.empty&lt;0&gt;());
++	assert(i&lt;src.size&lt;0&gt;());
++
++	if (	!(PARSE_OBVIOUS &amp; src.data&lt;0&gt;()[i].flags)
++		&amp;&amp;	src.data&lt;0&gt;()[i].is_atomic()
++		&amp;&amp;	terse_locate_CPP0X_typeid(src,i,types))
++		return true;
++	return false;
++}
++#/*cut-cpp*/
+ /*postfixexpression:
+ 	primaryexpression
+ 	postfixexpression [ expression ]
+@@ -5161,8 +5230,13 @@
+ 				{
+ 				}
+ 			}
++#/*cut-cpp*/
++#endif
+ 		}
+ 	else{	// if (NULL==src.data&lt;0&gt;()[i].index_tokens[1].token.first)
++		if (locate_CPP0X_typeid(src,i,types)) return;
++#if 0
++#/*cut-cpp*/
+ 		if (token_is_char&lt;'.'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			if (1&lt;=i &amp;&amp; 1&lt;src.size&lt;0&gt;()-i)
+@@ -8374,6 +8448,20 @@
+ 	return false;
+ }
+ 
++#/*cut-cpp*/
++static bool typeid_equal_content(const parse_tree&amp; lhs, const parse_tree&amp; rhs,bool&amp; is_equal)
++{
++	if (   is_CPP0X_typeid_expression(lhs) &amp;&amp; is_CPP0X_typeid_expression(rhs)
++		&amp;&amp; C_TYPE::NOT_VOID!=lhs.data&lt;2&gt;()-&gt;type_code.base_type_index
++		&amp;&amp; C_TYPE::NOT_VOID!=rhs.data&lt;2&gt;()-&gt;type_code.base_type_index)
++		{
++		is_equal = lhs.type_code.typeid_equal(rhs.type_code);
++		return true;
++		}
++	return false;
++}
++
++#/*cut-cpp*/
+ static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {	
+ 	BOOST_STATIC_ASSERT(1==C99_EQUALITY_SUBTYPE_NEQ-C99_EQUALITY_SUBTYPE_EQ);
+@@ -8390,7 +8478,11 @@
+ 				//! \test default/Pass_if_nonzero.hpp, default/Pass_if_nonzero.h, 
+ 				//! \test default/Pass_if_zero.hpp, default/Pass_if_zero.h, 
+ 			bool is_equal = false;
+-			if (C_string_literal_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal))
++			if (   C_string_literal_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
++#/*cut-cpp*/
++				|| typeid_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
++#/*cut-cpp*/
++				)
+ 				{
+ 				force_decimal_literal(src,is_equal_op==is_equal ? &quot;1&quot; : &quot;0&quot;,types);
+ 				return true;
+
+Modified: trunk/CSupport.hpp
+===================================================================
+--- trunk/CSupport.hpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/CSupport.hpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -1,4 +1,4 @@
+-// CSupport.hpp
++// CSupport_pp.hpp
+ // support for C/C++ language parsing
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+@@ -133,7 +133,7 @@
+ extern const size_t C_int_priority[];
+ 
+ #define C_TYPE_MAX 21
+-#define CPP_TYPE_MAX 22
++#define CPP_TYPE_MAX 23
+ #define C_INT_PRIORITY_SIZE 7
+ #define C_PP_INT_PRIORITY_ORIGIN 4
+ 
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/CSupport_pp.cpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -558,7 +558,8 @@
+ 	FLOAT__COMPLEX,
+ 	DOUBLE__COMPLEX,
+ 	LDOUBLE__COMPLEX,
+-	WCHAR_T
++	WCHAR_T,	// C++-specific
++	TYPEINFO	// C++-specific
+ };
+ 
+ }
+@@ -905,7 +906,8 @@
+ 		DICT_STRUCT(&quot;float _Complex&quot;),		/* start C++ extension support: C99 _Complex in C++ (we can do this as _Complex is reserved to the implementation) */
+ 		DICT_STRUCT(&quot;double _Complex&quot;),
+ 		DICT_STRUCT(&quot;long double _Complex&quot;),
+-		DICT_STRUCT(&quot;wchar_t&quot;)
++		DICT_STRUCT(&quot;wchar_t&quot;),			// C++-specific
++		DICT_STRUCT(&quot;std::typeinfo&quot;)	// C++-specific
+ 		};
+ 
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+@@ -3359,7 +3361,7 @@
+ {
+ 	if (NULL!=src.index_tokens[0].token.first)
+ 		{
+-		if (token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;_Bool&quot;))
++		if (token_is_string&lt;4&gt;(src.index_tokens[0].token,&quot;bool&quot;))
+ 			{
+ 			src.type_code.set_type(C_TYPE::BOOL);
+ 			src.flags |= PARSE_PRIMARY_TYPE;
+@@ -4700,8 +4702,6 @@
+ 				{
+ 				}
+ 			}
+-		}
+-	else{	// if (NULL==src.data&lt;0&gt;()[i].index_tokens[1].token.first)
+ 		if (token_is_char&lt;'.'&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token))
+ 			{
+ 			if (1&lt;=i &amp;&amp; 1&lt;src.size&lt;0&gt;()-i)
+@@ -7496,7 +7496,8 @@
+ 				//! \test default/Pass_if_nonzero.hpp, default/Pass_if_nonzero.h, 
+ 				//! \test default/Pass_if_zero.hpp, default/Pass_if_zero.h, 
+ 			bool is_equal = false;
+-			if (C_string_literal_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal))
++			if (   C_string_literal_equal_content(*src.data&lt;1&gt;(),*src.data&lt;2&gt;(),is_equal)
++				)
+ 				{
+ 				force_decimal_literal(src,is_equal_op==is_equal ? &quot;1&quot; : &quot;0&quot;,types);
+ 				return true;
+
+Modified: trunk/CSupport_pp.hpp
+===================================================================
+--- trunk/CSupport_pp.hpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/CSupport_pp.hpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -1,4 +1,4 @@
+-// CSupport_pp.hpp
++// CSupport.hpp
+ // support for C/C++ language parsing
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+@@ -123,7 +123,7 @@
+ extern const size_t C_int_priority[];
+ 
+ #define C_TYPE_MAX 21
+-#define CPP_TYPE_MAX 22
++#define CPP_TYPE_MAX 23
+ #define C_INT_PRIORITY_SIZE 7
+ #define C_PP_INT_PRIORITY_ORIGIN 4
+ 
+
+Added: trunk/tests/zcc/default/staticassert/Pass_typeid.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/tests/zcc/default/staticassert/Pass_typeid.hpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -0,0 +1,29 @@
++// tests/zcc/default/Pass_typeid.hpp
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++// The result of the typeid operator itself isn't a compile-time expression
++// (it's a std::typeinfo structure) -- but the result of == and != operators
++// can be known at compile-time in simple cases.
++
++// identity checks
++static_assert(typeid(bool)==typeid(bool),&quot;automatic success failed&quot;);
++static_assert(typeid(char)==typeid(char),&quot;automatic success failed&quot;);
++static_assert(typeid(signed char)==typeid(signed char),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned char)==typeid(unsigned char),&quot;automatic success failed&quot;);
++static_assert(typeid(short)==typeid(short),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned short)==typeid(unsigned short),&quot;automatic success failed&quot;);
++static_assert(typeid(int)==typeid(int),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned int)==typeid(unsigned int),&quot;automatic success failed&quot;);
++static_assert(typeid(long)==typeid(long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long)==typeid(unsigned long),&quot;automatic success failed&quot;);
++static_assert(typeid(long long)==typeid(long long),&quot;automatic success failed&quot;);
++static_assert(typeid(unsigned long long)==typeid(unsigned long long),&quot;automatic success failed&quot;);
++static_assert(typeid(float)==typeid(float),&quot;automatic success failed&quot;);
++static_assert(typeid(double)==typeid(double),&quot;automatic success failed&quot;);
++static_assert(typeid(long double)==typeid(long double),&quot;automatic success failed&quot;);
++
++// these three aren't remotely required by the C++ standards, but Z.C++
++// wants to support C _Complex as an extension.
++static_assert(typeid(float _Complex)==typeid(float _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(double _Complex)==typeid(double _Complex),&quot;automatic success failed&quot;);
++static_assert(typeid(long double _Complex)==typeid(long double _Complex),&quot;automatic success failed&quot;);
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/type_spec.cpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -173,6 +173,21 @@
+ 		&amp;&amp; (0==pointer_power || !memcmp(extent_vector,rhs.extent_vector,sizeof(uintmax_t)*pointer_power));
+ }
+ 
++bool type_spec::typeid_equal(const type_spec&amp; rhs) const
++{
++	if (   base_type_index==rhs.base_type_index
++		&amp;&amp; pointer_power==rhs.pointer_power)
++		{	// C++0X 5.2.8p5: lose the topmost level of 
++			// C++ cv-qualification (extending to C would be 
++			// C type-qualifiers)
++		if (0==pointer_power) return true;
++		if (	!memcmp(extent_vector,rhs.extent_vector,sizeof(uintmax_t)*pointer_power)
++			&amp;&amp;	!memcmp(q_vector.data(),rhs.q_vector.data(),pointer_power))
++			return true;
++		}
++	return false;
++}
++
+ void type_spec::MoveInto(type_spec&amp; dest)
+ {
+ 	dest.destroy();
+
+Modified: trunk/type_spec.hpp
+===================================================================
+--- trunk/type_spec.hpp	2010-05-17 19:08:11 UTC (rev 437)
++++ trunk/type_spec.hpp	2010-05-19 08:21:44 UTC (rev 438)
+@@ -64,6 +64,7 @@
+ 
+ 	//! \throw std::bad_alloc only if dest.pointer_power&lt;src.pointer_power 
+ 	static void value_copy(type_spec&amp; dest, const type_spec&amp; src) {::value_copy(dest,src);};
++	bool typeid_equal(const type_spec&amp; rhs) const;
+ 	void MoveInto(type_spec&amp; dest);
+ 	void OverwriteInto(type_spec&amp; dest);
+ #ifndef ZAIMONI_FORCE_ISO
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000204.html">[Zcplusplus-commits] r437 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000206.html">[Zcplusplus-commits] r439 - in trunk: .	tests/zcc/default/staticassert
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#205">[ date ]</a>
+              <a href="thread.html#205">[ thread ]</a>
+              <a href="subject.html#205">[ subject ]</a>
+              <a href="author.html#205">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,468 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r643%20-%20in%20trunk%3A%20.%20Zaimoni.STL/LexParse&In-Reply-To=%3C20110428213037.77F60480F93%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000409.html">
+   <LINK REL="Next"  HREF="000411.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r643%20-%20in%20trunk%3A%20.%20Zaimoni.STL/LexParse&In-Reply-To=%3C20110428213037.77F60480F93%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 28 23:30:37 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000409.html">[Zcplusplus-commits] r642 - trunk/tests/cpp
+</A></li>
+        <LI>Next message: <A HREF="000411.html">[Zcplusplus-commits] r644 - in trunk: . doc lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#410">[ date ]</a>
+              <a href="thread.html#410">[ thread ]</a>
+              <a href="subject.html#410">[ subject ]</a>
+              <a href="author.html#410">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-28 23:30:37 +0200 (Thu, 28 Apr 2011)
+New Revision: 643
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc.hpp
+   trunk/CPreproc_pp.cpp
+   trunk/CPreproc_pp.hpp
+   trunk/Zaimoni.STL/LexParse/LangConf.cpp
+   trunk/Zaimoni.STL/LexParse/LangConf.hpp
+   trunk/z_cpp.cpp
+   trunk/zcc.cpp
+Log:
+Law of Demeter change: require_padding now a member of LangConf, not CPreprocessor
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/CPreproc.cpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -2868,10 +2868,10 @@
+ 
+ 	size_t buffer_used = 0;
+ 	char Buffer[4] = &quot;&quot;;
+-	if (0&lt;pretokenized[i].first &amp;&amp; require_padding(x.data()[pretokenized[i].first-1],src))
++	if (0&lt;pretokenized[i].first &amp;&amp; lang.require_padding(x.data()[pretokenized[i].first-1],src))
+ 		Buffer[buffer_used++] = ' ';
+ 	Buffer[buffer_used++] = src;
+-	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
++	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; lang.require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
+ 		Buffer[buffer_used++] = ' ';
+ 
+ 	x.replace_once(std::nothrow,pretokenized[i].first,(pretokenized[i+delta].first-pretokenized[i].first)+pretokenized[i+delta].second,Buffer);
+@@ -3409,15 +3409,15 @@
+ 			x.rtrim(token_len);
+ 		else if (0==critical_offset)
+ 			x.ltrim(token_len);
+-		else if (require_padding(x.data()[critical_offset-1],x.data()[critical_offset+token_len]))
++		else if (lang.require_padding(x.data()[critical_offset-1],x.data()[critical_offset+token_len]))
+ 			x.replace_once(std::nothrow,critical_offset,token_len,' ');
+ 		else
+ 			x.intradelete(critical_offset,token_len);
+ 		return;
+ 		}
+ 
+-	const bool pad_left = 0&lt;critical_offset &amp;&amp; require_padding(x.data()[critical_offset-1],macro_value[0]);
+-	const bool pad_right = x.size()&gt;critical_offset+token_len &amp;&amp; require_padding(macro_value[strlen(macro_value)-1],x.data()[critical_offset+token_len]);
++	const bool pad_left = 0&lt;critical_offset &amp;&amp; lang.require_padding(x.data()[critical_offset-1],macro_value[0]);
++	const bool pad_right = x.size()&gt;critical_offset+token_len &amp;&amp; lang.require_padding(macro_value[strlen(macro_value)-1],x.data()[critical_offset+token_len]);
+ 
+ 	if (pad_right) x.replace_once(critical_offset+token_len,0,' ');
+ 	x.replace_once(critical_offset,token_len,macro_value);
+@@ -3964,7 +3964,7 @@
+ 		size_t i = 0;
+ 		while(i&lt;list_size)
+ 			{
+-			if (0&lt;i &amp;&amp; TokenList[i-1]-&gt;logical_line.first==TokenList[i]-&gt;logical_line.first &amp;&amp; !strcmp(TokenList[i-1]-&gt;src_filename,TokenList[i]-&gt;src_filename) &amp;&amp; require_padding(TokenList[i-1]-&gt;back(),TokenList[i]-&gt;front()))
++			if (0&lt;i &amp;&amp; TokenList[i-1]-&gt;logical_line.first==TokenList[i]-&gt;logical_line.first &amp;&amp; !strcmp(TokenList[i-1]-&gt;src_filename,TokenList[i]-&gt;src_filename) &amp;&amp; lang.require_padding(TokenList[i-1]-&gt;back(),TokenList[i]-&gt;front()))
+ 				INC_INFORM(' ');
+ 
+ 			if (list_size&lt;=i+1 || TokenList[i]-&gt;logical_line.first!=TokenList[i+1]-&gt;logical_line.first || strcmp(TokenList[i]-&gt;src_filename,TokenList[i+1]-&gt;src_filename))
+@@ -4364,31 +4364,6 @@
+ }
+ 
+ /*! 
+- * test whether two characters will glue two non-whitespace preprocessing tokens into one.
+- * This can tolerate false positives, but not false negatives.
+- * 
+- * \param lhs: left-hand character
+- * \param rhs: right-hand character
+- * 
+- * \return bool true iff they will glue tokens
+- */
+-bool CPreprocessor::require_padding(char lhs, char rhs) const
+-{
+-	if (strchr(lang.WhiteSpace+1,lhs)) return false;	// whitespace is fine
+-	if (strchr(lang.WhiteSpace+1,rhs)) return false;
+-	if (strchr(lang.AtomicSymbols,lhs)) return false;	// atomic characters are fine
+-	if (strchr(lang.AtomicSymbols,rhs)) return false;
+-	if ('\''==lhs || '&quot;'==lhs) return false;	// string/character literals are fine
+-	if ('\''==rhs || '&quot;'==rhs) return false;
+-	// word-chars glue to word-chars
+-	// symbol-chars glue to symbol-chars
+-	// universal-char-names will glue as well as normal word-chars
+-	const bool rhs_word_char = lang.IsWordChar(rhs);
+-	if (lang.IsWordChar(lhs)) return '\\'==rhs || rhs_word_char;
+-	return !rhs_word_char;
+-}
+-
+-/*! 
+  * Checks that a string has no identifiers within it.  That means no macro replacement can happen within it.
+  *
+  * \pre lang uses C_TESTFLAG_IDENTIFIER to indicate an identifier was lexed
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/CPreproc.cpp.in	2011-04-28 21:30:37 UTC (rev 643)
+@@ -2909,10 +2909,10 @@
+ 
+ 	size_t buffer_used = 0;
+ 	char Buffer[4] = &quot;&quot;;
+-	if (0&lt;pretokenized[i].first &amp;&amp; require_padding(x.data()[pretokenized[i].first-1],src))
++	if (0&lt;pretokenized[i].first &amp;&amp; lang.require_padding(x.data()[pretokenized[i].first-1],src))
+ 		Buffer[buffer_used++] = ' ';
+ 	Buffer[buffer_used++] = src;
+-	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
++	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; lang.require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
+ 		Buffer[buffer_used++] = ' ';
+ 
+ 	x.replace_once(std::nothrow,pretokenized[i].first,(pretokenized[i+delta].first-pretokenized[i].first)+pretokenized[i+delta].second,Buffer);
+@@ -3455,15 +3455,15 @@
+ 			x.rtrim(token_len);
+ 		else if (0==critical_offset)
+ 			x.ltrim(token_len);
+-		else if (require_padding(x.data()[critical_offset-1],x.data()[critical_offset+token_len]))
++		else if (lang.require_padding(x.data()[critical_offset-1],x.data()[critical_offset+token_len]))
+ 			x.replace_once(std::nothrow,critical_offset,token_len,' ');
+ 		else
+ 			x.intradelete(critical_offset,token_len);
+ 		return;
+ 		}
+ 
+-	const bool pad_left = 0&lt;critical_offset &amp;&amp; require_padding(x.data()[critical_offset-1],macro_value[0]);
+-	const bool pad_right = x.size()&gt;critical_offset+token_len &amp;&amp; require_padding(macro_value[strlen(macro_value)-1],x.data()[critical_offset+token_len]);
++	const bool pad_left = 0&lt;critical_offset &amp;&amp; lang.require_padding(x.data()[critical_offset-1],macro_value[0]);
++	const bool pad_right = x.size()&gt;critical_offset+token_len &amp;&amp; lang.require_padding(macro_value[strlen(macro_value)-1],x.data()[critical_offset+token_len]);
+ 
+ 	if (pad_right) x.replace_once(critical_offset+token_len,0,' ');
+ 	x.replace_once(critical_offset,token_len,macro_value);
+@@ -4010,7 +4010,7 @@
+ 		size_t i = 0;
+ 		while(i&lt;list_size)
+ 			{
+-			if (0&lt;i &amp;&amp; TokenList[i-1]-&gt;logical_line.first==TokenList[i]-&gt;logical_line.first &amp;&amp; !strcmp(TokenList[i-1]-&gt;src_filename,TokenList[i]-&gt;src_filename) &amp;&amp; require_padding(TokenList[i-1]-&gt;back(),TokenList[i]-&gt;front()))
++			if (0&lt;i &amp;&amp; TokenList[i-1]-&gt;logical_line.first==TokenList[i]-&gt;logical_line.first &amp;&amp; !strcmp(TokenList[i-1]-&gt;src_filename,TokenList[i]-&gt;src_filename) &amp;&amp; lang.require_padding(TokenList[i-1]-&gt;back(),TokenList[i]-&gt;front()))
+ 				INC_INFORM(' ');
+ 
+ 			if (list_size&lt;=i+1 || TokenList[i]-&gt;logical_line.first!=TokenList[i+1]-&gt;logical_line.first || strcmp(TokenList[i]-&gt;src_filename,TokenList[i+1]-&gt;src_filename))
+@@ -4417,31 +4417,6 @@
+ }
+ 
+ /*! 
+- * test whether two characters will glue two non-whitespace preprocessing tokens into one.
+- * This can tolerate false positives, but not false negatives.
+- * 
+- * \param lhs: left-hand character
+- * \param rhs: right-hand character
+- * 
+- * \return bool true iff they will glue tokens
+- */
+-bool CPreprocessor::require_padding(char lhs, char rhs) const
+-{
+-	if (strchr(lang.WhiteSpace+1,lhs)) return false;	// whitespace is fine
+-	if (strchr(lang.WhiteSpace+1,rhs)) return false;
+-	if (strchr(lang.AtomicSymbols,lhs)) return false;	// atomic characters are fine
+-	if (strchr(lang.AtomicSymbols,rhs)) return false;
+-	if ('\''==lhs || '&quot;'==lhs) return false;	// string/character literals are fine
+-	if ('\''==rhs || '&quot;'==rhs) return false;
+-	// word-chars glue to word-chars
+-	// symbol-chars glue to symbol-chars
+-	// universal-char-names will glue as well as normal word-chars
+-	const bool rhs_word_char = lang.IsWordChar(rhs);
+-	if (lang.IsWordChar(lhs)) return '\\'==rhs || rhs_word_char;
+-	return !rhs_word_char;
+-}
+-
+-/*! 
+  * Checks that a string has no identifiers within it.  That means no macro replacement can happen within it.
+  *
+  * \pre lang uses C_TESTFLAG_IDENTIFIER to indicate an identifier was lexed
+
+Modified: trunk/CPreproc.hpp
+===================================================================
+--- trunk/CPreproc.hpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/CPreproc.hpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -37,12 +37,12 @@
+ 	bool raw_system_include(const char* const look_for, zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; IncludeTokenList) const;
+ 
+ 	void set_debug(bool _debug_mode) {debug_mode = _debug_mode;};
+-	bool require_padding(char lhs, char rhs) const;
++	const zaimoni::LangConf&amp; lexer() {return lang;};
+ private:
+ 	uintmax_t counter_macro;
+ 	uintmax_t include_level;
+ 	size_t lang_code;
+-	zaimoni::LangConf&amp; lang;					//!&lt; lexer corresponding to the language being preprocessed
++	zaimoni::LangConf&amp; lang;	//!&lt; lexer corresponding to the language being preprocessed
+ 	const virtual_machine::CPUInfo&amp; target_machine;	//!&lt; target machine information
+ 	const zaimoni::POD_pair&lt;const char*,const char*&gt;* macro_identifier_default;
+ 	const zaimoni::POD_pair&lt;const char*,size_t&gt;* macro_locked_default; 
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/CPreproc_pp.cpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -2828,10 +2828,10 @@
+ 
+ 	size_t buffer_used = 0;
+ 	char Buffer[4] = &quot;&quot;;
+-	if (0&lt;pretokenized[i].first &amp;&amp; require_padding(x.data()[pretokenized[i].first-1],src))
++	if (0&lt;pretokenized[i].first &amp;&amp; lang.require_padding(x.data()[pretokenized[i].first-1],src))
+ 		Buffer[buffer_used++] = ' ';
+ 	Buffer[buffer_used++] = src;
+-	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
++	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; lang.require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
+ 		Buffer[buffer_used++] = ' ';
+ 
+ 	x.replace_once(std::nothrow,pretokenized[i].first,(pretokenized[i+delta].first-pretokenized[i].first)+pretokenized[i+delta].second,Buffer);
+@@ -3369,15 +3369,15 @@
+ 			x.rtrim(token_len);
+ 		else if (0==critical_offset)
+ 			x.ltrim(token_len);
+-		else if (require_padding(x.data()[critical_offset-1],x.data()[critical_offset+token_len]))
++		else if (lang.require_padding(x.data()[critical_offset-1],x.data()[critical_offset+token_len]))
+ 			x.replace_once(std::nothrow,critical_offset,token_len,' ');
+ 		else
+ 			x.intradelete(critical_offset,token_len);
+ 		return;
+ 		}
+ 
+-	const bool pad_left = 0&lt;critical_offset &amp;&amp; require_padding(x.data()[critical_offset-1],macro_value[0]);
+-	const bool pad_right = x.size()&gt;critical_offset+token_len &amp;&amp; require_padding(macro_value[strlen(macro_value)-1],x.data()[critical_offset+token_len]);
++	const bool pad_left = 0&lt;critical_offset &amp;&amp; lang.require_padding(x.data()[critical_offset-1],macro_value[0]);
++	const bool pad_right = x.size()&gt;critical_offset+token_len &amp;&amp; lang.require_padding(macro_value[strlen(macro_value)-1],x.data()[critical_offset+token_len]);
+ 
+ 	if (pad_right) x.replace_once(critical_offset+token_len,0,' ');
+ 	x.replace_once(critical_offset,token_len,macro_value);
+@@ -3924,7 +3924,7 @@
+ 		size_t i = 0;
+ 		while(i&lt;list_size)
+ 			{
+-			if (0&lt;i &amp;&amp; TokenList[i-1]-&gt;logical_line.first==TokenList[i]-&gt;logical_line.first &amp;&amp; !strcmp(TokenList[i-1]-&gt;src_filename,TokenList[i]-&gt;src_filename) &amp;&amp; require_padding(TokenList[i-1]-&gt;back(),TokenList[i]-&gt;front()))
++			if (0&lt;i &amp;&amp; TokenList[i-1]-&gt;logical_line.first==TokenList[i]-&gt;logical_line.first &amp;&amp; !strcmp(TokenList[i-1]-&gt;src_filename,TokenList[i]-&gt;src_filename) &amp;&amp; lang.require_padding(TokenList[i-1]-&gt;back(),TokenList[i]-&gt;front()))
+ 				INC_INFORM(' ');
+ 
+ 			if (list_size&lt;=i+1 || TokenList[i]-&gt;logical_line.first!=TokenList[i+1]-&gt;logical_line.first || strcmp(TokenList[i]-&gt;src_filename,TokenList[i+1]-&gt;src_filename))
+@@ -4322,31 +4322,6 @@
+ }
+ 
+ /*! 
+- * test whether two characters will glue two non-whitespace preprocessing tokens into one.
+- * This can tolerate false positives, but not false negatives.
+- * 
+- * \param lhs: left-hand character
+- * \param rhs: right-hand character
+- * 
+- * \return bool true iff they will glue tokens
+- */
+-bool CPreprocessor::require_padding(char lhs, char rhs) const
+-{
+-	if (strchr(lang.WhiteSpace+1,lhs)) return false;	// whitespace is fine
+-	if (strchr(lang.WhiteSpace+1,rhs)) return false;
+-	if (strchr(lang.AtomicSymbols,lhs)) return false;	// atomic characters are fine
+-	if (strchr(lang.AtomicSymbols,rhs)) return false;
+-	if ('\''==lhs || '&quot;'==lhs) return false;	// string/character literals are fine
+-	if ('\''==rhs || '&quot;'==rhs) return false;
+-	// word-chars glue to word-chars
+-	// symbol-chars glue to symbol-chars
+-	// universal-char-names will glue as well as normal word-chars
+-	const bool rhs_word_char = lang.IsWordChar(rhs);
+-	if (lang.IsWordChar(lhs)) return '\\'==rhs || rhs_word_char;
+-	return !rhs_word_char;
+-}
+-
+-/*! 
+  * Checks that a string has no identifiers within it.  That means no macro replacement can happen within it.
+  *
+  * \pre lang uses C_TESTFLAG_IDENTIFIER to indicate an identifier was lexed
+
+Modified: trunk/CPreproc_pp.hpp
+===================================================================
+--- trunk/CPreproc_pp.hpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/CPreproc_pp.hpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -37,12 +37,12 @@
+ 	bool raw_system_include(const char* const look_for, zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; IncludeTokenList) const;
+ 
+ 	void set_debug(bool _debug_mode) {debug_mode = _debug_mode;};
+-	bool require_padding(char lhs, char rhs) const;
++	const zaimoni::LangConf&amp; lexer() {return lang;};
+ private:
+ 	uintmax_t counter_macro;
+ 	uintmax_t include_level;
+ 	size_t lang_code;
+-	zaimoni::LangConf&amp; lang;					//!&lt; lexer corresponding to the language being preprocessed
++	zaimoni::LangConf&amp; lang;	//!&lt; lexer corresponding to the language being preprocessed
+ 	const virtual_machine::CPUInfo&amp; target_machine;	//!&lt; target machine information
+ 	const zaimoni::POD_pair&lt;const char*,const char*&gt;* macro_identifier_default;
+ 	const zaimoni::POD_pair&lt;const char*,size_t&gt;* macro_locked_default; 
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.cpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.cpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/Zaimoni.STL/LexParse/LangConf.cpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -505,3 +505,28 @@
+ 	return true;
+ }
+ 
++/*! 
++ * test whether two characters will glue two non-whitespace preprocessing tokens into one.
++ * This can tolerate false positives, but not false negatives.
++ * 
++ * \param lhs: left-hand character
++ * \param rhs: right-hand character
++ * 
++ * \return bool true iff they will glue tokens
++ */
++bool LangConf::_require_padding(char lhs, char rhs) const
++{
++	if (strchr(WhiteSpace+1,lhs)) return false;	// whitespace is fine
++	if (strchr(WhiteSpace+1,rhs)) return false;
++	if (strchr(AtomicSymbols,lhs)) return false;	// atomic characters are fine
++	if (strchr(AtomicSymbols,rhs)) return false;
++	if ('\''==lhs || '&quot;'==lhs) return false;	// string/character literals are fine
++	if ('\''==rhs || '&quot;'==rhs) return false;
++	// word-chars glue to word-chars
++	// symbol-chars glue to symbol-chars
++	// universal-char-names will glue as well as normal word-chars
++	const bool rhs_word_char = IsWordChar(rhs);
++	if (IsWordChar(lhs)) return '\\'==rhs || rhs_word_char;
++	return !rhs_word_char;
++}
++
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.hpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.hpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/Zaimoni.STL/LexParse/LangConf.hpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -311,7 +311,14 @@
+ 		assert(target_len&lt;=strlen(target));
+ 		return _line_lex_find(x,x_len,target,target_len,pretokenized);
+ 		};
+-
++	bool require_padding(char lhs, char rhs) const
++		{
++		assert(WhiteSpace);
++		assert(AtomicSymbols);
++		assert(IsWordChar);
++		return _require_padding(lhs,rhs);
++		};
++		
+ 	void NewContext(const char* _filename)	// no clients
+ 		{
+ 		error_count = 0;
+@@ -350,6 +357,7 @@
+ #endif
+ 	void _line_lex(const char* const x, const size_t x_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const;
+ 	bool _line_lex_find(const char* const x, const size_t x_len, const char* const target, size_t target_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const;
++	bool _require_padding(char lhs, char rhs) const;
+ };
+ 
+ }	// namespace zaimoni
+
+Modified: trunk/z_cpp.cpp
+===================================================================
+--- trunk/z_cpp.cpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/z_cpp.cpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -16,6 +16,7 @@
+ #include &quot;_version.h&quot;
+ 
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
++#include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ #include &lt;stdio.h&gt;
+ 
+ error_counter&lt;size_t&gt; zcc_errors(100,&quot;FATAL: too many preprocessing errors&quot;);
+@@ -258,7 +259,7 @@
+ 			STL_PTR_STRING_TO_STDOUT(TokenList[i]);
+ 			if (list_size&lt;=i+1 || TokenList[i]-&gt;logical_line.first!=TokenList[i+1]-&gt;logical_line.first || strcmp(TokenList[i]-&gt;src_filename,TokenList[i+1]-&gt;src_filename))
+ 				STRING_LITERAL_TO_STDOUT(&quot;\n&quot;);
+-			else if (cpp.require_padding(TokenList[i]-&gt;back(),TokenList[i+1]-&gt;front()))
++			else if (cpp.lexer().require_padding(TokenList[i]-&gt;back(),TokenList[i+1]-&gt;front()))
+ 				STRING_LITERAL_TO_STDOUT(&quot; &quot;);
+ 			++i;
+ 			};
+
+Modified: trunk/zcc.cpp
+===================================================================
+--- trunk/zcc.cpp	2011-04-28 14:46:45 UTC (rev 642)
++++ trunk/zcc.cpp	2011-04-28 21:30:37 UTC (rev 643)
+@@ -18,6 +18,7 @@
+ #include &quot;_version.h&quot;
+ 
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
++#include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ 
+ #include &lt;stdio.h&gt;
+ 
+@@ -256,7 +257,7 @@
+ 				STL_PTR_STRING_TO_STDOUT(TokenList[i]);
+ 				if (list_size&lt;=i+1 || TokenList[i]-&gt;logical_line.first!=TokenList[i+1]-&gt;logical_line.first || strcmp(TokenList[i]-&gt;src_filename,TokenList[i+1]-&gt;src_filename))
+ 					STRING_LITERAL_TO_STDOUT(&quot;\n&quot;);
+-				else if (cpp.require_padding(TokenList[i]-&gt;back(),TokenList[i+1]-&gt;front()))
++				else if (cpp.lexer().require_padding(TokenList[i]-&gt;back(),TokenList[i+1]-&gt;front()))
+ 					STRING_LITERAL_TO_STDOUT(&quot; &quot;);
+ 				++i;
+ 				};
+@@ -275,7 +276,7 @@
+ 				STL_PTR_STRING_TO_STDOUT(TokenList[i]);
+ 				if (list_size&lt;=i+1 || TokenList[i]-&gt;logical_line.first!=TokenList[i+1]-&gt;logical_line.first || strcmp(TokenList[i]-&gt;src_filename,TokenList[i+1]-&gt;src_filename))
+ 					STRING_LITERAL_TO_STDOUT(&quot;\n&quot;);
+-				else if (cpp.require_padding(TokenList[i]-&gt;back(),TokenList[i+1]-&gt;front()))
++				else if (cpp.lexer().require_padding(TokenList[i]-&gt;back(),TokenList[i+1]-&gt;front()))
+ 					STRING_LITERAL_TO_STDOUT(&quot; &quot;);
+ 				++i;
+ 				};
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000409.html">[Zcplusplus-commits] r642 - trunk/tests/cpp
+</A></li>
+	<LI>Next message: <A HREF="000411.html">[Zcplusplus-commits] r644 - in trunk: . doc lib
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#410">[ date ]</a>
+              <a href="thread.html#410">[ thread ]</a>
+              <a href="subject.html#410">[ subject ]</a>
+              <a href="author.html#410">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

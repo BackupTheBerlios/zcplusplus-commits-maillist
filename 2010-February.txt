@@ -1,0 +1,466 @@
+From zaimoni at mail.berlios.de  Sat Feb 13 22:25:53 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 13 Feb 2010 22:25:53 +0100
+Subject: [Zcplusplus-commits] r332 - trunk
+Message-ID: <201002132125.o1DLPrrC015668@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-02-13 22:25:50 +0100 (Sat, 13 Feb 2010)
+New Revision: 332
+
+Modified:
+   trunk/AtomicString.cpp
+Log:
+make this actually implement binary search
+
+Modified: trunk/AtomicString.cpp
+===================================================================
+--- trunk/AtomicString.cpp	2010-01-27 08:15:17 UTC (rev 331)
++++ trunk/AtomicString.cpp	2010-02-13 21:25:50 UTC (rev 332)
+@@ -50,19 +50,10 @@
+ 		int test = strncmp(x,string_cache[midpoint],x_len);
+ 		if (0==test && x_len<strlen(string_cache[midpoint])) test = -1;
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0<test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0<test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0<test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	char** Tmp = (char**)(realloc(string_cache,sizeof(char*)*(string_cache_size+1)));
+ 	if (NULL==Tmp) _fatal(RAM_FAIL);
+@@ -88,19 +79,10 @@
+ 		int test = strncmp(x,string_cache[midpoint],x_len);
+ 		if (0==test && x_len<strlen(string_cache[midpoint])) test = -1;
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0<test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0<test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0<test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	return NULL;
+ }
+@@ -115,19 +97,10 @@
+ 		const size_t midpoint = LB + (StrictUB-LB)/2;
+ 		const int test = strcmp(x,string_cache[midpoint]);
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0<test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0<test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0<test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	char** Tmp = reinterpret_cast<char**>(realloc(string_cache,sizeof(char*)*(string_cache_size+1)));
+ 	if (NULL==Tmp) _fatal(RAM_FAIL);
+@@ -152,19 +125,10 @@
+ 		const size_t midpoint = LB + (StrictUB-LB)/2;
+ 		const int test = strcmp(x,string_cache[midpoint]);
+ 		if (0==test) return string_cache[midpoint];
+-		if (midpoint==LB)
+-			{
+-			if (0<test)
+-				++LB;
+-			else
+-				--StrictUB;
+-			}
+-		else{
+-			if (0<test)
+-				LB = midpoint+1;
+-			else
+-				StrictUB = midpoint-1;
+-			};
++		if (0<test)
++			LB = midpoint+1;
++		else
++			StrictUB = midpoint;
+ 		};
+ 	return NULL;
+ }
+
+
+
+From zaimoni at mail.berlios.de  Sat Feb 13 22:27:15 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 13 Feb 2010 22:27:15 +0100
+Subject: [Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <201002132127.o1DLRFu7015950@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-02-13 22:27:05 +0100 (Sat, 13 Feb 2010)
+New Revision: 333
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in
+   trunk/tests/zcc/decl.C99/Error_enum_typedef.h
+   trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+pre-existing typedefs stop enumerator definitions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/CSupport.cpp	2010-02-13 21:27:05 UTC (rev 333)
+@@ -126,7 +126,7 @@
+ 2 The usual mathematical formulas for complex multiply, divide, and absolute value are
+ problematic because of their treatment of infinities and because of undue overflow and
+ underflow. The CX_LIMITED_RANGE pragma can be used to inform the
+-implementation that (where the state is ?e?eon?f?f) the usual mathematical formulas are
++implementation that (where the state is defined) the usual mathematical formulas are
+ acceptable.165) The pragma can occur either outside external declarations or preceding all
+ explicit declarations and statements inside a compound statement. When outside external
+ declarations, the pragma takes effect from its occurrence until another
+@@ -134,9 +134,9 @@
+ When inside a compound statement, the pragma takes effect from its occurrence until
+ another CX_LIMITED_RANGE pragma is encountered (including within a nested
+ 165) The purpose of the pragma is to allow the implementation to use the formulas:
+-(x + iy) ?~ (u + iv) = (xu . yv) + i(yu + xv)
++(x + iy) * (u + iv) = (xu . yv) + i(yu + xv)
+ (x + iy) / (u + iv) = [(xu + yv) + i(yu . xv)]/(u2 + v2)
+-| x + iy | = ??. .... x2 + y2
++| x + iy | = *. .... x2 + y2
+ where the programmer can determine they are safe.
+ 
+ The FENV_ACCESS pragma provides a means to inform the implementation when a
+@@ -11045,7 +11045,7 @@
+ 			{	// --do-what-i-mean could recover if the prior definition were identical
+ 				// C: note on C99/C1X 6.7.2.2p3 indicates autofail no matter where it was defined
+ 				// C++: One Definition Rule wipes out
+-				//! \bug need test case
++				//! \test decl.C99/Error_enum_multidef.h, decl.C99/Error_enum_multidef.hpp 
+ 			message_header(src.data<0>()[i].index_tokens[0]);
+ 			INC_INFORM(ERR_STR);
+ 			INFORM("enumerator is already defined (C99 6.7.2.2p3/C++98 3.2)");
+@@ -11061,17 +11061,65 @@
+ 		// C++0X 3.3.1p4: enumerator gets to hide class names and enum names, nothing else [in particular dies against typedefs and functions]
+ 		if (types.enum_already_defined(active_namespace,src.data<0>()[i].index_tokens[0].token.first))
+ 			{	// -Wbackport warn in C++, fail in C
++			if (allow_empty)
++				{	// C++0X
++				if (bool_options[boolopt::warn_crosslang_compatibility] || bool_options[boolopt::warn_backport])
++					{
++					message_header(src.data<0>()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM("enum with same name as enumerator is already defined (C99 6.7.2.2p3/C++98 3.2/C++0X 3.2)");
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					}
++			else{	// C
++				message_header(src.data<0>()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM("enum with same name as enumerator is already defined (C99 6.7.2.2p3)");
++				zcc_errors.inc_error();
++				return false;
++				}	
+ 			};
+ 		if (types.union_class_struct_already_declared(active_namespace,src.data<0>()[i].index_tokens[0].token.first))
+ 			{	// -Wbackport warn in C++, fail in C
++			if (allow_empty)
++				{	// C++0X
++				if (bool_options[boolopt::warn_crosslang_compatibility] || bool_options[boolopt::warn_backport])
++					{
++					message_header(src.data<0>()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM("union, struct, or class with same name as enumerator is already defined (C99 6.7.2.2p3/C++98 3.2/C++0X 3.2)");
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					}
++				}
++			else{	// C
++				message_header(src.data<0>()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM("union or struct with same name as enumerator is already defined (C99 6.7.2.2p3)");
++				zcc_errors.inc_error();
++				return false;
++				}	
+ 			};
+ 		if (types.function_already_declared(active_namespace,src.data<0>()[i].index_tokens[0].token.first))
+ 			{	// C++: One Definition Rule
+ 			};
+-		if (types.typedef_already_defined(active_namespace,src.data<0>()[i].index_tokens[0].token.first))
++#endif
++		{
++		const zaimoni::POD_triple<type_spec,const char*,size_t>* const tmp = types.get_typedef_CPP(src.data<0>()[i].index_tokens[0].token.first,active_namespace); 
++		if (tmp)
+ 			{	// C++: One Definition Rule
++				//! \test decl.C99/Error_enum_typedef.h, decl.C99/Error_enum_typedef.hpp 
++			message_header(src.data<0>()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM("typedef is already defined, conflicts with enumerator (C99 6.7.2.2p3/C++98 3.2)");
++			INC_INFORM(tmp->second);
++			INC_INFORM(":");
++			INC_INFORM(tmp->third);
++			INFORM(": typedef definition here");
++			zcc_errors.inc_error();
++			return false;
+ 			};
+-#endif
++		}
+ 
+ 		// The type and representation of an enumeration varies by language
+ 		// C: values are type int; actual representation can be decided after seeing all enumeration values.
+@@ -11855,7 +11903,7 @@
+ 			// enum-specifier doesn't have a specific declaration mode
+ 			const type_system::type_index tmp2 = types.register_enum_def_CPP(src.data<0>()[i].index_tokens[1].token.first,active_namespace,src.data<0>()[i].index_tokens[1].logical_line,src.data<0>()[i].index_tokens[1].src_filename);
+ 			assert(types.get_id_enum_CPP(src.data<0>()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-			if (!record_enum_values(*src.c_array<0>()[i].c_array<2>(),types,tmp2,NULL,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
++			if (!record_enum_values(*src.c_array<0>()[i].c_array<2>(),types,tmp2,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+ 				{
+ 				INFORM("enumeration not fully parsed: stopping to prevent spurious errors");
+ 				return;
+@@ -11865,7 +11913,7 @@
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			const type_system::type_index tmp = types.register_enum_def_CPP("<unknown>",active_namespace,src.data<0>()[i].index_tokens[0].logical_line,src.data<0>()[i].index_tokens[0].src_filename);
+-			if (!record_enum_values(*src.c_array<0>()[i].c_array<2>(),types,tmp,NULL,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
++			if (!record_enum_values(*src.c_array<0>()[i].c_array<2>(),types,tmp,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+ 				{
+ 				INFORM("enumeration not fully parsed: stopping to prevent spurious errors");
+ 				return;
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef.h	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef.h	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,10 @@
++// decl.C99\Error_enum_typedef.h
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,10 @@
++// decl.C99\Error_enum_typedef.hpp
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_enum_typedef2.hpp
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
++}
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,10 @@
++SUFFIXES h hpp
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+
+
+From zaimoni at mail.berlios.de  Wed Feb 17 16:45:42 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 17 Feb 2010 16:45:42 +0100
+Subject: [Zcplusplus-commits] r334 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <201002171545.o1HFjg7F019116@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-02-17 16:45:35 +0100 (Wed, 17 Feb 2010)
+New Revision: 334
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in
+   trunk/tests/zcc/decl.C99/Error_typedef_enum.h
+   trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp
+   trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+other half of prohibited multiple definitions of enumerators and typedefs
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/CSupport.cpp	2010-02-17 15:45:35 UTC (rev 334)
+@@ -11664,8 +11664,23 @@
+ 								}	
+ 							// do not re-register if there is a prior definition
+ 							}
+-						else	// register this with types object
++						else{	// prepare to register this with types object
++							const type_system::enumerator_info* tmp2 = types.get_enumerator(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first);
++							if (tmp2)
++								{	//! \bug needs test case
++								message_header(src.data<0>()[i].index_tokens[0]);
++								INC_INFORM(ERR_STR);
++//								INFORM("enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3/C++98 3.2)");
++								INFORM("enumerator is already defined, conflicts with typedef (C99 6.7.2.2p3)");
++								INC_INFORM(tmp2->second.second.first);
++								INC_INFORM(":");
++								INC_INFORM(tmp2->second.second.second.first);
++								INFORM(": enumerator definition here");
++								zcc_errors.inc_error();
++								return;
++								}
+ 							types.set_typedef(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first,src.data<0>()[initdecl_identifier_idx].index_tokens[0].src_filename,src.data<0>()[initdecl_identifier_idx].index_tokens[0].logical_line.first,bootstrap);
++							}
+ 						}
+ #if 0
+ 					else{	// something else
+@@ -12399,6 +12414,19 @@
+ 							}
+ 						else{	// register this with types object
+ 							free(namespace_name);
++							const type_system::enumerator_info* tmp2 = types.get_enumerator_CPP(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first,active_namespace);
++							if (tmp2)
++								{	//! \bug needs test case
++								message_header(src.data<0>()[i].index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM("enumerator is already defined, conflicts with typedef (C++98 3.2)");
++								INC_INFORM(tmp2->second.second.first);
++								INC_INFORM(":");
++								INC_INFORM(tmp2->second.second.second.first);
++								INFORM(": enumerator definition here");
++								zcc_errors.inc_error();
++								return;
++								}							
+ 							types.set_typedef_CPP(src.c_array<0>()[initdecl_identifier_idx].index_tokens[0].token.first,active_namespace,src.data<0>()[initdecl_identifier_idx].index_tokens[0].src_filename,src.data<0>()[initdecl_identifier_idx].index_tokens[0].logical_line.first,bootstrap);
+ 							}
+ 						}
+
+Added: trunk/tests/zcc/decl.C99/Error_typedef_enum.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_typedef_enum.h	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc/decl.C99/Error_typedef_enum.h	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,9 @@
++// decl.C99\Error_typedef_enum.h
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
+
+Added: trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc/decl.C99/Error_typedef_enum.hpp	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,9 @@
++// decl.C99\Error_typedef_enum.hpp
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
+
+Added: trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc/decl.C99/Error_typedef_enum2.hpp	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_typedef_enum2.hpp
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
++
++}
+
+Added: trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in	2010-02-13 21:27:05 UTC (rev 333)
++++ trunk/tests/zcc.in/decl.C99/Error_typedef_enum.in	2010-02-17 15:45:35 UTC (rev 334)
+@@ -0,0 +1,9 @@
++SUFFIXES h hpp
++// using multiply defined typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++typedef int x_factor;
+
+
+

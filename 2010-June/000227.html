@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r460 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r460%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201006120621.o5C6LRKn029119%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000226.html">
+   <LINK REL="Next"  HREF="000228.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r460 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r460%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201006120621.o5C6LRKn029119%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r460 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Jun 12 08:21:27 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000226.html">[Zcplusplus-commits] r459 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+        <LI>Next message: <A HREF="000228.html">[Zcplusplus-commits] r461 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#227">[ date ]</a>
+              <a href="thread.html#227">[ thread ]</a>
+              <a href="subject.html#227">[ subject ]</a>
+              <a href="author.html#227">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-12 08:21:14 +0200 (Sat, 12 Jun 2010)
+New Revision: 460
+
+Modified:
+   trunk/CPreproc_autogen.cpp
+   trunk/CPreproc_autogen_pp.cpp
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/Zaimoni.STL/Compiler.h
+Log:
+promote DICT_STRUCT, DICT_STRUCT2 macros to Zaimoni.STL/Compiler.h; document test case existence
+
+Modified: trunk/CPreproc_autogen.cpp
+===================================================================
+--- trunk/CPreproc_autogen.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CPreproc_autogen.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -18,9 +18,6 @@
+ #undef VM_MAX_BIT_PLATFORM
+ #define VM_MAX_BIT_PLATFORM target_machine.C_bit&lt;virtual_machine::std_int_long_long&gt;()
+ 
+-//! \bug Once And Only Once violation
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-
+ //! \todo POSIX support as feasible
+ static const char* const limits_h_reserved[]
+ 	=	{	&quot;CHAR_BIT&quot;,
+
+Modified: trunk/CPreproc_autogen_pp.cpp
+===================================================================
+--- trunk/CPreproc_autogen_pp.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CPreproc_autogen_pp.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -15,9 +15,6 @@
+ #undef VM_MAX_BIT_PLATFORM
+ #define VM_MAX_BIT_PLATFORM target_machine.C_bit&lt;virtual_machine::std_int_long_long&gt;()
+ 
+-//! \bug Once And Only Once violation
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-
+ //! \todo POSIX support as feasible
+ static const char* const limits_h_reserved[]
+ 	=	{	&quot;CHAR_BIT&quot;,
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CSupport.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -377,10 +377,6 @@
+           xor  xor_eq
+ #endif
+ 
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-// regrettably, varadic macros are not C++98
+-#define DICT2_STRUCT(A,B) { (A), sizeof(A)-1, (B) }
+-
+ #define ATOMIC_PREPROC_PUNC &quot;()[]{};~,?&quot;
+ 
+ static const POD_triple&lt;const char*,size_t,unsigned int&gt; valid_pure_preprocessing_op_punc[]
+@@ -1135,9 +1131,6 @@
+ }	
+ #/*cut-cpp*/
+ 
+-#undef DICT2_STRUCT
+-#undef DICT_STRUCT
+-
+ const size_t C_int_priority[]
+ 	=	{
+ 		C_TYPE::INT,
+@@ -10770,7 +10763,7 @@
+ 					src.DeleteIdx&lt;0&gt;(i);
+ 					}
+ 				else if (!typeid_is_ok &amp;&amp; token_is_string&lt;6&gt;(src.data&lt;0&gt;()[i].index_tokens[0].token,&quot;typeid&quot;))
+-					//! \bug need test case
++					//! \test staticassert.C1X/Error_typeid_no_typeinfo.hpp
+ 					simple_error(src.c_array&lt;0&gt;()[i],&quot; requires #include &lt;typeinfo&gt; first (C++0X 5.2.8p6)&quot;);
+ 				}
+ 			}
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/CSupport_pp.cpp	2010-06-12 06:21:14 UTC (rev 460)
+@@ -363,10 +363,6 @@
+           xor  xor_eq
+ #endif
+ 
+-#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+-// regrettably, varadic macros are not C++98
+-#define DICT2_STRUCT(A,B) { (A), sizeof(A)-1, (B) }
+-
+ #define ATOMIC_PREPROC_PUNC &quot;()[]{};~,?&quot;
+ 
+ static const POD_triple&lt;const char*,size_t,unsigned int&gt; valid_pure_preprocessing_op_punc[]
+@@ -913,9 +909,6 @@
+ BOOST_STATIC_ASSERT(STATIC_SIZE(C_atomic_types)==C_TYPE_MAX);
+ BOOST_STATIC_ASSERT(STATIC_SIZE(CPP_atomic_types)==CPP_TYPE_MAX);
+ 
+-#undef DICT2_STRUCT
+-#undef DICT_STRUCT
+-
+ const size_t C_int_priority[]
+ 	=	{
+ 		C_TYPE::INT,
+
+Modified: trunk/Zaimoni.STL/Compiler.h
+===================================================================
+--- trunk/Zaimoni.STL/Compiler.h	2010-06-11 22:28:48 UTC (rev 459)
++++ trunk/Zaimoni.STL/Compiler.h	2010-06-12 06:21:14 UTC (rev 460)
+@@ -27,8 +27,13 @@
+ /* this is meant to be lightweight */
+ #define ZAIMONI_STATIC_ASSERT(A) typedef char DEEP_CONCATENATE(static_assert_,__LINE__)[(A) ? 1 : -1]
+ 
++/* size of a static array */
+ #define STATIC_SIZE(A) (sizeof(A)/sizeof(*A))
+ 
++/* some macros to help with aggregate initialization */
++#define DICT_STRUCT(A) { (A), sizeof(A)-1 }
++#define DICT2_STRUCT(A,B) { (A), sizeof(A)-1, (B) }
++
+ /* C strings to stdout; include stdio.h before using these */
+ /* including cstdio ok if not on a deathstation */
+ #define STRING_LITERAL_TO_STDOUT(A) fwrite(A,sizeof(A)-1,1,stdout)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000226.html">[Zcplusplus-commits] r459 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+	<LI>Next message: <A HREF="000228.html">[Zcplusplus-commits] r461 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#227">[ date ]</a>
+              <a href="thread.html#227">[ thread ]</a>
+              <a href="subject.html#227">[ subject ]</a>
+              <a href="author.html#227">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

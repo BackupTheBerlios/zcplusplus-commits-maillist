@@ -1,0 +1,274 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r288 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r288%20-%20trunk&In-Reply-To=%3C200911291752.nATHqufW023533%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000054.html">
+   <LINK REL="Next"  HREF="000056.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r288 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r288%20-%20trunk&In-Reply-To=%3C200911291752.nATHqufW023533%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r288 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Nov 29 18:52:56 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000054.html">[Zcplusplus-commits] r287 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000056.html">[Zcplusplus-commits] r289 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#55">[ date ]</a>
+              <a href="thread.html#55">[ thread ]</a>
+              <a href="subject.html#55">[ subject ]</a>
+              <a href="author.html#55">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-29 18:52:41 +0100 (Sun, 29 Nov 2009)
+New Revision: 288
+
+Added:
+   trunk/str_aux.cpp
+   trunk/str_aux.h
+Modified:
+   trunk/CSupport.cpp
+   trunk/MakeMake.cfg
+   trunk/POSIX.dep
+Log:
+relocate a couple of generic C string analysis functions.  (It looks like type_system is the place to handle C++ namespace lookup, so it will need access to these functions.)
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-11-28 17:31:00 UTC (rev 287)
++++ trunk/CSupport.cpp	2009-11-29 17:52:41 UTC (rev 288)
+@@ -9,6 +9,7 @@
+ #include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
+ #include &quot;AtomicString.h&quot;
++#include &quot;str_aux.h&quot;
+ #include &quot;Trigraph.hpp&quot;
+ #include &quot;Flat_UNI.hpp&quot;
+ #include &quot;errors.hpp&quot;
+@@ -10136,42 +10137,6 @@
+ 	void value_copy_type(type_spec&amp; dest) const {value_copy(dest,base_type);};
+ };
+ 
+-//! \todo belongs elsewhere
+-size_t count_disjoint_substring_instances(const char* const src,const char* const match)
+-{
+-	assert(src &amp;&amp; *src);
+-	assert(match &amp;&amp; *match);
+-	const size_t src_len = strlen(src);
+-	const size_t match_len = strlen(match);
+-	size_t n = 0;
+-	const char* test = strstr(src,match);
+-	while(NULL!=test)
+-		{
+-		++n;
+-		test = (2*match_len&lt;=src_len-(test-src)) ? strstr(test+match_len,match) : NULL;
+-		};
+-	return n;
+-}
+-
+-//! \todo belongs elsewhere
+-void report_disjoint_substring_instances(const char* const src,const char* const match,const char** const namespace_break_stack,const size_t namespace_break_stack_size)
+-{
+-	assert(NULL!=src &amp;&amp; *src);
+-	assert(NULL!=match &amp;&amp; *match);
+-	assert(NULL!=namespace_break_stack);
+-	const size_t src_len = strlen(src);
+-	const size_t match_len = strlen(match);
+-	size_t n = 0;
+-	const char* test = strstr(src,match);
+-	while(NULL!=test)
+-		{
+-		assert(namespace_break_stack_size&gt;n);
+-		namespace_break_stack[n++] = test;
+-		test = (2*match_len&lt;=src_len-(test-src)) ? strstr(test+match_len,match) : NULL;
+-		};
+-	assert(0&lt;n);
+-}
+-
+ class CPP0X_decl_specifier_scanner
+ {
+ private:
+
+Modified: trunk/MakeMake.cfg
+===================================================================
+--- trunk/MakeMake.cfg	2009-11-28 17:31:00 UTC (rev 287)
++++ trunk/MakeMake.cfg	2009-11-29 17:52:41 UTC (rev 288)
+@@ -1,6 +1,6 @@
+ ########
+-ProgObjects = {	'z_cpp':('z_cpp','errors','langroute','AtomicString','filesystem','CPUInfo','enum_type','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','load_src','CPreproc','CPreproc_autogen'),
+-				'zcc':('zcc','errors','langroute','AtomicString','filesystem','CPUInfo','enum_type','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','load_src','CPreproc','CPreproc_autogen','ZParser')}
++ProgObjects = {	'z_cpp':('z_cpp','errors','langroute','AtomicString','str_aux','filesystem','CPUInfo','enum_type','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','load_src','CPreproc','CPreproc_autogen'),
++				'zcc':('zcc','errors','langroute','AtomicString','str_aux','filesystem','CPUInfo','enum_type','struct_type','type_system','ParseTree','type_spec','CSupport','C_PPNumCore','C_PPDecimalInteger','C_PPOctalInteger','C_PPHexInteger','C_PPDecimalFloat','C_PPHexFloat','unsigned_aux','Trigraph','Flat_UNI','load_src','CPreproc','CPreproc_autogen','ZParser')}
+ MainPrograms = ['z_cpp','zcc']
+ 
+ # process control
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2009-11-28 17:31:00 UTC (rev 287)
++++ trunk/POSIX.dep	2009-11-29 17:52:41 UTC (rev 288)
+@@ -1,14 +1,15 @@
+-OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o filesystem.o CPUInfo.o enum_type.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = z_cpp.o errors.o CPreproc.o CSupport.o enum_type.o type_system.o struct_type.o ParseTree.o type_spec.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
++OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o filesystem.o CPUInfo.o enum_type.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o
++OBJECTS_Z_CPP_LINK_PRIORITY = str_aux.o CSupport.o type_system.o CPreproc.o errors.o z_cpp.o enum_type.o struct_type.o ParseTree.o type_spec.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
+ 
+-OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o filesystem.o CPUInfo.o enum_type.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = zcc.o errors.o CPreproc.o CSupport.o enum_type.o type_system.o struct_type.o ParseTree.o type_spec.o ZParser.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
++OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o filesystem.o CPUInfo.o enum_type.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
++OBJECTS_ZCC_LINK_PRIORITY = str_aux.o CSupport.o type_system.o CPreproc.o errors.o zcc.o enum_type.o struct_type.o ParseTree.o type_spec.o ZParser.o C_PPDecimalInteger.o C_PPHexInteger.o C_PPOctalInteger.o CPreproc_autogen.o unsigned_aux.o AtomicString.o CPUInfo.o langroute.o load_src.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o Flat_UNI.o
+ 
+ # dependencies
+ z_cpp.o: Zaimoni.STL/LexParse/Token.hpp CSupport.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Pure.C/format_util.h Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h unsigned_fixed_int.hpp unsigned_aux.hpp
+ errors.o: errors.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/Logging.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ langroute.o: langroute.hpp CSupport.hpp Zaimoni.STL/Logging.h Zaimoni.STL/POD.hpp type_algebra.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp
+ AtomicString.o: AtomicString.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
++str_aux.o: str_aux.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ filesystem.o: filesystem.h Zaimoni.STL/Compiler.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h
+ CPUInfo.o: CPUInfo.hpp unsigned_fixed_int.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ enum_type.o: enum_type.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp CPUInfo.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_fixed_int.hpp unsigned_aux.hpp
+@@ -16,7 +17,7 @@
+ type_system.o: type_system.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ type_spec.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-CSupport.o: CSupport.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp AtomicString.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_fixed_int.hpp unsigned_aux.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport.o: CSupport.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_fixed_int.hpp unsigned_aux.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPDecimalInteger.o: C_PPDecimalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPOctalInteger.o: C_PPOctalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+
+Added: trunk/str_aux.cpp
+===================================================================
+--- trunk/str_aux.cpp	2009-11-28 17:31:00 UTC (rev 287)
++++ trunk/str_aux.cpp	2009-11-29 17:52:41 UTC (rev 288)
+@@ -0,0 +1,46 @@
++// str_aux.cpp
++
++#include &quot;str_aux.h&quot;
++
++#include &lt;string.h&gt;
++#include &quot;Zaimoni.STL/Logging.h&quot;
++
++EXTERN_C size_t count_disjoint_substring_instances(const char* const src,const char* const match)
++{
++	assert(src &amp;&amp; *src);
++	assert(match &amp;&amp; *match);
++	const size_t src_len = strlen(src);
++	const size_t match_len = strlen(match);
++	size_t n = 0;
++	if (src_len/2&gt;=match_len)
++		{
++		const ptrdiff_t can_fit_threshold = src_len-2*match_len;
++		const char* test = strstr(src,match);
++		while(test)
++			{
++			++n;
++			test = (test-src&lt;=can_fit_threshold) ? strstr(test+match_len,match) : NULL;
++			};
++		}
++	return n;
++}
++
++EXTERN_C void report_disjoint_substring_instances(const char* const src,const char* const match,const char** const index_stack,const size_t index_stack_size)
++{
++	assert(src &amp;&amp; *src);
++	assert(match &amp;&amp; *match);
++	assert(index_stack);
++	assert(count_disjoint_substring_instances(src,match)==index_stack_size);
++	const size_t match_len = strlen(match);
++	const ptrdiff_t can_fit_threshold = strlen(src)-2*match_len;
++	size_t n = 0;
++	const char* test = strstr(src,match);
++	while(test)
++		{
++		assert(index_stack_size&gt;n);
++		index_stack[n++] = test;
++		test = (test-src&lt;=can_fit_threshold) ? strstr(test+match_len,match) : NULL;
++		};
++	assert(0&lt;n);
++}
++
+
+Added: trunk/str_aux.h
+===================================================================
+--- trunk/str_aux.h	2009-11-28 17:31:00 UTC (rev 287)
++++ trunk/str_aux.h	2009-11-29 17:52:41 UTC (rev 288)
+@@ -0,0 +1,37 @@
++// str_aux.h
++
++#ifndef STR_AUX_H
++#define STR_AUX_H 1
++
++#include &lt;stddef.h&gt;
++
++#ifdef __cplusplus
++extern &quot;C&quot;
++{
++#endif
++
++/*! 
++ * reports how many disjoint copies of the C string match are in the C string src
++ * 
++ * \param src string to count matches in
++ * \param match string to match
++ * 
++ * \return size_t count of matches
++ */
++size_t count_disjoint_substring_instances(const char* src,const char* match);
++
++/*! 
++ * populate namespace_break_stack with the indexes of the disjoint copies of C string match in C string src
++ * 
++ * \param src string to count matches in
++ * \param match string to match
++ * \param index_stack array of string match indexes to populate
++ * \param index_stack_size size of above array
++ */
++void report_disjoint_substring_instances(const char* src,const char* match,const char** index_stack,size_t index_stack_size);
++
++#ifdef __cplusplus
++}	/* extern &quot;C&quot; */
++#endif
++
++#endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000054.html">[Zcplusplus-commits] r287 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000056.html">[Zcplusplus-commits] r289 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#55">[ date ]</a>
+              <a href="thread.html#55">[ thread ]</a>
+              <a href="subject.html#55">[ subject ]</a>
+              <a href="author.html#55">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

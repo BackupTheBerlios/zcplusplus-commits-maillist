@@ -1,0 +1,821 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r392 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r392%20-%20trunk&In-Reply-To=%3C201004252056.o3PKuM5U019686%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000158.html">
+   <LINK REL="Next"  HREF="000160.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r392 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r392%20-%20trunk&In-Reply-To=%3C201004252056.o3PKuM5U019686%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r392 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 25 22:56:22 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000158.html">[Zcplusplus-commits] r391 - in trunk: . Zaimoni.STL Zaimoni.STL/bits
+</A></li>
+        <LI>Next message: <A HREF="000160.html">[Zcplusplus-commits] r393 - in trunk: . freezer
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#159">[ date ]</a>
+              <a href="thread.html#159">[ thread ]</a>
+              <a href="subject.html#159">[ subject ]</a>
+              <a href="author.html#159">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-25 22:56:15 +0200 (Sun, 25 Apr 2010)
+New Revision: 392
+
+Modified:
+   trunk/CPUInfo.cpp
+   trunk/CPUInfo.hpp
+   trunk/CPreproc_autogen.cpp
+   trunk/CPreproc_autogen_pp.cpp
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+remove ZCC_LEGACY_FIXED_INT and its preprocessor blocks
+
+Modified: trunk/CPUInfo.cpp
+===================================================================
+--- trunk/CPUInfo.cpp	2010-04-25 18:08:22 UTC (rev 391)
++++ trunk/CPUInfo.cpp	2010-04-25 20:56:15 UTC (rev 392)
+@@ -10,15 +10,6 @@
+ 
+ void CPUInfo::_init()
+ {
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM+1&gt; tmp;
+-
+-#define SET_MAXIMUM(A)	\
+-	tmp.clear();	\
+-	tmp.set((SUCCEED_OR_DIE(VM_MAX_BIT_PLATFORM&gt;=C_char_bit()*C_sizeof_##A()),C_char_bit()*C_sizeof_##A()));	\
+-	tmp -= 1;	\
+-	unsigned_maxima[std_int_##A-1] = tmp
+-#else
+ 	unsigned_var_int tmp;
+ 
+ #define SET_MAXIMUM(A)	\
+@@ -28,7 +19,6 @@
+ 	tmp -= 1;	\
+ 	tmp.set_bitcount(C_bit&lt;std_int_long_long&gt;());	\
+ 	tmp.MoveInto(unsigned_maxima[std_int_##A-1])
+-#endif
+ 
+ 	SET_MAXIMUM(char);
+ 	SET_MAXIMUM(short);
+@@ -55,11 +45,7 @@
+ 	const unsigned int bitcount = C_bit(machine_type);
+ 	const int target_bytecount = bitcount/CHAR_BIT;
+ 	const unsigned int target_bitcount = bitcount%CHAR_BIT;
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	assert(VM_MAX_BIT_PLATFORM&gt;=bitcount &amp;&amp; 1&lt;=bitcount);
+-#else
+ 	assert(C_bit&lt;std_int_long_long&gt;()&gt;=bitcount &amp;&amp; 1&lt;=bitcount);
+-#endif
+ 
+ 	switch(C_signed_int_representation())
+ 	{
+@@ -99,29 +85,17 @@
+ 		tmp += 1;
+ 		tmp.mask_to(C_bit(machine_type));
+ 		}
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	src_int = tmp;
+-#else
+ 	tmp.MoveInto(src_int);
+-#endif
+ }
+ 
+ void CPUInfo::unsigned_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const
+ {
+ 	assert(machine_type);
+ 	assert(src_int&lt;=unsigned_max(machine_type));
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	umaxint tmp(0);
+-#else
+ 	umaxint tmp(0,src_int.size());
+-#endif
+ 	tmp -= src_int;
+ 	tmp.mask_to(C_bit(machine_type));
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	src_int = tmp;
+-#else
+ 	tmp.MoveInto(src_int);
+-#endif
+ }
+ 
+ bool CPUInfo::is_zero(const unsigned char* x, size_t x_len, const promotion_info&amp; targettype) const
+
+Modified: trunk/CPUInfo.hpp
+===================================================================
+--- trunk/CPUInfo.hpp	2010-04-25 18:08:22 UTC (rev 391)
++++ trunk/CPUInfo.hpp	2010-04-25 20:56:15 UTC (rev 392)
+@@ -4,11 +4,7 @@
+ #ifndef CPUINFO_HPP
+ #define CPUINFO_HPP
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-#include &quot;unsigned_fixed_int.hpp&quot;
+-#else
+ #include &quot;unsigned_var_int.hpp&quot;
+-#endif
+ 
+ namespace virtual_machine {
+ 
+@@ -41,21 +37,13 @@
+ 	bool is_signed;	// as in std::numeric_limits
+ };
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-// adjust this upwards as needed
+-#define VM_MAX_BIT_PLATFORM 64
+-#else
+ // as the implementation, we are free to not provide a larger type than
+ // C long long.  Yhis macro doesn't work so well outside of the language 
+ // support files, which are expected to declare a CPUInfo* target_machine
+ #define VM_MAX_BIT_PLATFORM target_machine-&gt;C_bit&lt;virtual_machine::std_int_long_long&gt;()
+-#endif
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	typedef unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; umaxint;
+-#else
+-	typedef unsigned_var_int umaxint;
+-#endif	
++// leave this typedef, just in case we have to change this around again
++typedef unsigned_var_int umaxint;
+ 
+ // names of macro parameters match names of constructor variables
+ // target wchar_t is assumed to be an unsigned integral type
+
+Modified: trunk/CPreproc_autogen.cpp
+===================================================================
+--- trunk/CPreproc_autogen.cpp	2010-04-25 18:08:22 UTC (rev 391)
++++ trunk/CPreproc_autogen.cpp	2010-04-25 20:56:15 UTC (rev 392)
+@@ -14,13 +14,10 @@
+ 
+ using virtual_machine::umaxint;
+ 
+-#ifndef ZCC_LEGACY_FIXED_INT
+ // XXX adjust VM_MAX_BIT_PLATFORM to work inside of CPreprocessor XXX
+ #undef VM_MAX_BIT_PLATFORM
+ #define VM_MAX_BIT_PLATFORM target_machine.C_bit&lt;virtual_machine::std_int_long_long&gt;()
+-#endif
+ 
+-
+ //! \bug Once And Only Once violation
+ #define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+ 
+@@ -286,7 +283,7 @@
+ disallow_prior_definitions(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,size_t i,const char* const * identifiers,size_t identifiers_len)
+ {
+ 	assert(TokenList.size()&gt;i);
+-	assert(NULL!=identifiers);
++	assert(identifiers);
+ 	assert(0&lt;identifiers_len);
+ 	assert(SIZE_MAX/4&gt;=identifiers_len);
+ /*
+@@ -298,7 +295,7 @@
+ 	if (!TokenList.InsertNSlotsAt(4*identifiers_len,i)) throw std::bad_alloc();
+ 	while(0&lt;identifiers_len)
+ 		{
+-		assert(NULL!=*identifiers &amp;&amp; '\0'!=**identifiers);
++		assert(*identifiers &amp;&amp; **identifiers);
+ 		zaimoni::Token&lt;char&gt;** const tmp = TokenList.c_array();
+ 		tmp[i+3] = new zaimoni::Token&lt;char&gt;(&quot;#endif&quot;,0,sizeof(&quot;#endif&quot;)-1,0);
+ 
+@@ -357,12 +354,12 @@
+ lockdown_reserved_identifiers(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const size_t i,const char* const * identifiers,size_t identifiers_len)
+ {
+ 	assert(TokenList.size()&gt;i);
+-	assert(NULL!=identifiers);
++	assert(identifiers);
+ 	assert(0&lt;identifiers_len);
+ 	size_t target_len = sizeof(&quot;#pragma ZCC lock&quot;)-1;
+ 	size_t j = 0;
+ 	do	{
+-		assert(NULL!=*identifiers &amp;&amp; '\0'!=**identifiers);
++		assert(*identifiers &amp;&amp; **identifiers);
+ 		target_len += strlen(identifiers[j])+1;
+ 		}
+ 	while(identifiers_len&gt; ++j);
+@@ -397,13 +394,13 @@
+ 
+ static void final_init_tokenlist(zaimoni::Token&lt;char&gt;* const * x, size_t x_len, const char* const header_name)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+-	assert(NULL!=header_name);
++	assert(header_name &amp;&amp; *header_name);
+ 	while(0&lt;x_len)
+ 		{
+ 		--x_len;
+-		assert(NULL!=x[x_len]);
++		assert(x[x_len]);
+ 		x[x_len]-&gt;logical_line.first = x_len+1;
+ 		x[x_len]-&gt;logical_line.second = 0;
+ 		x[x_len]-&gt;original_line = x[x_len]-&gt;logical_line;
+@@ -420,17 +417,12 @@
+ void
+ CPreprocessor::create_limits_header(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const char* const header_name) const
+ {
++	assert(header_name &amp;&amp; *header_name);
++	assert(TokenList.empty());
+ 	// 2 for: leading space, trailing null-termination
+ 	// (VM_MAX_BIT_PLATFORM/3) for: digits (using octal rather than decimal count because that's easy to do at compile-time)
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	// currently, worst-case platform we support has a 64-bit two's-complenent long long
+-	char buf[2+(VM_MAX_BIT_PLATFORM/3)] = &quot; &quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; buf(2+(VM_MAX_BIT_PLATFORM/3));
+ 	buf[0] = ' ';
+-#endif
+-	assert(NULL!=header_name);
+-	assert(TokenList.empty());
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt; TmpTokenList(STATIC_SIZE(limits_h_core));
+ 	zaimoni::Token&lt;char&gt;** tmp = TmpTokenList.c_array();
+ 	
+@@ -609,7 +601,7 @@
+ void
+ CPreprocessor::create_stddef_header(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const char* const header_name) const
+ {
+-	assert(NULL!=header_name);
++	assert(header_name &amp;&amp; *header_name);
+ 	assert(TokenList.empty());
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt; TmpTokenList(STATIC_SIZE(stddef_h_core));
+ 	zaimoni::Token&lt;char&gt;** tmp = TmpTokenList.c_array();
+@@ -623,17 +615,17 @@
+ 
+ 	// C99 17.7p2 : typedefs; C++ versions in namespace std
+ 	const char* const ptrdiff_str = signed_type_from_machine(target_machine.ptrdiff_t_type());
+-	assert(NULL!=ptrdiff_str);
++	assert(ptrdiff_str);
+ 	tmp[STDDEF_PTRDIFF_T_LINE]-&gt;append(ptrdiff_str,&quot; ptrdiff_t;&quot;);
+ 	tmp[STDDEF_CPP_PTRDIFF_T_LINE]-&gt;append(ptrdiff_str,&quot; ptrdiff_t;&quot;);
+ 
+ 	const char* const size_t_str = unsigned_type_from_machine(target_machine.size_t_type());
+-	assert(NULL!=size_t_str);
++	assert(size_t_str);
+ 	tmp[STDDEF_SIZE_T_LINE]-&gt;append(size_t_str,&quot; size_t;&quot;);
+ 	tmp[STDDEF_CPP_SIZE_T_LINE]-&gt;append(size_t_str,&quot; size_t;&quot;);
+ 
+ 	const char* const wchar_t_str = unsigned_type_from_machine(target_machine.UNICODE_wchar_t());
+-	assert(NULL!=wchar_t_str);
++	assert(wchar_t_str);
+ 	tmp[STDDEF_WCHAR_T_LINE]-&gt;append(wchar_t_str,&quot; wchar_t;&quot;);
+ 
+ 	// C99 17.7p3 : macros
+@@ -651,7 +643,7 @@
+ 
+ static void new_token_at(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; dest,size_t i,const char* const src)
+ {
+-	assert(NULL!=src &amp;&amp; *src);
++	assert(src &amp;&amp; *src);
+ 	zaimoni::Token&lt;char&gt;* tmp = new zaimoni::Token&lt;char&gt;(src,0,strlen(src),0);
+ 	if (!dest.InsertSlotAt(i,tmp))
+ 		{
+@@ -664,8 +656,8 @@
+ static void memset_strcpy(char* dest,const char* src)
+ {
+ 	BOOST_STATIC_ASSERT(offset&lt;buf_size);
+-	assert(NULL!=dest);
+-	assert(NULL!=src);
++	assert(dest);
++	assert(src);
+ 	assert(buf_size-offset&gt;strlen(src));
+ 	memset(dest += offset,0,buf_size-offset);
+ 	strcpy(dest,src);
+@@ -675,8 +667,8 @@
+ static void memset_strcpy(char* dest,const char* src,size_t buf_size)
+ {
+ 	assert(offset&lt;buf_size);
+-	assert(NULL!=dest);
+-	assert(NULL!=src);
++	assert(dest);
++	assert(src);
+ 	assert(buf_size-offset&gt;strlen(src));
+ 	memset(dest += offset,0,buf_size-offset);
+ 	strcpy(dest,src);
+@@ -693,16 +685,11 @@
+ void
+ CPreprocessor::create_stdint_header(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const char* const header_name) const
+ {
+-	assert(NULL!=header_name);
++	assert(header_name &amp;&amp; *header_name);
+ 	assert(TokenList.empty());
+ 	// 2 for: leading space, trailing null-termination
+ 	// (VM_MAX_BIT_PLATFORM/3) for: digits (using octal rather than decimal count because that's easy to do at compile-time)
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	// currently, worst-case platform we support has a 64-bit two's-complenent long long
+-	char buf[2+(VM_MAX_BIT_PLATFORM/3)] = &quot; &quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; buf(2+(VM_MAX_BIT_PLATFORM/3));
+-#endif
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt; TmpTokenList(STATIC_SIZE(stdint_h_core));
+ 	zaimoni::Token&lt;char&gt;** tmp = TmpTokenList.c_array();
+ 
+@@ -716,11 +703,7 @@
+ 	while(0&lt;i);
+ 
+ 	// set up some result strings
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char signed_max_metabuf[virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4)] = &quot;&quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; signed_max_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4));
+-#endif
+ 	char* signed_max_buf[virtual_machine::std_int_enum_max] = {signed_max_metabuf, signed_max_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_max_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_max_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_max_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+ 	*signed_max_buf[0] = ' ';
+ 	*signed_max_buf[1] = ' ';
+@@ -735,11 +718,7 @@
+ 	strcat(signed_max_buf[virtual_machine::std_int_long-1],&quot;L&quot;);
+ 	strcat(signed_max_buf[virtual_machine::std_int_long_long-1],&quot;LL&quot;);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char unsigned_max_metabuf[virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+3)] = &quot;&quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; unsigned_max_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+3));
+-#endif
+ 	char* unsigned_max_buf[virtual_machine::std_int_enum_max] = {unsigned_max_metabuf, unsigned_max_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), unsigned_max_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), unsigned_max_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), unsigned_max_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+ 	*unsigned_max_buf[0] = ' ';
+ 	*unsigned_max_buf[1] = ' ';
+@@ -758,11 +737,7 @@
+ 	strcat(unsigned_max_buf[virtual_machine::std_int_long_long-1],&quot;ULL&quot;);
+ 
+ 	const bool target_is_twos_complement = virtual_machine::twos_complement==target_machine.C_signed_int_representation();
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char signed_min_metabuf[virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4)] = &quot;&quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; signed_min_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4));
+-#endif
+ 	char* signed_min_buf[virtual_machine::std_int_enum_max] = {signed_min_metabuf, signed_min_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+ 	umaxint tmp_VM;
+ 	if (target_is_twos_complement &amp;&amp; !bool_options[boolopt::int_traps])
+@@ -791,13 +766,8 @@
+ 		strcat(signed_min_buf[virtual_machine::std_int_long_long-1],&quot;LL)&quot;);
+ 		}
+ 	else{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-		BOOST_STATIC_ASSERT(sizeof(signed_min_metabuf)==sizeof(signed_max_metabuf));
+-		memmove(signed_min_metabuf,signed_max_metabuf,sizeof(signed_max_metabuf));
+-#else
+ 		assert(signed_min_metabuf.size()==signed_max_metabuf.size());
+ 		memmove(signed_min_metabuf,signed_max_metabuf,signed_max_metabuf.size());
+-#endif
+ 		*signed_min_buf[0] = '-';
+ 		*signed_min_buf[1] = '-';
+ 		*signed_min_buf[2] = '-';
+@@ -1259,12 +1229,8 @@
+ 		}
+ 	while(0&lt;i);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char define_buf[sizeof(&quot;#define UINT_LEAST_MAX&quot;)+2+VM_MAX_BIT_PLATFORM/3+5] = &quot;#define &quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; define_buf(sizeof(&quot;#define UINT_LEAST_MAX&quot;)+2+VM_MAX_BIT_PLATFORM/3+5);
+ 	strcpy(define_buf,&quot;#define &quot;);
+-#endif
+ 	i = 13*bitspan_types;
+ 	TmpTokenList.InsertNSlotsAt(i,inject_C_index);
+ 	tmp = TmpTokenList.c_array()+inject_C_index;
+
+Modified: trunk/CPreproc_autogen_pp.cpp
+===================================================================
+--- trunk/CPreproc_autogen_pp.cpp	2010-04-25 18:08:22 UTC (rev 391)
++++ trunk/CPreproc_autogen_pp.cpp	2010-04-25 20:56:15 UTC (rev 392)
+@@ -11,13 +11,10 @@
+ 
+ using virtual_machine::umaxint;
+ 
+-#ifndef ZCC_LEGACY_FIXED_INT
+ // XXX adjust VM_MAX_BIT_PLATFORM to work inside of CPreprocessor XXX
+ #undef VM_MAX_BIT_PLATFORM
+ #define VM_MAX_BIT_PLATFORM target_machine.C_bit&lt;virtual_machine::std_int_long_long&gt;()
+-#endif
+ 
+-
+ //! \bug Once And Only Once violation
+ #define DICT_STRUCT(A) { (A), sizeof(A)-1 }
+ 
+@@ -283,7 +280,7 @@
+ disallow_prior_definitions(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,size_t i,const char* const * identifiers,size_t identifiers_len)
+ {
+ 	assert(TokenList.size()&gt;i);
+-	assert(NULL!=identifiers);
++	assert(identifiers);
+ 	assert(0&lt;identifiers_len);
+ 	assert(SIZE_MAX/4&gt;=identifiers_len);
+ /*
+@@ -295,7 +292,7 @@
+ 	if (!TokenList.InsertNSlotsAt(4*identifiers_len,i)) throw std::bad_alloc();
+ 	while(0&lt;identifiers_len)
+ 		{
+-		assert(NULL!=*identifiers &amp;&amp; '\0'!=**identifiers);
++		assert(*identifiers &amp;&amp; **identifiers);
+ 		zaimoni::Token&lt;char&gt;** const tmp = TokenList.c_array();
+ 		tmp[i+3] = new zaimoni::Token&lt;char&gt;(&quot;#endif&quot;,0,sizeof(&quot;#endif&quot;)-1,0);
+ 
+@@ -354,12 +351,12 @@
+ lockdown_reserved_identifiers(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const size_t i,const char* const * identifiers,size_t identifiers_len)
+ {
+ 	assert(TokenList.size()&gt;i);
+-	assert(NULL!=identifiers);
++	assert(identifiers);
+ 	assert(0&lt;identifiers_len);
+ 	size_t target_len = sizeof(&quot;#pragma ZCC lock&quot;)-1;
+ 	size_t j = 0;
+ 	do	{
+-		assert(NULL!=*identifiers &amp;&amp; '\0'!=**identifiers);
++		assert(*identifiers &amp;&amp; **identifiers);
+ 		target_len += strlen(identifiers[j])+1;
+ 		}
+ 	while(identifiers_len&gt; ++j);
+@@ -394,13 +391,13 @@
+ 
+ static void final_init_tokenlist(zaimoni::Token&lt;char&gt;* const * x, size_t x_len, const char* const header_name)
+ {
+-	assert(NULL!=x);
++	assert(x);
+ 	assert(0&lt;x_len);
+-	assert(NULL!=header_name);
++	assert(header_name &amp;&amp; *header_name);
+ 	while(0&lt;x_len)
+ 		{
+ 		--x_len;
+-		assert(NULL!=x[x_len]);
++		assert(x[x_len]);
+ 		x[x_len]-&gt;logical_line.first = x_len+1;
+ 		x[x_len]-&gt;logical_line.second = 0;
+ 		x[x_len]-&gt;original_line = x[x_len]-&gt;logical_line;
+@@ -417,17 +414,12 @@
+ void
+ CPreprocessor::create_limits_header(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const char* const header_name) const
+ {
++	assert(header_name &amp;&amp; *header_name);
++	assert(TokenList.empty());
+ 	// 2 for: leading space, trailing null-termination
+ 	// (VM_MAX_BIT_PLATFORM/3) for: digits (using octal rather than decimal count because that's easy to do at compile-time)
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	// currently, worst-case platform we support has a 64-bit two's-complenent long long
+-	char buf[2+(VM_MAX_BIT_PLATFORM/3)] = &quot; &quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; buf(2+(VM_MAX_BIT_PLATFORM/3));
+ 	buf[0] = ' ';
+-#endif
+-	assert(NULL!=header_name);
+-	assert(TokenList.empty());
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt; TmpTokenList(STATIC_SIZE(limits_h_core));
+ 	zaimoni::Token&lt;char&gt;** tmp = TmpTokenList.c_array();
+ 	
+@@ -606,7 +598,7 @@
+ void
+ CPreprocessor::create_stddef_header(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const char* const header_name) const
+ {
+-	assert(NULL!=header_name);
++	assert(header_name &amp;&amp; *header_name);
+ 	assert(TokenList.empty());
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt; TmpTokenList(STATIC_SIZE(stddef_h_core));
+ 	zaimoni::Token&lt;char&gt;** tmp = TmpTokenList.c_array();
+@@ -620,17 +612,17 @@
+ 
+ 	// C99 17.7p2 : typedefs; C++ versions in namespace std
+ 	const char* const ptrdiff_str = signed_type_from_machine(target_machine.ptrdiff_t_type());
+-	assert(NULL!=ptrdiff_str);
++	assert(ptrdiff_str);
+ 	tmp[STDDEF_PTRDIFF_T_LINE]-&gt;append(ptrdiff_str,&quot; ptrdiff_t;&quot;);
+ 	tmp[STDDEF_CPP_PTRDIFF_T_LINE]-&gt;append(ptrdiff_str,&quot; ptrdiff_t;&quot;);
+ 
+ 	const char* const size_t_str = unsigned_type_from_machine(target_machine.size_t_type());
+-	assert(NULL!=size_t_str);
++	assert(size_t_str);
+ 	tmp[STDDEF_SIZE_T_LINE]-&gt;append(size_t_str,&quot; size_t;&quot;);
+ 	tmp[STDDEF_CPP_SIZE_T_LINE]-&gt;append(size_t_str,&quot; size_t;&quot;);
+ 
+ 	const char* const wchar_t_str = unsigned_type_from_machine(target_machine.UNICODE_wchar_t());
+-	assert(NULL!=wchar_t_str);
++	assert(wchar_t_str);
+ 	tmp[STDDEF_WCHAR_T_LINE]-&gt;append(wchar_t_str,&quot; wchar_t;&quot;);
+ 
+ 	// C99 17.7p3 : macros
+@@ -648,7 +640,7 @@
+ 
+ static void new_token_at(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; dest,size_t i,const char* const src)
+ {
+-	assert(NULL!=src &amp;&amp; *src);
++	assert(src &amp;&amp; *src);
+ 	zaimoni::Token&lt;char&gt;* tmp = new zaimoni::Token&lt;char&gt;(src,0,strlen(src),0);
+ 	if (!dest.InsertSlotAt(i,tmp))
+ 		{
+@@ -661,8 +653,8 @@
+ static void memset_strcpy(char* dest,const char* src)
+ {
+ 	BOOST_STATIC_ASSERT(offset&lt;buf_size);
+-	assert(NULL!=dest);
+-	assert(NULL!=src);
++	assert(dest);
++	assert(src);
+ 	assert(buf_size-offset&gt;strlen(src));
+ 	memset(dest += offset,0,buf_size-offset);
+ 	strcpy(dest,src);
+@@ -672,8 +664,8 @@
+ static void memset_strcpy(char* dest,const char* src,size_t buf_size)
+ {
+ 	assert(offset&lt;buf_size);
+-	assert(NULL!=dest);
+-	assert(NULL!=src);
++	assert(dest);
++	assert(src);
+ 	assert(buf_size-offset&gt;strlen(src));
+ 	memset(dest += offset,0,buf_size-offset);
+ 	strcpy(dest,src);
+@@ -690,16 +682,11 @@
+ void
+ CPreprocessor::create_stdint_header(zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt;&amp; TokenList,const char* const header_name) const
+ {
+-	assert(NULL!=header_name);
++	assert(header_name &amp;&amp; *header_name);
+ 	assert(TokenList.empty());
+ 	// 2 for: leading space, trailing null-termination
+ 	// (VM_MAX_BIT_PLATFORM/3) for: digits (using octal rather than decimal count because that's easy to do at compile-time)
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	// currently, worst-case platform we support has a 64-bit two's-complenent long long
+-	char buf[2+(VM_MAX_BIT_PLATFORM/3)] = &quot; &quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; buf(2+(VM_MAX_BIT_PLATFORM/3));
+-#endif
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;* &gt; TmpTokenList(STATIC_SIZE(stdint_h_core));
+ 	zaimoni::Token&lt;char&gt;** tmp = TmpTokenList.c_array();
+ 
+@@ -713,11 +700,7 @@
+ 	while(0&lt;i);
+ 
+ 	// set up some result strings
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char signed_max_metabuf[virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4)] = &quot;&quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; signed_max_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4));
+-#endif
+ 	char* signed_max_buf[virtual_machine::std_int_enum_max] = {signed_max_metabuf, signed_max_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_max_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_max_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_max_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+ 	*signed_max_buf[0] = ' ';
+ 	*signed_max_buf[1] = ' ';
+@@ -732,11 +715,7 @@
+ 	strcat(signed_max_buf[virtual_machine::std_int_long-1],&quot;L&quot;);
+ 	strcat(signed_max_buf[virtual_machine::std_int_long_long-1],&quot;LL&quot;);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char unsigned_max_metabuf[virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+3)] = &quot;&quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; unsigned_max_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+3));
+-#endif
+ 	char* unsigned_max_buf[virtual_machine::std_int_enum_max] = {unsigned_max_metabuf, unsigned_max_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), unsigned_max_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), unsigned_max_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), unsigned_max_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+ 	*unsigned_max_buf[0] = ' ';
+ 	*unsigned_max_buf[1] = ' ';
+@@ -755,11 +734,7 @@
+ 	strcat(unsigned_max_buf[virtual_machine::std_int_long_long-1],&quot;ULL&quot;);
+ 
+ 	const bool target_is_twos_complement = virtual_machine::twos_complement==target_machine.C_signed_int_representation();
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char signed_min_metabuf[virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4)] = &quot;&quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; signed_min_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4));
+-#endif
+ 	char* signed_min_buf[virtual_machine::std_int_enum_max] = {signed_min_metabuf, signed_min_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+ 	umaxint tmp_VM;
+ 	if (target_is_twos_complement &amp;&amp; !bool_options[boolopt::int_traps])
+@@ -788,13 +763,8 @@
+ 		strcat(signed_min_buf[virtual_machine::std_int_long_long-1],&quot;LL)&quot;);
+ 		}
+ 	else{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-		BOOST_STATIC_ASSERT(sizeof(signed_min_metabuf)==sizeof(signed_max_metabuf));
+-		memmove(signed_min_metabuf,signed_max_metabuf,sizeof(signed_max_metabuf));
+-#else
+ 		assert(signed_min_metabuf.size()==signed_max_metabuf.size());
+ 		memmove(signed_min_metabuf,signed_max_metabuf,signed_max_metabuf.size());
+-#endif
+ 		*signed_min_buf[0] = '-';
+ 		*signed_min_buf[1] = '-';
+ 		*signed_min_buf[2] = '-';
+@@ -1256,12 +1226,8 @@
+ 		}
+ 	while(0&lt;i);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char define_buf[sizeof(&quot;#define UINT_LEAST_MAX&quot;)+2+VM_MAX_BIT_PLATFORM/3+5] = &quot;#define &quot;;
+-#else
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; define_buf(sizeof(&quot;#define UINT_LEAST_MAX&quot;)+2+VM_MAX_BIT_PLATFORM/3+5);
+ 	strcpy(define_buf,&quot;#define &quot;);
+-#endif
+ 	i = 13*bitspan_types;
+ 	TmpTokenList.InsertNSlotsAt(i,inject_C_index);
+ 	tmp = TmpTokenList.c_array()+inject_C_index;
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-25 18:08:22 UTC (rev 391)
++++ trunk/CSupport.cpp	2010-04-25 20:56:15 UTC (rev 392)
+@@ -2526,11 +2526,7 @@
+ {
+ 	assert(NULL!=src);
+ 	assert(0&lt;src_len);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+-#else
+ 	unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ #ifndef NDEBUG
+ 	umaxint uchar_max(target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;());
+ 	uchar_max &gt;&gt;= 4;
+@@ -3043,21 +3039,13 @@
+ 	{
+ 	default: return false;
+ 	case virtual_machine::ones_complement:		{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-												unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+-#else
+ 												unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ 												if (VM_MAX_BIT_PLATFORM&gt;target_machine-&gt;C_char_bit()) tmp.set(target_machine-&gt;C_char_bit());
+ 												tmp -= 1;
+ 												return tmp==result;
+ 												}
+ 	case virtual_machine::sign_and_magnitude:	{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-												unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+-#else
+ 												unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ 												tmp.set(target_machine-&gt;C_char_bit()-1);
+ 												return tmp==result;
+ 												}
+@@ -4207,13 +4195,8 @@
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+ 	assert(NULL!=src.ptr &amp;&amp; 0&lt;src.digit_span);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; alt_radix(src.radix);
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; strict_ub;
+-#else
+ 	const unsigned_var_int alt_radix(src.radix,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int strict_ub(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ 	const char* target = src.ptr;
+ 	size_t target_len = src.digit_span;
+ 
+@@ -5315,12 +5298,8 @@
+ {
+ 	assert(C_TYPE::INT&lt;=base_type_index &amp;&amp; C_TYPE::ULLONG&gt;=base_type_index);
+ 	const char* const suffix = literal_suffix(base_type_index);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char buf[(VM_MAX_BIT_PLATFORM/3)+4];	// null-termination: 1 byte; 3 bytes for type hint
+-#else
+ 	char* buf = _new_buffer&lt;char&gt;((VM_MAX_BIT_PLATFORM/3)+4);
+ 	if (!buf) return false;
+-#endif
+ 	dest.second = literal_flags(base_type_index);
+ 	dest.second |= C_TESTFLAG_DECIMAL;
+ 	z_ucharint_toa(src_int,buf,10);
+@@ -5329,19 +5308,13 @@
+ 	if (suffix) strcat(buf,suffix);
+ 
+ 	dest.first = _new_buffer&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	if (!dest.first) return false;
+-#else
+ 	if (!dest.first)
+ 		{
+ 		free(buf);
+ 		return false;
+ 		}
+-#endif
+ 	strcpy(dest.first,buf);
+-#ifndef ZCC_LEGACY_FIXED_INT
+ 	free(buf);
+-#endif
+ 	return true;
+ }
+ 
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-04-25 18:08:22 UTC (rev 391)
++++ trunk/CSupport_pp.cpp	2010-04-25 20:56:15 UTC (rev 392)
+@@ -2434,11 +2434,7 @@
+ {
+ 	assert(NULL!=src);
+ 	assert(0&lt;src_len);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+-#else
+ 	unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ #ifndef NDEBUG
+ 	umaxint uchar_max(target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;());
+ 	uchar_max &gt;&gt;= 4;
+@@ -2951,21 +2947,13 @@
+ 	{
+ 	default: return false;
+ 	case virtual_machine::ones_complement:		{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-												unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+-#else
+ 												unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ 												if (VM_MAX_BIT_PLATFORM&gt;target_machine-&gt;C_char_bit()) tmp.set(target_machine-&gt;C_char_bit());
+ 												tmp -= 1;
+ 												return tmp==result;
+ 												}
+ 	case virtual_machine::sign_and_magnitude:	{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-												unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
+-#else
+ 												unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ 												tmp.set(target_machine-&gt;C_char_bit()-1);
+ 												return tmp==result;
+ 												}
+@@ -3813,13 +3801,8 @@
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+ 	assert(NULL!=src.ptr &amp;&amp; 0&lt;src.digit_span);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; alt_radix(src.radix);
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; strict_ub;
+-#else
+ 	const unsigned_var_int alt_radix(src.radix,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int strict_ub(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+-#endif
+ 	const char* target = src.ptr;
+ 	size_t target_len = src.digit_span;
+ 
+@@ -4845,12 +4828,8 @@
+ {
+ 	assert(C_TYPE::INT&lt;=base_type_index &amp;&amp; C_TYPE::ULLONG&gt;=base_type_index);
+ 	const char* const suffix = literal_suffix(base_type_index);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	char buf[(VM_MAX_BIT_PLATFORM/3)+4];	// null-termination: 1 byte; 3 bytes for type hint
+-#else
+ 	char* buf = _new_buffer&lt;char&gt;((VM_MAX_BIT_PLATFORM/3)+4);
+ 	if (!buf) return false;
+-#endif
+ 	dest.second = literal_flags(base_type_index);
+ 	dest.second |= C_TESTFLAG_DECIMAL;
+ 	z_ucharint_toa(src_int,buf,10);
+@@ -4859,19 +4838,13 @@
+ 	if (suffix) strcat(buf,suffix);
+ 
+ 	dest.first = _new_buffer&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(strlen(buf)));
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	if (!dest.first) return false;
+-#else
+ 	if (!dest.first)
+ 		{
+ 		free(buf);
+ 		return false;
+ 		}
+-#endif
+ 	strcpy(dest.first,buf);
+-#ifndef ZCC_LEGACY_FIXED_INT
+ 	free(buf);
+-#endif
+ 	return true;
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000158.html">[Zcplusplus-commits] r391 - in trunk: . Zaimoni.STL Zaimoni.STL/bits
+</A></li>
+	<LI>Next message: <A HREF="000160.html">[Zcplusplus-commits] r393 - in trunk: . freezer
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#159">[ date ]</a>
+              <a href="thread.html#159">[ thread ]</a>
+              <a href="subject.html#159">[ subject ]</a>
+              <a href="author.html#159">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

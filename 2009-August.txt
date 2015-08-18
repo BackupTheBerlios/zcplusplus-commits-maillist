@@ -1,0 +1,2938 @@
+From zaimoni at mail.berlios.de  Sat Aug 22 08:01:50 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 22 Aug 2009 08:01:50 +0200
+Subject: [Zcplusplus-commits] r233 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <200908220601.n7M61oiY014133@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-22 08:01:27 +0200 (Sat, 22 Aug 2009)
+New Revision: 233
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_extern_static.in
+   trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in
+   trunk/tests/zcc.in/decl.C99/Error_static_typedef.in
+   trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in
+   trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_static.h
+   trunk/tests/zcc/decl.C99/Error_extern_static.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h
+   trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_extern_typedef.h
+   trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h
+   trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_static_typedef.h
+   trunk/tests/zcc/decl.C99/Error_static_typedef.hpp
+   trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h
+   trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+test case coverage; also, the LLONG_MIN fixup made some other code never execute so remove that
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/CSupport.cpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -6563,16 +6563,6 @@
+ 	return false;
+ }
+ 
+-static void C99_CPP_binary_minus_to_unary_minus(parse_tree& x)
+-{
+-	assert(is_C99_add_operator_expression<'-'>(x));
+-	x.DeleteIdx<1>(0);
+-	x.core_flag_update();
+-	x.flags |= PARSE_STRICT_UNARY_EXPRESSION;
+-	BOOST_STATIC_ASSERT(C99_UNARY_SUBTYPE_NEG==C99_ADD_SUBTYPE_MINUS);
+-	assert(is_C99_unary_operator_expression<'-'>(x));
+-}
+-
+ // this one hides a slight inefficiency: negative literals take 2 dynamic memory allocations, positive literals take one
+ static bool VM_to_signed_literal(parse_tree& x,const bool is_negative, const unsigned_fixed_int<VM_MAX_BIT_PLATFORM>& src_int,const parse_tree& src,const type_system& types)
+ {
+@@ -6703,123 +6693,6 @@
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_lhs_int;
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_rhs_int;
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_lhs_int;
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_rhs_int;
+-			// fear C++ operator overloading
+-			const int want_lhs_details 	= lhs_converted ? 0
+-										: is_C99_add_operator_expression<'+'>(*src.data<1>()) && converts_to_arithmeticlike(src.data<1>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<1>()->data<2>()->type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression<'-'>(*src.data<1>()) && converts_to_arithmeticlike(src.data<1>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<1>()->data<2>()->type_code.base_type_index) ? 2 : 0;
+-			if (!lhs_converted && !want_lhs_details) break;	// nothing to work with
+-			// fear C++ operator overloading
+-			const int want_rhs_details 	= rhs_converted ? 0
+-										: is_C99_add_operator_expression<'+'>(*src.data<2>()) && converts_to_arithmeticlike(src.data<2>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<2>()->data<2>()->type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression<'-'>(*src.data<2>()) && converts_to_arithmeticlike(src.data<2>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<2>()->data<2>()->type_code.base_type_index) ? 2 : 0;
+-			if (!rhs_converted && !want_rhs_details) break;	// nothing to work with
+-
+-			const bool lhs_lhs_converted = want_lhs_details && intlike_literal_to_VM(lhs_lhs_int,*src.data<1>()->data<1>());
+-			const bool lhs_rhs_converted = want_lhs_details && intlike_literal_to_VM(lhs_rhs_int,*src.data<1>()->data<2>());
+-			const bool rhs_lhs_converted = want_rhs_details && intlike_literal_to_VM(rhs_lhs_int,*src.data<2>()->data<1>());
+-			const bool rhs_rhs_converted = want_rhs_details && intlike_literal_to_VM(rhs_rhs_int,*src.data<2>()->data<2>());
+-
+-			const bool lhs_lhs_negative = lhs_lhs_converted && target_machine->C_promote_integer(lhs_lhs_int,promote_aux(src.data<1>()->data<1>()->type_code.base_type_index),lhs);
+-			const bool lhs_rhs_negative = lhs_rhs_converted && target_machine->C_promote_integer(lhs_rhs_int,promote_aux(src.data<1>()->data<2>()->type_code.base_type_index),lhs);
+-			if (rhs_lhs_converted) target_machine->C_promote_integer(rhs_lhs_int,promote_aux(src.data<2>()->data<1>()->type_code.base_type_index),rhs);
+-			if (rhs_rhs_converted) target_machine->C_promote_integer(rhs_rhs_int,promote_aux(src.data<2>()->data<2>()->type_code.base_type_index),rhs);
+-
+-			if (rhs_converted && 2==want_lhs_details)
+-				{
+-				const bool rhs_cancel_lhs_lhs = lhs_lhs_converted && rhs_negative!=lhs_lhs_negative;
+-				const bool rhs_cancel_lhs_rhs = lhs_rhs_converted && rhs_negative==lhs_rhs_negative;
+-				if (rhs_cancel_lhs_lhs || rhs_cancel_lhs_rhs)
+-					{
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_test(rhs_int);
+-					if (rhs_negative) target_machine->signed_additive_inverse(rhs_test,old.machine_type);
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_lhs_test(lhs_lhs_int);
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_rhs_test(lhs_rhs_int);
+-					if (rhs_cancel_lhs_lhs && lhs_lhs_negative) target_machine->signed_additive_inverse(lhs_lhs_test,lhs.machine_type);
+-					if (rhs_cancel_lhs_rhs && lhs_rhs_negative) target_machine->signed_additive_inverse(lhs_rhs_test,lhs.machine_type);
+-					if (rhs_cancel_lhs_rhs && rhs_test==lhs_rhs_test)
+-						{	// lose two terms
+-							//! \bug needs test case
+-						src.c_array<1>()->eval_to_arg<1>(0);
+-						src.eval_to_arg<1>(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						};
+-					if (rhs_cancel_lhs_lhs && rhs_test==lhs_lhs_test)
+-						{	// lose two terms
+-							//! \test cpp/default/twoscomp.notrap/Pass_min_int.h, cpp/default/twoscomp.notrap/Pass_min_int.hpp
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array<1>());
+-						src.eval_to_arg<1>(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						};
+-					if (rhs_cancel_lhs_rhs && rhs_test<lhs_rhs_test)
+-						{	// lose rhs
+-							//! \bug needs test case
+-						lhs_rhs_test -= rhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,lhs_rhs_negative,lhs_rhs_test,*src.c_array<1>()->c_array<2>(),types)) return false;
+-						src.c_array<1>()->c_array<2>()->destroy();
+-						*src.c_array<1>()->c_array<2>() = tmp;
+-
+-						src.eval_to_arg<1>(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					if (rhs_cancel_lhs_lhs && rhs_test<lhs_lhs_test)
+-						{	// lose rhs
+-							//! \bug needs test case
+-						lhs_lhs_test -= rhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,lhs_lhs_negative,lhs_lhs_test,*src.c_array<1>()->c_array<1>(),types)) return false;
+-						src.c_array<1>()->c_array<2>()->destroy();
+-						*src.c_array<1>()->c_array<2>() = tmp;
+-
+-						src.eval_to_arg<1>(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					if (rhs_cancel_lhs_rhs /* && rhs_test>lhs_rhs_test */)
+-						{	// lose lhs_rhs
+-							//! \bug needs test case
+-						rhs_test -= lhs_rhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,rhs_negative,rhs_test,*src.c_array<2>(),types)) return false;
+-						src.c_array<2>()->destroy();
+-						*src.c_array<2>() = tmp;
+-
+-						src.c_array<1>()->eval_to_arg<1>(0);
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					if (rhs_cancel_lhs_lhs /* && rhs_test>lhs_lhs_test */)
+-						{	// lose lhs_lhs
+-							//! \bug needs test case
+-						rhs_test -= lhs_lhs_test;
+-
+-						parse_tree tmp;
+-						if (!VM_to_signed_literal(tmp,rhs_negative,rhs_test,*src.c_array<2>(),types)) return false;
+-						src.c_array<2>()->destroy();
+-						*src.c_array<2>() = tmp;
+-
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array<1>());
+-						//! \todo reality-check (watch out for sudden typecasting)
+-						src.type_code = old_type;
+-						return true;
+-						}
+-					}
+-				}
+ 			break;
+ 			}
+ 	case 1:	{
+@@ -7682,77 +7555,6 @@
+ 				force_decimal_literal(src,(lhs_int==rhs_int)==is_equal_op ? "1" : "0",types);
+ 				return true;
+ 				};
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_lhs_int;
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_rhs_int;
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_lhs_int;
+-			unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_rhs_int;
+-			// fear C++ operator overloading
+-			const int want_lhs_details 	= lhs_converted ? 0
+-										: is_C99_add_operator_expression<'+'>(*src.data<1>()) && converts_to_arithmeticlike(src.data<1>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<1>()->data<2>()->type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression<'-'>(*src.data<1>()) && converts_to_arithmeticlike(src.data<1>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<1>()->data<2>()->type_code.base_type_index) ? 2 : 0;
+-			if (!lhs_converted && !want_lhs_details) break;	// nothing to work with
+-			// fear C++ operator overloading
+-			const int want_rhs_details 	= rhs_converted ? 0
+-										: is_C99_add_operator_expression<'+'>(*src.data<2>()) && converts_to_arithmeticlike(src.data<2>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<2>()->data<2>()->type_code.base_type_index) ? 1
+-										: is_C99_add_operator_expression<'-'>(*src.data<2>()) && converts_to_arithmeticlike(src.data<2>()->data<1>()->type_code.base_type_index) && converts_to_arithmeticlike(src.data<2>()->data<2>()->type_code.base_type_index) ? 2 : 0;
+-			if (!rhs_converted && !want_rhs_details) break;	// nothing to work with
+-
+-			const bool lhs_lhs_converted = want_lhs_details && intlike_literal_to_VM(lhs_lhs_int,*src.data<1>()->data<1>());
+-			const bool lhs_rhs_converted = want_lhs_details && intlike_literal_to_VM(lhs_rhs_int,*src.data<1>()->data<2>());
+-			const bool rhs_lhs_converted = want_rhs_details && intlike_literal_to_VM(rhs_lhs_int,*src.data<2>()->data<1>());
+-			const bool rhs_rhs_converted = want_rhs_details && intlike_literal_to_VM(rhs_rhs_int,*src.data<2>()->data<2>());
+-
+-			const bool lhs_lhs_negative = lhs_lhs_converted && target_machine->C_promote_integer(lhs_lhs_int,promote_aux(src.data<1>()->data<1>()->type_code.base_type_index),lhs);
+-			const bool lhs_rhs_negative = lhs_rhs_converted && target_machine->C_promote_integer(lhs_rhs_int,promote_aux(src.data<1>()->data<2>()->type_code.base_type_index),lhs);
+-			const bool rhs_lhs_negative = rhs_lhs_converted && target_machine->C_promote_integer(rhs_lhs_int,promote_aux(src.data<2>()->data<1>()->type_code.base_type_index),rhs);
+-			const bool rhs_rhs_negative = rhs_rhs_converted && target_machine->C_promote_integer(rhs_rhs_int,promote_aux(src.data<2>()->data<2>()->type_code.base_type_index),rhs);
+-			if (2==want_lhs_details && 2==want_rhs_details)
+-				{	// ...-... == ...-...
+-				const bool lhs_lhs_cancels_rhs_lhs = lhs_lhs_converted && rhs_lhs_converted && lhs_lhs_negative==rhs_lhs_negative;
+-				const bool lhs_lhs_cancels_rhs_rhs = lhs_lhs_converted && rhs_lhs_converted && lhs_lhs_negative!=rhs_rhs_negative;
+-				const bool lhs_rhs_cancels_rhs_lhs = lhs_rhs_converted && rhs_lhs_converted && lhs_rhs_negative!=rhs_lhs_negative;
+-				const bool lhs_rhs_cancels_rhs_rhs = lhs_rhs_converted && rhs_lhs_converted && lhs_rhs_negative==rhs_rhs_negative;
+-				if (lhs_lhs_cancels_rhs_lhs || lhs_lhs_cancels_rhs_rhs || lhs_rhs_cancels_rhs_lhs || lhs_rhs_cancels_rhs_rhs)
+-					{
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_lhs_test(lhs_lhs_int);
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> lhs_rhs_test(lhs_rhs_int);
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_lhs_test(rhs_lhs_int);
+-					unsigned_fixed_int<VM_MAX_BIT_PLATFORM> rhs_rhs_test(rhs_rhs_int);
+-
+-					if (lhs_lhs_negative && (lhs_lhs_cancels_rhs_lhs || lhs_lhs_cancels_rhs_rhs)) target_machine->signed_additive_inverse(lhs_lhs_test,lhs.machine_type);
+-					if (lhs_rhs_negative && (lhs_rhs_cancels_rhs_lhs || lhs_rhs_cancels_rhs_rhs)) target_machine->signed_additive_inverse(lhs_rhs_test,lhs.machine_type);
+-					if (rhs_lhs_negative && (lhs_lhs_cancels_rhs_lhs || lhs_rhs_cancels_rhs_lhs)) target_machine->signed_additive_inverse(rhs_lhs_test,rhs.machine_type);
+-					if (rhs_rhs_negative && (lhs_lhs_cancels_rhs_rhs || lhs_rhs_cancels_rhs_rhs)) target_machine->signed_additive_inverse(rhs_rhs_test,rhs.machine_type);
+-
+-					// memory conserving transforms first
+-					if (lhs_lhs_cancels_rhs_lhs && lhs_lhs_test==rhs_lhs_test)
+-						{	//! \bug needs test case
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array<1>());
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array<2>());
+-						return true;
+-						};
+-					if (lhs_lhs_cancels_rhs_rhs && lhs_lhs_test==rhs_rhs_test)
+-						{	//! \bug needs test case
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array<1>());
+-						src.c_array<2>()->eval_to_arg<1>(0);
+-						return true;
+-						};
+-					if (lhs_rhs_cancels_rhs_lhs && lhs_rhs_test==rhs_lhs_test)
+-						{	//! \bug needs test case
+-						src.c_array<1>()->eval_to_arg<1>(0);
+-						C99_CPP_binary_minus_to_unary_minus(*src.c_array<2>());
+-						return true;
+-						};
+-					if (lhs_rhs_cancels_rhs_rhs && lhs_rhs_test==rhs_rhs_test)
+-						{	//! \bug needs test case
+-						src.c_array<1>()->eval_to_arg<1>(0);
+-						src.c_array<2>()->eval_to_arg<1>(0);
+-						return true;
+-						};
+-#if 0
+-#endif
+-					};
+-				}
+ //			break;
+ 			}
+ 	};
+@@ -9253,7 +9055,7 @@
+ //! \todo really should be somewhere in natural-language output
+ void INFORM_separated_list(const char* const* x,size_t x_len, const char* const sep)
+ {
+-	assert(NULL!=sep && !*sep);
++	assert(NULL!=sep && *sep);
+ 	assert(NULL!=x);
+ 	if (0<x_len)
+ 		{
+@@ -9353,7 +9155,7 @@
+ 			if (C99_CPP0X_DECLSPEC_EXTERN & flags)
+ 				specs[storage_count++] = "extern";
+ 			if (C99_CPP0X_DECLSPEC_REGISTER & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_register_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = "register";
+ 				++erased_count;
+@@ -9365,7 +9167,7 @@
+ 				flags &= ~C99_CPP0X_DECLSPEC_REGISTER;
+ 				}
+ 			if (C99_DECLSPEC_AUTO & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_auto_global.h
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = "auto";
+ 				++erased_count;
+@@ -9377,7 +9179,10 @@
+ 				flags &= ~C99_DECLSPEC_AUTO;
+ 				};
+ 			if (1<storage_count)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_extern_static.h
++					//! \test zcc/decl.C99/Error_extern_typedef.h
++					//! \test zcc/decl.C99/Error_static_typedef.h
++					//! \test zcc/decl.C99/Error_extern_static_typedef.h
+ 				message_header(x.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM("declaration has too many storage-class specifiers: ");
+@@ -9514,7 +9319,7 @@
+ 		if (CPP_locate_qualified_name(x,i))
+ 			{
+ 			if (parse_tree::INVALID & x.data<0>()[i].flags)
+-				{	//! \todo error
++				{	//! \test zcc/decl.C99/Error_doublecolon_type.hpp
+ 				message_header(x.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM("qualified-name may not end in :: (C++98 7.1.5.3p1, 5.1p8)");
+@@ -9594,7 +9399,7 @@
+ 			if (C99_CPP0X_DECLSPEC_EXTERN & flags)
+ 				specs[storage_count++] = "extern";
+ 			if (C99_CPP0X_DECLSPEC_REGISTER & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_register_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = "register";
+ 				++erased_count;
+@@ -9606,7 +9411,7 @@
+ 				flags &= ~C99_CPP0X_DECLSPEC_REGISTER;
+ 				}
+ 			if (CPP_DECLSPEC_MUTABLE & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_mutable_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				specs[storage_count++] = "mutable";
+ 				++erased_count;
+@@ -9618,13 +9423,16 @@
+ 				flags &= ~CPP_DECLSPEC_MUTABLE;
+ 				};
+ 			if (1<storage_count)
+-				{	//! \bug needs test case
++				{	//! \test zcc/decl.C99/Error_extern_static.hpp
++					//! \test zcc/decl.C99/Error_extern_typedef.hpp
++					//! \test zcc/decl.C99/Error_static_typedef.hpp
++					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM("declaration has too many storage-class specifiers: ");
+ 				INFORM_separated_list(specs,storage_count,", ");
+-				INFORM(" (C99 6.7.1p2)");
++				INFORM(" (C++0X 7.1.1p1)");
+ 				zcc_errors.inc_error();
+ 				}
+ 			storage_count -= erased_count;
+@@ -9633,7 +9441,7 @@
+ 			// typedef must have a function type to tolerate anything (but kills inline)
+ 			// virtual and explicit can only be used in class declarations: erase (C++0X 7.1.2p5, 7.1.2p6
+ 			if (CPP_DECLSPEC_VIRTUAL & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_virtual_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -9643,7 +9451,7 @@
+ 				flags &= ~CPP_DECLSPEC_VIRTUAL;
+ 				};
+ 			if (CPP_DECLSPEC_EXPLICIT & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_explicit_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -9654,7 +9462,7 @@
+ 				};
+ 			// friend is only usable within a class
+ 			if (CPP_DECLSPEC_FRIEND & flags)
+-				{	//! \bug needs test case
++				{	//! \test zcc/default/decl.C99/Error_friend_global.hpp
+ 				//! \todo should be warning for --do-what-i-mean
+ 				message_header(x.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -9741,7 +9549,11 @@
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+ 			if (src.size<0>()-i<=decl_count)
+ 				{	// unterminated declaration
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_scope.h
++					//! \test zcc/decl.C99/Error_static_scope.h
++					//! \test zcc/decl.C99/Error_typedef_scope.h
++					//! \test zcc/decl.C99/Error_register_scope.h
++					//! \test zcc/decl.C99/Error_auto_scope.h
+ 				if (src.size<0>()>i) message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM("declaration cut off by end of scope (C99 6.7p1)");
+@@ -9753,7 +9565,11 @@
+ 				};
+ 			if (src.data<0>()[i+decl_count].is_atomic() && token_is_char<';'>(src.data<0>()[i+decl_count].index_tokens[0].token))
+ 				{	// C99 7p2 error: must declare something
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_semicolon.h
++					//! \test zcc/decl.C99/Error_static_semicolon.h
++					//! \test zcc/decl.C99/Error_typedef_semicolon.h
++					//! \test zcc/decl.C99/Error_register_semicolon.h
++					//! \test zcc/decl.C99/Error_auto_semicolon.h
+ 				message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM("declaration must declare something (C99 6.7p2)");
+@@ -9826,28 +9642,29 @@
+ 							{
+ 							if (bootstrap==tmp->first)
+ 								{	// warn if there is a prior, consistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
++									//! \todo control this warning with an option --no-OAOO or --no-DRY
+ 								message_header(src.data<0>()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(WARN_STR);
+-								INC_INFORM("redeclaring ");
+-								INC_INFORM(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first);
+-								INC_INFORM(", prior typedef at ");
++								INC_INFORM("redeclaring typedef ");
++								INFORM(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first);
+ 								INC_INFORM(tmp->second);
+ 								INC_INFORM(':');
+-								INFORM(tmp->third);
++								INC_INFORM(tmp->third);
++								INFORM(": prior typedef");
+ 								if (bool_options[boolopt::warnings_are_errors])
+ 									zcc_errors.inc_error();
+ 								}
+ 							else{	// error if there is a prior, inconsistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Warn_redeclare_typedef.h
+ 								message_header(src.data<0>()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+-								INC_INFORM("redeclaring ");
+-								INC_INFORM(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first);
+-								INC_INFORM(", prior typedef at ");
++								INC_INFORM("redeclaring typedef ");
++								INFORM(src.data<0>()[initdecl_identifier_idx].index_tokens[0].token.first);
+ 								INC_INFORM(tmp->second);
+ 								INC_INFORM(':');
+-								INFORM(tmp->third);
++								INC_INFORM(tmp->third);
++								INFORM(": prior typedef");
+ 								zcc_errors.inc_error();
+ 								}	
+ 							// do not re-register if there is a prior definition
+@@ -10086,7 +9903,14 @@
+ 			const bool coherent_storage_specifiers = declFind.analyze_flags_global(src,i,decl_count);
+ 			if (src.size<0>()-i<=decl_count)
+ 				{	// unterminated declaration
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_scope.hpp
++					//! \test zcc/decl.C99/Error_static_scope.hpp
++					//! \test zcc/decl.C99/Error_typedef_scope.hpp
++					//! \test zcc/decl.C99/Error_register_scope.hpp
++					//! \test zcc/decl.C99/Error_mutable_scope.hpp
++					//! \test zcc/decl.C99/Error_virtual_scope.hpp
++					//! \test zcc/decl.C99/Error_friend_scope.hpp
++					//! \test zcc/decl.C99/Error_explicit_scope.hpp
+ 				if (src.size<0>()>i) message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM("declaration cut off by end of scope (C++98 7p1)");
+@@ -10098,7 +9922,14 @@
+ 				};
+ 			if (src.data<0>()[i+decl_count].is_atomic() && token_is_char<';'>(src.data<0>()[i+decl_count].index_tokens[0].token))
+ 				{	// must declare something
+-					//! \bug need test case
++					//! \test zcc/decl.C99/Error_extern_semicolon.hpp
++					//! \test zcc/decl.C99/Error_static_semicolon.hpp
++					//! \test zcc/decl.C99/Error_typedef_semicolon.hpp
++					//! \test zcc/decl.C99/Error_register_semicolon.hpp
++					//! \test zcc/decl.C99/Error_mutable_semicolon.hpp
++					//! \test zcc/decl.C99/Error_virtual_semicolon.hpp
++					//! \test zcc/decl.C99/Error_friend_semicolon.hpp
++					//! \test zcc/decl.C99/Error_explicit_semicolon.hpp
+ 				message_header(src.data<0>()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM("declaration must declare something (C++98 7p4)");
+@@ -10183,28 +10014,29 @@
+ 							{
+ 							if (bootstrap==tmp->first)
+ 								{	// warn if there is a prior, consistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Warn_redeclare_typedef.hpp
++									//! \todo control this warning with an option --no-OAOO or --no-DRY
+ 								message_header(src.data<0>()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(WARN_STR);
+-								INC_INFORM("redeclaring ");
+-								INC_INFORM(fullname);
+-								INC_INFORM(", prior typedef at ");
++								INC_INFORM("redeclaring typedef ");
++								INFORM(fullname);
+ 								INC_INFORM(tmp->second);
+ 								INC_INFORM(':');
+-								INFORM(tmp->third);
++								INC_INFORM(tmp->third);
++								INFORM(": prior typedef");
+ 								if (bool_options[boolopt::warnings_are_errors])
+ 									zcc_errors.inc_error();
+ 								}
+ 							else{	// error if there is a prior, inconsistent definition
+-									//! \bug needs test case
++									//! \test zcc/decl.C99/Error_redeclare_typedef.hpp
+ 								message_header(src.data<0>()[initdecl_identifier_idx].index_tokens[0]);
+ 								INC_INFORM(ERR_STR);
+-								INC_INFORM("redeclaring ");
+-								INC_INFORM(fullname);
+-								INC_INFORM(", prior typedef at ");
++								INC_INFORM("redeclaring typedef ");
++								INFORM(fullname);
+ 								INC_INFORM(tmp->second);
+ 								INC_INFORM(':');
+-								INFORM(tmp->third);
++								INC_INFORM(tmp->third);
++								INFORM(": prior typedef");
+ 								zcc_errors.inc_error();
+ 								}
+ 							// do not re-register if there is a prior definition
+
+Added: trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_doublecolon_type.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static std:: ;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static_typedef.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_static_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_static_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_typedef.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_extern_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_extern_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_redeclare_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_redeclare_typedef.h
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef long test;
+
+Added: trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_redeclare_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_redeclare_typedef.hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef long test;
+
+Added: trunk/tests/zcc/decl.C99/Error_static_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_static_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_static_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_static_typedef.h
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Error_static_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_static_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Error_static_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_static_typedef.hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static typedef int i;
+
+Added: trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.h	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_redeclare_typedef.h
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef int test;
+
+Added: trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc/decl.C99/Warn_redeclare_typedef.hpp	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_redeclare_typedef.hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef int test;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_static.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_static.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_static.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_static_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern static typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_extern_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++extern typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_redeclare_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef long test;
+
+Added: trunk/tests/zcc.in/decl.C99/Error_static_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_static_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Error_static_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,5 @@
++SUFFIXES h hpp
++// declaration with too many storage qualifiers
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++static typedef int i;
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in	2009-08-20 20:11:20 UTC (rev 232)
++++ trunk/tests/zcc.in/decl.C99/Warn_redeclare_typedef.in	2009-08-22 06:01:27 UTC (rev 233)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// redeclaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++typedef int test;
++typedef int test;
+
+
+
+From zaimoni at mail.berlios.de  Sat Aug 22 09:17:28 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 22 Aug 2009 09:17:28 +0200
+Subject: [Zcplusplus-commits] r234 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <200908220717.n7M7HSGe019785@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-22 09:17:21 +0200 (Sat, 22 Aug 2009)
+New Revision: 234
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_scope.in
+   trunk/tests/zcc/decl.C99/Error_scope.h
+   trunk/tests/zcc/decl.C99/Error_scope.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+increase code coverage; now missing only test cases that were missing for Z.C++ 0.0.1
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-08-22 06:01:27 UTC (rev 233)
++++ trunk/CSupport.cpp	2009-08-22 07:17:21 UTC (rev 234)
+@@ -9680,7 +9680,7 @@
+ 				decl_offset += initdecl_span;
+ 				if (src.size<0>()-(i+decl_count)<=decl_offset)
+ 					{	// unterminated declaration: error
+-						//! \bug need test case
++						//! \test zcc/decl.C99/Error_scope.h
+ 					message_header(src.data<0>()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM("declaration cut off by end of scope (C99 6.7p1)");
+@@ -10052,7 +10052,7 @@
+ 				decl_offset += initdecl_span;
+ 				if (src.size<0>()-(i+decl_count)<=decl_offset)
+ 					{	// unterminated declaration: error
+-						//! \bug need test case
++						//! \test zcc/decl.C99/Error_scope.hpp
+ 					message_header(src.data<0>()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM("declaration cut off by end of scope (C++98 7p1)");
+
+Added: trunk/tests/zcc/decl.C99/Error_scope.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_scope.h	2009-08-22 06:01:27 UTC (rev 233)
++++ trunk/tests/zcc/decl.C99/Error_scope.h	2009-08-22 07:17:21 UTC (rev 234)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_scope.h
++// missing semicolon
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++int test
++
+
+Added: trunk/tests/zcc/decl.C99/Error_scope.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_scope.hpp	2009-08-22 06:01:27 UTC (rev 233)
++++ trunk/tests/zcc/decl.C99/Error_scope.hpp	2009-08-22 07:17:21 UTC (rev 234)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_scope.hpp
++// missing semicolon
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++int test
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_scope.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_scope.in	2009-08-22 06:01:27 UTC (rev 233)
++++ trunk/tests/zcc.in/decl.C99/Error_scope.in	2009-08-22 07:17:21 UTC (rev 234)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// missing semicolon
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++int test
++
+
+
+
+From zaimoni at mail.berlios.de  Sat Aug 22 09:43:22 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 22 Aug 2009 09:43:22 +0200
+Subject: [Zcplusplus-commits] r235 - in trunk/tests: cpp cpp/default
+	cpp/default/twoscomp.trap cpp.in cpp.in/default
+	cpp.in/default/twoscomp.trap
+Message-ID: <200908220743.n7M7hMYF022564@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-22 09:43:11 +0200 (Sat, 22 Aug 2009)
+New Revision: 235
+
+Added:
+   trunk/tests/cpp.in/default/twoscomp.trap/
+   trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in
+   trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in
+   trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in
+   trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in
+   trunk/tests/cpp/default/twoscomp.trap/
+   trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h
+   trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp
+   trunk/tests/cpp/default/twoscomp.trap/Error_compl.h
+   trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp
+   trunk/tests/cpp/default/twoscomp.trap/Error_xor.h
+   trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp
+   trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h
+   trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp
+Modified:
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+Log:
+test cases for two's complement machines with trapping integers
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_bitand.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,31 @@
++// default\twoscomp.trap\Error_bitand.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++
++// spot-check &
++#if INTMAX_MIN & (INTMAX_MIN+1)
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_bitand.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,31 @@
++// default\twoscomp.trap\Error_bitand.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++
++// spot-check &
++#if INTMAX_MIN & (INTMAX_MIN+1)
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_compl.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_compl.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_compl.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,14 @@
++// default\twoscomp.trap\Error_compl.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++#if ~INTMAX_MAX
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_compl.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,14 @@
++// default\twoscomp.trap\Error_compl.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++#if ~INTMAX_MAX
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_xor.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_xor.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_xor.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,16 @@
++// default\twoscomp.trap\Error_xor.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++
++// spot-check ^
++#if INTMAX_MAX ^ -1
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Error_xor.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,16 @@
++// default\twoscomp.trap\Error_xor.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++
++// spot-check ^
++#if INTMAX_MAX ^ -1
++#endif
++
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.h	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,20 @@
++// default\twoscomp.trap\Pass_int_min.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <limits.h>
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
+
+Added: trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp
+===================================================================
+--- trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/default/twoscomp.trap/Pass_int_min.hpp	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,20 @@
++// default\twoscomp.trap\Pass_int_min.hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <limits.h>
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++#if -INT_MIN==INT_MAX
++#else
++#error -INT_MIN==INT_MAX is false
++#endif
++#if -LONG_MIN==LONG_MAX
++#else
++#error -LONG_MIN==LONG_MAX is false
++#endif
++#if -LLONG_MIN==LLONG_MAX
++#else
++#error -LLONG_MIN==LLONG_MAX is false
++#endif
++
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/run_tests.bat	2009-08-22 07:43:11 UTC (rev 235)
+@@ -16,6 +16,7 @@
+ @set CPP_ONESCOMP_NOTRAP=..\..\z_cpp --int-ones-complement
+ @set CPP_ONESCOMP_TRAP=..\..\z_cpp --int-ones-complement --int-traps
+ @set CPP_TWOSCOMP_NOTRAP=..\..\z_cpp --int-twos-complement
++ at set CPP_TWOSCOMP_TRAP=..\..\z_cpp --int-twos-complement --int-traps
+ 
+ @echo Checking ISO error requirements
+ @echo ====
+@@ -122,6 +123,14 @@
+ @for %%f in (default\twoscomp.notrap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (default\twoscomp.notrap\Pass*.hpp) do @echo %CPP_TWOSCOMP_NOTRAP% %%f & @%CPP_TWOSCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 & set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (default\twoscomp.notrap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
++ at for %%f in (default\twoscomp.trap\Pass*.h) do @echo %CPP_TWOSCOMP_TRAP% %%f & @%CPP_TWOSCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 & set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
++ at for %%f in (default\twoscomp.trap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
++ at for %%f in (default\twoscomp.trap\Pass*.hpp) do @echo %CPP_TWOSCOMP_TRAP% %%f & @%CPP_TWOSCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 & set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
++ at for %%f in (default\twoscomp.trap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
++ at for %%f in (default\twoscomp.trap\Error*.h) do @echo %CPP_TWOSCOMP_TRAP% %%f & @%CPP_TWOSCOMP_TRAP% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
++ at for %%f in (default\twoscomp.trap\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
++ at for %%f in (default\twoscomp.trap\Error*.hpp) do @echo %CPP_TWOSCOMP_TRAP% %%f & @%CPP_TWOSCOMP_TRAP% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
++ at for %%f in (default\twoscomp.trap\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+ 
+ @echo Checking ZCC nonconforming errors
+ @echo ====
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp/run_tests.sh	2009-08-22 07:43:11 UTC (rev 235)
+@@ -23,6 +23,7 @@
+ 	local CPP_ONESCOMP_NOTRAP="../../z_cpp --int-ones-complement"
+ 	local CPP_ONESCOMP_TRAP="../../z_cpp --int-ones-complement --int-traps"
+ 	local CPP_TWOSCOMP_NOTRAP="../../z_cpp --int-twos-complement"
++	local CPP_TWOSCOMP_TRAP="../../z_cpp --int-twos-complement --int-traps"
+ 
+ 	echo Checking ISO error requirements
+ 	echo ====
+@@ -83,6 +84,10 @@
+ 	for F in default/onescomp.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ONESCOMP_TRAP $F; if $CPP_ONESCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in default/twoscomp.notrap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_NOTRAP $F; if $CPP_TWOSCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
+ 	for F in default/twoscomp.notrap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_NOTRAP $F; if $CPP_TWOSCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
++	for F in default/twoscomp.trap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
++	for F in default/twoscomp.trap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
++	for F in default/twoscomp.trap/Error*.h; do let ++REJECT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
++	for F in default/twoscomp.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 
+ 	echo Checking ZCC nonconforming errors
+ 	echo ====
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Error_bitand.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,21 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++TRUE_EXPRESSION -INT_MIN==INT_MAX
++TRUE_EXPRESSION -LONG_MIN==LONG_MAX
++TRUE_EXPRESSION -LLONG_MIN==LLONG_MAX
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++
++// spot-check &
++VALID_EXPRESSION INTMAX_MIN & (INTMAX_MIN+1)
++
++
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Error_compl.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,13 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++VALID_EXPRESSION ~INTMAX_MAX
++
++
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Error_xor.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,15 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <stdint.h>
++
++// trapping machines die on LLONG_MIN-1
++// | : impractical (have to start with obvious LLONG_MIN-1)
++// ~ : use LLONG_MAX
++// ^ : try LLONG_MAX vs -1 (randdriver)
++// & : (randdriver)
++
++// spot-check ^
++VALID_EXPRESSION INTMAX_MAX ^ -1
++
++
+
+Added: trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in
+===================================================================
+--- trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/default/twoscomp.trap/Pass_int_min.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -0,0 +1,11 @@
++SUFFIXES h hpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <limits.h>
++
++// two's complement: obvious INT_MIN is trap representation
++// check internal relations
++TRUE_EXPRESSION -INT_MIN==INT_MAX
++TRUE_EXPRESSION -LONG_MIN==LONG_MAX
++TRUE_EXPRESSION -LLONG_MIN==LLONG_MAX
++
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-08-22 07:17:21 UTC (rev 234)
++++ trunk/tests/cpp.in/run_tests.in	2009-08-22 07:43:11 UTC (rev 235)
+@@ -10,6 +10,7 @@
+ VAR CPP_ONESCOMP_NOTRAP ../../z_cpp --int-ones-complement
+ VAR CPP_ONESCOMP_TRAP ../../z_cpp --int-ones-complement --int-traps
+ VAR CPP_TWOSCOMP_NOTRAP ../../z_cpp --int-twos-complement
++VAR CPP_TWOSCOMP_TRAP ../../z_cpp --int-twos-complement --int-traps
+ 
+ ECHO Checking ISO error requirements
+ ERROR CPP_ISO Error*
+@@ -41,6 +42,8 @@
+ PASS CPP_ONESCOMP_TRAP default/onescomp.core/Pass*
+ ERROR CPP_ONESCOMP_TRAP default/onescomp.trap/Error*
+ PASS CPP_TWOSCOMP_NOTRAP default/twoscomp.notrap/Pass*
++PASS CPP_TWOSCOMP_TRAP default/twoscomp.trap/Pass*
++ERROR CPP_TWOSCOMP_TRAP default/twoscomp.trap/Error*
+ 
+ ECHO Checking ZCC nonconforming errors
+ ERROR CPP default.nonconforming/Error*
+
+
+
+From zaimoni at mail.berlios.de  Sat Aug 22 10:55:48 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 22 Aug 2009 10:55:48 +0200
+Subject: [Zcplusplus-commits] r236 - in trunk: . tests/cpp
+	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+Message-ID: <200908220855.n7M8tmwY031324@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-22 10:55:31 +0200 (Sat, 22 Aug 2009)
+New Revision: 236
+
+Added:
+   trunk/tests/cpp.in/line.C99/
+   trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in
+   trunk/tests/cpp.in/line.C99/Error_badnum1.in
+   trunk/tests/cpp.in/line.C99/Error_badnum2.in
+   trunk/tests/cpp.in/line.C99/Error_badnum3.in
+   trunk/tests/cpp.in/line.C99/Error_badnum4.in
+   trunk/tests/cpp/line.C99/
+   trunk/tests/cpp/line.C99/Error_VA_ARGS.h
+   trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp
+   trunk/tests/cpp/line.C99/Error_badnum1.h
+   trunk/tests/cpp/line.C99/Error_badnum1.hpp
+   trunk/tests/cpp/line.C99/Error_badnum2.h
+   trunk/tests/cpp/line.C99/Error_badnum2.hpp
+   trunk/tests/cpp/line.C99/Error_badnum3.h
+   trunk/tests/cpp/line.C99/Error_badnum3.hpp
+   trunk/tests/cpp/line.C99/Error_badnum4.h
+   trunk/tests/cpp/line.C99/Error_badnum4.hpp
+Removed:
+   trunk/tests/cpp/Error_line1.hpp
+   trunk/tests/cpp/Error_line2.hpp
+   trunk/tests/cpp/Error_line3.hpp
+   trunk/tests/cpp/Error_line4.hpp
+Modified:
+   trunk/CPreproc.cpp
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp.in/run_tests_C99.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+   trunk/tests/cpp/run_tests_C99.bat
+   trunk/tests/cpp/run_tests_C99.sh
+Log:
+check that we reject #line __VA_ARGS__ properly (before macro substitution).  Also, slight code size reduction exploiting modulo unsigned arithmetic.
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/CPreproc.cpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1068,7 +1068,7 @@
+ 					if (PP::LINE==directive_type)
+ 						{
+ 						if (C99_VA_ARGS_flinch(*TokenList[i],sizeof("#line ")-1))
+-							{	//! \todo need test case (but need to distinguish error from the other one that'll happen)
++							{	//! \test cpp/line.C99/Error_VA_ARGS.h, cpp/line.C99/Error_VA_ARGS.hpp
+ 							message_header(*TokenList[i]);
+ 							INFORM("discarding #line directive");
+ 							TokenList.DeleteIdx(i);
+@@ -4008,10 +4008,10 @@
+ 		||	!C_PPDecimalInteger::is(TokenList[i]->data()+critical_offset,first_token_len,line_number)
+ 		||	-1==cmp(line_number,"1",sizeof("1")-1)
+ 		||	 1==cmp(line_number,"2147483647",sizeof("2147483647")-1))	// constant should be stringized 2^31-1
+-		{	//! \test Error_line1.hpp
+-			//! \test Error_line2.hpp
+-			//! \test Error_line3.hpp
+-			//! \test Error_line4.hpp
++		{	//! \test cpp/line.C99/Error_badnum1.h, cpp/line.C99/Error_badnum1.hpp
++			//! \test cpp/line.C99/Error_badnum2.h, cpp/line.C99/Error_badnum2.hpp
++			//! \test cpp/line.C99/Error_badnum3.h, cpp/line.C99/Error_badnum3.hpp
++			//! \test cpp/line.C99/Error_badnum4.h, cpp/line.C99/Error_badnum4.hpp
+ 		message_header(*TokenList[i]);
+ 		INC_INFORM(ERR_STR);
+ 		INFORM("#line does not have a line number between 1 and 2147483647 inclusive (C99 6.10.4p3/C++0x 16.4p3)");
+@@ -4033,17 +4033,10 @@
+ 			{
+ 			size_t j = i+1;
+ 			//! \todo loops should stop at first (valid) #line directive
+-			if (TokenList[i]->logical_line.first<numeric_line_number)
+-				{
+-				const size_t inc_delta = numeric_line_number - TokenList[i]->logical_line.first;
+-				while(j<TokenList.size())
+-					TokenList[j++]->logical_line.first += inc_delta;
+-				}
+-			else{
+-				const size_t dec_delta = TokenList[i]->logical_line.first - numeric_line_number;
+-				while(j<TokenList.size())
+-					TokenList[j++]->logical_line.first -= dec_delta;
+-				}
++			// remember that unsigned arithmetic is modulo
++			const size_t delta = numeric_line_number - TokenList[i]->logical_line.first;
++			while(j<TokenList.size())
++				TokenList[j++]->logical_line.first += delta;
+ 			};
+ 		}
+ 
+
+Deleted: trunk/tests/cpp/Error_line1.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line1.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line1.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line1.hpp
+-// #line without PPnumber
+-// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line Unwelcome
+
+Deleted: trunk/tests/cpp/Error_line2.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line2.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line2.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line2.hpp
+-// #line without integer-like PPNumber
+-// C99 standard 6.10.4 3 requires failure
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line 1.0e4
+
+Deleted: trunk/tests/cpp/Error_line3.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line3.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line3.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line3.hpp
+-// #line with PPNumber below 1
+-// C99 standard 6.10.4 3 requires failure
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line 0
+
+Deleted: trunk/tests/cpp/Error_line4.hpp
+===================================================================
+--- trunk/tests/cpp/Error_line4.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/Error_line4.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -1,6 +0,0 @@
+-// tests/cpp/Error_line4.hpp
+-// #line with huge PPNumber
+-// C99 standard 6.10.4 3 requires failure
+-// (C)2009 Kenneth Boyd, license: MIT.txt
+-
+-#line 12345678987654321
+
+Added: trunk/tests/cpp/line.C99/Error_VA_ARGS.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_VA_ARGS.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_VA_ARGS.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_VA_ARGS.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line __VA_ARGS__
+
+Added: trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_VA_ARGS.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_VA_ARGS.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line __VA_ARGS__
+
+Added: trunk/tests/cpp/line.C99/Error_badnum1.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum1.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum1.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum1.h
++// #line without PPnumber
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line Unwelcome
+
+Added: trunk/tests/cpp/line.C99/Error_badnum1.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum1.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum1.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum1.hpp
++// #line without PPnumber
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line Unwelcome
+
+Added: trunk/tests/cpp/line.C99/Error_badnum2.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum2.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum2.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum2.h
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 1.0e4
+
+Added: trunk/tests/cpp/line.C99/Error_badnum2.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum2.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum2.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum2.hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 1.0e4
+
+Added: trunk/tests/cpp/line.C99/Error_badnum3.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum3.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum3.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum3.h
++// #line with PPNumber below 1
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 0
+
+Added: trunk/tests/cpp/line.C99/Error_badnum3.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum3.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum3.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum3.hpp
++// #line with PPNumber below 1
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 0
+
+Added: trunk/tests/cpp/line.C99/Error_badnum4.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum4.h	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum4.h	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum4.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 12345678987654321
+
+Added: trunk/tests/cpp/line.C99/Error_badnum4.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badnum4.hpp	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/line.C99/Error_badnum4.hpp	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badnum4.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 12345678987654321
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests.bat	2009-08-22 08:55:31 UTC (rev 236)
+@@ -44,6 +44,10 @@
+ @for %%f in (if.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (if.C99\Error*.hpp) do @echo %CPP_ISO% %%f & @%CPP_ISO% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (if.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
++ at for %%f in (line.C99\Error*.h) do @echo %CPP_ISO% %%f & @%CPP_ISO% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
++ at for %%f in (line.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
++ at for %%f in (line.C99\Error*.hpp) do @echo %CPP_ISO% %%f & @%CPP_ISO% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
++ at for %%f in (line.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (pragma.C99\Error*.h) do @echo %CPP_ISO% %%f & @%CPP_ISO% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (pragma.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (pragma.C99\Error*.hpp) do @echo %CPP_ISO% %%f & @%CPP_ISO% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests.sh	2009-08-22 08:55:31 UTC (rev 236)
+@@ -39,6 +39,8 @@
+ 	for F in ifdef.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in if.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in if.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in pragma.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in pragma.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 
+
+Modified: trunk/tests/cpp/run_tests_C99.bat
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.bat	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests_C99.bat	2009-08-22 08:55:31 UTC (rev 236)
+@@ -24,6 +24,8 @@
+ @for %%f in (ifdef.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (if.C99\Error*.h) do @echo %CPP% %%f & @%CPP% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (if.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
++ at for %%f in (line.C99\Error*.h) do @echo %CPP% %%f & @%CPP% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
++ at for %%f in (line.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (pragma.C99\Error*.h) do @echo %CPP% %%f & @%CPP% %%f && (set /a BAD_PASS=BAD_PASS+1 & set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (pragma.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ 
+
+Modified: trunk/tests/cpp/run_tests_C99.sh
+===================================================================
+--- trunk/tests/cpp/run_tests_C99.sh	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp/run_tests_C99.sh	2009-08-22 08:55:31 UTC (rev 236)
+@@ -25,6 +25,7 @@
+ 	for F in defined.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in ifdef.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in if.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 	for F in pragma.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME="$BAD_PASS_NAME $F"; else code_screen $? $F; fi; done;
+ 
+ 	echo Checking ISO acceptance requirements
+
+Added: trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_VA_ARGS.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line __VA_ARGS__
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum1.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum1.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum1.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line without PPnumber
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line Unwelcome
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum2.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum2.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum2.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 1.0e4
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum3.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum3.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum3.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line with PPNumber below 1
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 0
+
+Added: trunk/tests/cpp.in/line.C99/Error_badnum4.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badnum4.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/line.C99/Error_badnum4.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 12345678987654321
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/run_tests.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -19,6 +19,7 @@
+ ERROR CPP_ISO defined.C99/Error*
+ ERROR CPP_ISO ifdef.C99/Error*
+ ERROR CPP_ISO if.C99/Error*
++ERROR CPP_ISO line.C99/Error*
+ ERROR CPP_ISO pragma.C99/Error*
+ 
+ ECHO Checking ZCC warnings on ISO-accepted code
+
+Modified: trunk/tests/cpp.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests_C99.in	2009-08-22 07:43:11 UTC (rev 235)
++++ trunk/tests/cpp.in/run_tests_C99.in	2009-08-22 08:55:31 UTC (rev 236)
+@@ -11,6 +11,7 @@
+ ERROR CPP defined.C99/Error*
+ ERROR CPP ifdef.C99/Error*
+ ERROR CPP if.C99/Error*
++ERROR CPP line.C99/Error*
+ ERROR CPP pragma.C99/Error*
+ 
+ ECHO Checking ISO acceptance requirements
+
+
+
+From zaimoni at mail.berlios.de  Mon Aug 24 21:25:43 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 24 Aug 2009 21:25:43 +0200
+Subject: [Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default
+	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+Message-ID: <200908241925.n7OJPhFW012035@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-24 21:25:20 +0200 (Mon, 24 Aug 2009)
+New Revision: 237
+
+Added:
+   trunk/tests/cpp.in/line.C99/Error_badfile1.in
+   trunk/tests/cpp.in/line.C99/Error_badfile2.in
+   trunk/tests/cpp.in/line.C99/Preprocess_42.in
+   trunk/tests/cpp.in/line.C99/Preprocess_42test.in
+   trunk/tests/cpp/line.C99/Error_badfile1.h
+   trunk/tests/cpp/line.C99/Error_badfile1.hpp
+   trunk/tests/cpp/line.C99/Error_badfile2.h
+   trunk/tests/cpp/line.C99/Error_badfile2.hpp
+   trunk/tests/cpp/line.C99/Preprocess_42.h
+   trunk/tests/cpp/line.C99/Preprocess_42.h.txt
+   trunk/tests/cpp/line.C99/Preprocess_42.hpp
+   trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt
+   trunk/tests/cpp/line.C99/Preprocess_42test.h
+   trunk/tests/cpp/line.C99/Preprocess_42test.h.txt
+   trunk/tests/cpp/line.C99/Preprocess_42test.hpp
+   trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt
+Modified:
+   trunk/CPreproc.cpp
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt
+   trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt
+   trunk/tests/cpp/run_tests.sh
+Log:
+more #line testcases; fix #line directive
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/CPreproc.cpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -1640,7 +1640,7 @@
+ 							continue;
+ 							}
+ 						assert(!macros_object_expansion_pre_eval[object_macro_index]->empty());
+-						{	//! \test the cpp/default/Preprocess_*.h/hpp test cases
++						{	//! \test cpp/default/Preprocess_*.h/hpp
+ 						size_t discard = 0;
+ 						dynamic_macro_replace_once(*TokenList[i],discard,TokenList[i]->size(),macros_object,macros_object_expansion_pre_eval,macros_function,macros_function_arglist,macros_function_expansion_pre_eval,NULL);
+ 						}
+@@ -1741,7 +1741,7 @@
+ 									continue;
+ 									}
+ 								assert(!macros_function_expansion_pre_eval[function_macro_index]->empty());
+-								{	//! \test default/Preprocess_... family of test cases
++								{	//! \test default/Preprocess_*.h/hpp 
+ 								Token<char>* Tmp = new Token<char>(*macros_function_expansion_pre_eval[function_macro_index]);
+ 								Tmp->logical_line = TokenList[i]->logical_line;
+ 								if (!nonrecursive_macro_replacement_list(Tmp->data()))
+@@ -2049,7 +2049,7 @@
+ 				}
+ 			}
+ #undef CPP_INCLUDE_NOT_FOUND
+-		//! also tested in a number of data transform test cases
++		//! also tested in a number of data transform tests
+ 		//! \test Pass_include_local.hpp
+ 		if (!IncludeTokenList.empty())
+ 			{	// not sure whether C99 5.1.1.2 4 requires preprocessing the whole header before pasting, but it permits it
+@@ -3260,7 +3260,7 @@
+ 			macro_value = FileBuffer;
+ 			}
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,"__LINE__"))
+-			macro_value = ltoa((long)(x.logical_line.second),Buffer,10);
++			macro_value = ltoa((long)(x.logical_line.first),Buffer,10);
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,"__TIME__"))
+ 			macro_value = time_buffer;
+ 		else{
+@@ -4022,7 +4022,7 @@
+ 	critical_offset += first_token_len;
+ 	}
+ 	if (i+1 < TokenList.size())
+-		{	//! \bug need data-transform test case
++		{	//! \test cpp/line.C99/Preprocess_42.h, cpp/line.C99/Preprocess_42.hpp
+ 			// Behavior is undefined if the syntax is bad (line number with malformed filename string), so don't worry about this happening too early.
+ 		size_t numeric_line_number;
+ 		{	// don't worry about failure (pre-validated above), *but* as errno should be a synchronized global we have to lock it anyway
+@@ -4060,7 +4060,8 @@
+ 	//! \todo: extension?  C99 spec requires narrow string literals only
+ 	if (   C_TESTFLAG_STRING_LITERAL!=second_token_flags
+ 		|| 'L'==TokenList[i]->data()[critical_offset])
+-		{	//! \bug need test cases
++		{	//! \test cpp/line.C99/Error_badfile1.h, cpp/line.C99/Error_badfile1.hpp
++			//! \test cpp/line.C99/Error_badfile2.h, cpp/line.C99/Error_badfile2.hpp
+ 		message_header(*TokenList[i]);
+ 		INC_INFORM(ERR_STR);
+ 		INFORM("#line wants a narrow string literal for the new __FILE__ (C99 6.10.4p1/C++98 16.4p1)");
+@@ -4070,7 +4071,7 @@
+ 		}
+ 
+ 	if (i+1 < TokenList.size())
+-		{	//! \bug need data-transform test case
++		{	//! \test cpp/line.C99/Preprocess_42.h, cpp/line.C99/Preprocess_42.hpp
+ 		//! \todo loops should stop at first (valid) #line directive with a filename
+ 		// unescape the string, if needed
+ 		const char* new_FILE = NULL;
+
+Modified: trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt
+===================================================================
+--- trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -1,4 +1,4 @@
++3
+ 1
+ 1
+ 1
+-1
+
+Modified: trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt
+===================================================================
+--- trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -1,4 +1,4 @@
++3
+ 1
+ 1
+ 1
+-1
+
+Added: trunk/tests/cpp/line.C99/Error_badfile1.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile1.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile1.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile1.h
++// #line won't handle two line numbers
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 53
+
+Added: trunk/tests/cpp/line.C99/Error_badfile1.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile1.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile1.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile1.hpp
++// #line won't handle two line numbers
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 53
+
+Added: trunk/tests/cpp/line.C99/Error_badfile2.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile2.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile2.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile2.h
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 L"test"
+
+Added: trunk/tests/cpp/line.C99/Error_badfile2.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile2.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile2.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile2.hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 L"test"
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41
++__LINE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.h.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.h.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.h.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41
++__LINE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42test.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41 "test"
++__LINE__ __FILE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.h.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.h.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.h.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42"test"
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42test.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41 "test"
++__LINE__ __FILE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42"test"
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/run_tests.sh	2009-08-24 19:25:20 UTC (rev 237)
+@@ -100,6 +100,8 @@
+ 	echo ====
+ 	for F in default/Preprocess*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
+ 	for F in default/Preprocess*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
++	for F in line.C99/Preprocess*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
++	for F in line.C99/Preprocess*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME="$BAD_FAIL_NAME $F"; fi; done;
+ 
+ 	echo -E $BAD_PASS of $REJECT_TEST rejection tests accepted
+ 	if test -n "$BAD_PASS_NAME"; then echo -E $BAD_PASS_NAME; fi
+
+Added: trunk/tests/cpp.in/line.C99/Error_badfile1.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badfile1.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Error_badfile1.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line won't handle two line numbers
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 53
+
+Added: trunk/tests/cpp.in/line.C99/Error_badfile2.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badfile2.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Error_badfile2.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 L"test"
+
+Added: trunk/tests/cpp.in/line.C99/Preprocess_42.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Preprocess_42.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Preprocess_42.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41
++__LINE__
+
+Added: trunk/tests/cpp.in/line.C99/Preprocess_42test.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Preprocess_42test.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Preprocess_42test.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41 "test"
++__LINE__ __FILE__
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/run_tests.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -51,6 +51,7 @@
+ 
+ ECHO Checking ZCC content transforms
+ TEXTTRANSFORM CPP default/Preprocess*
++TEXTTRANSFORM CPP line.C99/Preprocess*
+ 
+ EPILOG
+ 
+
+
+
+From zaimoni at mail.berlios.de  Mon Aug 24 23:39:52 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Mon, 24 Aug 2009 23:39:52 +0200
+Subject: [Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS
+Message-ID: <200908242139.n7OLdquX027389@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-24 23:39:42 +0200 (Mon, 24 Aug 2009)
+New Revision: 238
+
+Modified:
+   trunk/Zaimoni.STL/LexParse/LangConf.cpp
+   trunk/Zaimoni.STL/Logging.h
+   trunk/Zaimoni.STL/OS/stdio_log.cpp
+   trunk/Zaimoni.STL/flat_alg.h
+Log:
+object-file size tuneup (preparing for insourcing POSIX cmp utility)
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.cpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.cpp	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/LexParse/LangConf.cpp	2009-08-24 21:39:42 UTC (rev 238)
+@@ -241,13 +241,13 @@
+ 		};
+ 	if (0==leading_space)
+ 		{
+-		SEVERE_WARNING(msg);
++		INFORM(msg);
+ 		return;
+ 		};
+ 	char* target = reinterpret_cast<char*>(calloc(strlen(msg)+leading_space,1));
+ 	if (NULL==target)
+ 		{
+-		SEVERE_WARNING(msg);
++		INFORM(msg);
+ 		return;
+ 		};
+ 	char* tracking_target = target;
+@@ -266,7 +266,7 @@
+ 	strcpy(tracking_target,": error: ");
+ 	tracking_target += sizeof(": error: ")-1;
+ 	strcpy(tracking_target,msg);
+-	SEVERE_WARNING(target);
++	INFORM(target);
+ 	free(target);
+ }
+ 
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/Logging.h	2009-08-24 21:39:42 UTC (rev 238)
+@@ -38,6 +38,7 @@
+ EXTERN_C void _inc_inform(const char* const B, size_t len);	/* only C stdio */
+ EXTERN_C void _log(const char* const B, size_t len);		/* Windows GUI crippled (assumes len := strlen() */
+ 
++#ifdef __cplusplus
+ /* overloadable adapters for C++ and debug-mode code */
+ /* all-uppercased because we may use macro wrappers on these */
+ void FATAL(const char* const B) NO_RETURN;
+@@ -51,20 +52,6 @@
+ inline void INFORM(const char* const B) {_inform(B,strlen(B));}
+ inline void LOG(const char* const B) {_log(B,strlen(B));}
+ 
+-void SEVERE_WARNING(const char* const B);	// useful for Console class
+-void WARNING(const char* const B);			// useful for Console class
+-
+-inline bool WARN(bool A, const char* const B)
+-{
+-	if (A)
+-		{
+-		WARNING(B);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-#ifdef __cplusplus
+ /* have C++, so function overloading */
+ inline void INFORM(const char* const B, size_t len) {_inform(B,len);}
+ inline void INC_INFORM(const char* const B, size_t len) {_inc_inform(B,len);}
+@@ -144,7 +131,7 @@
+ #define ARG_TRACE_LOG INFORM_INC(_file); INFORM_INC(":"); INFORM(_line)
+ 
+ #define AUDIT_IF_RETURN(A,B) if (A) {LOG(#A "; returning " #B); return B;}
+-#define AUDIT_STATEMENT(A) {LOG(#A); A;}
++#define AUDIT_STATEMENT(A) {A;}
+ #define DEBUG_STATEMENT(A) A
+ /* Interoperate with Microsoft: return code 3 */
+ #define DEBUG_FAIL_OR_LEAVE(A,B) if (A) FATAL_CODE(#A,3)
+
+Modified: trunk/Zaimoni.STL/OS/stdio_log.cpp
+===================================================================
+--- trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-24 21:39:42 UTC (rev 238)
+@@ -8,46 +8,38 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include <string.h>
+-#ifndef __cplusplus
+-#include <stdbool.h>
+-#endif
+ 
+ /* define this *first* */
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+-void
+-_fatal(const char* const B)
++void _fatal(const char* const B)
+ {
+ 	fwrite(B,strlen(B),1,stderr);
+ 	fwrite("\n",1,1,stderr);
+ 	exit(EXIT_FAILURE);
+ }
+ 
+-void
+-_fatal_code(const char* const B,int exit_code)
++void _fatal_code(const char* const B,int exit_code)
+ {
+ 	fwrite(B,strlen(B),1,stderr);
+ 	fwrite("\n",1,1,stderr);
+ 	exit(exit_code);
+ }
+ 
+-void
+-_inform(const char* const B, size_t len)
++void _inform(const char* const B, size_t len)
+ {
+ 	fwrite(B,len,1,stderr);
+ 	fwrite("\n",1,1,stderr);
+ }
+ 
+-void
+-_inc_inform(const char* const B, size_t len)
++void _inc_inform(const char* const B, size_t len)
+ {
+ 	fwrite(B,len,1,stderr);
+ }
+ 
+ /* this is going to be relocated later */
+-void
+-_log(const char* const B, size_t len)
++void _log(const char* const B, size_t len)
+ {
+ 	fwrite(B,len,1,stderr);
+ 	fwrite("\n",1,1,stderr);
+@@ -56,31 +48,4 @@
+ #ifdef __cplusplus
+ }	/* end extern "C" */
+ #endif
+-
+-bool
+-WARN(int A, const char* const B)
+-{
+-	if (A)
+-		{
+-		fwrite(B,strlen(B),1,stderr);
+-		fwrite("\n",1,1,stderr);
+-		return true;
+-		}
+-	return false;
+-}
+-
+-void
+-SEVERE_WARNING(const char* const B)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite("\n",1,1,stderr);
+-}
+-
+-void
+-WARNING(const char* const B)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite("\n",1,1,stderr);
+-}
+-
+ #endif
+
+Modified: trunk/Zaimoni.STL/flat_alg.h
+===================================================================
+--- trunk/Zaimoni.STL/flat_alg.h	2009-08-24 19:25:20 UTC (rev 237)
++++ trunk/Zaimoni.STL/flat_alg.h	2009-08-24 21:39:42 UTC (rev 238)
+@@ -10,10 +10,12 @@
+ 
+ #ifdef __cplusplus
+ namespace zaimoni {
+-#endif
+ 
+ /* C string tests */
+-inline bool is_empty_string(const char* const LHS) {return NULL==LHS || '\x00'==LHS[0];}
++inline bool is_empty_string(const char* const x) {return NULL==x || '\0'==x[0];}
++#else
++#define is_empty_string(x) (NULL==x || '\0'==x[0])
++#endif
+ 
+ #ifdef __cplusplus
+ 
+
+
+
+From zaimoni at mail.berlios.de  Wed Aug 26 01:21:46 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 26 Aug 2009 01:21:46 +0200
+Subject: [Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools
+Message-ID: <200908252321.n7PNLkTw007099@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-26 01:21:39 +0200 (Wed, 26 Aug 2009)
+New Revision: 239
+
+Modified:
+   trunk/Zaimoni.STL/Logging.h
+   trunk/Zaimoni.STL/flat_alg.h
+   trunk/tools/MakeMake.py
+Log:
+make build system C90-friendlier
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-08-24 21:39:42 UTC (rev 238)
++++ trunk/Zaimoni.STL/Logging.h	2009-08-25 23:21:39 UTC (rev 239)
+@@ -107,7 +107,22 @@
+ inline void INC_INFORM(unsigned char B) {return INC_INFORM((uintmax_t)(B));}
+ #endif
+ 
++#else	/* !defined(__cplusplus) */
++#ifdef NDEBUG
++#	define FATAL(B) _fatal(B)
++#	define FATAL_CODE(B,CODE) _fatal_code(B,CODE)
++#elif defined(__GNUC__)
++#	define FATAL(B) _fatal((_LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#else
++/* if no extensions, assume C99 */
++#	define FATAL(B) _fatal((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
++#define INC_INFORM(B) _inc_inform(B,strlen(B))
++#define INFORM(B) _inform(B,strlen(B))
++#define LOG(B) _log(B,strlen(B))
++#endif
+ 
+ /* this should look like an assert even in NDEBUG mode */
+ #define SUCCEED_OR_DIE(A) ((A) ? (void)0 : FATAL_CODE(#A,3))
+@@ -115,15 +130,14 @@
+ /* match assert.h C standard header, which uses NDEBUG */
+ #ifndef NDEBUG	/* self-aware version */
+ /* use similar extensions on other compilers */
+-#ifdef __GNUC__
+-#define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
+-#define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#ifdef __cplusplus
++#	ifdef __GNUC__
++#		define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#	else	/* if no extensions, assume C99 */		
++#		define FATAL(B) FATAL((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+-
+-/* if no extensions, assume C99 */
+-#ifndef FATAL
+-#define FATAL(B) FATAL((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
+-#define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+ 
+ #define ARG_TRACE_PARAMS , const char* const _file, long _line
+
+Modified: trunk/Zaimoni.STL/flat_alg.h
+===================================================================
+--- trunk/Zaimoni.STL/flat_alg.h	2009-08-24 21:39:42 UTC (rev 238)
++++ trunk/Zaimoni.STL/flat_alg.h	2009-08-25 23:21:39 UTC (rev 239)
+@@ -19,11 +19,11 @@
+ 
+ #ifdef __cplusplus
+ 
+-// from boost::numeric::interval
+-// not useful for built-in types, but allows uniform code with interval arithmetic
++/* from boost::numeric::interval
++ * not useful for built-in types, but allows uniform code with interval arithmetic */
+ inline long double square(const long double& x) { return x*x;}
+ 
+-// signum function
++/* signum function */
+ template<class T>
+ inline signed int sgn(T x) {return (0<x) ? 1 : (0==x ? 0 : -1);}
+ 
+@@ -32,14 +32,14 @@
+ ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned short)
+ ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned int)
+ ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned long)
+-//ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned long long)
++/*ZAIMONI_DEFINE_UNSIGNED_SGN(unsigned long long) */
+ #undef ZAIMONI_DEFINE_UNSIGNED_SGN
+ 
+-// cmp function
++/* cmp function */
+ template<class T1, class T2>
+ inline signed int cmp(T1 x, T2 y) {return (x<y) ? -1 : (x==y ? 0 : 1);}
+ 
+-// -1^N
++/* -1^N */
+ template<class T>
+ inline signed int negative_one_pow(T N) {return (N%2) ? -1 : 1;}
+ 
+@@ -53,10 +53,10 @@
+ 		|| x==0;
+ }
+ 
+-// modeled on std::transform
+-// but the unary operation is assumed to mutate its operand
+-// probably closest conceptually to std::for_each
+-// range version
++/* modeled on std::transform
++ * but the unary operation is assumed to mutate its operand
++ * probably closest conceptually to std::for_each */
++/* range version */
+ template<class IO_Iterator,typename unary_op>
+ inline void autotransform(IO_Iterator first,IO_Iterator last,unary_op op)
+ {
+@@ -64,7 +64,7 @@
+ 		op(*first++);
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template<class IO_Iterator,typename unary_op>
+ inline void autotransform_n(IO_Iterator first,size_t N,unary_op op)
+ {
+@@ -75,7 +75,7 @@
+ 		};
+ }
+ 
+-// range version
++/* range version */
+ template<typename unary_op,class IO_Iterator>
+ inline bool and_range(unary_op op,IO_Iterator first,IO_Iterator last)
+ {
+@@ -84,7 +84,7 @@
+ 	return true;
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template<typename unary_op,class IO_Iterator>
+ inline bool and_range_n(unary_op op,IO_Iterator first,size_t N)
+ {
+@@ -96,7 +96,7 @@
+ 	return true;
+ }
+ 
+-// range version
++/* range version */
+ template<typename binary_op,class IO_Iterator>
+ inline bool and_range(binary_op op,IO_Iterator first,IO_Iterator last,IO_Iterator first2)
+ {
+@@ -105,7 +105,7 @@
+ 	return true;
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template<typename binary_op,class IO_Iterator>
+ inline bool and_range_n(binary_op op,IO_Iterator first,size_t N,IO_Iterator first2)
+ {
+@@ -117,7 +117,7 @@
+ 	return true;
+ }
+ 
+-// range version
++/* range version */
+ template<typename unary_op,class IO_Iterator>
+ inline bool or_range(unary_op op,IO_Iterator first,IO_Iterator last)
+ {
+@@ -126,7 +126,7 @@
+ 	return false;
+ }
+ 
+-// forward-iterator version
++/* forward-iterator version */
+ template<typename unary_op,class IO_Iterator>
+ inline bool or_range_n(unary_op op,IO_Iterator first,size_t N)
+ {
+@@ -155,18 +155,18 @@
+ #if 0
+ template<IntType>
+ inline void self_abs(IntType& n)
+-{	// do not rely on abs for the default (broken compilers, etc.)
+-	// user types with efficient self_abs will redefine this
++{	/* do not rely on abs for the default (broken compilers, etc.)
++	 * user types with efficient self_abs will redefine this */
+ 	if (n<0) n = -n;
+ }
+ 
+ namespace detail {
+ 
+-// These two ripped from Boost.Rational and de-robustified
+-// lowercased to dodge macro conventions
++/* These two ripped from Boost.Rational and de-robustified
++ * lowercased to dodge macro conventions */
+ 
+-// We use n and m as temporaries in this function, so there is no value
+-// in using const IntType& as we would only need to make a copy anyway...
++/* We use n and m as temporaries in this function, so there is no value
++ * in using const IntType& as we would only need to make a copy anyway... */
+ template<class IntType>
+ IntType
+ gcd(IntType n, IntType m)
+@@ -174,9 +174,9 @@
+ 	self_abs(n);
+ 	self_abs(m);
+ 	
+-    // As n and m are now positive, we can be sure that %= returns a
+-    // positive value (the standard guarantees this for built-in types,
+-    // and we require it of user-defined types).
++    /* As n and m are now positive, we can be sure that %= returns a
++     * positive value (the standard guarantees this for built-in types,
++     * and we require it of user-defined types). */
+ 	while(true)
+ 	{
+ 		if (m==0) return n;
+@@ -200,7 +200,7 @@
+     return n;
+ }
+ 
+-}	// namespace detail
++}	/* namespace detail */
+ 
+ #endif
+ 
+
+Modified: trunk/tools/MakeMake.py
+===================================================================
+--- trunk/tools/MakeMake.py	2009-08-24 21:39:42 UTC (rev 238)
++++ trunk/tools/MakeMake.py	2009-08-25 23:21:39 UTC (rev 239)
+@@ -1,5 +1,8 @@
+ #!/usr/bin/python
+ 
++# http://www.boost.org/more/license_info.html
++# Boost Software License - Version 1.0 - August 17th, 2003
++
+ # Permission is hereby granted, free of charge, to any person or organization
+ # obtaining a copy of the software and accompanying documentation covered by
+ # this license (the "Software") to use, reproduce, display, distribute,
+@@ -22,6 +25,14 @@
+ # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ # DEALINGS IN THE SOFTWARE.
+ 
++# backward fixup note
++# old version of configuring *.exe objects was
++# ObjfileTuple = ('main','Mockup','Agent','render_curses')
++# ProgName = 'Skirmish'
++# 
++# This didn't work well for Z.C++.  New style is
++# ProgObjects = {'Skirmish':('main','Mockup','Agent','render_curses')}
++
+ from string import join
+ from os import stat,getcwd
+ from os.path import isfile
+@@ -33,7 +44,7 @@
+ C_system_includedirs = [C_compiler_master_directory+'/include']
+ C_system_libdirs = [C_compiler_master_directory+'/lib']
+ CPP_compiler = 'g++'
+-CPP_system_includedirs = [C_compiler_master_directory+'/include']
++CPP_system_includedirs = [C_compiler_master_directory+'/include',C_compiler_master_directory+'/include/c++/3.4.5']
+ C_backtrack_dirs = []
+ 
+ def InjectAlternateSystemHeaderDir(Dirname):
+@@ -139,7 +150,7 @@
+ 	HeaderCache[Target] = LineList2
+ 	return LineList2
+ 	
+-def CoreCRules(LineList):
++def CoreCPPRules(LineList):
+ #	if C_hard_nonsystem_includedirs:
+ #		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_hard_nonsystem_includedirs),' ') +' -I- \\\n')
+ #	if C_soft_nonsystem_includedirs:
+@@ -155,6 +166,22 @@
+ 	if object_strip:
+ 		LineList.append('\t'+object_strip+'\n')
+ 
++def CoreCRules(LineList):
++#	if C_hard_nonsystem_includedirs:
++#		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_hard_nonsystem_includedirs),' ') +' -I- \\\n')
++#	if C_soft_nonsystem_includedirs:
++#		LineList.append('\t '+ join(map(lambda x: '-I '+x,C_soft_nonsystem_includedirs),' ') +' \\\n')
++#	if C_defines:
++#		LineList.append('\t '+ join(map(lambda x: '-D'+x,C_defines),' ') +' \\\n')
++	if C_assembly_preprocessing:
++		LineList.append('\t -o $*.s -S -xc -pipe $<\n')
++		LineList.append('\t'+C_assembly_preprocessing+'\n')
++		LineList.append('\tas -o $*.o $*.s\n')
++	else:
++		LineList.append('\t -o $*.o -c -xc -pipe $<\n')
++	if object_strip:
++		LineList.append('\t'+object_strip+'\n')
++
+ def MakeMakefile():
+ 	LineList = []	# makefile
+ 	LineList2 = []	# dependencies
+@@ -222,9 +249,10 @@
+ 		LineList.append('# defines\n')
+ 	LineList.append('# processing details\n')
+ 
+-	LineList.append(CPP_suffix+'.o:\n')
+-	LineList.append('\t$(CXX) $(CFLAGS) $(CXXFLAGS) $(ARCH_FLAGS) $(OTHER_INCLUDEDIR) $(C_MACROS) $(CXX_MACROS) \\\n')
+-	CoreCRules(LineList)
++	if CPP_suffix:
++		LineList.append(CPP_suffix+'.o:\n')
++		LineList.append('\t$(CXX) $(CFLAGS) $(CXXFLAGS) $(ARCH_FLAGS) $(OTHER_INCLUDEDIR) $(C_MACROS) $(CXX_MACROS) \\\n')
++		CoreCPPRules(LineList)
+ 
+ 	if C_enabled:
+ 		LineList.append('\n.c.o:\n')
+
+
+
+From zaimoni at mail.berlios.de  Wed Aug 26 09:47:30 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 26 Aug 2009 09:47:30 +0200
+Subject: [Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include
+Message-ID: <200908260747.n7Q7lUlv026777@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-26 09:47:24 +0200 (Wed, 26 Aug 2009)
+New Revision: 240
+
+Modified:
+   trunk/lib/zc++/include/ciso646
+   trunk/lib/zc++/include/cstdbool
+   trunk/lib/zcc/include/iso646.h
+   trunk/lib/zcc/include/stdbool.h
+Log:
+license phrasing tweak (Boost is same as MIT)
+
+Modified: trunk/lib/zc++/include/ciso646
+===================================================================
+--- trunk/lib/zc++/include/ciso646	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zc++/include/ciso646	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ // ciso646
+ // not-that-useful wrapper for iso646.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-// This file is subject to the Boost licence.
+-
+ #ifndef __CISO646__
+ #define __CISO646__ 1
+ #pragma ZCC lock __CISO646__
+
+Modified: trunk/lib/zc++/include/cstdbool
+===================================================================
+--- trunk/lib/zc++/include/cstdbool	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zc++/include/cstdbool	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ // cstdbool
+ // wrapper for stdbool.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-// This file is subject to the Boost licence.
+-
+ #ifndef __CSTDBOOL__
+ #define __CSTDBOOL__ 1
+ #pragma ZCC lock __CSTDBOOL__
+
+Modified: trunk/lib/zcc/include/iso646.h
+===================================================================
+--- trunk/lib/zcc/include/iso646.h	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zcc/include/iso646.h	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ /* iso646.h */
+ /* C99 7.9: define following macros (which are reserved keywords in C++) */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
+ 
+-/* This file is subject to the Boost licence. */
+-
+ #ifndef __ISO646_H__
+ #define __ISO646_H__ 1
+ #pragma ZCC lock __ISO646_H__
+
+Modified: trunk/lib/zcc/include/stdbool.h
+===================================================================
+--- trunk/lib/zcc/include/stdbool.h	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zcc/include/stdbool.h	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ /* stdbool.h */
+ /* C99 7.16: define following macros: __bool_true_false_are_defined, bool, true, false */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
+ 
+-/* This file is subject to the Boost licence. */
+-
+ #ifndef __STDBOOL_H__
+ #define __STDBOOL_H__ 1
+ #pragma ZCC lock __STDBOOL_H__
+
+
+
+From zaimoni at mail.berlios.de  Sun Aug 30 01:43:31 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 30 Aug 2009 01:43:31 +0200
+Subject: [Zcplusplus-commits] r241 - in trunk/Zaimoni.STL: . OS Pure.C
+	Pure.C/stdio.log
+Message-ID: <200908292343.n7TNhVM6022713@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-08-30 01:43:22 +0200 (Sun, 30 Aug 2009)
+New Revision: 241
+
+Added:
+   trunk/Zaimoni.STL/Pure.C/stdio.log/
+   trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile
+   trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/log.c
+Removed:
+   trunk/Zaimoni.STL/OS/stdio_log.cpp
+Modified:
+   trunk/Zaimoni.STL/Logging.h
+   trunk/Zaimoni.STL/Makefile
+   trunk/Zaimoni.STL/OS/GNUmakefile
+Log:
+Build system rearrangement.  Convert libz_stdio_log.a to pure C, relocate its build to subdirectory Pure.C/stdio.log, and eliminate libz_stdio_log_c.a .  Break up old stdio_log.cpp into five files to be nice to ld.  Retain apparently duplicate _inform, _log as they're only duplicate for the C stdio version of these functions (there are two other unreleased implementations where they're different)
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Logging.h	2009-08-29 23:43:22 UTC (rev 241)
+@@ -38,6 +38,10 @@
+ EXTERN_C void _inc_inform(const char* const B, size_t len);	/* only C stdio */
+ EXTERN_C void _log(const char* const B, size_t len);		/* Windows GUI crippled (assumes len := strlen() */
+ 
++#define INC_INFORM_STRING_LITERAL(B) _inc_inform(B,sizeof(B)-1)
++#define INFORM_STRING_LITERAL(B) _inform(B,sizeof(B)-1)
++#define LOG_STRING_LITERAL(B) _log(B,sizeof(B)-1)
++
+ #ifdef __cplusplus
+ /* overloadable adapters for C++ and debug-mode code */
+ /* all-uppercased because we may use macro wrappers on these */
+@@ -112,12 +116,15 @@
+ #	define FATAL(B) _fatal(B)
+ #	define FATAL_CODE(B,CODE) _fatal_code(B,CODE)
+ #elif defined(__GNUC__)
+-#	define FATAL(B) _fatal((_LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
+-#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#	define FATAL(B) _fatal((_LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#elif 1300<=_MSC_VER	/* __FUNCDNAME__ extension cuts in at Visual C++ .NET 2002 */
++#	define FATAL(B) _fatal((_LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
+ #else
+ /* if no extensions, assume C99 */
+-#	define FATAL(B) _fatal((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
+-#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
++#	define FATAL(B) _fatal((LOG(__func__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__func__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+ #define INC_INFORM(B) _inc_inform(B,strlen(B))
+ #define INFORM(B) _inform(B,strlen(B))
+@@ -132,26 +139,29 @@
+ /* use similar extensions on other compilers */
+ #ifdef __cplusplus
+ #	ifdef __GNUC__
+-#		define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
+-#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#		define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
++#	elif 1300<=_MSC_VER	/* __FUNCDNAME__ extension cuts in at Visual C++ .NET 2002 */
++#		define FATAL(B) FATAL((LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B))
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE)
+ #	else	/* if no extensions, assume C99 */		
+-#		define FATAL(B) FATAL((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
+-#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
++#		define FATAL(B) FATAL((LOG(__func__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B));
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG_STRING_LITERAL(__FILE__ ":" DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+ #endif
+ 
+ #define ARG_TRACE_PARAMS , const char* const _file, long _line
+ #define ARG_TRACE_ARGS , __FILE__, __LINE__
+-#define ARG_TRACE_LOG INFORM_INC(_file); INFORM_INC(":"); INFORM(_line)
++#define ARG_TRACE_LOG INFORM_INC(_file); INFORM_INC_STRING_LITERAL(":"); INFORM(_line)
+ 
+-#define AUDIT_IF_RETURN(A,B) if (A) {LOG(#A "; returning " #B); return B;}
++#define AUDIT_IF_RETURN(A,B) if (A) {LOG_STRING_LITERAL(#A "; returning " #B); return B;}
+ #define AUDIT_STATEMENT(A) {A;}
+ #define DEBUG_STATEMENT(A) A
+ /* Interoperate with Microsoft: return code 3 */
+ #define DEBUG_FAIL_OR_LEAVE(A,B) if (A) FATAL_CODE(#A,3)
+ 
+-#define VERIFY(A,B) if (A) FATAL((LOG(#A),B))
+-#define REPORT(A,B) if (A) INFORM((LOG(#A),B))
++#define VERIFY(A,B) if (A) FATAL((LOG_STRING_LITERAL(#A),B))
++#define REPORT(A,B) if (A) INFORM((LOG_STRING_LITERAL(#A),B))
+ #define DEBUG_LOG(A) LOG(A)
+ 
+ #else	/* fast version */
+
+Modified: trunk/Zaimoni.STL/Makefile
+===================================================================
+--- trunk/Zaimoni.STL/Makefile	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Makefile	2009-08-29 23:43:22 UTC (rev 241)
+@@ -4,28 +4,28 @@
+ 
+ # GNU targets we know about
+ all:
+-	cd pure.C; $(MAKE) all
++	cd pure.C; $(MAKE) all; cd stdio.log; $(MAKE) all
+ 	cd core.RAM; $(MAKE) all
+ 	cd LexParse; $(MAKE) all
+ 	cd OS; $(MAKE) all
+ 	cd OS; cd Win32; $(MAKE) all
+ 
+ clean:
+-	cd pure.C; $(MAKE) clean
++	cd pure.C; $(MAKE) clean; cd stdio.log; $(MAKE) clean
+ 	cd core.RAM; $(MAKE) clean
+ 	cd LexParse; $(MAKE) clean
+ 	cd OS; $(MAKE) clean
+ 	cd OS; cd Win32; $(MAKE) clean
+ 
+ install:
+-	cd pure.C; $(MAKE) install
++	cd pure.C; $(MAKE) install; cd stdio.log; $(MAKE) install
+ 	cd core.RAM; $(MAKE) install
+ 	cd LexParse; $(MAKE) install
+ 	cd OS; $(MAKE) install
+ 	cd OS; cd Win32; $(MAKE) install
+ 
+ uninstall:
+-	cd pure.C; $(MAKE) uninstall
++	cd pure.C; $(MAKE) uninstall; cd stdio.log; $(MAKE) uninstall
+ 	cd core.RAM; $(MAKE) uninstall
+ 	cd LexParse; $(MAKE) uninstall
+ 	cd OS; $(MAKE) uninstall
+
+Modified: trunk/Zaimoni.STL/OS/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/OS/GNUmakefile	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/OS/GNUmakefile	2009-08-29 23:43:22 UTC (rev 241)
+@@ -10,7 +10,7 @@
+ CFLAGS := -Os -Wall -Wextra -finline -Winline -Wdisabled-optimization --param max-inline-insns-single=500 -c -pipe -DNDEBUG
+ CXXFLAGS := $(CFLAGS)
+ 
+-LIBS := libz_stdio_log.a libz_stdio_log_c.a libz_log_adapter.a
++LIBS := libz_log_adapter.a
+ 
+ # GNU targets we know about
+ all: $(LIBS)
+@@ -24,10 +24,6 @@
+ 	rm -f $(addprefix $(libdir)/, $(LIBS))
+ 
+ # rules
+-stdio_log_c.o: stdio_log.cpp
+-	$(CC) -c -xc stdio_log.cpp $(CFLAGS) $(ARCH_FLAGS) -o stdio_log_c.o
+-
+-stdio_log.o: stdio_log.cpp
+ log_adapter_inform.o: log_adapter_inform.cpp ../pure.C/format_util.c
+ log_adapter_inc_inform.o: log_adapter_inc_inform.cpp ../pure.C/format_util.c
+ log_adapter_log.o: log_adapter_log.cpp ../pure.C/format_util.c
+@@ -35,21 +31,9 @@
+ .cpp.o:
+ 	$(CXX) -c $< $(CXXFLAGS) $(ARCH_FLAGS) -o $*.o
+ 
+-libz_stdio_log.a: stdio_log.o
+-	$(AR) -ru libz_stdio_log.a stdio_log.o
+-
+-libz_stdio_log_c.a: stdio_log_c.o
+-	$(AR) -ru libz_stdio_log_c.a stdio_log_c.o
+-
+ libz_log_adapter.a: log_adapter_inc_inform.o log_adapter_inform.o log_adapter_log.o
+ 	$(AR) -ru libz_log_adapter.a log_adapter_inc_inform.o log_adapter_inform.o log_adapter_log.o
+ 
+-$(libdir)/libz_stdio_log.a: libz_stdio_log.a
+-	cp libz_stdio_log.a $(libdir)/libz_stdio_log.a
+-
+-$(libdir)/libz_stdio_log_c.a: libz_stdio_log_c.a
+-	cp libz_stdio_log_c.a $(libdir)/libz_stdio_log_c.a
+-
+ $(libdir)/libz_log_adapter.a: libz_log_adapter.a
+ 	cp libz_log_adapter.a $(libdir)/libz_log_adapter.a
+ 
+
+Deleted: trunk/Zaimoni.STL/OS/stdio_log.cpp
+===================================================================
+--- trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-29 23:43:22 UTC (rev 241)
+@@ -1,51 +0,0 @@
+-/* stdio_log.cpp */
+-/* implements Logging.h for C stdout/stderr */
+-/* (C)2009 Kenneth Boyd, license: MIT.txt */
+-
+-#ifndef ZAIMONI_STL_OS_CONSOLE_LOG_CPP
+-#define ZAIMONI_STL_OS_CONSOLE_LOG_CPP 1
+-
+-#include <stdlib.h>
+-#include <stdio.h>
+-#include <string.h>
+-
+-/* define this *first* */
+-#ifdef __cplusplus
+-extern "C" {
+-#endif
+-void _fatal(const char* const B)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite("\n",1,1,stderr);
+-	exit(EXIT_FAILURE);
+-}
+-
+-void _fatal_code(const char* const B,int exit_code)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite("\n",1,1,stderr);
+-	exit(exit_code);
+-}
+-
+-void _inform(const char* const B, size_t len)
+-{
+-	fwrite(B,len,1,stderr);
+-	fwrite("\n",1,1,stderr);
+-}
+-
+-void _inc_inform(const char* const B, size_t len)
+-{
+-	fwrite(B,len,1,stderr);
+-}
+-
+-/* this is going to be relocated later */
+-void _log(const char* const B, size_t len)
+-{
+-	fwrite(B,len,1,stderr);
+-	fwrite("\n",1,1,stderr);
+-}
+-
+-#ifdef __cplusplus
+-}	/* end extern "C" */
+-#endif
+-#endif
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,33 @@
++# Makefile for pure.C directory
++# assumes GNU make
++
++.SUFFIXES:
++.SUFFIXES: .c .a .o
++
++include ../../POSIX.inc
++
++CFLAGS := -Os -Wall -Wextra -finline -Winline -Wdisabled-optimization --param max-inline-insns-single=500 -pipe -DNDEBUG
++
++LIBS := libz_stdio_log.a
++
++# GNU targets we know about
++all: $(LIBS)
++
++clean:
++	rm -f *.a *.o
++
++install: $(addprefix $(libdir)/, $(LIBS))
++
++uninstall:
++	rm -f $(addprefix $(libdir)/, $(LIBS))
++
++# rules
++.c.o:
++	$(CC) -c $< $(CFLAGS) $(ARCH_FLAGS) -o $*.o
++
++libz_stdio_log.a: fatal.o fatal_code.o inform.o inc_inform.o log.o
++	$(AR) -ru libz_stdio_log.a fatal.o fatal_code.o inform.o inc_inform.o log.o
++
++$(libdir)/libz_stdio_log.a: libz_stdio_log.a
++	cp libz_stdio_log.a $(libdir)/libz_stdio_log.a
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,15 @@
++/* fatal.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++
++void _fatal(const char* const B)
++{
++	fwrite(B,strlen(B),1,stderr);
++	fwrite("\n",1,1,stderr);
++	exit(EXIT_FAILURE);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,15 @@
++/* fatal_code.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++
++void _fatal_code(const char* const B,int exit_code)
++{
++	fwrite(B,strlen(B),1,stderr);
++	fwrite("\n",1,1,stderr);
++	exit(exit_code);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,12 @@
++/* inc_inform.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include <stddef.h>
++#include <stdio.h>
++
++void _inc_inform(const char* const B, size_t len)
++{
++	fwrite(B,len,1,stderr);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,13 @@
++/* inform.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include <stddef.h>
++#include <stdio.h>
++
++void _inform(const char* const B, size_t len)
++{
++	fwrite(B,len,1,stderr);
++	fwrite("\n",1,1,stderr);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/log.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/log.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/log.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,13 @@
++/* log.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include <stddef.h>
++#include <stdio.h>
++
++void _log(const char* const B, size_t len)
++{
++	fwrite(B,len,1,stderr);
++	fwrite("\n",1,1,stderr);
++}
++
+
+
+

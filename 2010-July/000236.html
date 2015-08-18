@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r469 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r469%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20100728052411.75B1648054C%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000235.html">
+   <LINK REL="Next"  HREF="000237.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r469 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r469%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C20100728052411.75B1648054C%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r469 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 28 07:24:11 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000235.html">[Zcplusplus-commits] r468 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000237.html">[Zcplusplus-commits] r470 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#236">[ date ]</a>
+              <a href="thread.html#236">[ thread ]</a>
+              <a href="subject.html#236">[ subject ]</a>
+              <a href="author.html#236">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-28 07:24:11 +0200 (Wed, 28 Jul 2010)
+New Revision: 469
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in
+   trunk/tests/zcc/decl.C99/Warn_dup_const2.h
+   trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_const3.h
+   trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+test cases to exercise the formal fix
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 05:05:12 UTC (rev 468)
++++ trunk/CSupport.cpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -10727,11 +10727,19 @@
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+ 		case C99_CPP_CONST_IDX:
++			//! \test decl.C99/Warn_dup_const.h
++			//! \test decl.C99/Warn_dup_const.hpp
++			//! \test decl.C99/Warn_dup_const2.h
++			//! \test decl.C99/Warn_dup_const2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i-- -offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
++			//! \test decl.C99/Warn_dup_volatile.h
++			//! \test decl.C99/Warn_dup_volatile.hpp
++			//! \test decl.C99/Warn_dup_volatile2.h
++			//! \test decl.C99/Warn_dup_volatile2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i-- -offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+@@ -10759,11 +10767,19 @@
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+ 		case C99_CPP_CONST_IDX:
++			//! \test decl.C99/Warn_dup_const2.h
++			//! \test decl.C99/Warn_dup_const2.hpp
++			//! \test decl.C99/Warn_dup_const3.h
++			//! \test decl.C99/Warn_dup_const3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
++			//! \test decl.C99/Warn_dup_volatile2.h
++			//! \test decl.C99/Warn_dup_volatile2.hpp
++			//! \test decl.C99/Warn_dup_volatile3.h
++			//! \test decl.C99/Warn_dup_volatile3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx&lt;0&gt;(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const2.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const2.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const2.h
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const2.hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const3.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const3.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const3.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const3.h
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile int const const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const3.hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile int const const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile2.h
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int volatile i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile2.hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int volatile i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile3.h
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const int volatile volatile i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile3.hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const int volatile volatile i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int const i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile int const const i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int volatile i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const int volatile volatile i;
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000235.html">[Zcplusplus-commits] r468 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000237.html">[Zcplusplus-commits] r470 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#236">[ date ]</a>
+              <a href="thread.html#236">[ thread ]</a>
+              <a href="subject.html#236">[ subject ]</a>
+              <a href="author.html#236">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

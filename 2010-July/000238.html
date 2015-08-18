@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r471 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r471%20-%20trunk&In-Reply-To=%3C20100728215133.4FC1F480BE8%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000237.html">
+   <LINK REL="Next"  HREF="000239.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r471 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r471%20-%20trunk&In-Reply-To=%3C20100728215133.4FC1F480BE8%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r471 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 28 23:51:33 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000237.html">[Zcplusplus-commits] r470 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000239.html">[Zcplusplus-commits] r472 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#238">[ date ]</a>
+              <a href="thread.html#238">[ thread ]</a>
+              <a href="subject.html#238">[ subject ]</a>
+              <a href="author.html#238">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-28 23:51:33 +0200 (Wed, 28 Jul 2010)
+New Revision: 471
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+reference existing test case
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 05:40:17 UTC (rev 470)
++++ trunk/CSupport.cpp	2010-07-28 21:51:33 UTC (rev 471)
+@@ -12999,7 +12999,7 @@
+ 						base_enum_type = C_TYPE::ULLONG;
+ 					case C_TYPE::ULLONG:
+ 						if (target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;()&gt;=latest_value) break;
+-					default:	//! \bug needs test case
++					default:	//! \test decl.C99\Error_enum_overflow.hpp
+ 						message_header(src.data&lt;0&gt;()[origin-2].index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;enumeration requires values above UINTMAX_MAX, underlying type doesn't exist (C++0X 7.2p6)&quot;);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000237.html">[Zcplusplus-commits] r470 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000239.html">[Zcplusplus-commits] r472 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#238">[ date ]</a>
+              <a href="thread.html#238">[ thread ]</a>
+              <a href="subject.html#238">[ subject ]</a>
+              <a href="author.html#238">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r675 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r675%20-%20trunk&In-Reply-To=%3C20110725143225.6B37348142F%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000441.html">
+   <LINK REL="Next"  HREF="000443.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r675 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r675%20-%20trunk&In-Reply-To=%3C20110725143225.6B37348142F%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r675 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jul 25 16:32:24 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000441.html">[Zcplusplus-commits] r674 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000443.html">[Zcplusplus-commits] r676 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#442">[ date ]</a>
+              <a href="thread.html#442">[ thread ]</a>
+              <a href="subject.html#442">[ subject ]</a>
+              <a href="author.html#442">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-07-25 16:32:24 +0200 (Mon, 25 Jul 2011)
+New Revision: 675
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+make static thread_local, extern thread_local coherent storage class combinations
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-07-25 13:02:02 UTC (rev 674)
++++ trunk/CSupport.cpp	2011-07-25 14:32:24 UTC (rev 675)
+@@ -11902,6 +11902,8 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;auto&quot;);
+ 				flags &amp;= ~C99_DECLSPEC_AUTO;
+ 				};
++			// inline requires a function type
++			// typedef must have a function type to tolerate anything (but kills inline)
+ 			if (1&lt;storage_count-thread_local_compat)
+ 				{	//! \test zcc/decl.C99/Error_extern_static.h
+ 					//! \test zcc/decl.C99/Error_extern_typedef.h
+@@ -11913,10 +11915,9 @@
+ 				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+ 				INFORM(&quot; (C99 6.7.1p2)&quot;);
+ 				zcc_errors.inc_error();
++				return false;
+ 				};
+-			// inline requires a function type
+-			// typedef must have a function type to tolerate anything (but kills inline)
+-			return 1&gt;=storage_count;
++//			return true;
+ 			};
+ 		return true;
+ 		}
+@@ -11987,6 +11988,7 @@
+ 				specs[storage_count++] = &quot;static&quot;;
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
++			// thread_local ok at namespace scope for objects/references
+ 			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
+ 				{
+ 				specs[storage_count++] = &quot;thread_local&quot;;
+@@ -12012,22 +12014,6 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;mutable&quot;);
+ 				flags &amp;= ~CPP_DECLSPEC_MUTABLE;
+ 				};
+-			if (1&lt;storage_count-thread_local_compat)
+-				{	//! \test zcc/decl.C99/Error_extern_static.hpp
+-					//! \test zcc/decl.C99/Error_extern_typedef.hpp
+-					//! \test zcc/decl.C99/Error_static_typedef.hpp
+-					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
+-				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+-				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
+-				zcc_errors.inc_error();
+-				}
+-			// thread_local ok at namespace scope for objects/references
+-			// inline dies if not a function type
+-			// typedef must have a function type to tolerate anything (but kills inline)
+ 			// virtual and explicit can only be used in class declarations: erase (C++0X 7.1.2p5, 7.1.2p6
+ 			if (CPP_DECLSPEC_VIRTUAL &amp; flags)
+ 				{	//! \test zcc/default/decl.C99/Error_virtual_global.hpp
+@@ -12060,7 +12046,23 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;friend&quot;);
+ 				flags &amp;= ~CPP_DECLSPEC_FRIEND;
+ 				};
+-			return 1&gt;=storage_count;
++			if (1&lt;storage_count-thread_local_compat)
++				{	//! \test zcc/decl.C99/Error_extern_static.hpp
++					//! \test zcc/decl.C99/Error_extern_typedef.hpp
++					//! \test zcc/decl.C99/Error_static_typedef.hpp
++					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
++				//! \todo should be warning for --do-what-i-mean
++				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
++				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
++				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
++				zcc_errors.inc_error();
++				return false;
++				}
++			// inline dies if not a function type
++			// typedef must have a function type to tolerate anything (but kills inline)
++//			return true;
+ 			};
+ 		return true;
+ 		};
+@@ -14136,6 +14138,8 @@
+ 							parse_tree::types-&gt;set_typedef(initdecl_identifier-&gt;index_tokens[0].token.first,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
+ 							}
+ 						}
++					// for routing purposes, we care about: extern, static, _Thread_local
++					// function definitions also care about inline
+ #if 0
+ 					else{	// something else
+ 						};
+@@ -15656,7 +15660,12 @@
+ 							parse_tree::types-&gt;set_typedef_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
+ 							}
+ 						}
++					// for routing purposes, we care about: extern, static, thread_local
++					// function definitions also care about inline
+ #if 0
++					else if (() &amp; declFind.get_flags())
++						{
++						}
+ 					else{	// something else
+ 						};
+ #endif
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-07-25 13:02:02 UTC (rev 674)
++++ trunk/CSupport.cpp.in	2011-07-25 14:32:24 UTC (rev 675)
+@@ -12050,6 +12050,8 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;auto&quot;);
+ 				flags &amp;= ~C99_DECLSPEC_AUTO;
+ 				};
++			// inline requires a function type
++			// typedef must have a function type to tolerate anything (but kills inline)
+ 			if (1&lt;storage_count-thread_local_compat)
+ 				{	//! \test zcc/decl.C99/Error_extern_static.h
+ 					//! \test zcc/decl.C99/Error_extern_typedef.h
+@@ -12061,10 +12063,9 @@
+ 				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+ 				INFORM(&quot; (C99 6.7.1p2)&quot;);
+ 				zcc_errors.inc_error();
++				return false;
+ 				};
+-			// inline requires a function type
+-			// typedef must have a function type to tolerate anything (but kills inline)
+-			return 1&gt;=storage_count;
++//			return true;
+ 			};
+ 		return true;
+ 		}
+@@ -12135,6 +12136,7 @@
+ 				specs[storage_count++] = &quot;static&quot;;
+ 			if (C99_CPP0X_DECLSPEC_EXTERN &amp; flags)
+ 				specs[storage_count++] = &quot;extern&quot;;
++			// thread_local ok at namespace scope for objects/references
+ 			if (C99_CPP0X_DECLSPEC_THREAD_LOCAL &amp; flags)
+ 				{
+ 				specs[storage_count++] = &quot;thread_local&quot;;
+@@ -12160,22 +12162,6 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;mutable&quot;);
+ 				flags &amp;= ~CPP_DECLSPEC_MUTABLE;
+ 				};
+-			if (1&lt;storage_count-thread_local_compat)
+-				{	//! \test zcc/decl.C99/Error_extern_static.hpp
+-					//! \test zcc/decl.C99/Error_extern_typedef.hpp
+-					//! \test zcc/decl.C99/Error_static_typedef.hpp
+-					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
+-				//! \todo should be warning for --do-what-i-mean
+-				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
+-				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
+-				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
+-				zcc_errors.inc_error();
+-				}
+-			// thread_local ok at namespace scope for objects/references
+-			// inline dies if not a function type
+-			// typedef must have a function type to tolerate anything (but kills inline)
+ 			// virtual and explicit can only be used in class declarations: erase (C++0X 7.1.2p5, 7.1.2p6
+ 			if (CPP_DECLSPEC_VIRTUAL &amp; flags)
+ 				{	//! \test zcc/default/decl.C99/Error_virtual_global.hpp
+@@ -12208,7 +12194,23 @@
+ 				decl_count -= flush_token(x,i,decl_count,&quot;friend&quot;);
+ 				flags &amp;= ~CPP_DECLSPEC_FRIEND;
+ 				};
+-			return 1&gt;=storage_count;
++			if (1&lt;storage_count-thread_local_compat)
++				{	//! \test zcc/decl.C99/Error_extern_static.hpp
++					//! \test zcc/decl.C99/Error_extern_typedef.hpp
++					//! \test zcc/decl.C99/Error_static_typedef.hpp
++					//! \test zcc/decl.C99/Error_extern_static_typedef.hpp
++				//! \todo should be warning for --do-what-i-mean
++				message_header(x.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(&quot;declaration has too many storage-class specifiers: &quot;);
++				INFORM_separated_list(specs,storage_count,&quot;, &quot;);
++				INFORM(&quot; (C++0X 7.1.1p1)&quot;);
++				zcc_errors.inc_error();
++				return false;
++				}
++			// inline dies if not a function type
++			// typedef must have a function type to tolerate anything (but kills inline)
++//			return true;
+ 			};
+ 		return true;
+ 		};
+@@ -14284,6 +14286,8 @@
+ 							parse_tree::types-&gt;set_typedef(initdecl_identifier-&gt;index_tokens[0].token.first,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
+ 							}
+ 						}
++					// for routing purposes, we care about: extern, static, _Thread_local
++					// function definitions also care about inline
+ #if 0
+ 					else{	// something else
+ 						};
+@@ -15804,7 +15808,12 @@
+ 							parse_tree::types-&gt;set_typedef_CPP(initdecl_identifier-&gt;index_tokens[0].token.first,active_namespace,initdecl_identifier-&gt;index_tokens[0].src_filename,initdecl_identifier-&gt;index_tokens[0].logical_line.first,bootstrap);
+ 							}
+ 						}
++					// for routing purposes, we care about: extern, static, thread_local
++					// function definitions also care about inline
+ #if 0
++					else if (() &amp; declFind.get_flags())
++						{
++						}
+ 					else{	// something else
+ 						};
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000441.html">[Zcplusplus-commits] r674 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000443.html">[Zcplusplus-commits] r676 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#442">[ date ]</a>
+              <a href="thread.html#442">[ thread ]</a>
+              <a href="subject.html#442">[ subject ]</a>
+              <a href="author.html#442">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r383 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r383%20-%20in%20trunk/tests%3A%20zcc/staticassert.C1X%0A%09zcc.in/staticassert.C1X&In-Reply-To=%3C201004191642.o3JGgeYL022356%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000149.html">
+   <LINK REL="Next"  HREF="000151.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r383 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r383%20-%20in%20trunk/tests%3A%20zcc/staticassert.C1X%0A%09zcc.in/staticassert.C1X&In-Reply-To=%3C201004191642.o3JGgeYL022356%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r383 - in trunk/tests: zcc/staticassert.C1X	zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Apr 19 18:42:40 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000149.html">[Zcplusplus-commits] r382 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000151.html">[Zcplusplus-commits] r384 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#150">[ date ]</a>
+              <a href="thread.html#150">[ thread ]</a>
+              <a href="subject.html#150">[ subject ]</a>
+              <a href="author.html#150">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-19 18:42:36 +0200 (Mon, 19 Apr 2010)
+New Revision: 383
+
+Modified:
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+Log:
+some more basic checks on sizeof operator
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-17 23:30:22 UTC (rev 382)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-19 16:42:36 UTC (rev 383)
+@@ -211,7 +211,7 @@
+ _Static_Assert(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+ _Static_Assert(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
+-// check sizeof
++// check sizeof: sizeof(char)==1 and so on
+ _Static_Assert(1==sizeof 'A',&quot;automatic success has failed&quot;);
+ _Static_Assert(1==sizeof(char),&quot;automatic success has failed&quot;);
+ _Static_Assert(1==sizeof(signed char),&quot;automatic success has failed&quot;);
+@@ -221,3 +221,29 @@
+ _Static_Assert(sizeof(char)==1,&quot;automatic success has failed&quot;);
+ _Static_Assert(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
+ _Static_Assert(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
++
++// other target-independent reality checks on sizeof
++_Static_Assert(sizeof(short),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed short),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned short),&quot;automatic success has failed&quot;);
++
++_Static_Assert(sizeof(int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned),&quot;automatic success has failed&quot;);
++
++_Static_Assert(sizeof(long),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed long),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned long),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(long int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed long int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned long int),&quot;automatic success has failed&quot;);
++
++_Static_Assert(sizeof(long long),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed long long),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned long long),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(long long int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(signed long long int),&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof(unsigned long long int),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-17 23:30:22 UTC (rev 382)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-19 16:42:36 UTC (rev 383)
+@@ -211,7 +211,7 @@
+ static_assert(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+ static_assert(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
+-// check sizeof
++// check sizeof: sizeof(char)==1 and so on
+ static_assert(1==sizeof 'A',&quot;automatic success has failed&quot;);
+ static_assert(1==sizeof(char),&quot;automatic success has failed&quot;);
+ static_assert(1==sizeof(signed char),&quot;automatic success has failed&quot;);
+@@ -221,3 +221,29 @@
+ static_assert(sizeof(char)==1,&quot;automatic success has failed&quot;);
+ static_assert(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
+ static_assert(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
++
++// other target-independent reality checks on sizeof
++static_assert(sizeof(short),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed short),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned short),&quot;automatic success has failed&quot;);
++
++static_assert(sizeof(int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned),&quot;automatic success has failed&quot;);
++
++static_assert(sizeof(long),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed long),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned long),&quot;automatic success has failed&quot;);
++static_assert(sizeof(long int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed long int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned long int),&quot;automatic success has failed&quot;);
++
++static_assert(sizeof(long long),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed long long),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned long long),&quot;automatic success has failed&quot;);
++static_assert(sizeof(long long int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(signed long long int),&quot;automatic success has failed&quot;);
++static_assert(sizeof(unsigned long long int),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-17 23:30:22 UTC (rev 382)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-19 16:42:36 UTC (rev 383)
+@@ -212,7 +212,7 @@
+ STATIC_ASSERT(1 ? 1 : 0,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1 ? 1 : 1,&quot;automatic success has failed&quot;);
+ 
+-// check sizeof
++// check sizeof: sizeof(char)==1 and so on
+ STATIC_ASSERT(1==sizeof 'A',&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1==sizeof(char),&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1==sizeof(signed char),&quot;automatic success has failed&quot;);
+@@ -222,3 +222,29 @@
+ STATIC_ASSERT(sizeof(char)==1,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(sizeof(signed char)==1,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(sizeof(unsigned char)==1,&quot;automatic success has failed&quot;);
++
++// other target-independent reality checks on sizeof
++STATIC_ASSERT(sizeof(short),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed short),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned short),&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(sizeof(int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned),&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(sizeof(long),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed long),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned long),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(long int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed long int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned long int),&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(sizeof(long long),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed long long),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned long long),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(long long int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(signed long long int),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof(unsigned long long int),&quot;automatic success has failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000149.html">[Zcplusplus-commits] r382 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000151.html">[Zcplusplus-commits] r384 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#150">[ date ]</a>
+              <a href="thread.html#150">[ thread ]</a>
+              <a href="subject.html#150">[ subject ]</a>
+              <a href="author.html#150">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

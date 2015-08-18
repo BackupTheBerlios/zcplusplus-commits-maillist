@@ -1,0 +1,272 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r301 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r301%20-%20trunk&In-Reply-To=%3C200912070234.nB72YJsF007761%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000067.html">
+   <LINK REL="Next"  HREF="000069.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r301 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r301%20-%20trunk&In-Reply-To=%3C200912070234.nB72YJsF007761%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r301 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Dec  7 03:34:19 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000067.html">[Zcplusplus-commits] r300 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000069.html">[Zcplusplus-commits] r302 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#68">[ date ]</a>
+              <a href="thread.html#68">[ thread ]</a>
+              <a href="subject.html#68">[ subject ]</a>
+              <a href="author.html#68">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-07 03:34:13 +0100 (Mon, 07 Dec 2009)
+New Revision: 301
+
+Modified:
+   trunk/errors.cpp
+   trunk/errors.hpp
+   trunk/z_cpp.cpp
+   trunk/zcc.cpp
+Log:
+minor code cleanup
+
+Modified: trunk/errors.cpp
+===================================================================
+--- trunk/errors.cpp	2009-12-07 01:40:00 UTC (rev 300)
++++ trunk/errors.cpp	2009-12-07 02:34:13 UTC (rev 301)
+@@ -80,3 +80,21 @@
+ 	INC_INFORM(&quot;: &quot;);
+ }
+ 
++void enforce_mutually_exclusive_exhaustive_options(void)
++{
++	// platform-specific goo
++	// for now, go with Intel
++	// this should be overridable by command-line options
++	// deal with the int-format options
++	{	// handle integer representation trait options
++	const unsigned int int_opt_count = bool_options[boolopt::int_sign_magnitude]+bool_options[boolopt::int_ones_complement]+bool_options[boolopt::int_twos_complement];
++	if (2&lt;=int_opt_count) FATAL(&quot;error: the integer format options are mutually exclusive&quot;);
++	if (0==int_opt_count) bool_options[boolopt::int_twos_complement] = true;	// go with intel for now
++	}
++	{	// handle char as signed/unsigned char
++	const unsigned int char_opt_count = bool_options[boolopt::char_is_signed]+bool_options[boolopt::char_is_unsigned];
++	if (2&lt;=char_opt_count) FATAL(&quot;error: the character format options are mutually exclusive&quot;);
++	if (0==char_opt_count) bool_options[boolopt::char_is_unsigned] = true;	// unsigned makes our life easier
++	}
++}
++
+
+Modified: trunk/errors.hpp
+===================================================================
+--- trunk/errors.hpp	2009-12-07 01:40:00 UTC (rev 300)
++++ trunk/errors.hpp	2009-12-07 02:34:13 UTC (rev 301)
+@@ -128,5 +128,6 @@
+ int recognize_parameter_option(const char* const x,const zaimoni::POD_triple&lt;const char*, size_t, const char*&gt;* option_map,size_t j);
+ 
+ void message_header(const char* const filename, size_t line_number);
++void enforce_mutually_exclusive_exhaustive_options(void);
+ 
+ #endif
+
+Modified: trunk/z_cpp.cpp
+===================================================================
+--- trunk/z_cpp.cpp	2009-12-07 01:40:00 UTC (rev 300)
++++ trunk/z_cpp.cpp	2009-12-07 02:34:13 UTC (rev 301)
+@@ -65,22 +65,25 @@
+ 
+ void guess_lang_from_filename(const char* const x)
+ {
+-	if (zaimoni::is_empty_string(x)) return;
++	if (!x || !*x) return;
+ 	if (NULL!=string_options[stringopt::lang]) return;
+ 	const size_t name_len = strlen(x);
+ 	if (2&lt;=name_len &amp;&amp; '.'==x[name_len-2])
+ 		{
+-		if ('c'==x[name_len-1] || 'h'==x[name_len-1] || 'C'==x[name_len-1] || 'H'==x[name_len-1])
++		if (	'c'==x[name_len-1]
++			||  'h'==x[name_len-1]
++			||  'C'==x[name_len-1]
++			||  'H'==x[name_len-1])
+ 			interpret_stringopt_lang(&quot;C&quot;);
+ 		return;
+ 		}
+ 	if (4&lt;=name_len &amp;&amp; '.'==x[name_len-4])
+ 		{
+ 		if (	!stricmp(x+(name_len-3),&quot;hpp&quot;)
+-			||	!stricmp(x+(name_len-3),&quot;hxx&quot;)
++			||  !stricmp(x+(name_len-3),&quot;hxx&quot;)
+ 			||  !stricmp(x+(name_len-3),&quot;h++&quot;)
+-			||	!stricmp(x+(name_len-3),&quot;cpp&quot;)
+-			||	!stricmp(x+(name_len-3),&quot;cxx&quot;)
++			||  !stricmp(x+(name_len-3),&quot;cpp&quot;)
++			||  !stricmp(x+(name_len-3),&quot;cxx&quot;)
+ 			||  !stricmp(x+(name_len-3),&quot;c++&quot;))
+ 			interpret_stringopt_lang(&quot;C++&quot;);
+ 		return;
+@@ -116,19 +119,6 @@
+ static string_opt_handler* option_handler_int[MAX_OPT_STRING]
+ 	=	{default_handler(int_option(0))};
+ 
+-#if 0
+-// include path goo
+-char** local_paths = NULL;
+-char** system_paths = NULL;
+-
+-// note: stdlib.h; microsoft _fullpath, POSIX realpath
+-// _fullpath(buf,relpath,sizeof(buf))
+-// realpath(buf,relpath)
+-
+-const char* const * const default_local_paths = NULL;
+-const char* const * const default_system_paths = NULL;
+-#endif
+-
+ static bool process_options(const size_t argc, char* argv[])
+ {
+ 	size_t last_arg_used_in_option = 0;
+@@ -241,22 +231,8 @@
+ 	bootstrap_filesystem(argv[0]);
+ 	const bool last_arg_used_in_option = process_options(argc,argv);
+ 	if (!last_arg_used_in_option) guess_lang_from_filename(argv[argc-1]);
++	enforce_mutually_exclusive_exhaustive_options();
+ 
+-	// platform-specific goo
+-	// for now, go with Intel
+-	// this should be overridable by command-line options
+-	// deal with the int-format options
+-	{	// handle integer representation trait options
+-	const unsigned int int_opt_count = bool_options[boolopt::int_sign_magnitude]+bool_options[boolopt::int_ones_complement]+bool_options[boolopt::int_twos_complement];
+-	if (2&lt;=int_opt_count) FATAL(&quot;error: the integer format options are mutually exclusive&quot;);
+-	if (0==int_opt_count) bool_options[boolopt::int_twos_complement] = true;	// go with intel for now
+-	}
+-	{	// handle char as signed/unsigned char
+-	const unsigned int char_opt_count = bool_options[boolopt::char_is_signed]+bool_options[boolopt::char_is_unsigned];
+-	if (2&lt;=char_opt_count) FATAL(&quot;error: the character format options are mutually exclusive&quot;);
+-	if (0==char_opt_count) bool_options[boolopt::char_is_unsigned] = true;	// unsigned makes our life easier
+-	}
+-
+ 	// error count enforcement
+ 	zcc_errors.set_error_ub(int_options[intopt::error_ub]);
+ 
+
+Modified: trunk/zcc.cpp
+===================================================================
+--- trunk/zcc.cpp	2009-12-07 01:40:00 UTC (rev 300)
++++ trunk/zcc.cpp	2009-12-07 02:34:13 UTC (rev 301)
+@@ -69,22 +69,25 @@
+ 
+ void guess_lang_from_filename(const char* const x)
+ {
+-	if (zaimoni::is_empty_string(x)) return;
++	if (!x || !*x) return;
+ 	if (NULL!=string_options[stringopt::lang]) return;
+ 	const size_t name_len = strlen(x);
+ 	if (2&lt;=name_len &amp;&amp; '.'==x[name_len-2])
+ 		{
+-		if ('c'==x[name_len-1] || 'h'==x[name_len-1] || 'C'==x[name_len-1] || 'H'==x[name_len-1])
++		if (	'c'==x[name_len-1]
++			||  'h'==x[name_len-1]
++			||  'C'==x[name_len-1]
++			||  'H'==x[name_len-1])
+ 			interpret_stringopt_lang(&quot;C&quot;);
+ 		return;
+ 		}
+ 	if (4&lt;=name_len &amp;&amp; '.'==x[name_len-4])
+ 		{
+ 		if (	!stricmp(x+(name_len-3),&quot;hpp&quot;)
+-			||	!stricmp(x+(name_len-3),&quot;hxx&quot;)
++			||  !stricmp(x+(name_len-3),&quot;hxx&quot;)
+ 			||  !stricmp(x+(name_len-3),&quot;h++&quot;)
+-			||	!stricmp(x+(name_len-3),&quot;cpp&quot;)
+-			||	!stricmp(x+(name_len-3),&quot;cxx&quot;)
++			||  !stricmp(x+(name_len-3),&quot;cpp&quot;)
++			||  !stricmp(x+(name_len-3),&quot;cxx&quot;)
+ 			||  !stricmp(x+(name_len-3),&quot;c++&quot;))
+ 			interpret_stringopt_lang(&quot;C++&quot;);
+ 		return;
+@@ -120,19 +123,6 @@
+ static string_opt_handler* option_handler_int[MAX_OPT_STRING]
+ 	=	{default_handler(int_option(0))};
+ 
+-#if 0
+-// include path goo
+-char** local_paths = NULL;
+-char** system_paths = NULL;
+-
+-// note: stdlib.h; microsoft _fullpath, POSIX realpath
+-// _fullpath(buf,relpath,sizeof(buf))
+-// realpath(buf,relpath)
+-
+-const char* const * const default_local_paths = NULL;
+-const char* const * const default_system_paths = NULL;
+-#endif
+-
+ static bool process_options(const size_t argc, char* argv[])
+ {
+ 	size_t last_arg_used_in_option = 0;
+@@ -245,22 +235,8 @@
+ 	bootstrap_filesystem(argv[0]);
+ 	const bool last_arg_used_in_option = process_options(argc,argv);
+ 	if (!last_arg_used_in_option) guess_lang_from_filename(argv[argc-1]);
++	enforce_mutually_exclusive_exhaustive_options();
+ 
+-	// platform-specific goo
+-	// for now, go with Intel
+-	// this should be overridable by command-line options
+-	// deal with the int-format options
+-	{	// handle integer representation trait options
+-	const unsigned int int_opt_count = bool_options[boolopt::int_sign_magnitude]+bool_options[boolopt::int_ones_complement]+bool_options[boolopt::int_twos_complement];
+-	if (2&lt;=int_opt_count) FATAL(&quot;error: the integer format options are mutually exclusive&quot;);
+-	if (0==int_opt_count) bool_options[boolopt::int_twos_complement] = true;	// go with intel for now
+-	}
+-	{	// handle char as signed/unsigned char
+-	const unsigned int char_opt_count = bool_options[boolopt::char_is_signed]+bool_options[boolopt::char_is_unsigned];
+-	if (2&lt;=char_opt_count) FATAL(&quot;error: the character format options are mutually exclusive&quot;);
+-	if (0==char_opt_count) bool_options[boolopt::char_is_unsigned] = true;	// unsigned makes our life easier
+-	}
+-
+ 	// error count enforcement
+ 	zcc_errors.set_error_ub(int_options[intopt::error_ub]);
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000067.html">[Zcplusplus-commits] r300 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000069.html">[Zcplusplus-commits] r302 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#68">[ date ]</a>
+              <a href="thread.html#68">[ thread ]</a>
+              <a href="subject.html#68">[ subject ]</a>
+              <a href="author.html#68">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

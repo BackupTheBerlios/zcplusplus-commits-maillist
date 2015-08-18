@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r449 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r449%20-%20trunk&In-Reply-To=%3C201006020046.o520kvY3009792%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000217.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r449 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r449%20-%20trunk&In-Reply-To=%3C201006020046.o520kvY3009792%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r449 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  2 02:46:57 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000217.html">[Zcplusplus-commits] r450 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#216">[ date ]</a>
+              <a href="thread.html#216">[ thread ]</a>
+              <a href="subject.html#216">[ subject ]</a>
+              <a href="author.html#216">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-02 02:46:54 +0200 (Wed, 02 Jun 2010)
+New Revision: 449
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+object size reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-31 17:03:49 UTC (rev 448)
++++ trunk/CSupport.cpp	2010-06-02 00:46:54 UTC (rev 449)
+@@ -4078,6 +4078,13 @@
+ #endif
+ 			&amp;&amp;	src.empty&lt;1&gt;() &amp;&amp; src.empty&lt;2&gt;();
+ }
++
++static bool is_nonempty_naked_pair(const parse_tree&amp; src)
++{
++	return !src.empty&lt;0&gt;()  &amp;&amp; (is_naked_parentheses_pair(src) 
++		|| is_naked_brace_pair(src)
++		|| is_naked_bracket_pair(src));
++}
+ #/*cut-cpp*/
+ 
+ #ifndef NDEBUG
+@@ -4541,6 +4548,7 @@
+ 	return C_TESTFLAG_IDENTIFIER &amp; x.index_tokens[0].flags;
+ }
+ 
++//! \throw std::bad_alloc()
+ static void make_target_postfix_arg(parse_tree&amp; src,size_t&amp; offset,const size_t i,const size_t j)
+ {
+ 	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1) :  _new_buffer&lt;parse_tree&gt;(1));
+@@ -4555,6 +4563,7 @@
+ 	src.c_array&lt;0&gt;()[j].clear();
+ }
+ 
++//! \throw std::bad_alloc()
+ static void C99_notice_struct_union_enum(parse_tree&amp; src)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -4630,25 +4639,21 @@
+ 			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+ 			continue;
+ 			}
+-		else if (   is_naked_parentheses_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_brace_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
+-			{
+-			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
+-				{	// recurse into (...)
+-				if (0&lt;offset)
+-					{
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					};
+-				C99_notice_struct_union_enum(src.c_array&lt;0&gt;()[i]);
+-				}
++		else if (is_nonempty_naked_pair(src.data&lt;0&gt;()[i])) 
++			{	// recurse into (...)/{...}/[...]
++			if (0&lt;offset)
++				{
++				src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++				offset = 0;
++				};
++			C99_notice_struct_union_enum(src.c_array&lt;0&gt;()[i]);
+ 			}
+ 		++i;
+ 		};
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ }
+ 
++//! \throw std::bad_alloc()
+ static void CPP_notice_class_struct_union_enum(parse_tree&amp; src)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -4725,19 +4730,14 @@
+ 			assert(is_C99_named_specifier(src.data&lt;0&gt;()[i],tmp2));
+ 			continue;
+ 			}
+-		else if (   is_naked_parentheses_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_brace_pair(src.data&lt;0&gt;()[i])
+-				 || is_naked_bracket_pair(src.data&lt;0&gt;()[i]))
+-			{
+-			if (!src.data&lt;0&gt;()[i].empty&lt;0&gt;())
+-				{	// recurse into (...)/{...}/[...]
+-				if (0&lt;offset)
+-					{
+-					src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+-					offset = 0;
+-					};
+-				CPP_notice_class_struct_union_enum(src.c_array&lt;0&gt;()[i]);
+-				}
++		else if (is_nonempty_naked_pair(src.data&lt;0&gt;()[i]))
++			{	// recurse into (...)/{...}/[...]
++			if (0&lt;offset)
++				{
++				src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
++				offset = 0;
++				};
++			CPP_notice_class_struct_union_enum(src.c_array&lt;0&gt;()[i]);
+ 			}
+ 		++i;
+ 		};
+@@ -10685,6 +10685,7 @@
+ 
+ #/*cut-cpp*/
+ //! \todo check that the fact all literals are already legal-form is used
++//! \throw std::bad_alloc()
+ static void C99_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(src.is_raw_list());
+@@ -10801,12 +10802,8 @@
+ 	while(i&lt;src.size&lt;0&gt;())
+ 		{
+ 		parse_tree&amp; tmp = src.c_array&lt;0&gt;()[i++];
+-		if (tmp.empty&lt;0&gt;()) continue;
+-		// recurse into ...
+-		if (   is_naked_parentheses_pair(tmp) // (...)
+-			|| is_naked_brace_pair(tmp) // {...}
+-			|| is_naked_bracket_pair(tmp)) // [...]
+-			CPP_notice_scope_glue(tmp);
++		// recurse into (...)/{...}/[...]
++		if (is_nonempty_naked_pair(tmp)) CPP_notice_scope_glue(tmp);
+ 		};
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000217.html">[Zcplusplus-commits] r450 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#216">[ date ]</a>
+              <a href="thread.html#216">[ thread ]</a>
+              <a href="subject.html#216">[ subject ]</a>
+              <a href="author.html#216">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

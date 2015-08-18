@@ -1,0 +1,433 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r241 - in trunk/Zaimoni.STL: . OS Pure.C	Pure.C/stdio.log
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r241%20-%20in%20trunk/Zaimoni.STL%3A%20.%20OS%20Pure.C%0A%09Pure.C/stdio.log&In-Reply-To=%3C200908292343.n7TNhVM6022713%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000007.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r241 - in trunk/Zaimoni.STL: . OS Pure.C	Pure.C/stdio.log</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r241%20-%20in%20trunk/Zaimoni.STL%3A%20.%20OS%20Pure.C%0A%09Pure.C/stdio.log&In-Reply-To=%3C200908292343.n7TNhVM6022713%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r241 - in trunk/Zaimoni.STL: . OS Pure.C	Pure.C/stdio.log">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug 30 01:43:31 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000007.html">[Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-30 01:43:22 +0200 (Sun, 30 Aug 2009)
+New Revision: 241
+
+Added:
+   trunk/Zaimoni.STL/Pure.C/stdio.log/
+   trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile
+   trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c
+   trunk/Zaimoni.STL/Pure.C/stdio.log/log.c
+Removed:
+   trunk/Zaimoni.STL/OS/stdio_log.cpp
+Modified:
+   trunk/Zaimoni.STL/Logging.h
+   trunk/Zaimoni.STL/Makefile
+   trunk/Zaimoni.STL/OS/GNUmakefile
+Log:
+Build system rearrangement.  Convert libz_stdio_log.a to pure C, relocate its build to subdirectory Pure.C/stdio.log, and eliminate libz_stdio_log_c.a .  Break up old stdio_log.cpp into five files to be nice to ld.  Retain apparently duplicate _inform, _log as they're only duplicate for the C stdio version of these functions (there are two other unreleased implementations where they're different)
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Logging.h	2009-08-29 23:43:22 UTC (rev 241)
+@@ -38,6 +38,10 @@
+ EXTERN_C void _inc_inform(const char* const B, size_t len);	/* only C stdio */
+ EXTERN_C void _log(const char* const B, size_t len);		/* Windows GUI crippled (assumes len := strlen() */
+ 
++#define INC_INFORM_STRING_LITERAL(B) _inc_inform(B,sizeof(B)-1)
++#define INFORM_STRING_LITERAL(B) _inform(B,sizeof(B)-1)
++#define LOG_STRING_LITERAL(B) _log(B,sizeof(B)-1)
++
+ #ifdef __cplusplus
+ /* overloadable adapters for C++ and debug-mode code */
+ /* all-uppercased because we may use macro wrappers on these */
+@@ -112,12 +116,15 @@
+ #	define FATAL(B) _fatal(B)
+ #	define FATAL_CODE(B,CODE) _fatal_code(B,CODE)
+ #elif defined(__GNUC__)
+-#	define FATAL(B) _fatal((_LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
+-#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#	define FATAL(B) _fatal((_LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#elif 1300&lt;=_MSC_VER	/* __FUNCDNAME__ extension cuts in at Visual C++ .NET 2002 */
++#	define FATAL(B) _fatal((_LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
+ #else
+ /* if no extensions, assume C99 */
+-#	define FATAL(B) _fatal((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
+-#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
++#	define FATAL(B) _fatal((LOG(__func__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
++#	define FATAL_CODE(B,CODE) _fatal_code((LOG(__func__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+ #define INC_INFORM(B) _inc_inform(B,strlen(B))
+ #define INFORM(B) _inform(B,strlen(B))
+@@ -132,26 +139,29 @@
+ /* use similar extensions on other compilers */
+ #ifdef __cplusplus
+ #	ifdef __GNUC__
+-#		define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
+-#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#		define FATAL(B) FATAL((LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__PRETTY_FUNCTION__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
++#	elif 1300&lt;=_MSC_VER	/* __FUNCDNAME__ extension cuts in at Visual C++ .NET 2002 */
++#		define FATAL(B) FATAL((LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B))
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__FUNCDNAME__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE)
+ #	else	/* if no extensions, assume C99 */		
+-#		define FATAL(B) FATAL((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
+-#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
++#		define FATAL(B) FATAL((LOG(__func__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B));
++#		define FATAL_CODE(B,CODE) FATAL_CODE((LOG(__func__),LOG_STRING_LITERAL(__FILE__ &quot;:&quot; DEEP_STRINGIZE(__LINE__)),B),CODE);
+ #endif
+ #endif
+ 
+ #define ARG_TRACE_PARAMS , const char* const _file, long _line
+ #define ARG_TRACE_ARGS , __FILE__, __LINE__
+-#define ARG_TRACE_LOG INFORM_INC(_file); INFORM_INC(&quot;:&quot;); INFORM(_line)
++#define ARG_TRACE_LOG INFORM_INC(_file); INFORM_INC_STRING_LITERAL(&quot;:&quot;); INFORM(_line)
+ 
+-#define AUDIT_IF_RETURN(A,B) if (A) {LOG(#A &quot;; returning &quot; #B); return B;}
++#define AUDIT_IF_RETURN(A,B) if (A) {LOG_STRING_LITERAL(#A &quot;; returning &quot; #B); return B;}
+ #define AUDIT_STATEMENT(A) {A;}
+ #define DEBUG_STATEMENT(A) A
+ /* Interoperate with Microsoft: return code 3 */
+ #define DEBUG_FAIL_OR_LEAVE(A,B) if (A) FATAL_CODE(#A,3)
+ 
+-#define VERIFY(A,B) if (A) FATAL((LOG(#A),B))
+-#define REPORT(A,B) if (A) INFORM((LOG(#A),B))
++#define VERIFY(A,B) if (A) FATAL((LOG_STRING_LITERAL(#A),B))
++#define REPORT(A,B) if (A) INFORM((LOG_STRING_LITERAL(#A),B))
+ #define DEBUG_LOG(A) LOG(A)
+ 
+ #else	/* fast version */
+
+Modified: trunk/Zaimoni.STL/Makefile
+===================================================================
+--- trunk/Zaimoni.STL/Makefile	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Makefile	2009-08-29 23:43:22 UTC (rev 241)
+@@ -4,28 +4,28 @@
+ 
+ # GNU targets we know about
+ all:
+-	cd pure.C; $(MAKE) all
++	cd pure.C; $(MAKE) all; cd stdio.log; $(MAKE) all
+ 	cd core.RAM; $(MAKE) all
+ 	cd LexParse; $(MAKE) all
+ 	cd OS; $(MAKE) all
+ 	cd OS; cd Win32; $(MAKE) all
+ 
+ clean:
+-	cd pure.C; $(MAKE) clean
++	cd pure.C; $(MAKE) clean; cd stdio.log; $(MAKE) clean
+ 	cd core.RAM; $(MAKE) clean
+ 	cd LexParse; $(MAKE) clean
+ 	cd OS; $(MAKE) clean
+ 	cd OS; cd Win32; $(MAKE) clean
+ 
+ install:
+-	cd pure.C; $(MAKE) install
++	cd pure.C; $(MAKE) install; cd stdio.log; $(MAKE) install
+ 	cd core.RAM; $(MAKE) install
+ 	cd LexParse; $(MAKE) install
+ 	cd OS; $(MAKE) install
+ 	cd OS; cd Win32; $(MAKE) install
+ 
+ uninstall:
+-	cd pure.C; $(MAKE) uninstall
++	cd pure.C; $(MAKE) uninstall; cd stdio.log; $(MAKE) uninstall
+ 	cd core.RAM; $(MAKE) uninstall
+ 	cd LexParse; $(MAKE) uninstall
+ 	cd OS; $(MAKE) uninstall
+
+Modified: trunk/Zaimoni.STL/OS/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/OS/GNUmakefile	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/OS/GNUmakefile	2009-08-29 23:43:22 UTC (rev 241)
+@@ -10,7 +10,7 @@
+ CFLAGS := -Os -Wall -Wextra -finline -Winline -Wdisabled-optimization --param max-inline-insns-single=500 -c -pipe -DNDEBUG
+ CXXFLAGS := $(CFLAGS)
+ 
+-LIBS := libz_stdio_log.a libz_stdio_log_c.a libz_log_adapter.a
++LIBS := libz_log_adapter.a
+ 
+ # GNU targets we know about
+ all: $(LIBS)
+@@ -24,10 +24,6 @@
+ 	rm -f $(addprefix $(libdir)/, $(LIBS))
+ 
+ # rules
+-stdio_log_c.o: stdio_log.cpp
+-	$(CC) -c -xc stdio_log.cpp $(CFLAGS) $(ARCH_FLAGS) -o stdio_log_c.o
+-
+-stdio_log.o: stdio_log.cpp
+ log_adapter_inform.o: log_adapter_inform.cpp ../pure.C/format_util.c
+ log_adapter_inc_inform.o: log_adapter_inc_inform.cpp ../pure.C/format_util.c
+ log_adapter_log.o: log_adapter_log.cpp ../pure.C/format_util.c
+@@ -35,21 +31,9 @@
+ .cpp.o:
+ 	$(CXX) -c $&lt; $(CXXFLAGS) $(ARCH_FLAGS) -o $*.o
+ 
+-libz_stdio_log.a: stdio_log.o
+-	$(AR) -ru libz_stdio_log.a stdio_log.o
+-
+-libz_stdio_log_c.a: stdio_log_c.o
+-	$(AR) -ru libz_stdio_log_c.a stdio_log_c.o
+-
+ libz_log_adapter.a: log_adapter_inc_inform.o log_adapter_inform.o log_adapter_log.o
+ 	$(AR) -ru libz_log_adapter.a log_adapter_inc_inform.o log_adapter_inform.o log_adapter_log.o
+ 
+-$(libdir)/libz_stdio_log.a: libz_stdio_log.a
+-	cp libz_stdio_log.a $(libdir)/libz_stdio_log.a
+-
+-$(libdir)/libz_stdio_log_c.a: libz_stdio_log_c.a
+-	cp libz_stdio_log_c.a $(libdir)/libz_stdio_log_c.a
+-
+ $(libdir)/libz_log_adapter.a: libz_log_adapter.a
+ 	cp libz_log_adapter.a $(libdir)/libz_log_adapter.a
+ 
+
+Deleted: trunk/Zaimoni.STL/OS/stdio_log.cpp
+===================================================================
+--- trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/OS/stdio_log.cpp	2009-08-29 23:43:22 UTC (rev 241)
+@@ -1,51 +0,0 @@
+-/* stdio_log.cpp */
+-/* implements Logging.h for C stdout/stderr */
+-/* (C)2009 Kenneth Boyd, license: MIT.txt */
+-
+-#ifndef ZAIMONI_STL_OS_CONSOLE_LOG_CPP
+-#define ZAIMONI_STL_OS_CONSOLE_LOG_CPP 1
+-
+-#include &lt;stdlib.h&gt;
+-#include &lt;stdio.h&gt;
+-#include &lt;string.h&gt;
+-
+-/* define this *first* */
+-#ifdef __cplusplus
+-extern &quot;C&quot; {
+-#endif
+-void _fatal(const char* const B)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite(&quot;\n&quot;,1,1,stderr);
+-	exit(EXIT_FAILURE);
+-}
+-
+-void _fatal_code(const char* const B,int exit_code)
+-{
+-	fwrite(B,strlen(B),1,stderr);
+-	fwrite(&quot;\n&quot;,1,1,stderr);
+-	exit(exit_code);
+-}
+-
+-void _inform(const char* const B, size_t len)
+-{
+-	fwrite(B,len,1,stderr);
+-	fwrite(&quot;\n&quot;,1,1,stderr);
+-}
+-
+-void _inc_inform(const char* const B, size_t len)
+-{
+-	fwrite(B,len,1,stderr);
+-}
+-
+-/* this is going to be relocated later */
+-void _log(const char* const B, size_t len)
+-{
+-	fwrite(B,len,1,stderr);
+-	fwrite(&quot;\n&quot;,1,1,stderr);
+-}
+-
+-#ifdef __cplusplus
+-}	/* end extern &quot;C&quot; */
+-#endif
+-#endif
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,33 @@
++# Makefile for pure.C directory
++# assumes GNU make
++
++.SUFFIXES:
++.SUFFIXES: .c .a .o
++
++include ../../POSIX.inc
++
++CFLAGS := -Os -Wall -Wextra -finline -Winline -Wdisabled-optimization --param max-inline-insns-single=500 -pipe -DNDEBUG
++
++LIBS := libz_stdio_log.a
++
++# GNU targets we know about
++all: $(LIBS)
++
++clean:
++	rm -f *.a *.o
++
++install: $(addprefix $(libdir)/, $(LIBS))
++
++uninstall:
++	rm -f $(addprefix $(libdir)/, $(LIBS))
++
++# rules
++.c.o:
++	$(CC) -c $&lt; $(CFLAGS) $(ARCH_FLAGS) -o $*.o
++
++libz_stdio_log.a: fatal.o fatal_code.o inform.o inc_inform.o log.o
++	$(AR) -ru libz_stdio_log.a fatal.o fatal_code.o inform.o inc_inform.o log.o
++
++$(libdir)/libz_stdio_log.a: libz_stdio_log.a
++	cp libz_stdio_log.a $(libdir)/libz_stdio_log.a
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/fatal.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,15 @@
++/* fatal.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include &lt;stdlib.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;string.h&gt;
++
++void _fatal(const char* const B)
++{
++	fwrite(B,strlen(B),1,stderr);
++	fwrite(&quot;\n&quot;,1,1,stderr);
++	exit(EXIT_FAILURE);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/fatal_code.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,15 @@
++/* fatal_code.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include &lt;stdlib.h&gt;
++#include &lt;stdio.h&gt;
++#include &lt;string.h&gt;
++
++void _fatal_code(const char* const B,int exit_code)
++{
++	fwrite(B,strlen(B),1,stderr);
++	fwrite(&quot;\n&quot;,1,1,stderr);
++	exit(exit_code);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/inc_inform.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,12 @@
++/* inc_inform.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include &lt;stddef.h&gt;
++#include &lt;stdio.h&gt;
++
++void _inc_inform(const char* const B, size_t len)
++{
++	fwrite(B,len,1,stderr);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/inform.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,13 @@
++/* inform.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include &lt;stddef.h&gt;
++#include &lt;stdio.h&gt;
++
++void _inform(const char* const B, size_t len)
++{
++	fwrite(B,len,1,stderr);
++	fwrite(&quot;\n&quot;,1,1,stderr);
++}
++
+
+Added: trunk/Zaimoni.STL/Pure.C/stdio.log/log.c
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/log.c	2009-08-26 07:47:24 UTC (rev 240)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/log.c	2009-08-29 23:43:22 UTC (rev 241)
+@@ -0,0 +1,13 @@
++/* log.c */
++/* implements Logging.h for C stdout/stderr */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
++
++#include &lt;stddef.h&gt;
++#include &lt;stdio.h&gt;
++
++void _log(const char* const B, size_t len)
++{
++	fwrite(B,len,1,stderr);
++	fwrite(&quot;\n&quot;,1,1,stderr);
++}
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000007.html">[Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#8">[ date ]</a>
+              <a href="thread.html#8">[ thread ]</a>
+              <a href="subject.html#8">[ subject ]</a>
+              <a href="author.html#8">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

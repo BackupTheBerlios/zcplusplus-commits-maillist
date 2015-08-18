@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r612 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r612%20-%20trunk&In-Reply-To=%3C20110211104213.E426848139E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000378.html">
+   <LINK REL="Next"  HREF="000380.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r612 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r612%20-%20trunk&In-Reply-To=%3C20110211104213.E426848139E%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r612 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Feb 11 11:42:13 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000378.html">[Zcplusplus-commits] r611 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000380.html">[Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#379">[ date ]</a>
+              <a href="thread.html#379">[ thread ]</a>
+              <a href="subject.html#379">[ subject ]</a>
+              <a href="author.html#379">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-11 11:42:13 +0100 (Fri, 11 Feb 2011)
+New Revision: 612
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+C1X: first step towards _Thread_Local to be parsed like C++0X thread_local
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-02-08 11:48:36 UTC (rev 611)
++++ trunk/CSupport.cpp	2011-02-11 10:42:13 UTC (rev 612)
+@@ -910,7 +910,8 @@
+ 		DICT_STRUCT(&quot;static&quot;),
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+-		DICT_STRUCT(&quot;auto&quot;)
++		DICT_STRUCT(&quot;auto&quot;),
++		DICT_STRUCT(&quot;_Thread_Local&quot;)	// C1X, but in reserved class of identifiers
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -919,13 +920,13 @@
+ 	{	DICT_STRUCT(&quot;typedef&quot;),
+ 		DICT_STRUCT(&quot;const&quot;),
+ 		DICT_STRUCT(&quot;volatile&quot;),
+-		DICT_STRUCT(&quot;thread_local&quot;),
++		DICT_STRUCT(&quot;mutable&quot;),
+ 		DICT_STRUCT(&quot;register&quot;),
+ 		DICT_STRUCT(&quot;static&quot;),
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+ 		DICT_STRUCT(&quot;constexpr&quot;),
+-		DICT_STRUCT(&quot;mutable&quot;),
++		DICT_STRUCT(&quot;thread_local&quot;),
+ 		DICT_STRUCT(&quot;virtual&quot;),
+ 		DICT_STRUCT(&quot;explicit&quot;),
+ 		DICT_STRUCT(&quot;friend&quot;)
+@@ -938,8 +939,9 @@
+ #define C99_CPP0X_DECLSPEC_STATIC (1ULL&lt;&lt;5)
+ #define C99_CPP0X_DECLSPEC_EXTERN (1ULL&lt;&lt;6)
+ #define C99_CPP0X_DECLSPEC_INLINE (1ULL&lt;&lt;7)
++#define C99_CPP0X_DECLSPEC_THREAD_LOCAL (1ULL&lt;&lt;9)
+ #define C99_DECLSPEC_AUTO (1ULL&lt;&lt;8)
+-#define CPP_DECLSPEC_MUTABLE (1ULL&lt;&lt;9)
++#define CPP_DECLSPEC_MUTABLE (1ULL&lt;&lt;3)
+ #define CPP_DECLSPEC_VIRTUAL (1ULL&lt;&lt;10)
+ #define CPP_DECLSPEC_EXPLICIT (1ULL&lt;&lt;11)
+ #define CPP_DECLSPEC_FRIEND (1ULL&lt;&lt;12)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-02-08 11:48:36 UTC (rev 611)
++++ trunk/CSupport.cpp.in	2011-02-11 10:42:13 UTC (rev 612)
+@@ -962,7 +962,8 @@
+ 		DICT_STRUCT(&quot;static&quot;),
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+-		DICT_STRUCT(&quot;auto&quot;)
++		DICT_STRUCT(&quot;auto&quot;),
++		DICT_STRUCT(&quot;_Thread_Local&quot;)	// C1X, but in reserved class of identifiers
+ 	};
+ 
+ // we implement C++0X, not C++98.  auto as storage specifier is pretty much a waste of source code anyway.
+@@ -971,13 +972,13 @@
+ 	{	DICT_STRUCT(&quot;typedef&quot;),
+ 		DICT_STRUCT(&quot;const&quot;),
+ 		DICT_STRUCT(&quot;volatile&quot;),
+-		DICT_STRUCT(&quot;thread_local&quot;),
++		DICT_STRUCT(&quot;mutable&quot;),
+ 		DICT_STRUCT(&quot;register&quot;),
+ 		DICT_STRUCT(&quot;static&quot;),
+ 		DICT_STRUCT(&quot;extern&quot;),
+ 		DICT_STRUCT(&quot;inline&quot;),
+ 		DICT_STRUCT(&quot;constexpr&quot;),
+-		DICT_STRUCT(&quot;mutable&quot;),
++		DICT_STRUCT(&quot;thread_local&quot;),
+ 		DICT_STRUCT(&quot;virtual&quot;),
+ 		DICT_STRUCT(&quot;explicit&quot;),
+ 		DICT_STRUCT(&quot;friend&quot;)
+@@ -990,8 +991,9 @@
+ #define C99_CPP0X_DECLSPEC_STATIC (1ULL&lt;&lt;5)
+ #define C99_CPP0X_DECLSPEC_EXTERN (1ULL&lt;&lt;6)
+ #define C99_CPP0X_DECLSPEC_INLINE (1ULL&lt;&lt;7)
++#define C99_CPP0X_DECLSPEC_THREAD_LOCAL (1ULL&lt;&lt;9)
+ #define C99_DECLSPEC_AUTO (1ULL&lt;&lt;8)
+-#define CPP_DECLSPEC_MUTABLE (1ULL&lt;&lt;9)
++#define CPP_DECLSPEC_MUTABLE (1ULL&lt;&lt;3)
+ #define CPP_DECLSPEC_VIRTUAL (1ULL&lt;&lt;10)
+ #define CPP_DECLSPEC_EXPLICIT (1ULL&lt;&lt;11)
+ #define CPP_DECLSPEC_FRIEND (1ULL&lt;&lt;12)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000378.html">[Zcplusplus-commits] r611 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000380.html">[Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#379">[ date ]</a>
+              <a href="thread.html#379">[ thread ]</a>
+              <a href="subject.html#379">[ subject ]</a>
+              <a href="author.html#379">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

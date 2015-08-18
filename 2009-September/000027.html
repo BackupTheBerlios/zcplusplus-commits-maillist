@@ -1,0 +1,276 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r260 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r260%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C200909260039.n8Q0d2ut016314%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000026.html">
+   <LINK REL="Next"  HREF="000028.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r260 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r260%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C200909260039.n8Q0d2ut016314%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r260 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Sep 26 02:39:02 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000026.html">[Zcplusplus-commits] r259 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000028.html">[Zcplusplus-commits] r261 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#27">[ date ]</a>
+              <a href="thread.html#27">[ thread ]</a>
+              <a href="subject.html#27">[ subject ]</a>
+              <a href="author.html#27">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-26 02:38:59 +0200 (Sat, 26 Sep 2009)
+New Revision: 260
+
+Modified:
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+full choice between value and std::auto_ptr semantics in AutoPtr.hpp
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2009-09-25 18:42:09 UTC (rev 259)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2009-09-26 00:38:59 UTC (rev 260)
+@@ -150,34 +150,34 @@
+ };
+ 
+ template&lt;typename T&gt;
+-class weakautoarray_ptr : public c_var_array_CRTP&lt;weakautoarray_ptr&lt;T&gt;, T&gt;
++class _meta_weakautoarray_ptr : public c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;
+ {
+ private:
+-	friend class c_var_array_CRTP&lt;weakautoarray_ptr&lt;T&gt;, T&gt;;
++	friend class c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;;
+ 	T* _ptr;
+ #ifdef ZAIMONI_FORCE_ISO
+ 	size_t _size;
+ #endif
+ public:
+-	ZAIMONI_STL_TYPE_GLUE_ARRAY(T);
+-
+ #ifndef ZAIMONI_FORCE_ISO
+-	explicit weakautoarray_ptr() : _ptr(NULL) {};
+-	explicit weakautoarray_ptr(T*&amp; src) : _ptr(src) {src = NULL;};
+-	explicit weakautoarray_ptr(size_t n) : _ptr(_new_buffer&lt;T&gt;(n)) {};
+-	explicit weakautoarray_ptr(weakautoarray_ptr&amp; src) : _ptr(src._ptr) {src._ptr=NULL;};
++	explicit _meta_weakautoarray_ptr() : _ptr(NULL) {};
++	explicit _meta_weakautoarray_ptr(T*&amp; src) : _ptr(src) {src = NULL;};
++	explicit _meta_weakautoarray_ptr(size_t n) : _ptr(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL) {};
++	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)) {};
++	explicit _meta_weakautoarray_ptr(_meta_weakautoarray_ptr&amp; src) : _ptr(src._ptr) {src._ptr=NULL;};
+ #else
+-	explicit weakautoarray_ptr() : _ptr(NULL),_size(0) {};
+-	explicit weakautoarray_ptr(T*&amp; src,size_t src_size) : _ptr(src),_size(src_size) {src = NULL;};
+-	explicit weakautoarray_ptr(size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
+-	explicit weakautoarray_ptr(weakautoarray_ptr&amp; src) : _ptr(src._ptr),_size(src._size) {src._ptr=NULL; src._size=0;};
++	explicit _meta_weakautoarray_ptr() : _ptr(NULL),_size(0) {};
++	explicit _meta_weakautoarray_ptr(T*&amp; src,size_t src_size) : _ptr(src),_size(src_size) {src = NULL;};
++	explicit _meta_weakautoarray_ptr(size_t n) : _ptr(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL),_size(n) {};
++	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
++	explicit _meta_weakautoarray_ptr(_meta_weakautoarray_ptr&amp; src) : _ptr(src._ptr),_size(src._size) {src._ptr=NULL; src._size=0;};
+ #endif
+-	~weakautoarray_ptr() {_weak_flush(_ptr);};
++	~_meta_weakautoarray_ptr() {_weak_flush(_ptr);};
+ 
+ #ifndef ZAIMONI_FORCE_ISO
+-	const weakautoarray_ptr&amp; operator=(T* src);
++	void operator=(T* src);
+ #endif
+-	const weakautoarray_ptr&amp; operator=(weakautoarray_ptr&amp; src);
++	void operator=(const _meta_weakautoarray_ptr&amp; src);
+ 	template&lt;typename U&gt; bool value_copy_of(const U&amp; src);	// STL interfaces required of U: size(),data()
+ 	void reset() {_weak_flush(_ptr); this-&gt;NULLPtr();};
+ 
+@@ -194,11 +194,49 @@
+ 
+ 	// erase all elements
+ 	void clear() {_weak_flush(_ptr); this-&gt;NULLPtr();};
++};
+ 
++template&lt;typename T&gt;
++class weakautoarray_ptr : public _meta_weakautoarray_ptr&lt;T&gt;
++{
++public:
++	ZAIMONI_STL_TYPE_GLUE_ARRAY(T);
++
++	explicit weakautoarray_ptr() {};
++	explicit weakautoarray_ptr(T*&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++	explicit weakautoarray_ptr(size_t n) : _meta_weakautoarray_ptr&lt;T&gt;(std::nothrow,n) {};
++	explicit weakautoarray_ptr(weakautoarray_ptr&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src._ptr) {};
++//	~weakautoarray_ptr();	// default OK
++
++#ifndef ZAIMONI_FORCE_ISO
++	const weakautoarray_ptr&amp; operator=(T* src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++#endif
++	const weakautoarray_ptr&amp; operator=(weakautoarray_ptr&amp; src) {reset(src._ptr); return *this;};
++
+ 	friend void zaimoni::swap(weakautoarray_ptr&amp; lhs, weakautoarray_ptr&amp; rhs) {lhs.swap(rhs);};
+ };
+ 
+ template&lt;typename T&gt;
++class weakautoarray_ptr_throws : public _meta_weakautoarray_ptr&lt;T&gt;
++{
++public:
++	ZAIMONI_STL_TYPE_GLUE_ARRAY(T);
++
++	explicit weakautoarray_ptr_throws() {};
++	explicit weakautoarray_ptr_throws(T*&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src) {};
++	explicit weakautoarray_ptr_throws(size_t n) : _meta_weakautoarray_ptr&lt;T&gt;(n) {};
++	explicit weakautoarray_ptr_throws(weakautoarray_ptr_throws&amp; src) : _meta_weakautoarray_ptr&lt;T&gt;(src._ptr) {};
++//	~weakautoarray_ptr_throws();	// default OK
++
++#ifndef ZAIMONI_FORCE_ISO
++	const weakautoarray_ptr_throws&amp; operator=(T* src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++#endif
++	const weakautoarray_ptr_throws&amp; operator=(weakautoarray_ptr_throws&amp; src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++
++	friend void zaimoni::swap(weakautoarray_ptr_throws&amp; lhs, weakautoarray_ptr_throws&amp; rhs) {lhs.swap(rhs);};
++};
++
++template&lt;typename T&gt;
+ class _meta_autoarray_ptr : public c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;
+ {
+ protected:
+@@ -217,7 +255,8 @@
+ #else
+ 	explicit _meta_autoarray_ptr() : _ptr(NULL),_size(0) {};
+ 	explicit _meta_autoarray_ptr(T*&amp; src,size_t src_size) : _ptr(src),_size(src_size) {src = NULL;};
+-	explicit _meta_autoarray_ptr(size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
++	explicit _meta_autoarray_ptr(size_t n) : _ptr(_new_buffer&lt;T&gt;(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL)),_size(n) {};
++	explicit _meta_autoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
+ 	explicit _meta_autoarray_ptr(const _meta_autoarray_ptr&amp; src) : _ptr(NULL),_size(0) {*this=src;};
+ #endif
+ 	~_meta_autoarray_ptr() {_flush(_ptr);};
+@@ -384,43 +423,34 @@
+ 
+ #ifndef ZAIMONI_FORCE_ISO
+ template&lt;typename T&gt;
+-const weakautoarray_ptr&lt;T&gt;&amp;
+-weakautoarray_ptr&lt;T&gt;::operator=(T* src)
++void
++_meta_weakautoarray_ptr&lt;T&gt;::operator=(T* src)
+ {
+ 	if (_ptr!=src)
+ 		{
+ 		_weak_flush(_ptr);
+ 		_ptr = src;
+ 		}
+-	return *this;
+ }
+ #endif
+ 
+ template&lt;typename T&gt;
+-const weakautoarray_ptr&lt;T&gt;&amp;
+-weakautoarray_ptr&lt;T&gt;::operator=(weakautoarray_ptr&amp; src)
++void
++_meta_weakautoarray_ptr&lt;T&gt;::operator=(const _meta_weakautoarray_ptr&lt;T&gt;&amp; src)
+ {	// this convolution handles a recursion issue
+-	if (_ptr!=src._ptr)
+-		{
+-		T* TmpPtr = src._ptr;
+-#ifdef ZAIMONI_FORCE_ISO
+-		_size = src._size;
+-#endif
+-		src.NULLPtr();
+-		_weak_flush(_ptr);
+-		_ptr = TmpPtr;
+-		}
+-	else if (&amp;this-&gt;_ptr!=&amp;src._ptr)
+-		{
+-		src.NULLPtr();
+-		}
+-	return *this;
++	const size_t ub = src.size();
++	if (0&gt;=ub)
++		reset();
++	else{
++		this-&gt;resize(ub);
++		_copy_buffer(this-&gt;c_array(),src.data(),ub);
++		};
+ }
+ 
+ template&lt;typename T&gt;
+ template&lt;typename U&gt;
+ bool
+-weakautoarray_ptr&lt;T&gt;::value_copy_of(const U&amp; src)
++_meta_weakautoarray_ptr&lt;T&gt;::value_copy_of(const U&amp; src)
+ {
+ 	const size_t ub = src.size();
+ 	if (!Resize(ub)) return false;
+@@ -433,7 +463,7 @@
+ template&lt;typename T&gt;
+ template&lt;typename U,typename op&gt;
+ bool
+-weakautoarray_ptr&lt;T&gt;::grep(const U&amp; src,op Predicate)
++_meta_weakautoarray_ptr&lt;T&gt;::grep(const U&amp; src,op Predicate)
+ {
+ 	if (src.empty())
+ 		{
+@@ -465,7 +495,7 @@
+ template&lt;typename T&gt;
+ template&lt;typename U,typename op&gt;
+ bool
+-weakautoarray_ptr&lt;T&gt;::invgrep(const U&amp; src,op Predicate)
++_meta_weakautoarray_ptr&lt;T&gt;::invgrep(const U&amp; src,op Predicate)
+ {
+ 	if (src.empty())
+ 		{
+@@ -526,12 +556,12 @@
+ void
+ _meta_autoarray_ptr&lt;T&gt;::operator=(const _meta_autoarray_ptr&amp; src)
+ {
+-	const size_t TargetSize = src.size();
+-	if (0&gt;=TargetSize)
++	const size_t ub = src.size();
++	if (0&gt;=ub)
+ 		reset();
+ 	else{
+-		this-&gt;resize(TargetSize);
+-		_value_copy_buffer(this-&gt;c_array(),src.data(),TargetSize);
++		this-&gt;resize(ub);
++		_value_copy_buffer(this-&gt;c_array(),src.data(),ub);
+ 		};
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000026.html">[Zcplusplus-commits] r259 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000028.html">[Zcplusplus-commits] r261 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#27">[ date ]</a>
+              <a href="thread.html#27">[ thread ]</a>
+              <a href="subject.html#27">[ subject ]</a>
+              <a href="author.html#27">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

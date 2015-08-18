@@ -1,0 +1,773 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r286 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/default/has_include tests/cpp.in	tests/cpp.in/default tests/cpp.in/default/has_include
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r286%20-%20in%20trunk%3A%20.%20tests/cpp%20tests/cpp/default%0A%09tests/cpp/default/has_include%20tests/cpp.in%0A%09tests/cpp.in/default%20tests/cpp.in/default/has_include&In-Reply-To=%3C200911280528.nAS5Sv4f013466%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000052.html">
+   <LINK REL="Next"  HREF="000054.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r286 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/default/has_include tests/cpp.in	tests/cpp.in/default tests/cpp.in/default/has_include</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r286%20-%20in%20trunk%3A%20.%20tests/cpp%20tests/cpp/default%0A%09tests/cpp/default/has_include%20tests/cpp.in%0A%09tests/cpp.in/default%20tests/cpp.in/default/has_include&In-Reply-To=%3C200911280528.nAS5Sv4f013466%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r286 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/default/has_include tests/cpp.in	tests/cpp.in/default tests/cpp.in/default/has_include">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov 28 06:28:57 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000052.html">[Zcplusplus-commits] r285 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000054.html">[Zcplusplus-commits] r287 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-28 06:28:36 +0100 (Sat, 28 Nov 2009)
+New Revision: 286
+
+Added:
+   trunk/tests/cpp.in/default/has_include/
+   trunk/tests/cpp.in/default/has_include/Error_angle_in_angle1.in
+   trunk/tests/cpp.in/default/has_include/Error_angle_in_angle2.in
+   trunk/tests/cpp.in/default/has_include/Error_angle_in_angle3.in
+   trunk/tests/cpp.in/default/has_include/Error_angle_in_angle4.in
+   trunk/tests/cpp.in/default/has_include/Error_quote_in_quote.in
+   trunk/tests/cpp.in/default/has_include/Pass_typical_uses.in
+   trunk/tests/cpp/default/has_include/
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle1.h
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle1.hpp
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle2.h
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle2.hpp
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle3.h
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle3.hpp
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle4.h
+   trunk/tests/cpp/default/has_include/Error_angle_in_angle4.hpp
+   trunk/tests/cpp/default/has_include/Error_quote_in_quote.h
+   trunk/tests/cpp/default/has_include/Error_quote_in_quote.hpp
+   trunk/tests/cpp/default/has_include/Pass_typical_uses.h
+   trunk/tests/cpp/default/has_include/Pass_typical_uses.hpp
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.hpp
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp/run_tests.bat
+   trunk/tests/cpp/run_tests.sh
+Log:
+bring up CLang preprocessor extension __has_include
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/CPreproc.cpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -219,6 +219,7 @@
+ 		DICT_STRUCT(&quot;__TIMESTAMP__&quot;),			// lock down our extension macros
+ 		DICT_STRUCT(&quot;__COUNTER__&quot;),				// lock down our extension macros
+ 		DICT_STRUCT(&quot;__INCLUDE_LEVEL__&quot;),		// lock down our extension macros
++		DICT_STRUCT(&quot;__has_include&quot;),			// lock down our extension macros
+ 		DICT_STRUCT(&quot;__ZCC__&quot;),					// lock down our identity
+ 		DICT_STRUCT(&quot;__ZCC_MINOR__&quot;),			// lock down our identity
+ 		DICT_STRUCT(&quot;__ZCC_PATCHLEVEL__&quot;)		// lock down our identity
+@@ -832,6 +833,38 @@
+ 	while(0&lt;j);
+ }
+ 
++/*! 
++ * returns code for hardcoded system header not in the file system
++ * 
++ * \param look_for header name
++ * \param lang_code language code from preprocessor object
++ * 
++ * \return unsigned int
++ */
++static unsigned int
++detect_hardcoded_system_header(const char* const look_for,size_t lang_code)
++{
++	// C,C++: limits.h is hardcoded
++	// C++: climits is hardcoded
++	if (	(!strcmp(look_for,&quot;limits.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
++		||	(!strcmp(look_for,&quot;climits&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
++		return 1;
++
++	// C,C++: stddef.h is hardcoded
++	// C++: cstddef is hardcoded
++	if (	(!strcmp(look_for,&quot;stddef.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
++		||	(!strcmp(look_for,&quot;cstddef&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
++		return 2;
++
++	// C,C++: stdint.h is hardcoded
++	// C++: cstdint is hardcoded
++	if (	(!strcmp(look_for,&quot;stdint.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
++		||	(!strcmp(look_for,&quot;cstdint&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
++		return 3;
++
++	return 0;
++}
++
+ void
+ CPreprocessor::_preprocess(autovalarray_ptr&lt;Token&lt;char&gt;* &gt;&amp; TokenList, autovalarray_ptr&lt;char*&gt;&amp; locked_macros, autovalarray_ptr&lt;char*&gt;&amp; macros_object, autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_object_expansion, autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_object_expansion_pre_eval, autovalarray_ptr&lt;char*&gt;&amp; macros_function, autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_arglist, autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_expansion, autovalarray_ptr&lt;Token&lt;char&gt;*&gt;&amp; macros_function_expansion_pre_eval, autovalarray_ptr&lt;POD_triple&lt;const char*, const char*,uintptr_t&gt; &gt;&amp; include_file_index, autovalarray_ptr&lt;POD_pair&lt;const char*,autovalarray_ptr&lt;Token&lt;char&gt;*&gt;* &gt; &gt;&amp; include_file_cache, const type_system&amp; min_types)
+ {
+@@ -1921,7 +1954,7 @@
+ 			char buf[FILENAME_MAX];
+ 			const char* main_index_name = NULL;
+ 			// note: local_include needs to know where to start...
+-			bool found_file = local_include &amp;&amp; find_local_include(look_for, buf, ((NULL==TokenList[include_where]-&gt;parent_dir) ? &quot;.&quot; : TokenList[include_where]-&gt;parent_dir));
++			bool found_file = local_include &amp;&amp; find_local_include(look_for, buf, (TokenList[include_where]-&gt;parent_dir ? TokenList[include_where]-&gt;parent_dir : &quot;.&quot;));
+ 			bool hardcoded_header = false;
+ 			if (found_file)
+ 				{	// filepath known; local includes use the calculated path for information
+@@ -1974,38 +2007,35 @@
+ 				if (Lang::C==lang_code &amp;&amp; 0&lt;lang.pp_support-&gt;LengthOfSystemHeader(look_for))
+ 					C99_reject_keyword_macros(TokenList,include_where,look_for,lang,macros_object,macros_object_expansion,macros_object_expansion_pre_eval,macros_function,macros_function_arglist,macros_function_expansion,macros_function_expansion_pre_eval);
+ 
+-				// C,C++: limits.h is hardcoded
+-				// C++: climits is hardcoded
+-				if (	(!strcmp(look_for,&quot;limits.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-					||	(!strcmp(look_for,&quot;climits&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-					{	// header is limits.h
++				const unsigned int hardcoded_header_idx = detect_hardcoded_system_header(look_for,lang_code);
++				switch(hardcoded_header_idx)
++				{
++#ifndef NDEBUG
++				default: FATAL(&quot;hardcoded_header_idx out of range&quot;);
++#endif
++				case 3:	{	// stdint.h/cstdint
+ 					hardcoded_header = true;
+ 					C99_reject_keyword_macros(TokenList,include_where,look_for,lang,macros_object,macros_object_expansion,macros_object_expansion_pre_eval,macros_function,macros_function_arglist,macros_function_expansion,macros_function_expansion_pre_eval);
+-					if (0&gt;binary_find(&quot;__LIMITS_H__&quot;,sizeof(&quot;__LIMITS_H__&quot;)-1,macros_object))	
+-						create_limits_header(IncludeTokenList,look_for);	// not included yet
+-					};
+-
+-				// C,C++: stddef.h is hardcoded
+-				// C++: cstddef is hardcoded
+-				if (	(!strcmp(look_for,&quot;stddef.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-					||	(!strcmp(look_for,&quot;cstddef&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-					{	// header is stddef.h
++					if (0&gt;binary_find(&quot;__STDINT_H__&quot;,sizeof(&quot;__STDINT_H__&quot;)-1,macros_object))	
++						create_stdint_header(IncludeTokenList,look_for);	// not included yet
++					break;
++					}
++				case 2:	{	// stddef.h/cstddef
+ 					hardcoded_header = true;
+ 					C99_reject_keyword_macros(TokenList,include_where,look_for,lang,macros_object,macros_object_expansion,macros_object_expansion_pre_eval,macros_function,macros_function_arglist,macros_function_expansion,macros_function_expansion_pre_eval);
+ 					if (0&gt;binary_find(&quot;__STDDEF_H__&quot;,sizeof(&quot;__STDDEF_H__&quot;)-1,macros_object))	
+ 						create_stddef_header(IncludeTokenList,look_for);	// not included yet
+-					};
+-
+-				// C,C++: stdint.h is hardcoded
+-				// C++: cstdint is hardcoded
+-				if (	(!strcmp(look_for,&quot;stdint.h&quot;) &amp;&amp; (Lang::C==lang_code || Lang::CPlusPlus==lang_code))
+-					||	(!strcmp(look_for,&quot;cstdint&quot;) &amp;&amp; Lang::CPlusPlus==lang_code))
+-					{	// header is stdint.h
++					break;
++					}
++				case 1:	{	// limits.h/climits
+ 					hardcoded_header = true;
+ 					C99_reject_keyword_macros(TokenList,include_where,look_for,lang,macros_object,macros_object_expansion,macros_object_expansion_pre_eval,macros_function,macros_function_arglist,macros_function_expansion,macros_function_expansion_pre_eval);
+-					if (0&gt;binary_find(&quot;__STDINT_H__&quot;,sizeof(&quot;__STDINT_H__&quot;)-1,macros_object))	
+-						create_stdint_header(IncludeTokenList,look_for);	// not included yet
+-					};
++					if (0&gt;binary_find(&quot;__LIMITS_H__&quot;,sizeof(&quot;__LIMITS_H__&quot;)-1,macros_object))	
++						create_limits_header(IncludeTokenList,look_for);	// not included yet
++					break;
++					}
++				case 0:;
++				}
+ 
+ 				found_file = !hardcoded_header &amp;&amp; find_system_include(look_for, buf);
+ 				if (found_file)
+@@ -2483,6 +2513,8 @@
+ 	assert(NULL!=x);
+ 	assert(0&lt;x_len);
+ 	if (0&lt;=linear_find(x, x_len, macro_identifier_default, macro_identifier_default_count)) return 1;
++	// report &quot;magic macros&quot; as defined if the master preprocessor does
++	if (sizeof(&quot;__has_include&quot;)-1==x_len &amp;&amp; !strncmp(x,&quot;__has_include&quot;,x_len)) return 1;	// CLang says predefined
+ 	if (hard_locked_macro(x,x_len)) return -1;
+ 	return 0;
+ }
+@@ -2839,6 +2871,38 @@
+ 	return true;
+ }
+ 
++/*! 
++ * 
++ * 
++ * \param x overall directive
++ * \param pretokenized token index for overall directive
++ * \param src
++ * \param i start token
++ * \param delta last token offset included in range to be substituted
++ * 
++ * \return bool true if and only if directive obviously completely substituted
++ */
++bool
++CPreprocessor::replace_char_into_directive(Token&lt;char&gt;&amp; x,const autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized,const char src,const size_t i,const size_t delta)
++{
++	if (0==i &amp;&amp; delta+1==pretokenized.size())
++		{
++		x.replace_once(std::nothrow,pretokenized[0].first,x.size()-pretokenized[0].first,src);
++		return true;
++		};
++
++	size_t buffer_used = 0;
++	char Buffer[4] = &quot;&quot;;
++	if (0&lt;pretokenized[i].first &amp;&amp; require_padding(x.data()[pretokenized[i].first-1],src))
++		Buffer[buffer_used++] = ' ';
++	Buffer[buffer_used++] = src;
++	if (x.size()&gt;pretokenized[i+delta].first+pretokenized[i+delta].second &amp;&amp; require_padding(src,x.data()[pretokenized[i+delta].first+pretokenized[i+delta].second]))
++		Buffer[buffer_used++] = ' ';
++
++	x.replace_once(std::nothrow,pretokenized[i].first,(pretokenized[i+delta].first-pretokenized[i].first)+pretokenized[i+delta].second,Buffer);
++	return false;
++}
++
+ /*
+  * we use goto in CPreprocessor::if_elif_syntax_ok contrary to readable style guidelines
+  *	RetryStringMerge: restart the string-merge stage (should happen only if running short on memory
+@@ -2895,21 +2959,7 @@
+ 				if (0==know_it_now)
+ 					know_it_now = (macro_is_defined(x.data()+pretokenized[i+1].first, pretokenized[i+1].second, macros_object, macros_function)) ? 1 : -1;
+ 				const char subst_dest = (0&lt;know_it_now) ? '1' : '0';
+-				if (0==i &amp;&amp; 2==pretokenized.size())
+-					{
+-					x.replace_once(std::nothrow,pretokenized[0].first,x.size()-pretokenized[0].first,subst_dest);
+-					return true;
+-					};
+-
+-				size_t buffer_used = 0;
+-				char Buffer[4] = &quot;&quot;;
+-				if (0&lt;pretokenized[i].first &amp;&amp; require_padding(x.data()[pretokenized[i].first-1],subst_dest))
+-					Buffer[buffer_used++] = ' ';
+-				Buffer[buffer_used++] = subst_dest;
+-				if (x.size()&gt;pretokenized[i+1].first+pretokenized[i+1].second &amp;&amp; require_padding(subst_dest,x.data()[pretokenized[i+1].first+pretokenized[i+1].second]))
+-					Buffer[buffer_used++] = ' ';
+-
+-				x.replace_once(std::nothrow,pretokenized[i].first,(pretokenized[i+1].first-pretokenized[i].first)+pretokenized[i+1].second,Buffer);
++				if (replace_char_into_directive(x,pretokenized,subst_dest,i,1)) return true;
+ 				lang.line_lex(x.data()+critical_offset,x.size()-critical_offset,pretokenized);
+ 				STL_translate_first(critical_offset,pretokenized);	// coordinate fixup
+ 				continue;
+@@ -2935,21 +2985,7 @@
+ 						know_it_now = (macro_is_defined(x.data()+pretokenized[i+2].first, pretokenized[i+2].second, macros_object, macros_function)) ? 1 : -1;
+ 
+ 					const char subst_dest = (0&lt;know_it_now) ? '1' : '0';
+-					if (0==i &amp;&amp; 4==pretokenized.size())
+-						{
+-						x.replace_once(std::nothrow,pretokenized[0].first,x.size()-pretokenized[0].first,subst_dest);
+-						return true;
+-						};
+-
+-					size_t buffer_used = 0;
+-					char Buffer[4] = &quot;&quot;;
+-					if (0&lt;pretokenized[i].first &amp;&amp; require_padding(x.data()[pretokenized[i].first-1],subst_dest))
+-						Buffer[buffer_used++] = ' ';
+-					Buffer[buffer_used++] = subst_dest;
+-					if (x.size()&gt;pretokenized[i+3].first+pretokenized[i+3].second &amp;&amp; require_padding(subst_dest,x.data()[pretokenized[i+3].first+pretokenized[i+3].second]))
+-						Buffer[buffer_used++] = ' ';
+-
+-					x.replace_once(std::nothrow,pretokenized[i].first,(pretokenized[i+3].first-pretokenized[i].first)+pretokenized[i+3].second,Buffer);
++					if (replace_char_into_directive(x,pretokenized,subst_dest,i,3)) return true;
+ 					lang.line_lex(x.data()+critical_offset,x.size()-critical_offset,pretokenized);
+ 					STL_translate_first(critical_offset,pretokenized);	// coordinate fixup
+ 					continue;
+@@ -2978,6 +3014,99 @@
+ 	// if any identifiers survive, we have to do macro preprocessing to get further
+ 	if (bad_control) return false;	// but if we discard the block anyway it doesn't matter
+ 
++	// analyze the __has_include() extension operator (from CLang)
++	i = 0;
++	do	if ((sizeof(&quot;__has_include&quot;)-1)==pretokenized[i].second &amp;&amp; !strncmp(x.data()+pretokenized[i].first,&quot;__has_include&quot;,(sizeof(&quot;__has_include&quot;)-1)))
++			{
++			// if no space for extension, let default flush-to-zero happen silently
++			if (4&gt;pretokenized.size()-i) break;
++			if (!token_is_char&lt;'('&gt;(x.data(),pretokenized[i+1]))
++				// do not trigger __has_include extension
++				continue;
++			// we want: __has_include(&quot;...&quot;) or __has_include(&lt;...&gt;)
++			if (   C_TESTFLAG_STRING_LITERAL==pretokenized[i+2].third
++				&amp;&amp; '&quot;'==x.data()[pretokenized[i+2].first]
++				&amp;&amp; token_is_char&lt;')'&gt;(x.data(),pretokenized[i+3]))
++				{	// __has_include(&quot;...&quot;)
++					//! \todo need test cases
++				if (0==pretokenized[i+2].second-2)
++					{	// empty, automatic failure
++					if (replace_char_into_directive(x,pretokenized,'0',i,3)) return true;
++					lang.line_lex(x.data()+critical_offset,x.size()-critical_offset,pretokenized);
++					STL_translate_first(critical_offset,pretokenized);	// coordinate fixup
++					continue;
++					}
++
++				char buf[FILENAME_MAX];
++				char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[i+2].second-2));
++				strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[i+2].second-2);
++				if (strchr(look_for,'&quot;'))
++					{
++					message_header(x);
++					INFORM(&quot;__has_include(\&quot;...\&quot;) contains \&quot;; preprocessing per standards rather than invoking extension __has_include&quot;);
++					free(look_for);
++					i += 2;
++					continue;
++					};
++				const char subst_dest = (detect_hardcoded_system_header(look_for,lang_code) || find_local_include(look_for, buf, (x.parent_dir ? x.parent_dir : &quot;.&quot;)) || find_system_include(look_for, buf)) ? '1' : '0';
++				free(look_for);
++				if (replace_char_into_directive(x,pretokenized,subst_dest,i,3)) return true;
++				lang.line_lex(x.data()+critical_offset,x.size()-critical_offset,pretokenized);
++				STL_translate_first(critical_offset,pretokenized);	// coordinate fixup
++				continue;
++				}
++			//! \todo: optimization check: does testing for &lt; and &gt; by leading/trailing character reduce code size
++			else if (token_is_char&lt;'&lt;'&gt;(x.data(),pretokenized[i+2]))
++				{
++				size_t j = i+2;
++				while(pretokenized.size()-1 &gt; ++j)
++					if (token_is_char&lt;'&gt;'&gt;(x.data(),pretokenized[j]))
++						{	//! \todo need test cases
++						if (!token_is_char&lt;')'&gt;(x.data(),pretokenized[j+1])) break;
++						// __has_include(&lt;...&gt;)
++						if (0==pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2)
++							{	// empty, automatic failure
++							if (replace_char_into_directive(x,pretokenized,'0',i,j+1-i)) return true;
++							lang.line_lex(x.data()+critical_offset,x.size()-critical_offset,pretokenized);
++							STL_translate_first(critical_offset,pretokenized);	// coordinate fixup
++							continue;
++							}
++						char buf[FILENAME_MAX];
++						char* const look_for = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2));
++						strncpy(look_for,x.data()+pretokenized[i+2].first+1,pretokenized[j].first-pretokenized[i+2].first+pretokenized[j].second-2);
++						if (strchr(look_for,'&lt;'))
++							{
++							message_header(x);
++							INFORM(&quot;__has_include(&lt;...&gt;) contains &lt;; preprocessing per standards rather than invoking extension __has_include&quot;);
++							free(look_for);
++							i += 2;
++							continue;
++							};
++						if (strchr(look_for,'&gt;'))
++							{
++							message_header(x);
++							INFORM(&quot;__has_include(&lt;...&gt;) contains &gt;; preprocessing per standards rather than invoking extension __has_include&quot;);
++							free(look_for);
++							i += 2;
++							continue;
++							};
++						const char subst_dest = (detect_hardcoded_system_header(look_for,lang_code) || find_system_include(look_for, buf)) ? '1' : '0';
++						free(look_for);
++						if (replace_char_into_directive(x,pretokenized,subst_dest,i,j+1-i)) return true;
++						lang.line_lex(x.data()+critical_offset,x.size()-critical_offset,pretokenized);
++						STL_translate_first(critical_offset,pretokenized);	// coordinate fixup
++						continue;
++						}
++				++i;
++				continue;
++				}
++			// not recognized as __has_include directive, preprocess per standards
++			}
++	while(pretokenized.size() &gt; ++i);
++
++	// if any identifiers survive, we have to do macro preprocessing to get further
++	if (bad_control) return false;	// but if we discard the block anyway it doesn't matter
++
+ 	intradirective_preprocess(x,valid_directives[if_directive].second+2,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion);
+ 
+ 	// if we went invalid do not proceed further
+
+Modified: trunk/CPreproc.hpp
+===================================================================
+--- trunk/CPreproc.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/CPreproc.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -90,6 +90,7 @@
+ 	void normalize_macro_expansion(zaimoni::Token&lt;char&gt;&amp; x, const zaimoni::Token&lt;char&gt;&amp; src, size_t critical_offset, size_t first_token_len);
+ 	void intradirective_preprocess(zaimoni::Token&lt;char&gt;&amp; x, size_t critical_offset, const zaimoni::autovalarray_ptr&lt;char*&gt;&amp; macros_object, const zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;*&gt;&amp; macros_object_expansion, const zaimoni::autovalarray_ptr&lt;char*&gt;&amp; macros_function, const zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;*&gt;&amp; macros_function_arglist, const zaimoni::autovalarray_ptr&lt;zaimoni::Token&lt;char&gt;*&gt;&amp; macros_function_expansion,zaimoni::autovalarray_ptr&lt;char*&gt;* const used_macro_stack = NULL);
+ 	void intradirective_flush_identifiers_to_zero(zaimoni::Token&lt;char&gt;&amp; x, size_t critical_offset) const;
++	bool replace_char_into_directive(zaimoni::Token&lt;char&gt;&amp; x,const zaimoni::autovalarray_ptr&lt;zaimoni::POD_triple&lt;size_t,size_t,zaimoni::lex_flags&gt; &gt;&amp; pretokenized,const char subst_dest,const size_t i,const size_t delta);
+ 
+ 	// macro locking
+ 	bool hard_locked_macro(const char* const x,const size_t identifier_len) const;
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle1.h
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle1.h	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle1.h	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle1.h
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;a&lt;b&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle1.hpp
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle1.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle1.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle1.hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;a&lt;b&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle2.h
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle2.h	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle2.h	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle2.h
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;a&gt;b&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle2.hpp
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle2.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle2.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle2.hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;a&gt;b&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle3.h
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle3.h	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle3.h	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle3.h
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;&lt;&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle3.hpp
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle3.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle3.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle3.hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;&lt;&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle4.h
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle4.h	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle4.h	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle4.h
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;&gt;&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_angle_in_angle4.hpp
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_angle_in_angle4.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_angle_in_angle4.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_angle_in_angle4.hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&lt;&gt;&gt;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_quote_in_quote.h
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_quote_in_quote.h	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_quote_in_quote.h	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_quote_in_quote.h
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&quot;\&quot;&quot;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Error_quote_in_quote.hpp
+===================================================================
+--- trunk/tests/cpp/default/has_include/Error_quote_in_quote.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Error_quote_in_quote.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,7 @@
++// default\has_include\Error_quote_in_quote.hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#if __has_include(&quot;\&quot;&quot;)
++#endif
++
+
+Added: trunk/tests/cpp/default/has_include/Pass_typical_uses.h
+===================================================================
+--- trunk/tests/cpp/default/has_include/Pass_typical_uses.h	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Pass_typical_uses.h	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,38 @@
++// default\has_include\Pass_typical_uses.h
++// exercise valid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++// these should behave like CLang
++#if __has_include(&quot;&quot;)
++#error __has_include(&quot;&quot;) is true
++#endif
++#if __has_include(&lt;&gt;)
++#error __has_include(&lt;&gt;) is true
++#endif
++#if __has_include(&quot;bad_include&quot;)
++#error __has_include(&quot;bad_include&quot;) is true
++#endif
++#if __has_include(&lt;bad_include&gt;)
++#error __has_include(&lt;bad_include&gt;) is true
++#endif
++#if __has_include(&quot;stddef.h&quot;)
++#else
++#error __has_include(&quot;stddef.h&quot;) is false
++#endif
++#if __has_include(&lt;stddef.h&gt;)
++#else
++#error __has_include(&lt;stddef.h&gt;) is false
++#endif
++#if __has_include(&quot;stdbool.h&quot;)
++#else
++#error __has_include(&quot;stdbool.h&quot;) is false
++#endif
++#if __has_include(&lt;stdbool.h&gt;)
++#else
++#error __has_include(&lt;stdbool.h&gt;) is false
++#endif
++
++// this should be processed like C99
++#if __has_include
++#error __has_include is true
++#endif
+
+Added: trunk/tests/cpp/default/has_include/Pass_typical_uses.hpp
+===================================================================
+--- trunk/tests/cpp/default/has_include/Pass_typical_uses.hpp	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/default/has_include/Pass_typical_uses.hpp	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,38 @@
++// default\has_include\Pass_typical_uses.hpp
++// exercise valid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++// these should behave like CLang
++#if __has_include(&quot;&quot;)
++#error __has_include(&quot;&quot;) is true
++#endif
++#if __has_include(&lt;&gt;)
++#error __has_include(&lt;&gt;) is true
++#endif
++#if __has_include(&quot;bad_include&quot;)
++#error __has_include(&quot;bad_include&quot;) is true
++#endif
++#if __has_include(&lt;bad_include&gt;)
++#error __has_include(&lt;bad_include&gt;) is true
++#endif
++#if __has_include(&quot;stddef.h&quot;)
++#else
++#error __has_include(&quot;stddef.h&quot;) is false
++#endif
++#if __has_include(&lt;stddef.h&gt;)
++#else
++#error __has_include(&lt;stddef.h&gt;) is false
++#endif
++#if __has_include(&quot;stdbool.h&quot;)
++#else
++#error __has_include(&quot;stdbool.h&quot;) is false
++#endif
++#if __has_include(&lt;stdbool.h&gt;)
++#else
++#error __has_include(&lt;stdbool.h&gt;) is false
++#endif
++
++// this should be processed like C99
++#if __has_include
++#error __has_include is true
++#endif
+
+Modified: trunk/tests/cpp/run_tests.bat
+===================================================================
+--- trunk/tests/cpp/run_tests.bat	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/run_tests.bat	2009-11-28 05:28:36 UTC (rev 286)
+@@ -87,6 +87,14 @@
+ @for %%f in (default\keywords\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+ @for %%f in (default\keywords\Error*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (default\keywords\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (default\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (default\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (default\Pass*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp/run_tests.sh	2009-11-28 05:28:36 UTC (rev 286)
+@@ -66,6 +66,10 @@
+ 	for F in default/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in default/keywords/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in default/keywords/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/has_include/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/has_include/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/has_include/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/has_include/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in default/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in default/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in default/signmag.core/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_NOTRAP $F; if $CPP_SIGNMAG_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+
+Added: trunk/tests/cpp.in/default/has_include/Error_angle_in_angle1.in
+===================================================================
+--- trunk/tests/cpp.in/default/has_include/Error_angle_in_angle1.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/default/has_include/Error_angle_in_angle1.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++VALID_EXPRESSION __has_include(&lt;a&lt;b&gt;)
++
+
+Added: trunk/tests/cpp.in/default/has_include/Error_angle_in_angle2.in
+===================================================================
+--- trunk/tests/cpp.in/default/has_include/Error_angle_in_angle2.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/default/has_include/Error_angle_in_angle2.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++VALID_EXPRESSION __has_include(&lt;a&gt;b&gt;)
++
+
+Added: trunk/tests/cpp.in/default/has_include/Error_angle_in_angle3.in
+===================================================================
+--- trunk/tests/cpp.in/default/has_include/Error_angle_in_angle3.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/default/has_include/Error_angle_in_angle3.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++VALID_EXPRESSION __has_include(&lt;&lt;&gt;)
++
+
+Added: trunk/tests/cpp.in/default/has_include/Error_angle_in_angle4.in
+===================================================================
+--- trunk/tests/cpp.in/default/has_include/Error_angle_in_angle4.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/default/has_include/Error_angle_in_angle4.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++VALID_EXPRESSION __has_include(&lt;&gt;&gt;)
++
+
+Added: trunk/tests/cpp.in/default/has_include/Error_quote_in_quote.in
+===================================================================
+--- trunk/tests/cpp.in/default/has_include/Error_quote_in_quote.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/default/has_include/Error_quote_in_quote.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// invalid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++VALID_EXPRESSION __has_include(&quot;\&quot;&quot;)
++
+
+Added: trunk/tests/cpp.in/default/has_include/Pass_typical_uses.in
+===================================================================
+--- trunk/tests/cpp.in/default/has_include/Pass_typical_uses.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/default/has_include/Pass_typical_uses.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -0,0 +1,16 @@
++SUFFIXES h hpp
++// exercise valid __has_include variant
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++// these should behave like CLang
++FALSE_EXPRESSION __has_include(&quot;&quot;)
++FALSE_EXPRESSION __has_include(&lt;&gt;)
++FALSE_EXPRESSION __has_include(&quot;bad_include&quot;)
++FALSE_EXPRESSION __has_include(&lt;bad_include&gt;)
++TRUE_EXPRESSION __has_include(&quot;stddef.h&quot;)
++TRUE_EXPRESSION __has_include(&lt;stddef.h&gt;)
++TRUE_EXPRESSION __has_include(&quot;stdbool.h&quot;)
++TRUE_EXPRESSION __has_include(&lt;stdbool.h&gt;)
++
++// this should be processed like C99
++FALSE_EXPRESSION __has_include
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-11-27 04:16:02 UTC (rev 285)
++++ trunk/tests/cpp.in/run_tests.in	2009-11-28 05:28:36 UTC (rev 286)
+@@ -33,6 +33,8 @@
+ ECHO Checking ZCC implementation-defined errors and features
+ ERROR CPP default/Error*
+ ERROR CPP default/keywords/Error*
++ERROR CPP default/has_include/Error*
++PASS CPP default/has_include/Pass*
+ PASS CPP default/Pass*
+ PASS CPP_SIGNMAG_NOTRAP default/signmag.core/Pass*
+ PASS CPP_SIGNMAG_NOTRAP default/signmag.notrap/Pass*
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000052.html">[Zcplusplus-commits] r285 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000054.html">[Zcplusplus-commits] r287 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#53">[ date ]</a>
+              <a href="thread.html#53">[ thread ]</a>
+              <a href="subject.html#53">[ subject ]</a>
+              <a href="author.html#53">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

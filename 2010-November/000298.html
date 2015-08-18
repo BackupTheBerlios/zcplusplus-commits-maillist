@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r531 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r531%20-%20trunk&In-Reply-To=%3C20101102225958.78BDD480FE7%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000297.html">
+   <LINK REL="Next"  HREF="000299.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r531 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r531%20-%20trunk&In-Reply-To=%3C20101102225958.78BDD480FE7%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r531 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov  2 23:59:58 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000297.html">[Zcplusplus-commits] r530 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000299.html">[Zcplusplus-commits] r532 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#298">[ date ]</a>
+              <a href="thread.html#298">[ thread ]</a>
+              <a href="subject.html#298">[ subject ]</a>
+              <a href="author.html#298">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-02 23:59:58 +0100 (Tue, 02 Nov 2010)
+New Revision: 531
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+Log:
+start automatic cleanup of dead type specifications
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-11-02 22:14:29 UTC (rev 530)
++++ trunk/type_system.cpp	2010-11-02 22:59:58 UTC (rev 531)
+@@ -273,7 +273,31 @@
+ 	if (core_types_size&gt;=id) return;
+ 	if (SIZE_MAX==dynamic_types[id-=(core_types_size+1)].fourth) return;
+ 	assert(0&lt;dynamic_types[id].fourth);
+-	--dynamic_types[id].fourth;
++	if (0== --dynamic_types[id].fourth &amp;&amp; dynamic_types.size()-1==id)
++		{	// type use count down to zero
++		switch(dynamic_types[id].third.second)
++		{
++#if 0
++		case DYNAMIC_FUNCTYPE:
++			delete dynamic_types[id].third.first.first;
++			dynamic_types[id].third.first.first = NULL;
++			break;
++#endif
++		case DYNAMIC_STRUCTDECL:
++			delete dynamic_types[id].third.first.second;
++			dynamic_types[id].third.first.second = NULL;
++			break;
++		case DYNAMIC_C_STRUCTDEF:
++			delete dynamic_types[id].third.first.third;
++			dynamic_types[id].third.first.third = NULL;
++			break;
++		case DYNAMIC_ENUMDEF:
++			delete dynamic_types[id].third.first.fourth;
++			dynamic_types[id].third.first.fourth = NULL;
++			break;
++		}
++		dynamic_types.DeleteIdx(id);		
++		}
+ }
+ 
+ const char* type_system::_name(size_t id) const
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2010-11-02 22:14:29 UTC (rev 530)
++++ trunk/type_system.cpp.in	2010-11-02 22:59:58 UTC (rev 531)
+@@ -284,7 +284,31 @@
+ 	if (core_types_size&gt;=id) return;
+ 	if (SIZE_MAX==dynamic_types[id-=(core_types_size+1)].fourth) return;
+ 	assert(0&lt;dynamic_types[id].fourth);
+-	--dynamic_types[id].fourth;
++	if (0== --dynamic_types[id].fourth &amp;&amp; dynamic_types.size()-1==id)
++		{	// type use count down to zero
++		switch(dynamic_types[id].third.second)
++		{
++#if 0
++		case DYNAMIC_FUNCTYPE:
++			delete dynamic_types[id].third.first.first;
++			dynamic_types[id].third.first.first = NULL;
++			break;
++#endif
++		case DYNAMIC_STRUCTDECL:
++			delete dynamic_types[id].third.first.second;
++			dynamic_types[id].third.first.second = NULL;
++			break;
++		case DYNAMIC_C_STRUCTDEF:
++			delete dynamic_types[id].third.first.third;
++			dynamic_types[id].third.first.third = NULL;
++			break;
++		case DYNAMIC_ENUMDEF:
++			delete dynamic_types[id].third.first.fourth;
++			dynamic_types[id].third.first.fourth = NULL;
++			break;
++		}
++		dynamic_types.DeleteIdx(id);		
++		}
+ }
+ #/*cut-cpp*/
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000297.html">[Zcplusplus-commits] r530 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000299.html">[Zcplusplus-commits] r532 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#298">[ date ]</a>
+              <a href="thread.html#298">[ thread ]</a>
+              <a href="subject.html#298">[ subject ]</a>
+              <a href="author.html#298">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,170 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r613%20-%20trunk/Zaimoni.STL/core.RAM&In-Reply-To=%3C20110211110118.C81F348139E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000379.html">
+   <LINK REL="Next"  HREF="000381.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r613%20-%20trunk/Zaimoni.STL/core.RAM&In-Reply-To=%3C20110211110118.C81F348139E%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r613 - trunk/Zaimoni.STL/core.RAM">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Feb 11 12:01:18 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000379.html">[Zcplusplus-commits] r612 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000381.html">[Zcplusplus-commits] r614 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#380">[ date ]</a>
+              <a href="thread.html#380">[ thread ]</a>
+              <a href="subject.html#380">[ subject ]</a>
+              <a href="author.html#380">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-11 12:01:18 +0100 (Fri, 11 Feb 2011)
+New Revision: 613
+
+Modified:
+   trunk/Zaimoni.STL/core.RAM/memory.cpp
+Log:
+lines of code reduction, bugfix, warning reduction for Windows/GCC memory manager
+
+Modified: trunk/Zaimoni.STL/core.RAM/memory.cpp
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-02-11 10:42:13 UTC (rev 612)
++++ trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-02-11 11:01:18 UTC (rev 613)
+@@ -898,66 +898,63 @@
+ void* operator new(size_t NewSize) throw (std::bad_alloc)
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	while(NULL==Tmp &amp;&amp; NULL!=ZaimoniNewHandler)
+-		{
+-		ZaimoniNewHandler();
+-		Tmp = calloc(1,NewSize);
+-		}
+-	if (NULL==Tmp) throw std::bad_alloc();
++	if (ZaimoniNewHandler)
++		while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++
++	if (!Tmp) throw std::bad_alloc();
+ 	return Tmp;
+ }
+ 
+ void* operator new[](std::size_t NewSize) throw (std::bad_alloc)
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	while(NULL==Tmp &amp;&amp; NULL!=ZaimoniNewHandler)
+-		{
+-		ZaimoniNewHandler();
+-		Tmp = calloc(1,NewSize);
+-		}
+-	if (NULL==Tmp) throw std::bad_alloc();
++	if (ZaimoniNewHandler)
++		while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++
++	if (!Tmp) throw std::bad_alloc();
+ 	return Tmp;
+ }
+ 
+-void* operator new(size_t NewSize, const std::nothrow_t&amp; tracer) throw ()
++void* operator new(size_t NewSize, const std::nothrow_t&amp;) throw ()
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	while(NULL==Tmp &amp;&amp; NULL!=ZaimoniNewHandler)
+-		{
+-		ZaimoniNewHandler();
+-		Tmp = calloc(1,NewSize);
+-		}
++	if (ZaimoniNewHandler)
++		try	{
++			while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++			}
++		catch(const std::bad_alloc&amp;)
++			{
++			return NULL;
++			}
++
+ 	return Tmp;
+ }
+ 
+-void*
+-operator new[](std::size_t NewSize, const std::nothrow_t&amp; tracer) throw ()
++void* operator new[](std::size_t NewSize, const std::nothrow_t&amp;) throw ()
+ {
+ 	void* Tmp = calloc(1,NewSize);
+-	try	{
+-		while(NULL==Tmp &amp;&amp; NULL!=ZaimoniNewHandler)
++	if (ZaimoniNewHandler)
++		try	{
++			while(!Tmp) Tmp = (ZaimoniNewHandler(),calloc(1,NewSize));
++			}
++		catch(const std::bad_alloc&amp;)
+ 			{
+-			ZaimoniNewHandler();
+-			Tmp = calloc(1,NewSize);
++			return NULL;
+ 			}
+-		}
+-	catch(const std::bad_alloc&amp;)
+-		{
+-		return NULL;
+-		}
++
+ 	return Tmp;
+ }
+ 
+ void operator delete(void* Target) throw ()
+ {/* FORMALLY CORRECT: 4/16/98, Kenneth Boyd */ free(Target);}
+ 
+-void operator delete(void* Target, const std::nothrow_t&amp; tracer) throw ()
++void operator delete(void* Target, const std::nothrow_t&amp;) throw ()
+ {/* FORMALLY CORRECT: 4/16/98, Kenneth Boyd */ free(Target);}
+ 
+ void operator delete[](void* Target) throw()
+ {/* FORMALLY CORRECT: 9/27/2005, Kenneth Boyd */ free(Target);}
+ 
+-void operator delete[](void* Target, const std::nothrow_t&amp; tracer) throw()
++void operator delete[](void* Target, const std::nothrow_t&amp;) throw()
+ {/* FORMALLY CORRECT: 9/27/2005, Kenneth Boyd */ free(Target);}
+ 
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000379.html">[Zcplusplus-commits] r612 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000381.html">[Zcplusplus-commits] r614 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#380">[ date ]</a>
+              <a href="thread.html#380">[ thread ]</a>
+              <a href="subject.html#380">[ subject ]</a>
+              <a href="author.html#380">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

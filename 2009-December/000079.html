@@ -1,0 +1,352 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r312 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-December/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r312%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200912202118.nBKLIcuZ003694%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000078.html">
+   <LINK REL="Next"  HREF="000080.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r312 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r312%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200912202118.nBKLIcuZ003694%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r312 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Dec 20 22:18:38 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000078.html">[Zcplusplus-commits] r311 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000080.html">[Zcplusplus-commits] r313 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#79">[ date ]</a>
+              <a href="thread.html#79">[ thread ]</a>
+              <a href="subject.html#79">[ subject ]</a>
+              <a href="author.html#79">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-12-20 22:18:33 +0100 (Sun, 20 Dec 2009)
+New Revision: 312
+
+Modified:
+   trunk/CPreproc_autogen.cpp
+   trunk/Zaimoni.STL/AutoPtr.hpp
+   trunk/Zaimoni.STL/MetaRAM2.hpp
+Log:
+optimize number of realloc() calls when generating stdint.h/cstdint
+
+Modified: trunk/CPreproc_autogen.cpp
+===================================================================
+--- trunk/CPreproc_autogen.cpp	2009-12-20 17:19:55 UTC (rev 311)
++++ trunk/CPreproc_autogen.cpp	2009-12-20 21:18:33 UTC (rev 312)
+@@ -873,51 +873,65 @@
+ 	size_t inject_C_index = STDINT_LEAST_FAST_INJECT_LINE;
+ 	size_t inject_CPP_index = STDINT_CPP_LEAST_FAST_INJECT_LINE;
+ 	// C++ typedef cleanup
++	{
++	size_t stack[9];
++	size_t stack_size = 0;
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_long_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_LLONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_LLONG_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_LONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_LONG_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (!target_is_twos_complement)
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_INT_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_INT_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_short-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_SHRT_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_SHRT_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_char-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_SCHAR_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_SCHAR_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_long_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_ULLONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_ULLONG_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_ULONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_ULONG_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_short-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_USHRT_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_USHRT_OFFSET;
+ 		--inject_CPP_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_char-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_UCHAR_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_CPP_EXACT_LINEORIGIN+STDINT_EXACT_UCHAR_OFFSET;
+ 		--inject_CPP_index;
+-		}
++		}	
++	if (0&lt;stack_size) TokenList.DeleteNSlots(stack,stack_size);
++	}
+ 
+ 	// limits macros cleanup
+ 	char lock_buf[sizeof(&quot;#pragma ZCC lock INT_LEAST_MIN INT_LEAST_MAX UINT_LEAST_MAX INT_FAST_MIN INT_FAST_MAX UINT_FAST_MAX INT_C UINT_C&quot;)+8*2] = &quot;#pragma ZCC lock &quot;;	// should be dependent on base 10 logarithm of VM_MAX_BIT_PLATFORM: fix auto_int.h
+@@ -1051,60 +1065,75 @@
+ 		}
+ 
+ 	// C typedef cleanup
++	{
++	size_t stack[9];
++	size_t stack_size = 0;
++
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_long_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_LLONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_LLONG_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_LONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_LONG_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (!target_is_twos_complement)
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_INT_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_INT_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_short-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_SHRT_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_SHRT_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (!target_is_twos_complement || suppress[virtual_machine::std_int_char-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_SCHAR_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_SCHAR_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_long_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_ULLONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_ULLONG_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_long-2])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_ULONG_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_ULONG_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_short-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_USHRT_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_USHRT_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
+ 	if (suppress[virtual_machine::std_int_char-1])
+ 		{
+-		TokenList.DeleteIdx(STDINT_EXACT_LINEORIGIN+STDINT_EXACT_UCHAR_OFFSET);
++		assert(STATIC_SIZE(stack)&gt;stack_size);
++		stack[stack_size++] = STDINT_EXACT_LINEORIGIN+STDINT_EXACT_UCHAR_OFFSET;
+ 		--inject_CPP_index;
+ 		--inject_C_index;
+ 		}
++	if (0&lt;stack_size) TokenList.DeleteNSlots(stack,stack_size);	
++	}
+ 
+ 	// prepare to inject least/fast types and their adapter macros
+ 	// span...start with *8_t and go up to long long bits
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2009-12-20 17:19:55 UTC (rev 311)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2009-12-20 21:18:33 UTC (rev 312)
+@@ -334,10 +334,12 @@
+ #ifndef ZAIMONI_FORCE_ISO
+ 	void DeleteIdx(size_t n) {_safe_delete_idx(_ptr,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(_ptr,n,Idx);};
++	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(_ptr,indexes,n);};
+ 	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U __default) {return _insert_slot_at(_ptr,Idx,__default);}
+ #else
+ 	void DeleteIdx(size_t n) {_safe_delete_idx(_ptr,_size,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(_ptr,_size,n,Idx);};
++	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(_ptr,_size,indexes,n);};
+ 	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U __default) {return _insert_slot_at(_ptr,_size,Idx,__default);}
+ #endif
+ 
+
+Modified: trunk/Zaimoni.STL/MetaRAM2.hpp
+===================================================================
+--- trunk/Zaimoni.STL/MetaRAM2.hpp	2009-12-20 17:19:55 UTC (rev 311)
++++ trunk/Zaimoni.STL/MetaRAM2.hpp	2009-12-20 21:18:33 UTC (rev 312)
+@@ -812,6 +812,90 @@
+ }
+ 
+ template&lt;typename T&gt;
++typename boost::enable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_destructor&lt;T&gt;::value, boost::has_trivial_assign&lt;T&gt;::value &gt;, void&gt;::type
++#ifndef ZAIMONI_FORCE_ISO
++_delete_n_slots(T*&amp; _ptr, size_t* _indexes, size_t n)
++{
++	assert(_ptr);
++	assert(_indexes);
++	const size_t _ptr_size = ArraySize(_ptr);
++#else
++_delete_n_slots(T*&amp; _ptr, size_t&amp; _ptr_size, size_t* _indexes, size_t n)
++{
++	assert(_ptr);
++	assert(_indexes);
++	assert(0&lt;_ptr_size);
++#endif
++	if (0&gt;=n) return;
++	assert(_indexes[0]&lt;_ptr_size);
++	if (_ptr_size&lt;=n)
++		{
++		_flush(_ptr);
++		_ptr = NULL;
++#ifdef ZAIMONI_FORCE_ISO
++		_ptr_size = 0;
++#endif
++		return;
++		}
++
++	size_t i = 0;
++	while(i&lt;n)
++		{
++		assert(i+1&gt;=n || _indexes[i]&gt;_indexes[i+1]);
++		if (_indexes[i]+i&lt;_ptr_size)
++			memmove(_ptr+_indexes[i],_ptr+_indexes[i]+1,sizeof(*_ptr)*(_ptr_size-(_indexes[i]+i)));
++		++i;
++		}
++
++	_ptr = REALLOC(_ptr,sizeof(*_ptr)*(_ptr_size-n));
++#ifdef ZAIMONI_FORCE_ISO
++	_ptr_size -= n;
++#endif
++}
++
++template&lt;typename T&gt;
++#ifndef ZAIMONI_FORCE_ISO
++void _delete_n_slots(T**&amp; _ptr, size_t* _indexes, size_t n)
++{
++	assert(_ptr);
++	assert(_indexes);
++	const size_t _ptr_size = ArraySize(_ptr);
++#else
++void _delete_n_slots(T**&amp; _ptr, size_t&amp; _ptr_size, size_t* _indexes, size_t n)
++{
++	assert(_ptr);
++	assert(_indexes);
++	assert(0&lt;_ptr_size);
++#endif
++	if (0&gt;=n) return;
++	assert(_indexes[0]&lt;_ptr_size);
++	if (_ptr_size&lt;=n)
++		{
++		_flush(_ptr);
++		_ptr = NULL;
++#ifdef ZAIMONI_FORCE_ISO
++		_ptr_size = 0;
++#endif
++		return;
++		}
++
++	size_t i = 0;
++	while(i&lt;n)
++		{
++		assert(i+1&gt;=n || _indexes[i]&gt;_indexes[i+1]);
++		_single_flush(_ptr[_indexes[i]]);
++		if (_indexes[i]+i&lt;_ptr_size)
++			memmove(_ptr+_indexes[i],_ptr+_indexes[i]+1,sizeof(*_ptr)*(_ptr_size-(_indexes[i]+i)));
++		++i;
++		}
++
++	_ptr = REALLOC(_ptr,sizeof(*_ptr)*(_ptr_size-n));
++#ifdef ZAIMONI_FORCE_ISO
++	_ptr_size -= n;
++#endif
++}
++
++template&lt;typename T&gt;
+ void
+ _weak_delete_n_slots_at(T**&amp; _ptr, size_t n, size_t Idx)
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000078.html">[Zcplusplus-commits] r311 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000080.html">[Zcplusplus-commits] r313 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#79">[ date ]</a>
+              <a href="thread.html#79">[ thread ]</a>
+              <a href="subject.html#79">[ subject ]</a>
+              <a href="author.html#79">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

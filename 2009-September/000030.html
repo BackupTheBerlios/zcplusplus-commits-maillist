@@ -1,0 +1,320 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r263%20-%20in%20trunk%3A%20.%20Zaimoni.STL%0A%09Zaimoni.STL/LexParse&In-Reply-To=%3C200909270601.n8R61xjn028280%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000029.html">
+   <LINK REL="Next"  HREF="000031.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r263%20-%20in%20trunk%3A%20.%20Zaimoni.STL%0A%09Zaimoni.STL/LexParse&In-Reply-To=%3C200909270601.n8R61xjn028280%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r263 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 27 08:01:59 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000029.html">[Zcplusplus-commits] r262 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000031.html">[Zcplusplus-commits] r264 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#30">[ date ]</a>
+              <a href="thread.html#30">[ thread ]</a>
+              <a href="subject.html#30">[ subject ]</a>
+              <a href="author.html#30">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-27 08:01:41 +0200 (Sun, 27 Sep 2009)
+New Revision: 263
+
+Modified:
+   trunk/Zaimoni.STL/LexParse/LangConf.cpp
+   trunk/Zaimoni.STL/LexParse/MetaToken.hpp
+   trunk/Zaimoni.STL/POD.hpp
+   trunk/type_system.hpp
+Log:
+ISO-mode fixes; check that planned extension to type_system builds (new classes are coming)
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.cpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.cpp	2009-09-27 01:12:02 UTC (rev 262)
++++ trunk/Zaimoni.STL/LexParse/LangConf.cpp	2009-09-27 06:01:41 UTC (rev 263)
+@@ -51,8 +51,7 @@
+ 	return 0;
+ }
+ 
+-void
+-LangConf::ExtractLineFromTextBuffer(char*&amp; Buffer, char*&amp; NewLine) const
++void LangConf::ExtractLineFromTextBuffer(char*&amp; Buffer, char*&amp; NewLine) const
+ {
+ #ifdef ZAIMONI_FORCE_ISO
+ 	size_t BufferLength = _msize(Buffer);
+@@ -106,14 +105,9 @@
+ 		}
+ 
+ 	size_t NewLineLength = (SweepIdx&lt;=(BufferLength&gt;&gt;1)) ? SweepIdx : BufferLength-(SweepIdx+1);
+-#ifdef ZAIMONI_FORCE_ISO
+-	NewLine = (0&lt;NewLineLength) ? REALLOC(NewLine,NewLineLength+1) : NULL;
++	NewLine = (0&lt;NewLineLength) ? REALLOC(NewLine,ZAIMONI_LEN_WITH_NULL(NewLineLength)) : NULL;
+ 	if (NULL==NewLine) return;
+-	NewLine[NewLineLength] = '\0';
+-#else
+-	NewLine = REALLOC(NewLine,NewLineLength);
+-	if (NULL==NewLine) return;
+-#endif
++	ZAIMONI_NULL_TERMINATE(NewLine[NewLineLength]);
+ 
+ 	Buffer[SweepIdx] = '\0';
+ 	if (SweepIdx&lt;=(BufferLength&gt;&gt;1))
+@@ -133,8 +127,7 @@
+ 		}	
+ }
+ 
+-bool
+-LangConf::ApplyGlobalFilters(char*&amp; Target) const
++bool LangConf::ApplyGlobalFilters(char*&amp; Target) const
+ {
+ 	if (NULL!=Target)
+ 		{	// legal char set is a global filter, but should be fairly late (after comment-stripping)
+@@ -144,15 +137,13 @@
+ 	return true;
+ }
+ 
+-bool
+-LangConf::ApplyTokenizingFilters(char*&amp; Target) const
++bool LangConf::ApplyTokenizingFilters(char*&amp; Target) const
+ {
+ 	if (NULL==TokenizingFilters || NULL==Target) return true;
+ 	return _applyFilters(TokenizingFilters,TokenizingFilters.size(),Target);
+ }
+ 
+-size_t
+-LangConf::TokenizeCore(const char* Target, lex_flags&amp; Flags) const
++size_t LangConf::TokenizeCore(const char* Target, lex_flags&amp; Flags) const
+ {
+ 	if (IsAtomicSymbol(Target[0]))
+ 		{
+@@ -191,12 +182,10 @@
+ LangConf::UnfilteredNextToken(const char* Target, lex_flags&amp; Flags) const
+ {
+ 	if (NULL==Target) return 0;
+-
+ 	return TokenizeCore(Target,Flags);
+ }
+ 
+-size_t
+-LangConf::NextToken(char*&amp; Target, lex_flags&amp; Flags) const
++size_t LangConf::NextToken(char*&amp; Target, lex_flags&amp; Flags) const
+ {
+ 	if (NULL==Target) return 0;
+ 	if (NULL!=TokenizingFilters &amp;&amp; !_applyFilters(TokenizingFilters,TokenizingFilters.size(),Target))
+@@ -205,8 +194,7 @@
+ 	return TokenizeCore(Target,Flags);
+ }
+ 
+-bool
+-LangConf::InstallTokenizer(Tokenizer* Source,lex_flags SourceFlags)
++bool LangConf::InstallTokenizer(Tokenizer* Source,lex_flags SourceFlags)
+ {
+ 	const size_t StackSize = Tokenizers.size();
+ 	if (!Tokenizers.InsertSlotAt(StackSize,Source)) return false;
+@@ -270,15 +258,13 @@
+ 	free(target);
+ }
+ 
+-size_t
+-LangConf::_len_SingleLineComment(const char* const Test) const
++size_t LangConf::_len_SingleLineComment(const char* const Test) const
+ {
+ 	if (0!=strncmp(Test,SingleLineCommenter,len_SingleLineCommenter)) return 0;
+ 	return strcspn(Test,&quot;\n&quot;);
+ }
+ 
+-size_t
+-LangConf::_len_MultiLineComment(const char* const Test) const
++size_t LangConf::_len_MultiLineComment(const char* const Test) const
+ {
+ 	if (0!=strncmp(Test,MultiLineCommentStart,len_MultiLineCommentStart)) return 0;
+ 	const char* const end_comment = strstr(Test+len_MultiLineCommentStart,MultiLineCommentEnd);
+@@ -308,8 +294,7 @@
+ 	return SIZE_MAX;
+ }
+ 
+-void
+-LangConf::_compactWSAtIdx(char*&amp; Text,size_t Idx) const
++void LangConf::_compactWSAtIdx(char*&amp; Text,size_t Idx) const
+ {
+ 	size_t TextLength = strlen(Text);
+ 	Text[++Idx]=' ';
+@@ -337,8 +322,7 @@
+ 	return false;
+ }
+ 
+-void
+-LangConf::_flattenComments(char*&amp; Text)
++void LangConf::_flattenComments(char*&amp; Text)
+ {	// note: have to be able to lex
+ #ifdef ZAIMONI_FORCE_ISO
+ 	const size_t TextLength = strlen(Text);
+
+Modified: trunk/Zaimoni.STL/LexParse/MetaToken.hpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/MetaToken.hpp	2009-09-27 01:12:02 UTC (rev 262)
++++ trunk/Zaimoni.STL/LexParse/MetaToken.hpp	2009-09-27 06:01:41 UTC (rev 263)
+@@ -14,7 +14,7 @@
+ class MetaToken
+ {
+ protected:
+-	autovalarray_ptr&lt;T&gt; _token;	
++	autovalarray_ptr_throws&lt;T&gt; _token;	
+ public:
+ 	// pairs are: line number, origin (column number)
+ 	std::pair&lt;size_t,size_t&gt; logical_line;		// where the token actually is
+@@ -106,21 +106,19 @@
+ 
+ template&lt;class T&gt;
+ MetaToken&lt;T&gt;::MetaToken(const MetaToken&amp; src,size_t prefix)
+-:	_token(prefix),
++:	_token((prefix ? ZAIMONI_LEN_WITH_NULL(prefix) : 0)),
+ 	logical_line(src.logical_line),
+ 	original_line(src.original_line),
+ 	src_filename(src.src_filename),
+ 	parent_dir(src.parent_dir)
+ {
+-	assert(prefix&lt;=src._token.size());
+ 	DEBUG_FAIL_OR_LEAVE(0==prefix,return);
+-	if (0==_token.size()) throw std::bad_alloc();	// didn't allocate space properly
+ 	_value_copy_buffer(_token.c_array(),src._token.data(),prefix);
+ }
+ 
+ template&lt;class T&gt;
+ MetaToken&lt;T&gt;::MetaToken(const MetaToken&amp; src,size_t offset,size_t token_len)
+-:	_token(token_len),
++:	_token((token_len ? ZAIMONI_LEN_WITH_NULL(token_len) : 0)),
+ 	logical_line(src.logical_line.first,src.logical_line.second+offset),
+ 	original_line(src.original_line.first,src.original_line.second+offset),
+ 	src_filename(src.src_filename),
+@@ -129,13 +127,12 @@
+ 	assert(offset&lt;src._token.size());
+ 	assert(token_len&lt;=src._token.size()-offset);
+ 	DEBUG_FAIL_OR_LEAVE(0==token_len,return);
+-	if (0==_token.size()) throw std::bad_alloc();	// didn't allocate space properly
+ 	_value_copy_buffer(_token.c_array(),src._token.data()+offset,token_len);
+ }
+ 
+ template&lt;class T&gt;
+ MetaToken&lt;T&gt;::MetaToken(const T* const src,size_t offset,size_t token_len)
+-:	_token(token_len),
++:	_token((token_len ? ZAIMONI_LEN_WITH_NULL(token_len) : 0)),
+ 	logical_line(0,offset),
+ 	original_line(0,offset),
+ 	src_filename(NULL),
+@@ -145,7 +142,6 @@
+ 	assert(offset&lt;strlen(src));
+ 	assert(token_len&lt;=strlen(src)-offset);
+ 	DEBUG_FAIL_OR_LEAVE(0==token_len,return);
+-	if (0==_token.size()) throw std::bad_alloc();	// didn't allocate space properly
+ 	_value_copy_buffer(_token.c_array(),src+offset,token_len);
+ }
+ 
+
+Modified: trunk/Zaimoni.STL/POD.hpp
+===================================================================
+--- trunk/Zaimoni.STL/POD.hpp	2009-09-27 01:12:02 UTC (rev 262)
++++ trunk/Zaimoni.STL/POD.hpp	2009-09-27 06:01:41 UTC (rev 263)
+@@ -104,6 +104,14 @@
+ 	T2 second;
+ };
+ 
++template&lt;class T1, class T2, class T3&gt;
++union union_triple
++{
++	T1 first;
++	T2 second;
++	T3 third;
++};
++
+ template&lt;class T1, class T2, class T3, class T4&gt;
+ union union_quartet
+ {
+@@ -141,6 +149,18 @@
+ #undef ZAIMONI_CLASS_SPEC
+ #undef ZAIMONI_TEMPLATE_SPEC
+ 
++#define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2&gt;
++#define ZAIMONI_CLASS_SPEC zaimoni::union_pair&lt;_T1,_T2&gt;
++ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
++#undef ZAIMONI_CLASS_SPEC
++#undef ZAIMONI_TEMPLATE_SPEC
++
++#define ZAIMONI_TEMPLATE_SPEC template&lt;typename _T1,typename _T2,typename _T3&gt;
++#define ZAIMONI_CLASS_SPEC zaimoni::union_triple&lt;_T1,_T2,_T3&gt;
++ZAIMONI_POD_STRUCT(ZAIMONI_TEMPLATE_SPEC,ZAIMONI_CLASS_SPEC,_T1)
++#undef ZAIMONI_CLASS_SPEC
++#undef ZAIMONI_TEMPLATE_SPEC
++
+ }
+ 
+ 
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-09-27 01:12:02 UTC (rev 262)
++++ trunk/type_system.hpp	2009-09-27 06:01:41 UTC (rev 263)
+@@ -8,6 +8,10 @@
+ #include &quot;Zaimoni.STL/AutoPtr.hpp&quot;
+ #include &quot;type_spec.hpp&quot;
+ 
++class function_type;
++class union_struct_decl;
++class union_struct_def;
++
+ class type_system
+ {
+ public:
+@@ -18,7 +22,7 @@
+ 	const size_t core_types_size;
+ 	const size_t int_priority_size;
+ private:
+-	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;char*,size_t&gt; &gt; dynamic_types;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_triple&lt;char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_triple&lt;function_type*,union_struct_decl*,union_struct_def*&gt;, unsigned char&gt; &gt; &gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+ 	// uncopyable
+ 	type_system(const type_system&amp; src);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000029.html">[Zcplusplus-commits] r262 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000031.html">[Zcplusplus-commits] r264 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#30">[ date ]</a>
+              <a href="thread.html#30">[ thread ]</a>
+              <a href="subject.html#30">[ subject ]</a>
+              <a href="author.html#30">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

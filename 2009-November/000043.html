@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r276 - in trunk/tests: zcc zcc.in
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r276%20-%20in%20trunk/tests%3A%20zcc%20zcc.in&In-Reply-To=%3C200911240542.nAO5gTiw001365%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000042.html">
+   <LINK REL="Next"  HREF="000044.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r276 - in trunk/tests: zcc zcc.in</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r276%20-%20in%20trunk/tests%3A%20zcc%20zcc.in&In-Reply-To=%3C200911240542.nAO5gTiw001365%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r276 - in trunk/tests: zcc zcc.in">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 24 06:42:29 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000042.html">[Zcplusplus-commits] r275 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000044.html">[Zcplusplus-commits] r277 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#43">[ date ]</a>
+              <a href="thread.html#43">[ thread ]</a>
+              <a href="subject.html#43">[ subject ]</a>
+              <a href="author.html#43">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-24 06:42:13 +0100 (Tue, 24 Nov 2009)
+New Revision: 276
+
+Modified:
+   trunk/tests/zcc.in/run_tests.in
+   trunk/tests/zcc.in/run_tests_C99.in
+   trunk/tests/zcc/run_tests.bat
+   trunk/tests/zcc/run_tests.sh
+   trunk/tests/zcc/run_tests_C99.bat
+   trunk/tests/zcc/run_tests_C99.sh
+Log:
+make test driver *.sh, *.bat cover pass/warn tests in decl.C99
+
+Modified: trunk/tests/zcc/run_tests.bat
+===================================================================
+--- trunk/tests/zcc/run_tests.bat	2009-11-23 08:22:29 UTC (rev 275)
++++ trunk/tests/zcc/run_tests.bat	2009-11-24 05:42:13 UTC (rev 276)
+@@ -27,6 +27,12 @@
+ 
+ @echo Checking ZCC warnings on ISO-accepted code
+ @echo ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Warn*.h) do @echo %CPP_ISO% -Werror %%f &amp; @%CPP_ISO% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Warn*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Warn*.h) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Warn*.hpp) do @echo %CPP_ISO% -Werror %%f &amp; @%CPP_ISO% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Warn*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Warn*.hpp) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+ @for %%f in (namespace.CPP\Warn*.hpp) do @echo %CPP_ISO% -Werror %%f &amp; @%CPP_ISO% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+ @for %%f in (namespace.CPP\Warn*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (namespace.CPP\Warn*.hpp) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+@@ -37,6 +43,10 @@
+ @for %%f in (Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Pass*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (staticassert.C1X\Pass*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (staticassert.C1X\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ @for %%f in (staticassert.C1X\Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+
+Modified: trunk/tests/zcc/run_tests.sh
+===================================================================
+--- trunk/tests/zcc/run_tests.sh	2009-11-23 08:22:29 UTC (rev 275)
++++ trunk/tests/zcc/run_tests.sh	2009-11-24 05:42:13 UTC (rev 276)
+@@ -29,6 +29,10 @@
+ 
+ 	echo Checking ZCC warnings on ISO-accepted code
+ 	echo ====
++	for F in decl.C99/Warn*.h; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in decl.C99/Warn*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in decl.C99/Warn*.hpp; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in decl.C99/Warn*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in namespace.CPP/Warn*.hpp; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
+ 	for F in namespace.CPP/Warn*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 
+@@ -36,6 +40,8 @@
+ 	echo ====
+ 	for F in Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in decl.C99/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in decl.C99/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in staticassert.C1X/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in staticassert.C1X/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 
+
+Modified: trunk/tests/zcc/run_tests_C99.bat
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.bat	2009-11-23 08:22:29 UTC (rev 275)
++++ trunk/tests/zcc/run_tests_C99.bat	2009-11-24 05:42:13 UTC (rev 276)
+@@ -19,6 +19,8 @@
+ @echo ====
+ @for %%f in (Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+ @for %%f in (Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (decl.C99\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+ 
+ @echo %BAD_PASS% of %REJECT_TEST% rejection tests accepted
+ @if not &quot;%BAD_PASS_NAME%&quot;==&quot;LastAccepted:&quot; @echo %BAD_PASS_NAME%
+
+Modified: trunk/tests/zcc/run_tests_C99.sh
+===================================================================
+--- trunk/tests/zcc/run_tests_C99.sh	2009-11-23 08:22:29 UTC (rev 275)
++++ trunk/tests/zcc/run_tests_C99.sh	2009-11-24 05:42:13 UTC (rev 276)
+@@ -24,6 +24,7 @@
+ 	echo Checking ISO acceptance requirements
+ 	echo ====
+ 	for F in Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in decl.C99/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 
+ 	echo -E $BAD_PASS of $REJECT_TEST rejection tests accepted
+ 	if test -n &quot;$BAD_PASS_NAME&quot;; then echo -E $BAD_PASS_NAME; fi
+
+Modified: trunk/tests/zcc.in/run_tests.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests.in	2009-11-23 08:22:29 UTC (rev 275)
++++ trunk/tests/zcc.in/run_tests.in	2009-11-24 05:42:13 UTC (rev 276)
+@@ -12,10 +12,12 @@
+ ERROR CPP_ISO staticassert.C1X/Error*
+ 
+ ECHO Checking ZCC warnings on ISO-accepted code
++WARN CPP_ISO decl.C99/Warn*
+ WARN CPP_ISO namespace.CPP/Warn*
+ 
+ ECHO Checking ISO acceptance requirements
+ PASS CPP_ISO Pass*
++PASS CPP_ISO decl.C99/Pass*
+ PASS CPP_ISO staticassert.C1X/Pass*
+ 
+ EPILOG
+
+Modified: trunk/tests/zcc.in/run_tests_C99.in
+===================================================================
+--- trunk/tests/zcc.in/run_tests_C99.in	2009-11-23 08:22:29 UTC (rev 275)
++++ trunk/tests/zcc.in/run_tests_C99.in	2009-11-24 05:42:13 UTC (rev 276)
+@@ -9,5 +9,6 @@
+ 
+ ECHO Checking ISO acceptance requirements
+ PASS CPP Pass*
++PASS CPP decl.C99/Pass*
+ 
+ EPILOG
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000042.html">[Zcplusplus-commits] r275 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000044.html">[Zcplusplus-commits] r277 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#43">[ date ]</a>
+              <a href="thread.html#43">[ thread ]</a>
+              <a href="subject.html#43">[ subject ]</a>
+              <a href="author.html#43">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

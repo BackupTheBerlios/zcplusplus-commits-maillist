@@ -1,0 +1,387 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r237%20-%20in%20trunk%3A%20.%20tests/cpp%20tests/cpp/default%0A%09tests/cpp/line.C99%20tests/cpp.in%20tests/cpp.in/line.C99&In-Reply-To=%3C200908241925.n7OJPhFW012035%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000003.html">
+   <LINK REL="Next"  HREF="000005.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r237%20-%20in%20trunk%3A%20.%20tests/cpp%20tests/cpp/default%0A%09tests/cpp/line.C99%20tests/cpp.in%20tests/cpp.in/line.C99&In-Reply-To=%3C200908241925.n7OJPhFW012035%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r237 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Aug 24 21:25:43 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000003.html">[Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+        <LI>Next message: <A HREF="000005.html">[Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-24 21:25:20 +0200 (Mon, 24 Aug 2009)
+New Revision: 237
+
+Added:
+   trunk/tests/cpp.in/line.C99/Error_badfile1.in
+   trunk/tests/cpp.in/line.C99/Error_badfile2.in
+   trunk/tests/cpp.in/line.C99/Preprocess_42.in
+   trunk/tests/cpp.in/line.C99/Preprocess_42test.in
+   trunk/tests/cpp/line.C99/Error_badfile1.h
+   trunk/tests/cpp/line.C99/Error_badfile1.hpp
+   trunk/tests/cpp/line.C99/Error_badfile2.h
+   trunk/tests/cpp/line.C99/Error_badfile2.hpp
+   trunk/tests/cpp/line.C99/Preprocess_42.h
+   trunk/tests/cpp/line.C99/Preprocess_42.h.txt
+   trunk/tests/cpp/line.C99/Preprocess_42.hpp
+   trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt
+   trunk/tests/cpp/line.C99/Preprocess_42test.h
+   trunk/tests/cpp/line.C99/Preprocess_42test.h.txt
+   trunk/tests/cpp/line.C99/Preprocess_42test.hpp
+   trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt
+Modified:
+   trunk/CPreproc.cpp
+   trunk/tests/cpp.in/run_tests.in
+   trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt
+   trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt
+   trunk/tests/cpp/run_tests.sh
+Log:
+more #line testcases; fix #line directive
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/CPreproc.cpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -1640,7 +1640,7 @@
+ 							continue;
+ 							}
+ 						assert(!macros_object_expansion_pre_eval[object_macro_index]-&gt;empty());
+-						{	//! \test the cpp/default/Preprocess_*.h/hpp test cases
++						{	//! \test cpp/default/Preprocess_*.h/hpp
+ 						size_t discard = 0;
+ 						dynamic_macro_replace_once(*TokenList[i],discard,TokenList[i]-&gt;size(),macros_object,macros_object_expansion_pre_eval,macros_function,macros_function_arglist,macros_function_expansion_pre_eval,NULL);
+ 						}
+@@ -1741,7 +1741,7 @@
+ 									continue;
+ 									}
+ 								assert(!macros_function_expansion_pre_eval[function_macro_index]-&gt;empty());
+-								{	//! \test default/Preprocess_... family of test cases
++								{	//! \test default/Preprocess_*.h/hpp 
+ 								Token&lt;char&gt;* Tmp = new Token&lt;char&gt;(*macros_function_expansion_pre_eval[function_macro_index]);
+ 								Tmp-&gt;logical_line = TokenList[i]-&gt;logical_line;
+ 								if (!nonrecursive_macro_replacement_list(Tmp-&gt;data()))
+@@ -2049,7 +2049,7 @@
+ 				}
+ 			}
+ #undef CPP_INCLUDE_NOT_FOUND
+-		//! also tested in a number of data transform test cases
++		//! also tested in a number of data transform tests
+ 		//! \test Pass_include_local.hpp
+ 		if (!IncludeTokenList.empty())
+ 			{	// not sure whether C99 5.1.1.2 4 requires preprocessing the whole header before pasting, but it permits it
+@@ -3260,7 +3260,7 @@
+ 			macro_value = FileBuffer;
+ 			}
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__LINE__&quot;))
+-			macro_value = ltoa((long)(x.logical_line.second),Buffer,10);
++			macro_value = ltoa((long)(x.logical_line.first),Buffer,10);
+ 		else if (!strcmp(macro_identifier_default[macro_index].first,&quot;__TIME__&quot;))
+ 			macro_value = time_buffer;
+ 		else{
+@@ -4022,7 +4022,7 @@
+ 	critical_offset += first_token_len;
+ 	}
+ 	if (i+1 &lt; TokenList.size())
+-		{	//! \bug need data-transform test case
++		{	//! \test cpp/line.C99/Preprocess_42.h, cpp/line.C99/Preprocess_42.hpp
+ 			// Behavior is undefined if the syntax is bad (line number with malformed filename string), so don't worry about this happening too early.
+ 		size_t numeric_line_number;
+ 		{	// don't worry about failure (pre-validated above), *but* as errno should be a synchronized global we have to lock it anyway
+@@ -4060,7 +4060,8 @@
+ 	//! \todo: extension?  C99 spec requires narrow string literals only
+ 	if (   C_TESTFLAG_STRING_LITERAL!=second_token_flags
+ 		|| 'L'==TokenList[i]-&gt;data()[critical_offset])
+-		{	//! \bug need test cases
++		{	//! \test cpp/line.C99/Error_badfile1.h, cpp/line.C99/Error_badfile1.hpp
++			//! \test cpp/line.C99/Error_badfile2.h, cpp/line.C99/Error_badfile2.hpp
+ 		message_header(*TokenList[i]);
+ 		INC_INFORM(ERR_STR);
+ 		INFORM(&quot;#line wants a narrow string literal for the new __FILE__ (C99 6.10.4p1/C++98 16.4p1)&quot;);
+@@ -4070,7 +4071,7 @@
+ 		}
+ 
+ 	if (i+1 &lt; TokenList.size())
+-		{	//! \bug need data-transform test case
++		{	//! \test cpp/line.C99/Preprocess_42.h, cpp/line.C99/Preprocess_42.hpp
+ 		//! \todo loops should stop at first (valid) #line directive with a filename
+ 		// unescape the string, if needed
+ 		const char* new_FILE = NULL;
+
+Modified: trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt
+===================================================================
+--- trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/default/Preprocess_STDC_predefines.h.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -1,4 +1,4 @@
++3
+ 1
+ 1
+ 1
+-1
+
+Modified: trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt
+===================================================================
+--- trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/default/Preprocess_STDC_predefines.hpp.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -1,4 +1,4 @@
++3
+ 1
+ 1
+ 1
+-1
+
+Added: trunk/tests/cpp/line.C99/Error_badfile1.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile1.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile1.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile1.h
++// #line won't handle two line numbers
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 53
+
+Added: trunk/tests/cpp/line.C99/Error_badfile1.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile1.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile1.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile1.hpp
++// #line won't handle two line numbers
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 53
+
+Added: trunk/tests/cpp/line.C99/Error_badfile2.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile2.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile2.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile2.h
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 L&quot;test&quot;
+
+Added: trunk/tests/cpp/line.C99/Error_badfile2.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Error_badfile2.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Error_badfile2.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++// line.C99\Error_badfile2.hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 L&quot;test&quot;
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41
++__LINE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.h.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.h.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.h.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41
++__LINE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42.hpp.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.h
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.h	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.h	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42test.h
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41 &quot;test&quot;
++__LINE__ __FILE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.h.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.h.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.h.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42&quot;test&quot;
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.hpp
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.hpp	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.hpp	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++// line.C99\Preprocess_42test.hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41 &quot;test&quot;
++__LINE__ __FILE__
+
+Added: trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt
+===================================================================
+--- trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/line.C99/Preprocess_42test.hpp.txt	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1 @@
++42&quot;test&quot;
+
+Modified: trunk/tests/cpp/run_tests.sh
+===================================================================
+--- trunk/tests/cpp/run_tests.sh	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp/run_tests.sh	2009-08-24 19:25:20 UTC (rev 237)
+@@ -100,6 +100,8 @@
+ 	echo ====
+ 	for F in default/Preprocess*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 	for F in default/Preprocess*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in line.C99/Preprocess*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in line.C99/Preprocess*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
+ 
+ 	echo -E $BAD_PASS of $REJECT_TEST rejection tests accepted
+ 	if test -n &quot;$BAD_PASS_NAME&quot;; then echo -E $BAD_PASS_NAME; fi
+
+Added: trunk/tests/cpp.in/line.C99/Error_badfile1.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badfile1.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Error_badfile1.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line won't handle two line numbers
++// C99 standard 6.10.4 3 requires failure (note that no macro is defined)
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 53
+
+Added: trunk/tests/cpp.in/line.C99/Error_badfile2.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Error_badfile2.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Error_badfile2.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// #line without integer-like PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 42 L&quot;test&quot;
+
+Added: trunk/tests/cpp.in/line.C99/Preprocess_42.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Preprocess_42.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Preprocess_42.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41
++__LINE__
+
+Added: trunk/tests/cpp.in/line.C99/Preprocess_42test.in
+===================================================================
+--- trunk/tests/cpp.in/line.C99/Preprocess_42test.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/line.C99/Preprocess_42test.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -0,0 +1,7 @@
++SUFFIXES h hpp
++// #line with huge PPNumber
++// C99 standard 6.10.4 3 requires failure
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#line 41 &quot;test&quot;
++__LINE__ __FILE__
+
+Modified: trunk/tests/cpp.in/run_tests.in
+===================================================================
+--- trunk/tests/cpp.in/run_tests.in	2009-08-22 08:55:31 UTC (rev 236)
++++ trunk/tests/cpp.in/run_tests.in	2009-08-24 19:25:20 UTC (rev 237)
+@@ -51,6 +51,7 @@
+ 
+ ECHO Checking ZCC content transforms
+ TEXTTRANSFORM CPP default/Preprocess*
++TEXTTRANSFORM CPP line.C99/Preprocess*
+ 
+ EPILOG
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000003.html">[Zcplusplus-commits] r236 - in trunk: . tests/cpp	tests/cpp/line.C99 tests/cpp.in tests/cpp.in/line.C99
+</A></li>
+	<LI>Next message: <A HREF="000005.html">[Zcplusplus-commits] r238 - in trunk/Zaimoni.STL: . LexParse OS
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#4">[ date ]</a>
+              <a href="thread.html#4">[ thread ]</a>
+              <a href="subject.html#4">[ subject ]</a>
+              <a href="author.html#4">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

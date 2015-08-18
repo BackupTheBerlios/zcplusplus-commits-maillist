@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r657 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r657%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110608200603.CDAB848130A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000423.html">
+   <LINK REL="Next"  HREF="000425.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r657 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r657%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110608200603.CDAB848130A%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r657 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  8 22:06:03 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000423.html">[Zcplusplus-commits] r656 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000425.html">[Zcplusplus-commits] r658 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#424">[ date ]</a>
+              <a href="thread.html#424">[ thread ]</a>
+              <a href="subject.html#424">[ subject ]</a>
+              <a href="author.html#424">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-08 22:06:03 +0200 (Wed, 08 Jun 2011)
+New Revision: 657
+
+Modified:
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+source code reduction
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-08 06:19:42 UTC (rev 656)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-08 20:06:03 UTC (rev 657)
+@@ -101,25 +101,6 @@
+ template&lt;class Derived,class T&gt;
+ struct c_var_array_CRTP : public c_array_CRTP&lt;c_var_array_CRTP&lt;Derived,T&gt;, T&gt;
+ {
+-	// other support
+-#ifndef ZAIMONI_FORCE_ISO
+-	void NULLPtr() {static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL;};
+-	size_t ArraySize() const {return zaimoni::ArraySize(static_cast&lt;const Derived*&gt;(this)-&gt;_ptr);};
+-	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U _default) {return _insert_slot_at(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,Idx,_default);}
+-	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,n,i);};
+-	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,n,i)) throw std::bad_alloc();};
+-#else
+-	void NULLPtr() {static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL; static_cast&lt;Derived*&gt;(this)-&gt;_size = 0;};
+-	size_t ArraySize() const {return static_cast&lt;const Derived*&gt;(this)-&gt;_size;};
+-	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U _default) {return _insert_slot_at(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,static_cast&lt;Derived*&gt;(this)-&gt;_size,Idx,_default);}
+-	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,static_cast&lt;Derived*&gt;(this)-&gt;_size,n,i);};
+-	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,static_cast&lt;Derived*&gt;(this)-&gt;_size,n,i)) throw std::bad_alloc();};
+-#endif
+-
+-	// typecasts
+-	operator T*&amp;() {return static_cast&lt;Derived*&gt;(this)-&gt;_ptr;};
+-	operator T* const&amp;() const {return static_cast&lt;const Derived*&gt;(this)-&gt;_ptr;};
+-
+ 	// STL support
+ 	T* c_array() {return static_cast&lt;Derived*&gt;(this)-&gt;_ptr;};
+ 	const T* data() const {return static_cast&lt;const Derived*&gt;(this)-&gt;_ptr;};
+@@ -139,11 +120,6 @@
+ 	void rangecheck(size_t i) const { if (i&gt;=size()) FATAL(&quot;out-of-bounds array access&quot;); };
+ 
+ 	void swap(c_var_array_CRTP&amp; RHS) {std::swap(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,static_cast&lt;Derived&amp;&gt;(RHS)._ptr);};
+-#ifndef ZAIMONI_FORCE_ISO
+-	T* release() {T* tmp = static_cast&lt;Derived*&gt;(this)-&gt;_ptr; static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL; return tmp;};
+-#else
+-	T* release() {T* tmp = static_cast&lt;Derived*&gt;(this)-&gt;_ptr; static_cast&lt;Derived*&gt;(this)-&gt;_ptr = NULL; static_cast&lt;Derived*&gt;(this)-&gt;_size = 0; return tmp;};
+-#endif
+ 
+ 	// Perl grep
+ 	template&lt;typename U&gt; void destructive_grep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
+@@ -162,6 +138,36 @@
+ #ifdef ZAIMONI_FORCE_ISO
+ 	size_t _size;
+ #endif
++public:
++#ifndef ZAIMONI_FORCE_ISO
++	void NULLPtr() {_ptr = NULL;};
++	void de_novo(size_t n) {_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL;};
++	void de_novo_nothrow(size_t n) {_ptr = _new_buffer&lt;T&gt;(n);};
++	
++	size_t ArraySize() const {return zaimoni::ArraySize(_ptr);};
++	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U _default) {return _insert_slot_at(_ptr,Idx,_default);}
++	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(_ptr,n,i);};
++	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(_ptr,n,i)) throw std::bad_alloc();};
++
++	// STL support	
++	T* release() {T* tmp = _ptr; _ptr = NULL; return tmp;};
++#else
++	void NULLPtr() {_ptr = NULL; _size = 0;};
++	void de_novo(size_t n) {_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL; _size = n;};
++	void de_novo_nothrow(size_t n) {_ptr = _new_buffer&lt;T&gt;(n); _size = n;};
++
++	size_t ArraySize() const {return _size;};
++	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U _default) {return _insert_slot_at(_ptr,_size,Idx,_default);}
++	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(_ptr,_size,n,i);};
++	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(_ptr,_size,n,i)) throw std::bad_alloc();};
++
++	// STL support	
++	T* release() {T* tmp = _ptr; _ptr = NULL; _size = 0; return tmp;};
++#endif	
++
++	// typecasts
++	operator T*&amp;() {return _ptr;};
++	operator T* const&amp;() const {return _ptr;};
+ };
+ 
+ } // namespace zaimoni
+@@ -179,29 +185,21 @@
+ namespace zaimoni {
+ 
+ template&lt;typename T&gt;
+-#if 2
+ class _meta_weakautoarray_ptr : public c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;,public POD_autoarray_ptr&lt;T&gt;
+-#else
+-class _meta_weakautoarray_ptr : public c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;,protected POD_autoarray_ptr&lt;T&gt;
+-#endif
+ {
+ private:
+ 	friend class c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;;
+ 	friend bool operator==&lt;&gt;(const c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;&amp; lhs, const c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;&amp; rhs);
+ public:
++	explicit _meta_weakautoarray_ptr() {this-&gt;NULLPtr();};
+ #ifndef ZAIMONI_FORCE_ISO
+-	explicit _meta_weakautoarray_ptr() {this-&gt;_ptr = NULL;};
+ 	explicit _meta_weakautoarray_ptr(T*&amp; src) {this-&gt;_ptr = src; src = NULL;};
+-	explicit _meta_weakautoarray_ptr(size_t n) {this-&gt;_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL;};
+-	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) {this-&gt;_ptr = _new_buffer&lt;T&gt;(n);};
+-	explicit _meta_weakautoarray_ptr(const _meta_weakautoarray_ptr&amp; src) {this-&gt;_ptr = NULL; *this=src;};
+ #else
+-	explicit _meta_weakautoarray_ptr() {this-&gt;_ptr = NULL; this-&gt;_size = 0;};
+ 	explicit _meta_weakautoarray_ptr(T*&amp; src,size_t src_size) {this-&gt;_ptr = src; this-&gt;_size = src_size; src = NULL;};
+-	explicit _meta_weakautoarray_ptr(size_t n) {this-&gt;_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL; this-&gt;_size = n;};
+-	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) {this-&gt;_ptr = _new_buffer&lt;T&gt;(n); this-&gt;_size = n;};
+-	explicit _meta_weakautoarray_ptr(const _meta_weakautoarray_ptr&amp; src) {this-&gt;_ptr = NULL; this-&gt;_size = 0; *this=src;};
+ #endif
++	explicit _meta_weakautoarray_ptr(size_t n) {this-&gt;de_novo(n);};
++	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) {this-&gt;de_novo_nothrow(n);};
++	explicit _meta_weakautoarray_ptr(const _meta_weakautoarray_ptr&amp; src) {this-&gt;NULLPtr(); *this=src;};
+ 	~_meta_weakautoarray_ptr() {_weak_flush(this-&gt;_ptr);};
+ 
+ #ifndef ZAIMONI_FORCE_ISO
+@@ -216,15 +214,14 @@
+ 	void TransferOutAndNULL(T*&amp; dest) {_weak_flush(dest); dest = this-&gt;_ptr; this-&gt;NULLPtr();}
+ #ifndef ZAIMONI_FORCE_ISO
+ 	bool Resize(size_t n) {return _weak_resize(this-&gt;_ptr,n);};
+-#else
+-	bool Resize(size_t n) {return _weak_resize(this-&gt;_ptr,this-&gt;_size,n);};
+-#endif
+ 	void FastDeleteIdx(size_t n) {_weak_delete_idx(this-&gt;_ptr,n);};
+-#ifndef ZAIMONI_FORCE_ISO
+ 	void DeleteIdx(size_t n) {_safe_weak_delete_idx(this-&gt;_ptr,n);};
+ #else
++	bool Resize(size_t n) {return _weak_resize(this-&gt;_ptr,this-&gt;_size,n);};
++	void FastDeleteIdx(size_t n) {_weak_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void DeleteIdx(size_t n) {_safe_weak_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ #endif
++	//! \todo need an ISO version of _weak_delete_n_slots_at
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_weak_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
+ 	
+ 	// Perl grep
+@@ -318,29 +315,21 @@
+ };
+ 
+ template&lt;typename T&gt;
+-#if 2
+ class _meta_autoarray_ptr : public c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;,public POD_autoarray_ptr&lt;T&gt;
+-#else
+-class _meta_autoarray_ptr : public c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;,protected POD_autoarray_ptr&lt;T&gt;
+-#endif
+ {
+ protected:
+ 	friend class c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;;
+ 	friend bool operator==&lt;&gt;(const c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;&amp; lhs, const c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;&amp; rhs);
+ 
++	explicit _meta_autoarray_ptr() {this-&gt;NULLPtr();};	
+ #ifndef ZAIMONI_FORCE_ISO
+-	explicit _meta_autoarray_ptr() {this-&gt;_ptr = NULL;};
+ 	explicit _meta_autoarray_ptr(T*&amp; src) {this-&gt;_ptr = src; src = NULL;};
+-	explicit _meta_autoarray_ptr(size_t n) {this-&gt;_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL;};
+-	explicit _meta_autoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) {this-&gt;_ptr = _new_buffer&lt;T&gt;(n);};
+-	explicit _meta_autoarray_ptr(const _meta_autoarray_ptr&amp; src) {this-&gt;_ptr = NULL; *this=src;};
+ #else
+-	explicit _meta_autoarray_ptr() {this-&gt;_ptr = NULL; this-&gt;_size = 0;};
+ 	explicit _meta_autoarray_ptr(T*&amp; src,size_t src_size) {this-&gt;_ptr = src; this-&gt;_size = src_size; src = NULL;};
+-	explicit _meta_autoarray_ptr(size_t n) {this-&gt;_ptr = n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL; this-&gt;_size = n;};
+-	explicit _meta_autoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) {this-&gt;_ptr = _new_buffer&lt;T&gt;(n); this-&gt;_size = n;};
+-	explicit _meta_autoarray_ptr(const _meta_autoarray_ptr&amp; src) {this-&gt;_ptr = NULL; this-&gt;_size = 0; *this=src;};
+ #endif
++	explicit _meta_autoarray_ptr(size_t n) {this-&gt;de_novo(n);};
++	explicit _meta_autoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) {this-&gt;de_novo_nothrow(n);};
++	explicit _meta_autoarray_ptr(const _meta_autoarray_ptr&amp; src) {this-&gt;NULLPtr(); *this=src;};
+ 	~_meta_autoarray_ptr() {_flush(this-&gt;_ptr);};
+ 
+ #ifndef ZAIMONI_FORCE_ISO
+@@ -361,17 +350,15 @@
+ #ifndef ZAIMONI_FORCE_ISO
+ 	bool Resize(size_t n) {return _resize(this-&gt;_ptr,n);};
+ 	void Shrink(size_t n) {_shrink(this-&gt;_ptr,n);};
+-#else
+-	bool Resize(size_t n) {return _resize(this-&gt;_ptr,this-&gt;_size,n);};
+-	void Shrink(size_t n) {_shrink(this-&gt;_ptr,this-&gt;_size,n);};
+-#endif
+ 	void FastDeleteIdx(size_t n) {_delete_idx(this-&gt;_ptr,n);};
+-#ifndef ZAIMONI_FORCE_ISO
+ 	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
+ 	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,indexes,n);};
+ 	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U __default) {return _insert_slot_at(this-&gt;_ptr,Idx,__default);}
+ #else
++	bool Resize(size_t n) {return _resize(this-&gt;_ptr,this-&gt;_size,n);};
++	void Shrink(size_t n) {_shrink(this-&gt;_ptr,this-&gt;_size,n);};
++	void FastDeleteIdx(size_t n) {_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void DeleteIdx(size_t n) {_safe_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_delete_n_slots_at(this-&gt;_ptr,this-&gt;_size,n,Idx);};
+ 	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,this-&gt;_size,indexes,n);};
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000423.html">[Zcplusplus-commits] r656 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000425.html">[Zcplusplus-commits] r658 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#424">[ date ]</a>
+              <a href="thread.html#424">[ thread ]</a>
+              <a href="subject.html#424">[ subject ]</a>
+              <a href="author.html#424">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

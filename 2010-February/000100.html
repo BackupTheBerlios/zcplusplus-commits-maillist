@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r333%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C201002132127.o1DLRFu7015950%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000099.html">
+   <LINK REL="Next"  HREF="000101.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r333%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C201002132127.o1DLRFu7015950%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r333 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Feb 13 22:27:15 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000099.html">[Zcplusplus-commits] r332 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000101.html">[Zcplusplus-commits] r334 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#100">[ date ]</a>
+              <a href="thread.html#100">[ thread ]</a>
+              <a href="subject.html#100">[ subject ]</a>
+              <a href="author.html#100">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-02-13 22:27:05 +0100 (Sat, 13 Feb 2010)
+New Revision: 333
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in
+   trunk/tests/zcc/decl.C99/Error_enum_typedef.h
+   trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+pre-existing typedefs stop enumerator definitions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/CSupport.cpp	2010-02-13 21:27:05 UTC (rev 333)
+@@ -126,7 +126,7 @@
+ 2 The usual mathematical formulas for complex multiply, divide, and absolute value are
+ problematic because of their treatment of infinities and because of undue overflow and
+ underflow. The CX_LIMITED_RANGE pragma can be used to inform the
+-implementation that (where the state is &#129;e&#129;eon&#129;f&#129;f) the usual mathematical formulas are
++implementation that (where the state is defined) the usual mathematical formulas are
+ acceptable.165) The pragma can occur either outside external declarations or preceding all
+ explicit declarations and statements inside a compound statement. When outside external
+ declarations, the pragma takes effect from its occurrence until another
+@@ -134,9 +134,9 @@
+ When inside a compound statement, the pragma takes effect from its occurrence until
+ another CX_LIMITED_RANGE pragma is encountered (including within a nested
+ 165) The purpose of the pragma is to allow the implementation to use the formulas:
+-(x + iy) &#129;~ (u + iv) = (xu . yv) + i(yu + xv)
++(x + iy) * (u + iv) = (xu . yv) + i(yu + xv)
+ (x + iy) / (u + iv) = [(xu + yv) + i(yu . xv)]/(u2 + v2)
+-| x + iy | = &#129;&#227;. .... x2 + y2
++| x + iy | = *. .... x2 + y2
+ where the programmer can determine they are safe.
+ 
+ The FENV_ACCESS pragma provides a means to inform the implementation when a
+@@ -11045,7 +11045,7 @@
+ 			{	// --do-what-i-mean could recover if the prior definition were identical
+ 				// C: note on C99/C1X 6.7.2.2p3 indicates autofail no matter where it was defined
+ 				// C++: One Definition Rule wipes out
+-				//! \bug need test case
++				//! \test decl.C99/Error_enum_multidef.h, decl.C99/Error_enum_multidef.hpp 
+ 			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 			INC_INFORM(ERR_STR);
+ 			INFORM(&quot;enumerator is already defined (C99 6.7.2.2p3/C++98 3.2)&quot;);
+@@ -11061,17 +11061,65 @@
+ 		// C++0X 3.3.1p4: enumerator gets to hide class names and enum names, nothing else [in particular dies against typedefs and functions]
+ 		if (types.enum_already_defined(active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].token.first))
+ 			{	// -Wbackport warn in C++, fail in C
++			if (allow_empty)
++				{	// C++0X
++				if (bool_options[boolopt::warn_crosslang_compatibility] || bool_options[boolopt::warn_backport])
++					{
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;enum with same name as enumerator is already defined (C99 6.7.2.2p3/C++98 3.2/C++0X 3.2)&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					}
++			else{	// C
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;enum with same name as enumerator is already defined (C99 6.7.2.2p3)&quot;);
++				zcc_errors.inc_error();
++				return false;
++				}	
+ 			};
+ 		if (types.union_class_struct_already_declared(active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].token.first))
+ 			{	// -Wbackport warn in C++, fail in C
++			if (allow_empty)
++				{	// C++0X
++				if (bool_options[boolopt::warn_crosslang_compatibility] || bool_options[boolopt::warn_backport])
++					{
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;union, struct, or class with same name as enumerator is already defined (C99 6.7.2.2p3/C++98 3.2/C++0X 3.2)&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					}
++				}
++			else{	// C
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INFORM(&quot;union or struct with same name as enumerator is already defined (C99 6.7.2.2p3)&quot;);
++				zcc_errors.inc_error();
++				return false;
++				}	
+ 			};
+ 		if (types.function_already_declared(active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].token.first))
+ 			{	// C++: One Definition Rule
+ 			};
+-		if (types.typedef_already_defined(active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].token.first))
++#endif
++		{
++		const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = types.get_typedef_CPP(src.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace); 
++		if (tmp)
+ 			{	// C++: One Definition Rule
++				//! \test decl.C99/Error_enum_typedef.h, decl.C99/Error_enum_typedef.hpp 
++			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(&quot;typedef is already defined, conflicts with enumerator (C99 6.7.2.2p3/C++98 3.2)&quot;);
++			INC_INFORM(tmp-&gt;second);
++			INC_INFORM(&quot;:&quot;);
++			INC_INFORM(tmp-&gt;third);
++			INFORM(&quot;: typedef definition here&quot;);
++			zcc_errors.inc_error();
++			return false;
+ 			};
+-#endif
++		}
+ 
+ 		// The type and representation of an enumeration varies by language
+ 		// C: values are type int; actual representation can be decided after seeing all enumeration values.
+@@ -11855,7 +11903,7 @@
+ 			// enum-specifier doesn't have a specific declaration mode
+ 			const type_system::type_index tmp2 = types.register_enum_def_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 			assert(types.get_id_enum_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,tmp2,NULL,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
++			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,tmp2,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+ 				{
+ 				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 				return;
+@@ -11865,7 +11913,7 @@
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			const type_system::type_index tmp = types.register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+-			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,tmp,NULL,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
++			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,tmp,active_namespace,true,CPP_echo_reserved_keyword,CPP_intlike_literal_to_VM,CPP_CondenseParseTree,CPP_EvalParseTree))
+ 				{
+ 				INFORM(&quot;enumeration not fully parsed: stopping to prevent spurious errors&quot;);
+ 				return;
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef.h	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef.h	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,10 @@
++// decl.C99\Error_enum_typedef.h
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef.hpp	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,10 @@
++// decl.C99\Error_enum_typedef.hpp
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc/decl.C99/Error_enum_typedef2.hpp	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,13 @@
++// decl.C99\Error_enum_typedef2.hpp
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++namespace test {
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
++}
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in	2010-02-13 21:25:50 UTC (rev 332)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_typedef.in	2010-02-13 21:27:05 UTC (rev 333)
+@@ -0,0 +1,10 @@
++SUFFIXES h hpp
++// using multiply defined enum
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef int x_factor;
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000099.html">[Zcplusplus-commits] r332 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000101.html">[Zcplusplus-commits] r334 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#100">[ date ]</a>
+              <a href="thread.html#100">[ thread ]</a>
+              <a href="subject.html#100">[ subject ]</a>
+              <a href="author.html#100">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

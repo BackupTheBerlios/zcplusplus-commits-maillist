@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r680 - trunk/Zaimoni.STL/core.RAM
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r680%20-%20trunk/Zaimoni.STL/core.RAM&In-Reply-To=%3C20110807194845.018BF481261%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000448.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r680 - trunk/Zaimoni.STL/core.RAM</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r680%20-%20trunk/Zaimoni.STL/core.RAM&In-Reply-To=%3C20110807194845.018BF481261%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r680 - trunk/Zaimoni.STL/core.RAM">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Aug  7 21:48:44 CEST 2011</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000448.html">[Zcplusplus-commits] r681 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#447">[ date ]</a>
+              <a href="thread.html#447">[ thread ]</a>
+              <a href="subject.html#447">[ subject ]</a>
+              <a href="author.html#447">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-08-07 21:48:44 +0200 (Sun, 07 Aug 2011)
+New Revision: 680
+
+Modified:
+   trunk/Zaimoni.STL/core.RAM/memory.cpp
+Log:
+fix infinite loop in invalid free detection
+
+Modified: trunk/Zaimoni.STL/core.RAM/memory.cpp
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-07-29 14:59:22 UTC (rev 679)
++++ trunk/Zaimoni.STL/core.RAM/memory.cpp	2011-08-07 19:48:44 UTC (rev 680)
+@@ -215,7 +215,7 @@
+ 	// binary-searching the array pointed to by BasePtrIndex.  
+ 	// Idx is a strict upper bound to the valid indices.
+ 	size_t lb = 0;
+-	while(lb&lt;=strict_ub)
++	while(lb&lt;strict_ub)
+ 		{
+ 		const size_t midpoint = lb + (strict_ub-lb)/2;
+ 		if (Target==BasePtrIndex[midpoint]._address)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000448.html">[Zcplusplus-commits] r681 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#447">[ date ]</a>
+              <a href="thread.html#447">[ thread ]</a>
+              <a href="subject.html#447">[ subject ]</a>
+              <a href="author.html#447">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

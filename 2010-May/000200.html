@@ -1,0 +1,408 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r433 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r433%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert%20tests/zcc.in/default/staticassert&In-Reply-To=%3C201005152048.o4FKmjIA016371%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000199.html">
+   <LINK REL="Next"  HREF="000201.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r433 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r433%20-%20in%20trunk%3A%20.%0A%09tests/zcc/default/staticassert%20tests/zcc.in/default/staticassert&In-Reply-To=%3C201005152048.o4FKmjIA016371%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r433 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat May 15 22:48:45 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000199.html">[Zcplusplus-commits] r432 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert
+</A></li>
+        <LI>Next message: <A HREF="000201.html">[Zcplusplus-commits] r434 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#200">[ date ]</a>
+              <a href="thread.html#200">[ thread ]</a>
+              <a href="subject.html#200">[ subject ]</a>
+              <a href="author.html#200">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-15 22:48:37 +0200 (Sat, 15 May 2010)
+New Revision: 433
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+Log:
+handle unary * typing much like unary +- typing
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-15 18:50:31 UTC (rev 432)
++++ trunk/CSupport.cpp	2010-05-15 20:48:37 UTC (rev 433)
+@@ -5665,6 +5665,22 @@
+ 		}
+ }
+ 
++// this is going to have to be forked eventually; the CPP variant has to be more
++// careful with the *&amp; identity as both deference * and reference &amp; are 
++// overloadable operators
++//! \throw std::bad_alloc()
++static void C_deref_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
++	//! \todo: handle *&amp; identity when we have &amp;
++	// multi-dimensional arrays and cv-qualified pointers should be automatically handled
++	value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
++	// handle lvalueness in indirection type building and/or the dereference stage
++	if (!src.type_code.dereference())
++		//! \test default/Error_if_control24.hpp, default/Error_if_control24.h
++		simple_error(src,&quot; is not dereferencing a pointer (C99 6.5.3.2p2; C++98 5.3.1p1)&quot;);
++}
++
+ // no eval_deref because of &amp;* cancellation
+ // defer syntax check to after resolution of multiply-*, so no C/C++ fork
+ //! \throw std::bad_alloc()
+@@ -5681,6 +5697,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_DEREF);
+@@ -5705,6 +5723,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_DEREF);
+@@ -5716,19 +5736,6 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static void C_deref_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+-{
+-	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
+-	//! \todo: handle *&amp; identity when we have &amp;
+-	// multi-dimensional arrays and cv-qualified pointers should be automatically handled
+-	value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+-	// handle lvalueness in indirection type building and/or the dereference stage
+-	if (!src.type_code.dereference())
+-		//! \test default/Error_if_control24.hpp, default/Error_if_control24.h
+-		simple_error(src,&quot; is not dereferencing a pointer (C99 6.5.3.2p2; C++98 5.3.1p1)&quot;);
+-}
+-
+-//! \throw std::bad_alloc()
+ static bool terse_locate_C_logical_NOT(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5742,6 +5749,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_NOT);
+@@ -5766,6 +5775,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_NOT);
+@@ -5908,6 +5919,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_COMPL);
+@@ -5932,6 +5945,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_COMPL);
+@@ -6120,6 +6135,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+@@ -6149,6 +6166,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+@@ -6202,6 +6221,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (   (PARSE_UNARY_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			|| (is_naked_parentheses_pair(src.data&lt;0&gt;()[i+1]) &amp;&amp; (PARSE_TYPE &amp; src.data&lt;0&gt;()[i+1].flags)))
+ 			{
+@@ -6287,12 +6308,12 @@
+ 	bool want_fundamental = true;
+ 	do  {
+ 		--i;
+-		if (type_spec::_array &amp; src.type_code.qualifier(i))
++		if (type_spec::_array &amp; src.data&lt;2&gt;()-&gt;type_code.qualifier(i+1))
+ 			{
+-			if (0&gt;=src.type_code.extent_vector[i])
++			if (0&gt;=src.data&lt;2&gt;()-&gt;type_code.extent_vector[i])
+ 				// C99 variable-length array: can't sizeof it at compile time
+ 				return false;
+-			tmp = src.type_code.extent_vector[i];
++			tmp = src.data&lt;2&gt;()-&gt;type_code.extent_vector[i];
+ 			}
+ 		else{	// data pointer (for now); 0==i actually could be function pointer
+ 			tmp = _eval_sizeof_core_type(unsigned_type_from_machine_type(target_machine-&gt;size_t_type()));
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-15 18:50:31 UTC (rev 432)
++++ trunk/CSupport_pp.cpp	2010-05-15 20:48:37 UTC (rev 433)
+@@ -5120,6 +5120,22 @@
+ 		}
+ }
+ 
++// this is going to have to be forked eventually; the CPP variant has to be more
++// careful with the *&amp; identity as both deference * and reference &amp; are 
++// overloadable operators
++//! \throw std::bad_alloc()
++static void C_deref_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
++{
++	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
++	//! \todo: handle *&amp; identity when we have &amp;
++	// multi-dimensional arrays and cv-qualified pointers should be automatically handled
++	value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
++	// handle lvalueness in indirection type building and/or the dereference stage
++	if (!src.type_code.dereference())
++		//! \test default/Error_if_control24.hpp, default/Error_if_control24.h
++		simple_error(src,&quot; is not dereferencing a pointer (C99 6.5.3.2p2; C++98 5.3.1p1)&quot;);
++}
++
+ // no eval_deref because of &amp;* cancellation
+ // defer syntax check to after resolution of multiply-*, so no C/C++ fork
+ //! \throw std::bad_alloc()
+@@ -5136,6 +5152,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_DEREF);
+@@ -5160,6 +5178,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_DEREF);
+@@ -5171,19 +5191,6 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static void C_deref_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types)
+-{
+-	assert(is_C99_unary_operator_expression&lt;'*'&gt;(src));
+-	//! \todo: handle *&amp; identity when we have &amp;
+-	// multi-dimensional arrays and cv-qualified pointers should be automatically handled
+-	value_copy(src.type_code,src.data&lt;2&gt;()-&gt;type_code);
+-	// handle lvalueness in indirection type building and/or the dereference stage
+-	if (!src.type_code.dereference())
+-		//! \test default/Error_if_control24.hpp, default/Error_if_control24.h
+-		simple_error(src,&quot; is not dereferencing a pointer (C99 6.5.3.2p2; C++98 5.3.1p1)&quot;);
+-}
+-
+-//! \throw std::bad_alloc()
+ static bool terse_locate_C_logical_NOT(parse_tree&amp; src, size_t&amp; i,const type_system&amp; types)
+ {
+ 	assert(!src.empty&lt;0&gt;());
+@@ -5197,6 +5204,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_NOT);
+@@ -5221,6 +5230,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_NOT);
+@@ -5363,6 +5374,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_COMPL);
+@@ -5387,6 +5400,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,C99_UNARY_SUBTYPE_COMPL);
+@@ -5568,6 +5583,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			C_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+@@ -5597,6 +5614,8 @@
+ 		inspect_potential_paren_primary_expression(src.c_array&lt;0&gt;()[i+1]);
+ 		if (is_C99_unary_operator_expression&lt;'+'&gt;(src.data&lt;0&gt;()[i+1]) || is_C99_unary_operator_expression&lt;'-'&gt;(src.data&lt;0&gt;()[i+1]))
+ 			CPP_unary_plusminus_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
++		else if (is_C99_unary_operator_expression&lt;'*'&gt;(src.data&lt;0&gt;()[i+1]))
++			C_deref_easy_syntax_check(src.c_array&lt;0&gt;()[i+1],types);
+ 		if (PARSE_CAST_EXPRESSION &amp; src.data&lt;0&gt;()[i+1].flags)
+ 			{
+ 			assemble_unary_postfix_arguments(src,i,unary_subtype);
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-05-15 18:50:31 UTC (rev 432)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-05-15 20:48:37 UTC (rev 433)
+@@ -10,6 +10,7 @@
+ _Static_Assert(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
+ _Static_Assert(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
+ _Static_Assert(*&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_Assert(!*&quot;&quot;,&quot;automatic success has failed&quot;);
+ 
+ _Static_Assert(&quot;A&quot;+0,&quot;automatic success has failed&quot;);
+ _Static_Assert(0+&quot;A&quot;,&quot;automatic success has failed&quot;);
+@@ -27,3 +28,9 @@
+ _Static_Assert(sizeof &quot;&quot;==1,&quot;automatic success has failed&quot;);
+ _Static_Assert(2==sizeof &quot;A&quot;,&quot;automatic success has failed&quot;);
+ _Static_Assert(sizeof &quot;A&quot;==2,&quot;automatic success has failed&quot;);
++
++_Static_Assert(1==sizeof *&quot;A&quot;,&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof *&quot;A&quot;==1,&quot;automatic success has failed&quot;);
++_Static_Assert(1==sizeof *&quot;&quot;,&quot;automatic success has failed&quot;);
++_Static_Assert(sizeof *&quot;&quot;==1,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-05-15 18:50:31 UTC (rev 432)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-05-15 20:48:37 UTC (rev 433)
+@@ -10,6 +10,7 @@
+ static_assert(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
+ static_assert(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
+ static_assert(*&quot;A&quot;,&quot;automatic success has failed&quot;);
++static_assert(!*&quot;&quot;,&quot;automatic success has failed&quot;);
+ 
+ static_assert(&quot;A&quot;+0,&quot;automatic success has failed&quot;);
+ static_assert(0+&quot;A&quot;,&quot;automatic success has failed&quot;);
+@@ -27,3 +28,9 @@
+ static_assert(sizeof &quot;&quot;==1,&quot;automatic success has failed&quot;);
+ static_assert(2==sizeof &quot;A&quot;,&quot;automatic success has failed&quot;);
+ static_assert(sizeof &quot;A&quot;==2,&quot;automatic success has failed&quot;);
++
++static_assert(1==sizeof *&quot;A&quot;,&quot;automatic success has failed&quot;);
++static_assert(sizeof *&quot;A&quot;==1,&quot;automatic success has failed&quot;);
++static_assert(1==sizeof *&quot;&quot;,&quot;automatic success has failed&quot;);
++static_assert(sizeof *&quot;&quot;==1,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-05-15 18:50:31 UTC (rev 432)
++++ trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-05-15 20:48:37 UTC (rev 433)
+@@ -11,6 +11,7 @@
+ STATIC_ASSERT(-&quot;A&quot;[0],&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(!&quot;A&quot;[1],&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(*&quot;A&quot;,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!*&quot;&quot;,&quot;automatic success has failed&quot;);
+ 
+ STATIC_ASSERT(&quot;A&quot;+0,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(0+&quot;A&quot;,&quot;automatic success has failed&quot;);
+@@ -28,3 +29,9 @@
+ STATIC_ASSERT(sizeof &quot;&quot;==1,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(2==sizeof &quot;A&quot;,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(sizeof &quot;A&quot;==2,&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(1==sizeof *&quot;A&quot;,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof *&quot;A&quot;==1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1==sizeof *&quot;&quot;,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(sizeof *&quot;&quot;==1,&quot;automatic success has failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000199.html">[Zcplusplus-commits] r432 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert
+</A></li>
+	<LI>Next message: <A HREF="000201.html">[Zcplusplus-commits] r434 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#200">[ date ]</a>
+              <a href="thread.html#200">[ thread ]</a>
+              <a href="subject.html#200">[ subject ]</a>
+              <a href="author.html#200">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

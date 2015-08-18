@@ -1,0 +1,428 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r461 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r461%20-%20trunk&In-Reply-To=%3C20100628203554.E3C33480BFF%40sheep2.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000227.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r461 - trunk</H1>
+    <B>zaimoni at sheep.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r461%20-%20trunk&In-Reply-To=%3C20100628203554.E3C33480BFF%40sheep2.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r461 - trunk">zaimoni at sheep.berlios.de
+       </A><BR>
+    <I>Mon Jun 28 22:35:54 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000227.html">[Zcplusplus-commits] r460 - in trunk: . Zaimoni.STL
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#228">[ date ]</a>
+              <a href="thread.html#228">[ thread ]</a>
+              <a href="subject.html#228">[ subject ]</a>
+              <a href="author.html#228">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-28 22:35:54 +0200 (Mon, 28 Jun 2010)
+New Revision: 461
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+augment context-free parsing; improve source code locality
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-12 06:21:14 UTC (rev 460)
++++ trunk/CSupport.cpp	2010-06-28 20:35:54 UTC (rev 461)
+@@ -1224,6 +1224,20 @@
+ #define CPP_SYS_HEADER_STRICT_UB STATIC_SIZE(system_headers)
+ #define C_SYS_HEADER_STRICT_UB 23
+ 
++static size_t LengthOfCSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
++	if (0&lt;=i) return strlen(system_headers[i]);
++	return 0;
++}
++
++static size_t LengthOfCPPSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
++	if (0&lt;=i) return strlen(system_headers[i]);
++	return 0;
++}
++
+ /* XXX this may belong with weak_token XXX */
+ static void message_header(const weak_token&amp; src)
+ {
+@@ -2022,20 +2036,6 @@
+ 	return 1+linear_reverse_find_lencached(x,x_len,valid_pure_preprocessing_op_punc,CPP_PREPROC_OP_STRICT_UB);
+ }
+ 
+-static size_t LengthOfCSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
+-	if (0&lt;=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+-static size_t LengthOfCPPSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
+-	if (0&lt;=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+ static void _bad_syntax_tokenized(const char* const x, size_t x_len, lex_flags&amp; flags, const char* const src_filename, size_t line_no, func_traits&lt;signed int (*)(const char* const, size_t)&gt;::function_type find_pp_code)
+ {
+ 	assert(NULL!=x);
+@@ -10629,6 +10629,235 @@
+ }
+ 
+ #/*cut-cpp*/
++static const POD_pair&lt;const char*,size_t&gt; C99_nontype_decl_specifier_list[] =
++	{	DICT_STRUCT(&quot;typedef&quot;),
++		DICT_STRUCT(&quot;const&quot;),
++		DICT_STRUCT(&quot;volatile&quot;),
++		DICT_STRUCT(&quot;restrict&quot;),
++		DICT_STRUCT(&quot;register&quot;),
++		DICT_STRUCT(&quot;static&quot;),
++		DICT_STRUCT(&quot;extern&quot;),
++		DICT_STRUCT(&quot;inline&quot;),
++		DICT_STRUCT(&quot;auto&quot;),
++		DICT_STRUCT(&quot;_Thread_Local&quot;),	// C1X, actually
++	};
++
++static const POD_pair&lt;const char*,size_t&gt; CPP0X_nontype_decl_specifier_list[] =
++	{	DICT_STRUCT(&quot;typedef&quot;),
++		DICT_STRUCT(&quot;const&quot;),
++		DICT_STRUCT(&quot;volatile&quot;),
++		DICT_STRUCT(&quot;register&quot;),
++		DICT_STRUCT(&quot;static&quot;),
++		DICT_STRUCT(&quot;extern&quot;),
++		DICT_STRUCT(&quot;inline&quot;),
++		DICT_STRUCT(&quot;thread_local&quot;),	// C1X _Thread_Local
++		DICT_STRUCT(&quot;constexpr&quot;),
++		DICT_STRUCT(&quot;mutable&quot;),
++		DICT_STRUCT(&quot;virtual&quot;),
++		DICT_STRUCT(&quot;explicit&quot;),
++		DICT_STRUCT(&quot;friend&quot;)
++	};
++
++size_t C99_type_or_invariant_decl_specifier(const parse_tree&amp; x)
++{
++	if (PARSE_TYPE &amp; x.flags)
++		return STATIC_SIZE(C99_nontype_decl_specifier_list);
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list));
++		if (STATIC_SIZE(C99_nontype_decl_specifier_list)&gt;i) return i;
++		}
++	return SIZE_MAX;
++}
++
++size_t CPP0X_type_or_invariant_decl_specifier(const parse_tree&amp; x)
++{
++	if (PARSE_TYPE &amp; x.flags)
++		return STATIC_SIZE(CPP0X_nontype_decl_specifier_list); 
++	if (x.is_atomic())
++		{
++		const errr i = linear_find(x.index_tokens[0].token.first,CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list));
++		if (STATIC_SIZE(CPP0X_nontype_decl_specifier_list)&gt;i) return i;
++		}
++	return SIZE_MAX;
++}	
++
++void record_qualifier(parse_tree* x, unsigned char qualify)
++{
++	assert(x);
++	assert(PARSE_TYPE &amp; x-&gt;flags);
++tail_recurse:
++	x-&gt;type_code.q_vector.back() |= qualify;
++	if (is_naked_parentheses_pair(*x) &amp;&amp; 1==x-&gt;size&lt;0&gt;() &amp;&amp; (PARSE_TYPE &amp; x-&gt;data&lt;0&gt;()-&gt;flags))
++		{	// discard nested parentheses
++		while(is_naked_parentheses_pair(*x-&gt;data&lt;0&gt;()) &amp;&amp; 1==x-&gt;data&lt;0&gt;()-&gt;size&lt;0&gt;() &amp;&amp; (PARSE_TYPE &amp; x-&gt;data&lt;0&gt;()-&gt;data&lt;0&gt;()-&gt;flags))
++			x-&gt;c_array&lt;0&gt;()-&gt;eval_to_arg&lt;0&gt;(0);
++		// tail-recurse
++		x = x-&gt;c_array&lt;0&gt;();
++		goto tail_recurse;
++		}
++}
++
++void record_qualifier_or_warn(parse_tree&amp; src,unsigned char qualify,size_t type_at,size_t qual_at,bool&amp; have_warned,const char* const warning)
++{
++	assert(src.size&lt;0&gt;()&gt;type_at);
++	assert(src.size&lt;0&gt;()&gt;qual_at);
++	assert(PARSE_TYPE &amp; src.data&lt;0&gt;()[type_at].flags);
++	if (!(qualify &amp; src.data&lt;0&gt;()[type_at].type_code.q_vector.back()))
++		record_qualifier(src.c_array&lt;0&gt;()+type_at,qualify);
++	else if (!have_warned)
++		{	// already qualified, have not warned yet
++		message_header(src.data&lt;0&gt;()[qual_at].index_tokens[0]);
++		INC_INFORM(WARN_STR);
++		INFORM(warning);
++		if (bool_options[boolopt::warnings_are_errors])
++			zcc_errors.inc_error();
++		have_warned = true;
++		}
++}
++
++void C99_condense_const_volatile_onto_type(parse_tree&amp; src)
++{
++	assert(src.is_raw_list());
++	size_t i = 0;
++	kleene_star&lt;STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
++	do	if (PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags)
++			{
++			size_t offset = 0;
++			bool have_warned_too_many_types = false;
++			bool have_warned_about_const = false;
++			bool have_warned_about_volatile = false;
++
++			while(0&lt;i-offset &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i- ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(C99_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{
++						message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx&lt;0&gt;(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;);
++					src.DeleteIdx&lt;0&gt;(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
++					src.DeleteIdx&lt;0&gt;(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++
++			invariant_decl_scanner.clear();
++			offset = 0;
++			while(src.size&lt;0&gt;()-i&gt;offset+1 &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i+ ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(C99_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{
++						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx&lt;0&gt;(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;);
++					src.DeleteIdx&lt;0&gt;(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
++					src.DeleteIdx&lt;0&gt;(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++			}
++	while(src.size&lt;0&gt;()&gt; ++i);
++}
++
++void CPP0X_condense_const_volatile_onto_type(parse_tree&amp; src)
++{
++	assert(src.is_raw_list());
++	size_t i = 0;
++	kleene_star&lt;STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&amp;)&gt; invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
++	do	if (PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags)
++			{
++			size_t offset = 0;
++			bool have_warned_too_many_types = false;
++			bool have_warned_about_const = false;
++			bool have_warned_about_volatile = false;
++
++			while(0&lt;i-offset &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i- ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{	//! \bug need test case
++						message_header(src.data&lt;0&gt;()[i-offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx&lt;0&gt;(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++					src.DeleteIdx&lt;0&gt;(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++					src.DeleteIdx&lt;0&gt;(i-- -offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++
++			invariant_decl_scanner.clear();
++			offset = 0;
++			while(src.size&lt;0&gt;()-i&gt;offset+1 &amp;&amp; invariant_decl_scanner(src.data&lt;0&gt;()[i+ ++offset]))
++				switch(invariant_decl_scanner[offset-1])
++				{
++				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
++					if (!have_warned_too_many_types)
++						{	//! \bug need test case
++						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;multiple types in decl-specifier sequence, discarding extra types&quot;);
++						zcc_errors.inc_error();
++						have_warned_too_many_types = true;
++						}
++					src.DeleteIdx&lt;0&gt;(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					return;
++				case C99_CPP_CONST_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++					src.DeleteIdx&lt;0&gt;(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
++					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++					src.DeleteIdx&lt;0&gt;(i+offset);
++					invariant_decl_scanner.DeleteIdx(--offset);
++					continue;
++				}
++			}
++	while(src.size&lt;0&gt;()&gt; ++i);
++}
++
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc()
+ static void C99_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+@@ -10637,6 +10866,7 @@
+ 	_label_literals(src,types);
+ 	// handle core type specifiers
+ 	C99_notice_primary_type(src);
++	C99_condense_const_volatile_onto_type(src);
+ 	if (!_match_pairs(src)) return;
+ 	// struct/union/enum specifiers can occur in all sorts of strange places
+ 	C99_notice_struct_union_enum(src);
+@@ -10781,6 +11011,7 @@
+ 	std::for_each(src.begin&lt;0&gt;(),src.end&lt;0&gt;(),_label_CPP_literal);	// intercepts: true, false, this
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	CPP0X_condense_const_volatile_onto_type(src);
+ 	if (!_match_pairs(src)) return;
+ 	// do context-free part of qualified-names
+ 	CPP_notice_scope_glue(src);
+@@ -14346,8 +14577,12 @@
+ 	assert(C99_CPP_TYPEDEF_IDX==linear_find(&quot;typedef&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+ 	assert(C99_CPP_CONST_IDX==linear_find(&quot;const&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_CONST_IDX==linear_find(&quot;const&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
++	assert(C99_CPP_CONST_IDX==linear_find(&quot;const&quot;,C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list)));
++	assert(C99_CPP_CONST_IDX==linear_find(&quot;const&quot;,CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)));
+ 	assert(C99_CPP_VOLATILE_IDX==linear_find(&quot;volatile&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_VOLATILE_IDX==linear_find(&quot;volatile&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
++	assert(C99_CPP_VOLATILE_IDX==linear_find(&quot;volatile&quot;,C99_nontype_decl_specifier_list,STATIC_SIZE(C99_nontype_decl_specifier_list)));
++	assert(C99_CPP_VOLATILE_IDX==linear_find(&quot;volatile&quot;,CPP0X_nontype_decl_specifier_list,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)));
+ 	assert(C99_RESTRICT_IDX==linear_find(&quot;restrict&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_REGISTER_IDX==linear_find(&quot;register&quot;,C99_decl_specifier_list,STATIC_SIZE(C99_decl_specifier_list)));
+ 	assert(C99_CPP_REGISTER_IDX==linear_find(&quot;register&quot;,CPP0X_decl_specifier_list,STATIC_SIZE(CPP0X_decl_specifier_list)));
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-06-12 06:21:14 UTC (rev 460)
++++ trunk/CSupport_pp.cpp	2010-06-28 20:35:54 UTC (rev 461)
+@@ -1002,6 +1002,20 @@
+ #define CPP_SYS_HEADER_STRICT_UB STATIC_SIZE(system_headers)
+ #define C_SYS_HEADER_STRICT_UB 23
+ 
++static size_t LengthOfCSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
++	if (0&lt;=i) return strlen(system_headers[i]);
++	return 0;
++}
++
++static size_t LengthOfCPPSystemHeader(const char* src)
++{
++	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
++	if (0&lt;=i) return strlen(system_headers[i]);
++	return 0;
++}
++
+ /* XXX this may belong with weak_token XXX */
+ static void message_header(const weak_token&amp; src)
+ {
+@@ -1785,20 +1799,6 @@
+ 	return 1+linear_reverse_find_lencached(x,x_len,valid_pure_preprocessing_op_punc,CPP_PREPROC_OP_STRICT_UB);
+ }
+ 
+-static size_t LengthOfCSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,C_SYS_HEADER_STRICT_UB);
+-	if (0&lt;=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+-static size_t LengthOfCPPSystemHeader(const char* src)
+-{
+-	const errr i = linear_find(src,system_headers,CPP_SYS_HEADER_STRICT_UB);
+-	if (0&lt;=i) return strlen(system_headers[i]);
+-	return 0;
+-}
+-
+ static void _bad_syntax_tokenized(const char* const x, size_t x_len, lex_flags&amp; flags, const char* const src_filename, size_t line_no, func_traits&lt;signed int (*)(const char* const, size_t)&gt;::function_type find_pp_code)
+ {
+ 	assert(NULL!=x);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000227.html">[Zcplusplus-commits] r460 - in trunk: . Zaimoni.STL
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#228">[ date ]</a>
+              <a href="thread.html#228">[ thread ]</a>
+              <a href="subject.html#228">[ subject ]</a>
+              <a href="author.html#228">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

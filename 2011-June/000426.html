@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r659 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r659%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110608211810.B2A0448130A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000425.html">
+   <LINK REL="Next"  HREF="000427.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r659 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r659%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110608211810.B2A0448130A%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r659 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  8 23:18:10 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000425.html">[Zcplusplus-commits] r658 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000427.html">[Zcplusplus-commits] r660 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#426">[ date ]</a>
+              <a href="thread.html#426">[ thread ]</a>
+              <a href="subject.html#426">[ subject ]</a>
+              <a href="author.html#426">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-08 23:18:10 +0200 (Wed, 08 Jun 2011)
+New Revision: 659
+
+Modified:
+   trunk/Zaimoni.STL/AutoPtr.hpp
+   trunk/Zaimoni.STL/MetaRAM2.hpp
+Log:
+ISO mode fixes
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-08 21:17:15 UTC (rev 658)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-08 21:18:10 UTC (rev 659)
+@@ -216,15 +216,15 @@
+ 	bool Resize(size_t n) {return _weak_resize(this-&gt;_ptr,n);};
+ 	void FastDeleteIdx(size_t n) {_weak_delete_idx(this-&gt;_ptr,n);};
+ 	void DeleteIdx(size_t n) {_safe_weak_delete_idx(this-&gt;_ptr,n);};
++	void DeleteNSlotsAt(size_t n, size_t Idx) {_weak_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
+ #else
+ 	void reset(T*&amp; src,size_t n);
+ 	void MoveInto(_meta_weakautoarray_ptr&lt;T&gt;&amp; dest) {dest.reset(this-&gt;_ptr,this-&gt;_size);};
+ 	bool Resize(size_t n) {return _weak_resize(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void FastDeleteIdx(size_t n) {_weak_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void DeleteIdx(size_t n) {_safe_weak_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
++	void DeleteNSlotsAt(size_t n, size_t Idx) {_weak_delete_n_slots_at(this-&gt;_ptr,this-&gt;_size,n,Idx);};
+ #endif
+-	//! \todo need an ISO version of _weak_delete_n_slots_at
+-	void DeleteNSlotsAt(size_t n, size_t Idx) {_weak_delete_n_slots_at(this-&gt;_ptr,n,Idx);};
+ 	
+ 	// Perl grep
+ 	// next two require of U: STL size(),data()
+
+Modified: trunk/Zaimoni.STL/MetaRAM2.hpp
+===================================================================
+--- trunk/Zaimoni.STL/MetaRAM2.hpp	2011-06-08 21:17:15 UTC (rev 658)
++++ trunk/Zaimoni.STL/MetaRAM2.hpp	2011-06-08 21:18:10 UTC (rev 659)
+@@ -879,14 +879,24 @@
+ }
+ 
+ template&lt;typename T&gt;
++#ifndef ZAIMONI_FORCE_ISO
+ void _weak_delete_n_slots_at(T**&amp; _ptr, size_t n, size_t i)
+ {
+ 	assert(_ptr);
+ 	const size_t _ptr_size = ArraySize(_ptr);
++#else
++void _weak_delete_n_slots_at(T**&amp; _ptr, size_t&amp; _ptr_size, size_t n, size_t i)
++{
++	assert(_ptr);
++	assert(0&lt;_ptr_size);
++#endif
+ 	if (0==i &amp;&amp; _ptr_size&lt;=n)
+ 		{
+ 		_weak_flush(_ptr);
+ 		_ptr = NULL;
++#ifdef ZAIMONI_FORCE_ISO
++		_ptr_size = 0;
++#endif
+ 		return;
+ 		}
+ 	T** const _offset_ptr = _ptr+i;
+@@ -895,10 +905,16 @@
+ 		if (i+n&lt;_ptr_size)
+ 			memmove(_offset_ptr,_offset_ptr+n,sizeof(T*)*(_ptr_size-i-n));
+ 		_ptr = REALLOC(_ptr,sizeof(T*)*(_ptr_size-n));
++#ifdef ZAIMONI_FORCE_ISO
++		_ptr_size -= n;
++#endif
+ 		}
+ 	else{
+ 		free(_ptr);
+ 		_ptr = NULL;
++#ifdef ZAIMONI_FORCE_ISO
++		_ptr_size = 0;
++#endif
+ 		}
+ }
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000425.html">[Zcplusplus-commits] r658 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000427.html">[Zcplusplus-commits] r660 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#426">[ date ]</a>
+              <a href="thread.html#426">[ thread ]</a>
+              <a href="subject.html#426">[ subject ]</a>
+              <a href="author.html#426">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

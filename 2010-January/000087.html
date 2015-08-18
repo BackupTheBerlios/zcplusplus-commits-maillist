@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r320 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r320%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C201001040913.o049DO8l022749%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000086.html">
+   <LINK REL="Next"  HREF="000088.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r320 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r320%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C201001040913.o049DO8l022749%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r320 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Jan  4 10:13:24 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000086.html">[Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000088.html">[Zcplusplus-commits] r321 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#87">[ date ]</a>
+              <a href="thread.html#87">[ thread ]</a>
+              <a href="subject.html#87">[ subject ]</a>
+              <a href="author.html#87">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-01-04 10:13:20 +0100 (Mon, 04 Jan 2010)
+New Revision: 320
+
+Modified:
+   trunk/Zaimoni.STL/MetaRAM.hpp
+   trunk/Zaimoni.STL/MetaRAM2.hpp
+Log:
+lift some template functions that don't actually use the custom memory manager
+
+Modified: trunk/Zaimoni.STL/MetaRAM.hpp
+===================================================================
+--- trunk/Zaimoni.STL/MetaRAM.hpp	2010-01-03 01:54:51 UTC (rev 319)
++++ trunk/Zaimoni.STL/MetaRAM.hpp	2010-01-04 09:13:20 UTC (rev 320)
+@@ -8,6 +8,7 @@
+ 
+ #include &lt;string.h&gt;
+ #include &quot;flat_alg.h&quot;
++#include &lt;stdlib.h&gt;
+ 
+ /* ZAIMONI_PROTECT_NONANSI_NONNULL_CHECKING_DEALLOCATORS : code fragment suitable as a guard clause for non-ansi free/delete that can't handle NULL */
+ /* good alternative if needed: */
+@@ -290,6 +291,38 @@
+ 	free(_ptr);
+ }
+ 
++// _new_buffer/_new_buffer_nonNULL_throws and _flush [MetaRAM2.hpp] have to be synchronized for ISO C++
++// _new_buffer_nonNULL is in MetaRAM2.hpp, as it depends on Logging.h
++template&lt;typename T&gt;
++inline typename boost::disable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
++_new_buffer(size_t Idx)
++{
++	return new(std::nothrow) T[Idx];
++}
++
++template&lt;typename T&gt;
++inline typename boost::enable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
++_new_buffer(size_t Idx)
++{
++	return reinterpret_cast&lt;T*&gt;(calloc(Idx,sizeof(T)));
++}
++
++template&lt;typename T&gt;
++inline typename boost::disable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
++_new_buffer_nonNULL_throws(size_t Idx)
++{
++	return new T[Idx];
++}
++
++template&lt;typename T&gt;
++inline typename boost::enable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
++_new_buffer_nonNULL_throws(size_t Idx)
++{
++	T* tmp = reinterpret_cast&lt;T*&gt;(calloc(Idx,sizeof(T)));
++	if (NULL==tmp) throw std::bad_alloc();
++	return tmp;
++}
++
+ }	// end namespace zaimoni
+ 
+ #else	/* not in C++ */
+
+Modified: trunk/Zaimoni.STL/MetaRAM2.hpp
+===================================================================
+--- trunk/Zaimoni.STL/MetaRAM2.hpp	2010-01-03 01:54:51 UTC (rev 319)
++++ trunk/Zaimoni.STL/MetaRAM2.hpp	2010-01-04 09:13:20 UTC (rev 320)
+@@ -9,8 +9,6 @@
+ #include &quot;MetaRAM.hpp&quot;
+ #ifndef ZAIMONI_FORCE_ISO
+ #include &quot;z_memory.h&quot;
+-#else
+-#include &lt;stdlib.h&gt;
+ #endif
+ #include &quot;Logging.h&quot;
+ 
+@@ -140,23 +138,10 @@
+ 
+ // How to tell difference between T* (single) and T* (array) in resize/shrink?
+ // we don't, assume single
+-// note: _new_buffer and _flush have to be synchronized for ISO C++
+ 
++// _new_buffer_nonNULL and _flush have to be synchronized for ISO C++
++// _new_buffer and _new_buffer_nonNULL_throws are in MetaRAM.hpp (they don't depend on Logging.h)
+ template&lt;typename T&gt;
+-inline typename boost::disable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
+-_new_buffer(size_t Idx)
+-{
+-	return new(std::nothrow) T[Idx];
+-}
+-
+-template&lt;typename T&gt;
+-inline typename boost::enable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
+-_new_buffer(size_t Idx)
+-{
+-	return reinterpret_cast&lt;T*&gt;(calloc(Idx,sizeof(T)));
+-}
+-
+-template&lt;typename T&gt;
+ typename boost::disable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
+ _new_buffer_nonNULL(size_t Idx)
+ {
+@@ -175,22 +160,6 @@
+ }
+ 
+ template&lt;typename T&gt;
+-inline typename boost::disable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
+-_new_buffer_nonNULL_throws(size_t Idx)
+-{
+-	return new T[Idx];
+-}
+-
+-template&lt;typename T&gt;
+-inline typename boost::enable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, T*&gt;::type
+-_new_buffer_nonNULL_throws(size_t Idx)
+-{
+-	T* tmp = reinterpret_cast&lt;T*&gt;(calloc(Idx,sizeof(T)));
+-	if (NULL==tmp) throw std::bad_alloc();
+-	return tmp;
+-}
+-
+-template&lt;typename T&gt;
+ inline typename boost::disable_if&lt;boost::type_traits::ice_and&lt;boost::has_trivial_constructor&lt;T&gt;::value, boost::has_trivial_destructor&lt;T&gt;::value&gt;, void&gt;::type
+ _flush(T* _ptr)
+ {
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000086.html">[Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000088.html">[Zcplusplus-commits] r321 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#87">[ date ]</a>
+              <a href="thread.html#87">[ thread ]</a>
+              <a href="subject.html#87">[ subject ]</a>
+              <a href="author.html#87">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

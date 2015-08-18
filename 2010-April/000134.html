@@ -1,0 +1,403 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r367 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r367%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201004090110.o391AFoM016727%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000133.html">
+   <LINK REL="Next"  HREF="000135.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r367 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r367%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201004090110.o391AFoM016727%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r367 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr  9 03:10:15 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000133.html">[Zcplusplus-commits] r366 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000135.html">[Zcplusplus-commits] r368 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#134">[ date ]</a>
+              <a href="thread.html#134">[ thread ]</a>
+              <a href="subject.html#134">[ subject ]</a>
+              <a href="author.html#134">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-09 03:10:07 +0200 (Fri, 09 Apr 2010)
+New Revision: 367
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+Log:
+make enumerators work with the relational operators &lt; &lt;= &gt;= &gt;
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/CSupport.cpp	2010-04-09 01:10:07 UTC (rev 367)
+@@ -678,7 +678,6 @@
+ 
+ static bool converts_to_reallike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index;
+ #ifdef ZCC_NOT_BUILDING_CPP
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/CSupport_pp.cpp	2010-04-09 01:10:07 UTC (rev 367)
+@@ -622,7 +622,6 @@
+ 
+ static bool converts_to_reallike(size_t base_type_index SIG_CONST_TYPES)
+ {	//! \todo handle cast operator overloading
+-	return C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index;
+ #ifdef ZCC_NOT_BUILDING_CPP
+ 	if (C_TYPE::BOOL&lt;=base_type_index &amp;&amp; C_TYPE::LDOUBLE&gt;=base_type_index) return true;
+ 	return types.get_enum_def(base_type_index);
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-09 01:10:07 UTC (rev 367)
+@@ -83,3 +83,44 @@
+ _Static_Assert(1&lt;&lt;0,&quot;automatic success has failed&quot;);
+ _Static_Assert(1&lt;&lt;1,&quot;automatic success has failed&quot;);
+ 
++// check &lt;, &lt;=, &gt;=, &gt;
++_Static_Assert(!(-1&lt; -1),&quot;automatic success has failed&quot;);
++_Static_Assert(-1&lt;0,&quot;automatic success has failed&quot;);
++_Static_Assert(-1&lt;1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(0&lt; -1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(0&lt;0),&quot;automatic success has failed&quot;);
++_Static_Assert(0&lt;1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(1&lt; -1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(1&lt;0),&quot;automatic success has failed&quot;);
++_Static_Assert(!(1&lt;1),&quot;automatic success has failed&quot;);
++
++_Static_Assert(-1&lt;= -1,&quot;automatic success has failed&quot;);
++_Static_Assert(-1&lt;=0,&quot;automatic success has failed&quot;);
++_Static_Assert(-1&lt;=1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(0&lt;= -1),&quot;automatic success has failed&quot;);
++_Static_Assert(0&lt;=0,&quot;automatic success has failed&quot;);
++_Static_Assert(0&lt;=1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(1&lt;= -1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(1&lt;=0),&quot;automatic success has failed&quot;);
++_Static_Assert(1&lt;=1,&quot;automatic success has failed&quot;);
++
++_Static_Assert(-1&gt;= -1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(-1&gt;=0),&quot;automatic success has failed&quot;);
++_Static_Assert(!(-1&gt;=1),&quot;automatic success has failed&quot;);
++_Static_Assert(0&gt;= -1,&quot;automatic success has failed&quot;);
++_Static_Assert(0&gt;=0,&quot;automatic success has failed&quot;);
++_Static_Assert(!(0&gt;=1),&quot;automatic success has failed&quot;);
++_Static_Assert(1&gt;= -1,&quot;automatic success has failed&quot;);
++_Static_Assert(1&gt;=0,&quot;automatic success has failed&quot;);
++_Static_Assert(1&gt;=1,&quot;automatic success has failed&quot;);
++
++_Static_Assert(!(-1&gt; -1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(-1&gt;0),&quot;automatic success has failed&quot;);
++_Static_Assert(!(-1&gt;1),&quot;automatic success has failed&quot;);
++_Static_Assert(0&gt; -1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(0&gt;0),&quot;automatic success has failed&quot;);
++_Static_Assert(!(0&gt;1),&quot;automatic success has failed&quot;);
++_Static_Assert(1&gt; -1,&quot;automatic success has failed&quot;);
++_Static_Assert(1&gt;0,&quot;automatic success has failed&quot;);
++_Static_Assert(!(1&gt;1),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-09 01:10:07 UTC (rev 367)
+@@ -83,3 +83,44 @@
+ static_assert(1&lt;&lt;0,&quot;automatic success has failed&quot;);
+ static_assert(1&lt;&lt;1,&quot;automatic success has failed&quot;);
+ 
++// check &lt;, &lt;=, &gt;=, &gt;
++static_assert(!(-1&lt; -1),&quot;automatic success has failed&quot;);
++static_assert(-1&lt;0,&quot;automatic success has failed&quot;);
++static_assert(-1&lt;1,&quot;automatic success has failed&quot;);
++static_assert(!(0&lt; -1),&quot;automatic success has failed&quot;);
++static_assert(!(0&lt;0),&quot;automatic success has failed&quot;);
++static_assert(0&lt;1,&quot;automatic success has failed&quot;);
++static_assert(!(1&lt; -1),&quot;automatic success has failed&quot;);
++static_assert(!(1&lt;0),&quot;automatic success has failed&quot;);
++static_assert(!(1&lt;1),&quot;automatic success has failed&quot;);
++
++static_assert(-1&lt;= -1,&quot;automatic success has failed&quot;);
++static_assert(-1&lt;=0,&quot;automatic success has failed&quot;);
++static_assert(-1&lt;=1,&quot;automatic success has failed&quot;);
++static_assert(!(0&lt;= -1),&quot;automatic success has failed&quot;);
++static_assert(0&lt;=0,&quot;automatic success has failed&quot;);
++static_assert(0&lt;=1,&quot;automatic success has failed&quot;);
++static_assert(!(1&lt;= -1),&quot;automatic success has failed&quot;);
++static_assert(!(1&lt;=0),&quot;automatic success has failed&quot;);
++static_assert(1&lt;=1,&quot;automatic success has failed&quot;);
++
++static_assert(-1&gt;= -1,&quot;automatic success has failed&quot;);
++static_assert(!(-1&gt;=0),&quot;automatic success has failed&quot;);
++static_assert(!(-1&gt;=1),&quot;automatic success has failed&quot;);
++static_assert(0&gt;= -1,&quot;automatic success has failed&quot;);
++static_assert(0&gt;=0,&quot;automatic success has failed&quot;);
++static_assert(!(0&gt;=1),&quot;automatic success has failed&quot;);
++static_assert(1&gt;= -1,&quot;automatic success has failed&quot;);
++static_assert(1&gt;=0,&quot;automatic success has failed&quot;);
++static_assert(1&gt;=1,&quot;automatic success has failed&quot;);
++
++static_assert(!(-1&gt; -1),&quot;automatic success has failed&quot;);
++static_assert(!(-1&gt;0),&quot;automatic success has failed&quot;);
++static_assert(!(-1&gt;1),&quot;automatic success has failed&quot;);
++static_assert(0&gt; -1,&quot;automatic success has failed&quot;);
++static_assert(!(0&gt;0),&quot;automatic success has failed&quot;);
++static_assert(!(0&gt;1),&quot;automatic success has failed&quot;);
++static_assert(1&gt; -1,&quot;automatic success has failed&quot;);
++static_assert(1&gt;0,&quot;automatic success has failed&quot;);
++static_assert(!(1&gt;1),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-04-09 01:10:07 UTC (rev 367)
+@@ -78,3 +78,44 @@
+ _Static_Assert(one&lt;&lt;zero,&quot;automatic success has failed&quot;);
+ _Static_Assert(one&lt;&lt;one,&quot;automatic success has failed&quot;);
+ 
++// check &lt;, &lt;=, &gt;=, &gt;
++_Static_Assert(!(neg_one&lt;neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one&lt;zero,&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one&lt;one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero&lt;neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero&lt;zero),&quot;automatic success has failed&quot;);
++_Static_Assert(zero&lt;one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(one&lt;neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(one&lt;zero),&quot;automatic success has failed&quot;);
++_Static_Assert(!(one&lt;one),&quot;automatic success has failed&quot;);
++
++_Static_Assert(neg_one&lt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one&lt;=zero,&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one&lt;=one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero&lt;=neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(zero&lt;=zero,&quot;automatic success has failed&quot;);
++_Static_Assert(zero&lt;=one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(one&lt;=neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(one&lt;=zero),&quot;automatic success has failed&quot;);
++_Static_Assert(one&lt;=one,&quot;automatic success has failed&quot;);
++
++_Static_Assert(neg_one&gt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(neg_one&gt;=zero),&quot;automatic success has failed&quot;);
++_Static_Assert(!(neg_one&gt;=one),&quot;automatic success has failed&quot;);
++_Static_Assert(zero&gt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(zero&gt;=zero,&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero&gt;=one),&quot;automatic success has failed&quot;);
++_Static_Assert(one&gt;=neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(one&gt;=zero,&quot;automatic success has failed&quot;);
++_Static_Assert(one&gt;=one,&quot;automatic success has failed&quot;);
++
++_Static_Assert(!(neg_one&gt;neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(neg_one&gt;zero),&quot;automatic success has failed&quot;);
++_Static_Assert(!(neg_one&gt;one),&quot;automatic success has failed&quot;);
++_Static_Assert(zero&gt;neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero&gt;zero),&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero&gt;one),&quot;automatic success has failed&quot;);
++_Static_Assert(one&gt;neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(one&gt;zero,&quot;automatic success has failed&quot;);
++_Static_Assert(!(one&gt;one),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-04-09 01:10:07 UTC (rev 367)
+@@ -78,3 +78,44 @@
+ static_assert(one&lt;&lt;zero,&quot;automatic success has failed&quot;);
+ static_assert(one&lt;&lt;one,&quot;automatic success has failed&quot;);
+ 
++// check &lt;, &lt;=, &gt;=, &gt;
++static_assert(!(neg_one&lt;neg_one),&quot;automatic success has failed&quot;);
++static_assert(neg_one&lt;zero,&quot;automatic success has failed&quot;);
++static_assert(neg_one&lt;one,&quot;automatic success has failed&quot;);
++static_assert(!(zero&lt;neg_one),&quot;automatic success has failed&quot;);
++static_assert(!(zero&lt;zero),&quot;automatic success has failed&quot;);
++static_assert(zero&lt;one,&quot;automatic success has failed&quot;);
++static_assert(!(one&lt;neg_one),&quot;automatic success has failed&quot;);
++static_assert(!(one&lt;zero),&quot;automatic success has failed&quot;);
++static_assert(!(one&lt;one),&quot;automatic success has failed&quot;);
++
++static_assert(neg_one&lt;=neg_one,&quot;automatic success has failed&quot;);
++static_assert(neg_one&lt;=zero,&quot;automatic success has failed&quot;);
++static_assert(neg_one&lt;=one,&quot;automatic success has failed&quot;);
++static_assert(!(zero&lt;=neg_one),&quot;automatic success has failed&quot;);
++static_assert(zero&lt;=zero,&quot;automatic success has failed&quot;);
++static_assert(zero&lt;=one,&quot;automatic success has failed&quot;);
++static_assert(!(one&lt;=neg_one),&quot;automatic success has failed&quot;);
++static_assert(!(one&lt;=zero),&quot;automatic success has failed&quot;);
++static_assert(one&lt;=one,&quot;automatic success has failed&quot;);
++
++static_assert(neg_one&gt;=neg_one,&quot;automatic success has failed&quot;);
++static_assert(!(neg_one&gt;=zero),&quot;automatic success has failed&quot;);
++static_assert(!(neg_one&gt;=one),&quot;automatic success has failed&quot;);
++static_assert(zero&gt;=neg_one,&quot;automatic success has failed&quot;);
++static_assert(zero&gt;=zero,&quot;automatic success has failed&quot;);
++static_assert(!(zero&gt;=one),&quot;automatic success has failed&quot;);
++static_assert(one&gt;=neg_one,&quot;automatic success has failed&quot;);
++static_assert(one&gt;=zero,&quot;automatic success has failed&quot;);
++static_assert(one&gt;=one,&quot;automatic success has failed&quot;);
++
++static_assert(!(neg_one&gt;neg_one),&quot;automatic success has failed&quot;);
++static_assert(!(neg_one&gt;zero),&quot;automatic success has failed&quot;);
++static_assert(!(neg_one&gt;one),&quot;automatic success has failed&quot;);
++static_assert(zero&gt;neg_one,&quot;automatic success has failed&quot;);
++static_assert(!(zero&gt;zero),&quot;automatic success has failed&quot;);
++static_assert(!(zero&gt;one),&quot;automatic success has failed&quot;);
++static_assert(one&gt;neg_one,&quot;automatic success has failed&quot;);
++static_assert(one&gt;zero,&quot;automatic success has failed&quot;);
++static_assert(!(one&gt;one),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-04-09 01:10:07 UTC (rev 367)
+@@ -84,3 +84,44 @@
+ STATIC_ASSERT(1&lt;&lt;0,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1&lt;&lt;1,&quot;automatic success has failed&quot;);
+ 
++// check &lt;, &lt;=, &gt;=, &gt;
++STATIC_ASSERT(!(-1&lt; -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1&lt;0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1&lt;1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0&lt; -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0&lt;0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0&lt;1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1&lt; -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1&lt;0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1&lt;1),&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(-1&lt;= -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1&lt;=0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(-1&lt;=1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0&lt;= -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0&lt;=0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0&lt;=1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1&lt;= -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1&lt;=0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1&lt;=1,&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(-1&gt;= -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(-1&gt;=0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(-1&gt;=1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0&gt;= -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0&gt;=0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0&gt;=1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1&gt;= -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1&gt;=0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1&gt;=1,&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(!(-1&gt; -1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(-1&gt;0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(-1&gt;1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(0&gt; -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0&gt;0),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0&gt;1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1&gt; -1,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(1&gt;0,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1&gt;1),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-04-09 00:02:28 UTC (rev 366)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-04-09 01:10:07 UTC (rev 367)
+@@ -79,3 +79,44 @@
+ STATIC_ASSERT(one&lt;&lt;zero,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(one&lt;&lt;one,&quot;automatic success has failed&quot;);
+ 
++// check &lt;, &lt;=, &gt;=, &gt;
++STATIC_ASSERT(!(neg_one&lt;neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one&lt;zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one&lt;one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero&lt;neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero&lt;zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero&lt;one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one&lt;neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one&lt;zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one&lt;one),&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(neg_one&lt;=neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one&lt;=zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(neg_one&lt;=one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero&lt;=neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero&lt;=zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero&lt;=one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one&lt;=neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one&lt;=zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one&lt;=one,&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(neg_one&gt;=neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(neg_one&gt;=zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(neg_one&gt;=one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero&gt;=neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero&gt;=zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero&gt;=one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one&gt;=neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one&gt;=zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one&gt;=one,&quot;automatic success has failed&quot;);
++
++STATIC_ASSERT(!(neg_one&gt;neg_one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(neg_one&gt;zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(neg_one&gt;one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(zero&gt;neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero&gt;zero),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero&gt;one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one&gt;neg_one,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(one&gt;zero,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one&gt;one),&quot;automatic success has failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000133.html">[Zcplusplus-commits] r366 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000135.html">[Zcplusplus-commits] r368 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#134">[ date ]</a>
+              <a href="thread.html#134">[ thread ]</a>
+              <a href="subject.html#134">[ subject ]</a>
+              <a href="author.html#134">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

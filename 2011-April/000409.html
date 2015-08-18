@@ -1,0 +1,463 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r642 - trunk/tests/cpp
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r642%20-%20trunk/tests/cpp&In-Reply-To=%3C20110428144645.7544D480D07%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000408.html">
+   <LINK REL="Next"  HREF="000410.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r642 - trunk/tests/cpp</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r642%20-%20trunk/tests/cpp&In-Reply-To=%3C20110428144645.7544D480D07%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r642 - trunk/tests/cpp">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 28 16:46:45 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000408.html">[Zcplusplus-commits] r641 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000410.html">[Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#409">[ date ]</a>
+              <a href="thread.html#409">[ thread ]</a>
+              <a href="subject.html#409">[ subject ]</a>
+              <a href="author.html#409">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-28 16:46:45 +0200 (Thu, 28 Apr 2011)
+New Revision: 642
+
+Added:
+   trunk/tests/cpp/run_tests_2.bat
+   trunk/tests/cpp/run_tests_2.sh
+   trunk/tests/cpp/run_tests_C99_2.bat
+   trunk/tests/cpp/run_tests_C99_2.sh
+Log:
+test drivers for zcc -E
+
+Added: trunk/tests/cpp/run_tests_2.bat
+===================================================================
+--- trunk/tests/cpp/run_tests_2.bat	                        (rev 0)
++++ trunk/tests/cpp/run_tests_2.bat	2011-04-28 14:46:45 UTC (rev 642)
+@@ -0,0 +1,159 @@
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> not sure how far below WinXP this will run
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> runs regression tests for zcc.exe -E
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> (C)2009,2011 Kenneth Boyd, license: MIT.txt
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at setlocal</A>
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> BAD_PASS=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> BAD_PASS_NAME=LastAccepted:
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> REJECT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> FAILED=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> BAD_FAIL_NAME=LastRejected:
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> ACCEPT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP=..\..\bin\zcc -E
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ISO=..\..\bin\zcc -E --pedantic
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_SIGNMAG_NOTRAP=..\..\bin\zcc -E --int-sign-magnitude
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_SIGNMAG_TRAP=..\..\bin\zcc -E --int-sign-magnitude --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ONESCOMP_NOTRAP=..\..\bin\zcc -E --int-ones-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_ONESCOMP_TRAP=..\..\bin\zcc -E --int-ones-complement --int-traps
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_TWOSCOMP_NOTRAP=..\..\bin\zcc -E --int-twos-complement
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP_TWOSCOMP_TRAP=..\..\bin\zcc -E --int-twos-complement --int-traps
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ISO error requirements
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (UNICODE.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (UNICODE.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (UNICODE.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (UNICODE.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (defined.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (defined.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (defined.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (defined.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (ifdef.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (ifdef.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (ifdef.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (ifdef.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (pragma.C99\Error*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (pragma.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (pragma.C99\Error*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (pragma.C99\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ZCC warnings on ISO-accepted code
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.h) do @echo %CPP_ISO% -Werror %%f &amp; @%CPP_ISO% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.h) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.hpp) do @echo %CPP_ISO% -Werror %%f &amp; @%CPP_ISO% -Werror %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.hpp) do @(set /a ACCEPT_TEST=ACCEPT_TEST+1 &amp; set /a REJECT_TEST=REJECT_TEST+1)
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ISO acceptance requirements
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Pass*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Pass*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Pass*.h) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Pass*.hpp) do @echo %CPP_ISO% %%f &amp; @%CPP_ISO% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ZCC implementation-defined errors and features
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Error*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\keywords\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\keywords\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\keywords\Error*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\keywords\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\has_include\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Pass*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.h) do @echo %CPP_SIGNMAG_NOTRAP% %%f &amp; @%CPP_SIGNMAG_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.hpp) do @echo %CPP_SIGNMAG_NOTRAP% %%f &amp; @%CPP_SIGNMAG_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.notrap\Pass*.h) do @echo %CPP_SIGNMAG_NOTRAP% %%f &amp; @%CPP_SIGNMAG_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.notrap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.notrap\Pass*.hpp) do @echo %CPP_SIGNMAG_NOTRAP% %%f &amp; @%CPP_SIGNMAG_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.notrap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.h) do @echo %CPP_SIGNMAG_TRAP% %%f &amp; @%CPP_SIGNMAG_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.hpp) do @echo %CPP_SIGNMAG_TRAP% %%f &amp; @%CPP_SIGNMAG_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.core\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.trap\Error*.h) do @echo %CPP_SIGNMAG_TRAP% %%f &amp; @%CPP_SIGNMAG_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.trap\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.trap\Error*.hpp) do @echo %CPP_SIGNMAG_TRAP% %%f &amp; @%CPP_SIGNMAG_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\signmag.trap\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.h) do @echo %CPP_ONESCOMP_NOTRAP% %%f &amp; @%CPP_ONESCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.hpp) do @echo %CPP_ONESCOMP_NOTRAP% %%f &amp; @%CPP_ONESCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.notrap\Pass*.h) do @echo %CPP_ONESCOMP_NOTRAP% %%f &amp; @%CPP_ONESCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.notrap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.notrap\Pass*.hpp) do @echo %CPP_ONESCOMP_NOTRAP% %%f &amp; @%CPP_ONESCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.notrap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.h) do @echo %CPP_ONESCOMP_TRAP% %%f &amp; @%CPP_ONESCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.hpp) do @echo %CPP_ONESCOMP_TRAP% %%f &amp; @%CPP_ONESCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.core\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.trap\Error*.h) do @echo %CPP_ONESCOMP_TRAP% %%f &amp; @%CPP_ONESCOMP_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.trap\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.trap\Error*.hpp) do @echo %CPP_ONESCOMP_TRAP% %%f &amp; @%CPP_ONESCOMP_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\onescomp.trap\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.notrap\Pass*.h) do @echo %CPP_TWOSCOMP_NOTRAP% %%f &amp; @%CPP_TWOSCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.notrap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.notrap\Pass*.hpp) do @echo %CPP_TWOSCOMP_NOTRAP% %%f &amp; @%CPP_TWOSCOMP_NOTRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.notrap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.h) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.hpp) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Pass*.hpp) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.h) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.hpp) do @echo %CPP_TWOSCOMP_TRAP% %%f &amp; @%CPP_TWOSCOMP_TRAP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default\twoscomp.trap\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ZCC nonconforming errors
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default.nonconforming\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default.nonconforming\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default.nonconforming\Error*.hpp) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (default.nonconforming\Error*.hpp) do @set /a REJECT_TEST=REJECT_TEST+1
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ZCC content transforms
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> %BAD_PASS% of %REJECT_TEST% rejection tests accepted
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at if</A> not &quot;%BAD_PASS_NAME%&quot;==&quot;LastAccepted:&quot; @echo %BAD_PASS_NAME%
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> %FAILED% of %ACCEPT_TEST% acceptance tests rejected
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at if</A> not &quot;%BAD_FAIL_NAME%&quot;==&quot;LastRejected:&quot; @echo %BAD_FAIL_NAME%
++
+
+Added: trunk/tests/cpp/run_tests_2.sh
+===================================================================
+--- trunk/tests/cpp/run_tests_2.sh	                        (rev 0)
++++ trunk/tests/cpp/run_tests_2.sh	2011-04-28 14:46:45 UTC (rev 642)
+@@ -0,0 +1,118 @@
++#!/bin/sh
++# runs regression tests for zcc.exe -E
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
++
++ASSERT_FAILED=0
++ASSERT_FAIL_NAME=
++
++function code_screen {
++	if test ${1} -eq 3; then let ++ASSERT_FAILED; ASSERT_FAIL_NAME=&quot;$ASSERT_FAIL_NAME ${2}&quot;; fi;
++}
++
++function run_tests {
++	local BAD_PASS=0
++	local BAD_PASS_NAME=
++	local REJECT_TEST=0
++	local FAILED=0
++	local BAD_FAIL_NAME=
++	local ACCEPT_TEST=0
++	local CPP=&quot;../../bin/zcc -E&quot;
++	local CPP_ISO=&quot;../../bin/zcc -E --pedantic&quot;
++	local CPP_SIGNMAG_NOTRAP=&quot;../../bin/zcc -E --int-sign-magnitude&quot;
++	local CPP_SIGNMAG_TRAP=&quot;../../bin/zcc -E --int-sign-magnitude --int-traps&quot;
++	local CPP_ONESCOMP_NOTRAP=&quot;../../bin/zcc -E --int-ones-complement&quot;
++	local CPP_ONESCOMP_TRAP=&quot;../../bin/zcc -E --int-ones-complement --int-traps&quot;
++	local CPP_TWOSCOMP_NOTRAP=&quot;../../bin/zcc -E --int-twos-complement&quot;
++	local CPP_TWOSCOMP_TRAP=&quot;../../bin/zcc -E --int-twos-complement --int-traps&quot;
++
++	echo Checking ISO error requirements
++	echo ====
++	for F in Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in UNICODE.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in UNICODE.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in define.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in define.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in defined.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in defined.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in ifdef.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in ifdef.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in if.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in if.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in pragma.C99/Error*.h; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in pragma.C99/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++
++	echo Checking ZCC warnings on ISO-accepted code
++	echo ====
++	for F in Warn*.h; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in Warn*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in Warn*.hpp; do let ++REJECT_TEST; echo $CPP_ISO -Werror $F; if $CPP_ISO -Werror $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in Warn*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++
++	echo Checking ISO acceptance requirements
++	echo ====
++	for F in Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in define.C99/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in define.C99/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in if.C99/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in if.C99/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ISO $F; if $CPP_ISO $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++
++	echo Checking ZCC implementation-defined errors and features
++	echo ====
++	for F in default/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/keywords/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/keywords/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/has_include/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/has_include/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/has_include/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/has_include/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.core/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_NOTRAP $F; if $CPP_SIGNMAG_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.core/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_NOTRAP $F; if $CPP_SIGNMAG_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.notrap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_NOTRAP $F; if $CPP_SIGNMAG_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.notrap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_NOTRAP $F; if $CPP_SIGNMAG_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.core/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_TRAP $F; if $CPP_SIGNMAG_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.core/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_SIGNMAG_TRAP $F; if $CPP_SIGNMAG_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/signmag.trap/Error*.h; do let ++REJECT_TEST; echo $CPP_SIGNMAG_TRAP $F; if $CPP_SIGNMAG_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/signmag.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_SIGNMAG_TRAP $F; if $CPP_SIGNMAG_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/onescomp.core/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ONESCOMP_NOTRAP $F; if $CPP_ONESCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/onescomp.core/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ONESCOMP_NOTRAP $F; if $CPP_ONESCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/onescomp.notrap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ONESCOMP_NOTRAP $F; if $CPP_ONESCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/onescomp.notrap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ONESCOMP_NOTRAP $F; if $CPP_ONESCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/onescomp.core/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_ONESCOMP_TRAP $F; if $CPP_ONESCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/onescomp.core/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_ONESCOMP_TRAP $F; if $CPP_ONESCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/onescomp.trap/Error*.h; do let ++REJECT_TEST; echo $CPP_ONESCOMP_TRAP $F; if $CPP_ONESCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/onescomp.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_ONESCOMP_TRAP $F; if $CPP_ONESCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/twoscomp.notrap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_NOTRAP $F; if $CPP_TWOSCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.notrap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_NOTRAP $F; if $CPP_TWOSCOMP_NOTRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.trap/Pass*.h; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.trap/Pass*.hpp; do let ++ACCEPT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/twoscomp.trap/Error*.h; do let ++REJECT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default/twoscomp.trap/Error*.hpp; do let ++REJECT_TEST; echo $CPP_TWOSCOMP_TRAP $F; if $CPP_TWOSCOMP_TRAP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++
++	echo Checking ZCC nonconforming errors
++	echo ====
++	for F in default.nonconforming/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in default.nonconforming/Error*.hpp; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++
++	echo Checking ZCC content transforms
++	echo ====
++	for F in default/Preprocess*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in default/Preprocess*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in line.C99/Preprocess*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in line.C99/Preprocess*.hpp; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F | cmp - $F.txt; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++
++	echo -E $BAD_PASS of $REJECT_TEST rejection tests accepted
++	if test -n &quot;$BAD_PASS_NAME&quot;; then echo -E $BAD_PASS_NAME; fi
++	echo -E $FAILED of $ACCEPT_TEST acceptance tests rejected
++	if test -n &quot;$BAD_FAIL_NAME&quot;; then echo -E $BAD_FAIL_NAME; fi
++	echo -E $ASSERT_FAILED tests failed by critical bugs
++	if test -n &quot;$ASSERT_FAIL_NAME&quot;; then echo -E $ASSERT_FAIL_NAME; fi
++}
++
++run_tests
++
+
+Added: trunk/tests/cpp/run_tests_C99_2.bat
+===================================================================
+--- trunk/tests/cpp/run_tests_C99_2.bat	                        (rev 0)
++++ trunk/tests/cpp/run_tests_C99_2.bat	2011-04-28 14:46:45 UTC (rev 642)
+@@ -0,0 +1,44 @@
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> not sure how far below WinXP this will run
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> runs only C99 regression tests for zcc.exe -E
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at REM</A> (C)2009,2011 Kenneth Boyd, license: MIT.txt
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at setlocal</A>
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> BAD_PASS=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> BAD_PASS_NAME=LastAccepted:
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> REJECT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> FAILED=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> BAD_FAIL_NAME=LastRejected:
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> ACCEPT_TEST=0
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at set</A> CPP=..\..\bin\zcc -E --pedantic
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ISO error requirements
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (UNICODE.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (UNICODE.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (defined.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (defined.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (ifdef.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (ifdef.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (line.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (pragma.C99\Error*.h) do @echo %CPP% %%f &amp; @%CPP% %%f &amp;&amp; (set /a BAD_PASS=BAD_PASS+1 &amp; set BAD_PASS_NAME=%BAD_PASS_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (pragma.C99\Error*.h) do @set /a REJECT_TEST=REJECT_TEST+1
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> Checking ISO acceptance requirements
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> ====
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Warn*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (define.C99\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Pass*.h) do @echo %CPP% %%f &amp; @%CPP% %%f || (set /a FAILED=FAILED+1 &amp; set BAD_FAIL_NAME=%BAD_FAIL_NAME% %%f)
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at for</A> %%f in (if.C99\Pass*.h) do @set /a ACCEPT_TEST=ACCEPT_TEST+1
++
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> %BAD_PASS% of %REJECT_TEST% rejection tests accepted
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at if</A> not &quot;%BAD_PASS_NAME%&quot;==&quot;LastAccepted:&quot; @echo %BAD_PASS_NAME%
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at echo</A> %FAILED% of %ACCEPT_TEST% acceptance tests rejected
+<A HREF="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">+ at if</A> not &quot;%BAD_FAIL_NAME%&quot;==&quot;LastRejected:&quot; @echo %BAD_FAIL_NAME%
+
+Added: trunk/tests/cpp/run_tests_C99_2.sh
+===================================================================
+--- trunk/tests/cpp/run_tests_C99_2.sh	                        (rev 0)
++++ trunk/tests/cpp/run_tests_C99_2.sh	2011-04-28 14:46:45 UTC (rev 642)
+@@ -0,0 +1,45 @@
++#!/bin/sh
++# runs only C99 regression tests for zcc.exe -E
++# (C)2009,2011 Kenneth Boyd, license: MIT.txt
++ASSERT_FAILED=0
++ASSERT_FAIL_NAME=
++
++function code_screen {
++	if test ${1} -eq 3; then let ++ASSERT_FAILED; ASSERT_FAIL_NAME=&quot;$ASSERT_FAIL_NAME ${2}&quot;; fi;
++}
++
++function run_tests {
++	local BAD_PASS=0
++	local BAD_PASS_NAME=
++	local REJECT_TEST=0
++	local FAILED=0
++	local BAD_FAIL_NAME=
++	local ACCEPT_TEST=0
++	local CPP=&quot;../../bin/zcc -E --pedantic&quot;
++
++	echo Checking ISO error requirements
++	echo ====
++	for F in UNICODE.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in define.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in defined.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in ifdef.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in if.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in line.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++	for F in pragma.C99/Error*.h; do let ++REJECT_TEST; echo $CPP $F; if $CPP $F; then let ++BAD_PASS; BAD_PASS_NAME=&quot;$BAD_PASS_NAME $F&quot;; else code_screen $? $F; fi; done;
++
++	echo Checking ISO acceptance requirements
++	echo ====
++	for F in Warn*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in define.C99/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++	for F in if.C99/Pass*.h; do let ++ACCEPT_TEST; echo $CPP $F; if $CPP $F; then :; else code_screen $? $F; let ++FAILED; BAD_FAIL_NAME=&quot;$BAD_FAIL_NAME $F&quot;; fi; done;
++
++	echo -E $BAD_PASS of $REJECT_TEST rejection tests accepted
++	if test -n &quot;$BAD_PASS_NAME&quot;; then echo -E $BAD_PASS_NAME; fi
++	echo -E $FAILED of $ACCEPT_TEST acceptance tests rejected
++	if test -n &quot;$BAD_FAIL_NAME&quot;; then echo -E $BAD_FAIL_NAME; fi
++	echo -E $ASSERT_FAILED tests failed by critical bugs
++	if test -n &quot;$ASSERT_FAIL_NAME&quot;; then echo -E $ASSERT_FAIL_NAME; fi
++}
++
++run_tests
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000408.html">[Zcplusplus-commits] r641 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000410.html">[Zcplusplus-commits] r643 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#409">[ date ]</a>
+              <a href="thread.html#409">[ thread ]</a>
+              <a href="subject.html#409">[ subject ]</a>
+              <a href="author.html#409">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

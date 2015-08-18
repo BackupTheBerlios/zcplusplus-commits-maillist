@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r338 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r338%20-%20trunk&In-Reply-To=%3C201003032117.o23LHnEM011665%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000106.html">
+   <LINK REL="Next"  HREF="000104.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r338 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r338%20-%20trunk&In-Reply-To=%3C201003032117.o23LHnEM011665%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r338 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Mar  3 22:17:49 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000106.html">[Zcplusplus-commits] r337 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000104.html">[Zcplusplus-commits] r339 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#105">[ date ]</a>
+              <a href="thread.html#105">[ thread ]</a>
+              <a href="subject.html#105">[ subject ]</a>
+              <a href="author.html#105">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-03 22:17:45 +0100 (Wed, 03 Mar 2010)
+New Revision: 338
+
+Modified:
+   trunk/CPreproc.hpp
+   trunk/CSupport.hpp
+Log:
+minor cleanup
+
+Modified: trunk/CPreproc.hpp
+===================================================================
+--- trunk/CPreproc.hpp	2010-03-03 19:22:46 UTC (rev 337)
++++ trunk/CPreproc.hpp	2010-03-03 21:17:45 UTC (rev 338)
+@@ -4,7 +4,7 @@
+ #ifndef CPREPROC_HPP
+ #define CPREPROC_HPP 1
+ 
+-#include &lt;cstddef&gt;
++#include &lt;stddef.h&gt;
+ #include &lt;stdint.h&gt;
+ #include &quot;Zaimoni.STL/LexParse/std.h&quot;
+ 
+
+Modified: trunk/CSupport.hpp
+===================================================================
+--- trunk/CSupport.hpp	2010-03-03 19:22:46 UTC (rev 337)
++++ trunk/CSupport.hpp	2010-03-03 21:17:45 UTC (rev 338)
+@@ -18,12 +18,6 @@
+ struct parse_tree;
+ class type_system;
+ 
+-namespace virtual_machine {
+-
+-class CPUInfo;
+-
+-}
+-
+ /* the current draft of UNICODE only uses 17 planes so far */
+ /* unfortunately, we can't assume wchar_t is correctly defined */
+ /* pick the smallest type that works: need 21 bits, do not want more than 32 bits */
+@@ -133,12 +127,6 @@
+ 
+ }
+ 
+-namespace virtual_machine {
+-
+-class CPUInfo;
+-
+-}
+-
+ extern const zaimoni::POD_pair&lt;const char* const,size_t&gt; C_atomic_types[];	// to help out the preprocessor, etc.
+ extern const zaimoni::POD_pair&lt;const char* const,size_t&gt; CPP_atomic_types[];	// to help out the preprocessor, etc.
+ extern const size_t C_int_priority[];
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000106.html">[Zcplusplus-commits] r337 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000104.html">[Zcplusplus-commits] r339 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#105">[ date ]</a>
+              <a href="thread.html#105">[ thread ]</a>
+              <a href="subject.html#105">[ subject ]</a>
+              <a href="author.html#105">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

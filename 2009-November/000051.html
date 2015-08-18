@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r284 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r284%20-%20trunk&In-Reply-To=%3C200911270335.nAR3ZbxW022950%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000050.html">
+   <LINK REL="Next"  HREF="000052.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r284 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r284%20-%20trunk&In-Reply-To=%3C200911270335.nAR3ZbxW022950%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r284 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 27 04:35:37 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000050.html">[Zcplusplus-commits] r283 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000052.html">[Zcplusplus-commits] r285 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#51">[ date ]</a>
+              <a href="thread.html#51">[ thread ]</a>
+              <a href="subject.html#51">[ subject ]</a>
+              <a href="author.html#51">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-27 04:35:33 +0100 (Fri, 27 Nov 2009)
+New Revision: 284
+
+Added:
+   trunk/errors.cpp
+Log:
+unbreak SVN
+
+Added: trunk/errors.cpp
+===================================================================
+--- trunk/errors.cpp	2009-11-27 03:33:32 UTC (rev 283)
++++ trunk/errors.cpp	2009-11-27 03:35:33 UTC (rev 284)
+@@ -0,0 +1,82 @@
++// errors.cpp
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include &quot;errors.hpp&quot;
++#include &quot;Zaimoni.STL/OS/mutex.hpp&quot;
++#include &quot;Zaimoni.STL/POD.hpp&quot;
++#include &quot;Zaimoni.STL/Logging.h&quot;
++
++const bool bool_options_default[MAX_OPT_BOOL]
++	= 	{	default_option(boolean_option(0)),
++			default_option(boolean_option(1)),
++			default_option(boolean_option(2)),
++			default_option(boolean_option(3)),
++			default_option(boolean_option(4)),
++			default_option(boolean_option(5)),
++			default_option(boolean_option(6)),
++			default_option(boolean_option(7)),
++			default_option(boolean_option(8)),
++			default_option(boolean_option(9)),
++			default_option(boolean_option(10)),
++			default_option(boolean_option(11))
++		};
++
++bool bool_options[MAX_OPT_BOOL]
++	= 	{	default_option(boolean_option(0)),
++			default_option(boolean_option(1)),
++			default_option(boolean_option(2)),
++			default_option(boolean_option(3)),
++			default_option(boolean_option(4)),
++			default_option(boolean_option(5)),
++			default_option(boolean_option(6)),
++			default_option(boolean_option(7)),
++			default_option(boolean_option(8)),
++			default_option(boolean_option(9)),
++			default_option(boolean_option(10)),
++			default_option(boolean_option(11))
++		};
++
++const char* string_options[MAX_OPT_STRING]
++	= 	{	default_option(string_option(0)),
++			default_option(string_option(1))
++		};
++
++int int_options[MAX_OPT_INT]
++	= {default_option(int_option(0))};
++
++zaimoni::OS::mutex errno_mutex;
++
++#ifndef NDEBUG
++bool debug_tracer = false;
++#endif
++
++int recognize_bool_option(const char* const x,const zaimoni::POD_triple&lt;const char*, size_t, const char*&gt;* option_map,size_t j)
++{
++	assert(option_map &amp;&amp; 0&lt;j);
++	if (x &amp;&amp; *x)
++		while(0&lt;j)
++			if (!strcmp(option_map[--j].first,x)) return j;
++	return -1;
++}
++
++int recognize_parameter_option(const char* const x,const zaimoni::POD_triple&lt;const char*, size_t, const char*&gt;* option_map,size_t j)
++{
++	assert(option_map &amp;&amp; 0&lt;j);
++	if (x &amp;&amp; *x)
++		while(0&lt;j)
++			{
++			--j;
++			if (!strncmp(option_map[j].first,x,strlen(option_map[j].first))) return j;
++			}
++	return -1;
++}
++
++void message_header(const char* const filename, size_t line_number)
++{
++	assert(filename &amp;&amp; *filename);
++	INC_INFORM(filename);
++	INC_INFORM(':');
++	INC_INFORM(line_number);
++	INC_INFORM(&quot;: &quot;);
++}
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000050.html">[Zcplusplus-commits] r283 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000052.html">[Zcplusplus-commits] r285 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#51">[ date ]</a>
+              <a href="thread.html#51">[ thread ]</a>
+              <a href="subject.html#51">[ subject ]</a>
+              <a href="author.html#51">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

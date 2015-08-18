@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r660 - trunk/Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r660%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110609014100.0A96248130A%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000426.html">
+   <LINK REL="Next"  HREF="000428.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r660 - trunk/Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r660%20-%20trunk/Zaimoni.STL&In-Reply-To=%3C20110609014100.0A96248130A%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r660 - trunk/Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun  9 03:40:59 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000426.html">[Zcplusplus-commits] r659 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000428.html">[Zcplusplus-commits] r661 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#427">[ date ]</a>
+              <a href="thread.html#427">[ thread ]</a>
+              <a href="subject.html#427">[ subject ]</a>
+              <a href="author.html#427">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-06-09 03:40:59 +0200 (Thu, 09 Jun 2011)
+New Revision: 660
+
+Modified:
+   trunk/Zaimoni.STL/AutoPtr.hpp
+Log:
+let POD_autoarray_ptr take over as CRTP base class
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-08 21:18:10 UTC (rev 659)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2011-06-09 01:40:59 UTC (rev 660)
+@@ -91,47 +91,9 @@
+ {
+ };
+ 
+-template&lt;class Derived,class T&gt; struct c_var_array_CRTP;
+-
+-template&lt;class Derived,class T&gt;
+-bool
+-operator==(const c_var_array_CRTP&lt;Derived,T&gt;&amp; lhs, const c_var_array_CRTP&lt;Derived,T&gt;&amp; rhs);
+-
+-// requires: _ptr
+-template&lt;class Derived,class T&gt;
+-struct c_var_array_CRTP : public c_array_CRTP&lt;c_var_array_CRTP&lt;Derived,T&gt;, T&gt;
+-{
+-	// STL support
+-	T* c_array() {return static_cast&lt;Derived*&gt;(this)-&gt;_ptr;};
+-	const T* data() const {return static_cast&lt;const Derived*&gt;(this)-&gt;_ptr;};
+-
+-	// at() with range check
+-	T&amp; at(size_t i) { rangecheck(i); return static_cast&lt;Derived*&gt;(this)-&gt;_ptr[i];}
+-	const T&amp; at(size_t i) const { rangecheck(i); return static_cast&lt;const Derived*&gt;(this)-&gt;_ptr[i]; };
+-
+-#ifndef ZAIMONI_FORCE_ISO
+-	size_t size() const { return zaimoni::SafeArraySize(static_cast&lt;const Derived*&gt;(this)-&gt;_ptr); };
+-#else
+-	size_t size() const { return static_cast&lt;const Derived*&gt;(this)-&gt;_size; };
+-#endif
+-	bool empty() const { return NULL==static_cast&lt;const Derived*&gt;(this)-&gt;_ptr; };
+-	static size_t max_size() { return size_t(-1)/sizeof(T); };	// XXX casting -1 to an unsigned type gets the maximum of that type
+-
+-	void rangecheck(size_t i) const { if (i&gt;=size()) FATAL(&quot;out-of-bounds array access&quot;); };
+-
+-	void swap(c_var_array_CRTP&amp; RHS) {std::swap(static_cast&lt;Derived*&gt;(this)-&gt;_ptr,static_cast&lt;Derived&amp;&gt;(RHS)._ptr);};
+-
+-	// Perl grep
+-	template&lt;typename U&gt; void destructive_grep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
+-	template&lt;typename U&gt; void destructive_invgrep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
+-
+-	// throwing resize
+-	void resize(size_t n) {if (!static_cast&lt;Derived*&gt;(this)-&gt;Resize(n)) throw std::bad_alloc();};	
+-};
+-
+ // POD backing class for the autoarray and weak autoarray family
+ template&lt;typename T&gt;
+-class POD_autoarray_ptr
++class POD_autoarray_ptr : public c_array_CRTP&lt;POD_autoarray_ptr&lt;T&gt;, T&gt;
+ {
+ protected:
+ 	T* _ptr;
+@@ -149,7 +111,10 @@
+ 	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(_ptr,n,i);};
+ 	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(_ptr,n,i)) throw std::bad_alloc();};
+ 
++	void swap(POD_autoarray_ptr&lt;T&gt;&amp; rhs) {std::swap(_ptr,rhs._ptr);};
++	
+ 	// STL support	
++	size_t size() const { return zaimoni::SafeArraySize(_ptr); };
+ 	T* release() {T* tmp = _ptr; _ptr = NULL; return tmp;};
+ #else
+ 	void NULLPtr() {_ptr = NULL; _size = 0;};
+@@ -161,10 +126,23 @@
+ 	bool InsertNSlotsAt(size_t n,size_t i) {return _insert_n_slots_at(_ptr,_size,n,i);};
+ 	void insertNSlotsAt(size_t n,size_t i) {if (!_insert_n_slots_at(_ptr,_size,n,i)) throw std::bad_alloc();};
+ 
++	void swap(POD_autoarray_ptr&lt;T&gt;&amp; rhs) {std::swap(_ptr,rhs._ptr); std::swap(_size,rhs._size);};
++	
+ 	// STL support	
+ 	T* release() {T* tmp = _ptr; _ptr = NULL; _size = 0; return tmp;};
++	size_t size() const { return _size; };
+ #endif	
++	T* c_array() {return _ptr;};
++	const T* data() const {return _ptr;};
++	bool empty() const { return NULL==_ptr; };
++	static size_t max_size() { return size_t(-1)/sizeof(T); };	// XXX casting -1 to an unsigned type gets the maximum of that type
+ 
++	void rangecheck(size_t i) const { if (i&gt;=size()) FATAL(&quot;out-of-bounds array access&quot;); };
++
++	// Perl grep
++	template&lt;typename U&gt; void destructive_grep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
++	template&lt;typename U&gt; void destructive_invgrep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type));
++
+ 	// typecasts
+ 	operator T*&amp;() {return _ptr;};
+ 	operator T* const&amp;() const {return _ptr;};
+@@ -185,11 +163,8 @@
+ namespace zaimoni {
+ 
+ template&lt;typename T&gt;
+-class _meta_weakautoarray_ptr : public c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;,public POD_autoarray_ptr&lt;T&gt;
++class _meta_weakautoarray_ptr : public POD_autoarray_ptr&lt;T&gt;
+ {
+-private:
+-	friend class c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;;
+-	friend bool operator==&lt;&gt;(const c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;&amp; lhs, const c_var_array_CRTP&lt;_meta_weakautoarray_ptr&lt;T&gt;, T&gt;&amp; rhs);
+ public:
+ 	explicit _meta_weakautoarray_ptr() {this-&gt;NULLPtr();};
+ #ifndef ZAIMONI_FORCE_ISO
+@@ -225,6 +200,7 @@
+ 	void DeleteIdx(size_t n) {_safe_weak_delete_idx(this-&gt;_ptr,this-&gt;_size,n);};
+ 	void DeleteNSlotsAt(size_t n, size_t Idx) {_weak_delete_n_slots_at(this-&gt;_ptr,this-&gt;_size,n,Idx);};
+ #endif
++	void resize(size_t n) {if (!Resize(n)) throw std::bad_alloc();};	
+ 	
+ 	// Perl grep
+ 	// next two require of U: STL size(),data()
+@@ -317,12 +293,9 @@
+ };
+ 
+ template&lt;typename T&gt;
+-class _meta_autoarray_ptr : public c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;,public POD_autoarray_ptr&lt;T&gt;
++class _meta_autoarray_ptr : public POD_autoarray_ptr&lt;T&gt;
+ {
+ protected:
+-	friend class c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;;
+-	friend bool operator==&lt;&gt;(const c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;&amp; lhs, const c_var_array_CRTP&lt;_meta_autoarray_ptr&lt;T&gt;, T&gt;&amp; rhs);
+-
+ 	explicit _meta_autoarray_ptr() {this-&gt;NULLPtr();};	
+ #ifndef ZAIMONI_FORCE_ISO
+ 	explicit _meta_autoarray_ptr(T*&amp; src) {this-&gt;_ptr = src; src = NULL;};
+@@ -368,6 +341,7 @@
+ 	void DeleteNSlots(size_t* indexes,size_t n) {_delete_n_slots(this-&gt;_ptr,this-&gt;_size,indexes,n);};
+ 	template&lt;typename U&gt; bool InsertSlotAt(size_t Idx, U __default) {return _insert_slot_at(this-&gt;_ptr,this-&gt;_size,Idx,__default);}
+ #endif
++	void resize(size_t n) {if (!Resize(n)) throw std::bad_alloc();};	
+ 
+ 	// Perl grep
+ 	// these two assume T has valid * operator
+@@ -578,21 +552,16 @@
+ 	return Resize(Offset),true;
+ }
+ 
+-template&lt;class Derived,class T&gt;
++template&lt;class T&gt;
+ bool
+-operator==(const c_var_array_CRTP&lt;Derived,T&gt;&amp; lhs, const c_var_array_CRTP&lt;Derived,T&gt;&amp; rhs)
++operator==(const POD_autoarray_ptr&lt;T&gt;&amp; lhs, const POD_autoarray_ptr&lt;T&gt;&amp; rhs)
+ {
+ 	const size_t ub = rhs.size();
+ 	if (ub!=lhs.size()) return false;
+ 	if (0==ub) return true;
+-	return _value_vector_equal(static_cast&lt;const Derived&amp;&gt;(lhs)._ptr,static_cast&lt;const Derived&amp;&gt;(rhs)._ptr,ub);
++	return _value_vector_equal(lhs.data(),rhs.data(),ub);
+ }
+ 
+-template&lt;class Derived,class T&gt;
+-inline bool
+-operator!=(const c_var_array_CRTP&lt;Derived,T&gt;&amp; lhs, const c_var_array_CRTP&lt;Derived,T&gt;&amp; rhs)
+-{	return !(lhs==rhs); }
+-
+ #ifndef ZAIMONI_FORCE_ISO
+ template&lt;typename T&gt;
+ void
+@@ -739,44 +708,44 @@
+ 	return dest.Resize(Offset),true;
+ }
+ 
+-template&lt;class Derived,class T&gt;
++template&lt;class T&gt;
+ template&lt;typename U&gt;
+ void
+-c_var_array_CRTP&lt;Derived,T&gt;::destructive_grep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type))
++POD_autoarray_ptr&lt;T&gt;::destructive_grep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type))
+ {
+ 	size_t i = this-&gt;size();
+-	do	if (!equivalence(x,static_cast&lt;Derived*&gt;(this)-&gt;_ptr[--i]))
++	do	if (!equivalence(x,_ptr[--i]))
+ 			{
+ 			size_t j = i;
+-			while(0&lt;j &amp;&amp; !equivalence(x,static_cast&lt;Derived*&gt;(this)-&gt;_ptr[j-1])) --j;
++			while(0&lt;j &amp;&amp; !equivalence(x,_ptr[j-1])) --j;
+ 			if (j&lt;i)
+ 				{
+-				static_cast&lt;Derived*&gt;(this)-&gt;DeleteNSlotsAt(j,(i-j)+1);
++				this-&gt;DeleteNSlotsAt(j,(i-j)+1);
+ 				i = j;
+ 				}
+ 			else
+-				static_cast&lt;Derived*&gt;(this)-&gt;DeleteIdx(i);
++				this-&gt;DeleteIdx(i);
+ 			}
+ 	while(0&lt;i);
+ }
+ 
+-template&lt;class Derived,class T&gt;
++template&lt;class T&gt;
+ template&lt;typename U&gt;
+ void
+-c_var_array_CRTP&lt;Derived,T&gt;::destructive_invgrep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type))
++POD_autoarray_ptr&lt;T&gt;::destructive_invgrep(U&amp; x,bool (&amp;equivalence)(typename boost::call_traits&lt;U&gt;::param_type,typename boost::call_traits&lt;T&gt;::param_type))
+ {
+ 	size_t i = this-&gt;size();
+-	do	if (equivalence(x,static_cast&lt;Derived*&gt;(this)-&gt;_ptr[--i]))
++	do	if (equivalence(x,_ptr[--i]))
+ 			{
+ 			size_t j = i;
+-			while(0&lt;j &amp;&amp; equivalence(x,static_cast&lt;Derived*&gt;(this)-&gt;_ptr[j-1])) --j;
++			while(0&lt;j &amp;&amp; equivalence(x,_ptr[j-1])) --j;
+ 			if (j&lt;i)
+ 				{
+-				static_cast&lt;Derived*&gt;(this)-&gt;DeleteNSlotsAt(j,(i-j)+1);
++				this-&gt;DeleteNSlotsAt(j,(i-j)+1);
+ 				i = j;
+ 				}
+ 			else
+-				static_cast&lt;Derived*&gt;(this)-&gt;DeleteIdx(i);
++				this-&gt;DeleteIdx(i);
+ 			}
+ 	while(0&lt;i);
+ }
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000426.html">[Zcplusplus-commits] r659 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000428.html">[Zcplusplus-commits] r661 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#427">[ date ]</a>
+              <a href="thread.html#427">[ thread ]</a>
+              <a href="subject.html#427">[ subject ]</a>
+              <a href="author.html#427">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

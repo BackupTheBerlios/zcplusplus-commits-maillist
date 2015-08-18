@@ -1,0 +1,341 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r517 - in trunk: . tools
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r517%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C20101030092413.76654480E99%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000283.html">
+   <LINK REL="Next"  HREF="000285.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r517 - in trunk: . tools</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r517%20-%20in%20trunk%3A%20.%20tools&In-Reply-To=%3C20101030092413.76654480E99%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r517 - in trunk: . tools">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Oct 30 11:24:13 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000283.html">[Zcplusplus-commits] r516 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000285.html">[Zcplusplus-commits] r518 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#284">[ date ]</a>
+              <a href="thread.html#284">[ thread ]</a>
+              <a href="subject.html#284">[ subject ]</a>
+              <a href="author.html#284">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-30 11:24:13 +0200 (Sat, 30 Oct 2010)
+New Revision: 517
+
+Added:
+   trunk/tools/POSIX.inc
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+   trunk/POSIX.dep
+Log:
+build system adjust
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-10-30 09:12:34 UTC (rev 516)
++++ trunk/CPreproc.cpp	2010-10-30 09:24:13 UTC (rev 517)
+@@ -1,10 +1,7 @@
+ // CPreproc.cpp
+ // (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+-#/*cut-cpp*/
+ #include &quot;CPreproc.hpp&quot;
+-#/*cut-cpp*/
+-#include &quot;CPreproc_pp.hpp&quot;
+ 
+ #include &lt;limits.h&gt;
+ #include &lt;time.h&gt;
+@@ -12,11 +9,8 @@
+ #include &lt;unistd.h&gt;
+ 
+ #include &quot;AtomicString.h&quot;
+-#/*cut-cpp*/
+ #include &quot;CSupport.hpp&quot;
+ #include &quot;_CSupport3.hpp&quot;
+-#/*cut-cpp*/
+-#include &quot;CSupport_pp.hpp&quot;
+ #include &quot;C_PPDecimalInteger.hpp&quot;
+ #include &quot;CPUInfo.hpp&quot;
+ #include &quot;errors.hpp&quot;
+@@ -352,7 +346,6 @@
+ 
+ #define PRAGMA_ZCC_LOCK 0
+ #define PRAGMA_ZCC_ENABLE_TYPEID 1
+-#/*cut-cpp*/
+ 
+ const POD_pair&lt;const char*,size_t&gt; pragma_relay_keywords[]
+ 	=	{	DICT_STRUCT(&quot;_ZCC_FP_CONTRACT_OFF&quot;),
+@@ -368,7 +361,6 @@
+ 		};
+ 
+ BOOST_STATIC_ASSERT(PRAGMA_RELAY_KEYWORDS_STRICT_UB==STATIC_SIZE(pragma_relay_keywords));		
+-#/*cut-cpp*/
+ #undef DICT_STRUCT
+ 
+ static void _init_weak_token(weak_token&amp; dest, const Token&lt;char&gt;&amp; x,const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; pretoken)
+@@ -1420,25 +1412,19 @@
+ 					if (PP::PRAGMA==directive_type)
+ 						{
+ 						const size_t critical_offset = valid_directives[directive_type].second+2;
+-#/*cut-cpp*/
+ 						const unsigned int pragma_code =
+-#/*cut-cpp*/
+ 						interpret_pragma(TokenList[i]-&gt;data()+critical_offset,TokenList[i]-&gt;size()-critical_offset,locked_macros);
+-#/*cut-cpp*/
+ 						switch(pragma_code)
+ 						{
+ 						default:
+-#/*cut-cpp*/
+ 						TokenList.DeleteIdx(i);
+ 						if (0==i) goto Restart;
+ 						--i;
+ 						continue;
+-#/*cut-cpp*/
+ 						case RELAY_ZCC_ENABLE_TYPEID+1:
+ 							TokenList[i]-&gt;replace_once(0,TokenList[i]-&gt;size(),pragma_relay_keywords[pragma_code-1].first,pragma_relay_keywords[pragma_code-1].second);
+ 							continue;
+ 						}
+-#/*cut-cpp*/
+ 						}
+ 					}
+ 				}
+@@ -1684,11 +1670,8 @@
+ 						{	//! \test Pass_pragma_STDC.hpp
+ 						autovalarray_ptr_throws&lt;char&gt; pragma_string(lang.UnescapeStringLength(TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2));
+ 						lang.UnescapeString(pragma_string.c_array(),TokenList[i+2]-&gt;data()+1,TokenList[i+2]-&gt;size()-2);
+-#/*cut-cpp*/
+ 						const unsigned int pragma_code =
+-#/*cut-cpp*/
+ 						interpret_pragma(pragma_string.data(),pragma_string.size(),locked_macros);
+-#/*cut-cpp*/
+ 						switch(pragma_code)
+ 						{
+ 						case RELAY_ZCC_ENABLE_TYPEID+1:
+@@ -1696,7 +1679,6 @@
+ 							TokenList.DeleteNSlotsAt(3,i+1);
+ 							continue;
+ 						}
+-#/*cut-cpp*/
+ 						};
+ 					TokenList.DeleteNSlotsAt(4,i);
+ 					if (0==i) goto Restart;
+@@ -2184,13 +2166,10 @@
+ 		{
+ 		if (1&lt;pretokenized.size())
+ 			{
+-#/*cut-cpp*/
+ 			BOOST_STATIC_ASSERT(RELAY_ZCC_ENABLE_TYPEID==STATIC_SIZE(pragma_STDC_on_off_switch)*STATIC_SIZE(pragma_STDC_keywords));
+-#/*cut-cpp*/
+ 			const errr ZCC_pragma =  linear_find_lencached(x+pretokenized[1].first, pretokenized[1].second, pragma_ZCC_keywords, STATIC_SIZE(pragma_ZCC_keywords));
+ 			switch(ZCC_pragma)
+ 			{
+-#/*cut-cpp*/
+ 			// #pragma ZCC enable_typeid gets rewritten to the 
+ 			// reserved-to-the-implementation keyword 
+ 			// _ZCC_pragma_enable_typeid, which in turn turns off the syntax
+@@ -2198,7 +2177,6 @@
+ 			// instantly break other compilers inadvertently using our 
+ 			// #include &lt;typeinfo&gt;
+ 			case PRAGMA_ZCC_ENABLE_TYPEID: return STATIC_SIZE(pragma_STDC_on_off_switch)*STATIC_SIZE(pragma_STDC_keywords)+1;				
+-#/*cut-cpp*/
+ 			case PRAGMA_ZCC_LOCK:
+ 				{	//! \test Error_undef_locked_macro.hpp
+ 				size_t j = pretokenized.size();
+@@ -4297,10 +4275,8 @@
+ // Macro names beginning with __STDC_ are reserved for future standardization.
+ //! \bug should have positive test suite for named __STDC_ macros
+ 	if (7&lt;=x_len &amp;&amp; !strncmp(x,&quot;__STDC_&quot;,sizeof(&quot;__STDC_&quot;)-1)) return true;
+-#/*cut-cpp*/
+ // Lock down our relay identifiers. to be safe
+ 	if (0&lt;=linear_find_lencached(x,x_len,pragma_relay_keywords,STATIC_SIZE(pragma_relay_keywords))) return true;
+-#/*cut-cpp*/
+ // C++0x 17.4.3.2.2 simply prohibits all keywords as macros; prefer this to C++98.  C99/C0X is handled elsewhere, as it isn't so draconian.
+ // follow C++0x when generalizing to non-standard languages, as that's more intuitive.
+ 	if (Lang::C!=lang_code &amp;&amp; 0&lt;=linear_find_lencached(x,x_len,lang.InvariantKeywords,lang.len_InvariantKeywords)) return true;
+@@ -4807,3 +4783,4 @@
+ C++98 17.3.3.1.1p1 prohibits undefining any macro defined in a library header (watch out for assert.h)
+ C99 7.1.3p1,3 prohibit defining macros for any identifier declared in a library header
+  */
++
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-10-30 09:12:34 UTC (rev 516)
++++ trunk/CPreproc_pp.cpp	2010-10-30 09:24:13 UTC (rev 517)
+@@ -18,7 +18,7 @@
+ #include &quot;langroute.hpp&quot;
+ #include &quot;load_src.hpp&quot;
+ #include &quot;ParseTree.hpp&quot;
+-#include &quot;type_system.hpp&quot;
++#include &quot;type_system_pp.hpp&quot;
+ #include &quot;weak_token.hpp&quot;
+ #include &quot;_version.h&quot;
+ #include &quot;Zaimoni.STL/POD.hpp&quot;
+@@ -4741,3 +4741,4 @@
+ C++98 17.3.3.1.1p1 prohibits undefining any macro defined in a library header (watch out for assert.h)
+ C99 7.1.3p1,3 prohibit defining macros for any identifier declared in a library header
+  */
++
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-10-30 09:12:34 UTC (rev 516)
++++ trunk/POSIX.dep	2010-10-30 09:24:13 UTC (rev 517)
+@@ -32,11 +32,11 @@
+ end_lc.o: end_lc.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ end_nl.o: end_nl.hpp Zaimoni.STL/MetaRAM2.hpp errors.hpp errcount.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h
+ load_src.o: Zaimoni.STL/cstdio Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp AtomicString.h errors.hpp errcount.hpp end_nl.hpp Zaimoni.STL/Logging.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/Pure.C/stdio_c.h Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/POD.hpp
+-CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operat
+ or.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system_pp.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/lo
+ gic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h type_system.hpp Zaimoni.STL/Perl_localize.hpp
+ type_system.o: type_system.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+ CSupport.o: CSupport.hpp _CSupport3.hpp _CSupport4.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp end_lc.hpp end_nl.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp kleene_star.hpp cond_act.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_l
+ t.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+-CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp _CSupport3.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/lo
+ gic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
++CPreproc.o: CPreproc.hpp AtomicString.h CSupport.hpp _CSupport3.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/
+ operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp _CSupport3.hpp _CSupport4.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/search.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/Perl_localize.hpp Zaimoni.STL/POD.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h weak_token.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/LexParse/MetaToken.hpp
+
+Added: trunk/tools/POSIX.inc
+===================================================================
+--- trunk/tools/POSIX.inc	                        (rev 0)
++++ trunk/tools/POSIX.inc	2010-10-30 09:24:13 UTC (rev 517)
+@@ -0,0 +1,90 @@
++# GNU compatibility core
++srcdir = /CPP_App/Z.C++
++prefix = /CPP_App/Z.C++
++exec_prefix = $(prefix)
++bindir = $(exec_prefix)/bin
++includedir = $(exec_prefix)/include
++libdir = $(exec_prefix)/lib
++
++AR = ar
++CC = gcc
++CXX = g++
++
++EXEEXT = exe
++OBJEXT = o
++
++CFLAGS = -fargument-alias -finline -Os -Wall -Wno-long-long --pedantic
++CXXFLAGS =
++ARCH_FLAGS = -mconsole -mno-cygwin -march=pentium -mtune=pentium3
++LINK_FLAGS = 
++
++OTHER_INCLUDEDIR = -I /MingWin.aux/Headers.lib
++C_MACROS = 
++CXX_MACROS = -D__STDC_LIMIT_MACROS
++
++# build rules
++PYTHON = c:\Python26\python
++SELECTIVE_CUT = tools\selective_cut.py
++SUPPRESS_CUT = tools\suppress_cut.py
++
++CPreproc_pp.hpp: CPreproc.hpp
++	$(PYTHON) $(SELECTIVE_CUT) cpp CPreproc.hpp CPreproc_pp.hpp.alt 
++	if cmp -s CPreproc_pp.hpp CPreproc_pp.hpp.alt; then rm CPreproc_pp.hpp.alt ; else mv CPreproc_pp.hpp.alt CPreproc_pp.hpp; fi
++
++CPreproc_pp.cpp: CPreproc.cpp.in
++	$(PYTHON) $(SELECTIVE_CUT) cpp CPreproc.cpp.in CPreproc_pp.cpp.alt2 
++	$(PYTHON) $(SUPPRESS_CUT) nocpp CPreproc_pp.cpp.alt2 CPreproc_pp.cpp.alt 
++	if cmp -s CPreproc_pp.cpp CPreproc_pp.cpp.alt; then rm CPreproc_pp.cpp.alt ; else mv CPreproc_pp.cpp.alt CPreproc_pp.cpp; fi
++	rm CPreproc_pp.cpp.alt2
++
++CPreproc.cpp: CPreproc.cpp.in
++	$(PYTHON) $(SUPPRESS_CUT) cpp CPreproc.cpp.in CPreproc.cpp.alt2 
++	$(PYTHON) $(SELECTIVE_CUT) nocpp CPreproc.cpp.alt2 CPreproc.cpp.alt 
++	if cmp -s CPreproc.cpp CPreproc.cpp.alt; then rm CPreproc.cpp.alt ; else mv CPreproc.cpp.alt CPreproc.cpp; fi
++	rm CPreproc.cpp.alt2
++	
++CPreproc_autogen_pp.cpp: CPreproc_autogen.cpp
++	$(PYTHON) $(SELECTIVE_CUT) cpp CPreproc_autogen.cpp CPreproc_autogen_pp.cpp.alt 
++	if cmp -s CPreproc_autogen_pp.cpp CPreproc_autogen_pp.cpp.alt; then rm CPreproc_autogen_pp.cpp.alt ; else mv CPreproc_autogen_pp.cpp.alt CPreproc_autogen_pp.cpp; fi
++
++CSupport_pp.hpp: CSupport.hpp
++	$(PYTHON) $(SELECTIVE_CUT) cpp CSupport.hpp CSupport_pp.hpp.alt 
++	if cmp -s CSupport_pp.hpp CSupport_pp.hpp.alt; then rm CSupport_pp.hpp.alt ; else mv CSupport_pp.hpp.alt CSupport_pp.hpp; fi
++
++CSupport_pp.cpp: CSupport.cpp.in
++	$(PYTHON) $(SELECTIVE_CUT) cpp CSupport.cpp.in CSupport_pp.cpp.alt2 
++	$(PYTHON) $(SUPPRESS_CUT) nocpp CSupport_pp.cpp.alt2 CSupport_pp.cpp.alt 
++	if cmp -s CSupport_pp.cpp CSupport_pp.cpp.alt; then rm CSupport_pp.cpp.alt ; else mv CSupport_pp.cpp.alt CSupport_pp.cpp; fi
++	rm CSupport_pp.cpp.alt2
++
++CSupport.cpp: CSupport.cpp.in
++	$(PYTHON) $(SUPPRESS_CUT) cpp CSupport.cpp.in CSupport.cpp.alt2 
++	$(PYTHON) $(SELECTIVE_CUT) nocpp CSupport.cpp.alt2 CSupport.cpp.alt 
++	if cmp -s CSupport.cpp CSupport.cpp.alt; then rm CSupport.cpp.alt ; else mv CSupport.cpp.alt CSupport.cpp; fi
++	rm CSupport.cpp.alt2
++	
++type_system_pp.hpp: type_system.hpp.in
++	$(PYTHON) $(SELECTIVE_CUT) cpp type_system.hpp.in type_system_pp.hpp.alt2 
++	$(PYTHON) $(SUPPRESS_CUT) nocpp type_system_pp.hpp.alt2 type_system_pp.hpp.alt 
++	if cmp -s type_system_pp.hpp type_system_pp.hpp.alt; then rm type_system_pp.hpp.alt ; else mv type_system_pp.hpp.alt type_system_pp.hpp; fi
++	rm type_system_pp.hpp.alt2
++
++type_system.hpp: type_system.hpp.in
++	$(PYTHON) $(SUPPRESS_CUT) cpp type_system.hpp.in type_system.hpp.alt2 
++	$(PYTHON) $(SELECTIVE_CUT) nocpp type_system.hpp.alt2 type_system.hpp.alt 
++	if cmp -s type_system.hpp type_system.hpp.alt; then rm type_system.hpp.alt ; else mv type_system.hpp.alt type_system.hpp; fi
++	rm type_system.hpp.alt2
++
++type_system_pp.cpp: type_system.cpp.in
++	$(PYTHON) $(SELECTIVE_CUT) cpp type_system.cpp.in type_system_pp.cpp.alt2 
++	$(PYTHON) $(SUPPRESS_CUT) nocpp type_system_pp.cpp.alt2 type_system_pp.cpp.alt 
++	if cmp -s type_system_pp.cpp type_system_pp.cpp.alt; then rm type_system_pp.cpp.alt ; else mv type_system_pp.cpp.alt type_system_pp.cpp; fi
++	rm type_system_pp.cpp.alt2
++
++type_system.cpp: type_system.cpp.in
++	$(PYTHON) $(SUPPRESS_CUT) cpp type_system.cpp.in type_system.cpp.alt2 
++	$(PYTHON) $(SELECTIVE_CUT) nocpp type_system.cpp.alt2 type_system.cpp.alt 
++	if cmp -s type_system.cpp type_system.cpp.alt; then rm type_system.cpp.alt ; else mv type_system.cpp.alt type_system.cpp; fi
++	rm type_system.cpp.alt2
++
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000283.html">[Zcplusplus-commits] r516 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000285.html">[Zcplusplus-commits] r518 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#284">[ date ]</a>
+              <a href="thread.html#284">[ thread ]</a>
+              <a href="subject.html#284">[ subject ]</a>
+              <a href="author.html#284">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

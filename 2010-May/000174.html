@@ -1,0 +1,275 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r407 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r407%20-%20trunk&In-Reply-To=%3C201005051842.o45IgqNK028464%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000173.html">
+   <LINK REL="Next"  HREF="000175.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r407 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r407%20-%20trunk&In-Reply-To=%3C201005051842.o45IgqNK028464%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r407 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed May  5 20:42:52 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000173.html">[Zcplusplus-commits] r406 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000175.html">[Zcplusplus-commits] r408 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#174">[ date ]</a>
+              <a href="thread.html#174">[ thread ]</a>
+              <a href="subject.html#174">[ subject ]</a>
+              <a href="author.html#174">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-05 20:42:48 +0200 (Wed, 05 May 2010)
+New Revision: 407
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+split upcoming diff into two chunks to slide under 40K size limit; soon-to-be-correct documentation changes
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-05 18:15:11 UTC (rev 406)
++++ trunk/CSupport.cpp	2010-05-05 18:42:48 UTC (rev 407)
+@@ -5434,6 +5434,7 @@
+ 	return converts_to_integerlike(x.type_code ARG_TYPES) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; x.flags);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+@@ -5473,6 +5474,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(src));
+@@ -5956,6 +5958,7 @@
+ 	return true;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+@@ -6730,7 +6733,8 @@
+ 	return false;
+ }
+ 
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++//! \throw std::bad_alloc()
++tatic bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+@@ -6857,6 +6861,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+@@ -7246,6 +7251,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+@@ -7400,6 +7406,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+@@ -7557,6 +7564,7 @@
+ 
+ // +: either both are arithmetic, or one is raw pointer and one is integer
+ // -: either both are arithmetic, or both are compatible raw pointer, or left is raw pointer and right is integer
++//! \throw std::bad_alloc()
+ static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert((C99_ADD_SUBTYPE_PLUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'+'&gt;(src)) || (C99_ADD_SUBTYPE_MINUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'-'&gt;(src)));
+@@ -7836,6 +7844,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+@@ -8481,6 +8490,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+@@ -8677,6 +8687,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+@@ -8857,6 +8868,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-05 18:15:11 UTC (rev 406)
++++ trunk/CSupport_pp.cpp	2010-05-05 18:42:48 UTC (rev 407)
+@@ -4937,6 +4937,7 @@
+ 	return converts_to_integerlike(x.type_code ARG_TYPES) &amp;&amp; (PARSE_PRIMARY_EXPRESSION &amp; x.flags);
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_unary_plus(parse_tree&amp; src, const type_system&amp; types)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'+'&gt;(src));
+@@ -4962,6 +4963,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(src));
+@@ -5410,6 +5412,7 @@
+ 	return true;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+@@ -5948,6 +5951,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+@@ -6075,6 +6079,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+@@ -6435,6 +6440,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+@@ -6589,6 +6595,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+@@ -6746,6 +6753,7 @@
+ 
+ // +: either both are arithmetic, or one is raw pointer and one is integer
+ // -: either both are arithmetic, or both are compatible raw pointer, or left is raw pointer and right is integer
++//! \throw std::bad_alloc()
+ static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert((C99_ADD_SUBTYPE_PLUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'+'&gt;(src)) || (C99_ADD_SUBTYPE_MINUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'-'&gt;(src)));
+@@ -6995,6 +7003,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+@@ -7634,6 +7643,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+@@ -7810,6 +7820,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+@@ -7978,6 +7989,7 @@
+ 	return false;
+ }
+ 
++//! \throw std::bad_alloc()
+ static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000173.html">[Zcplusplus-commits] r406 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000175.html">[Zcplusplus-commits] r408 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#174">[ date ]</a>
+              <a href="thread.html#174">[ thread ]</a>
+              <a href="subject.html#174">[ subject ]</a>
+              <a href="author.html#174">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

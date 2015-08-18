@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r452 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r452%20-%20trunk&In-Reply-To=%3C201006020459.o524xXqG013225%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000218.html">
+   <LINK REL="Next"  HREF="000220.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r452 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r452%20-%20trunk&In-Reply-To=%3C201006020459.o524xXqG013225%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r452 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jun  2 06:59:33 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000218.html">[Zcplusplus-commits] r451 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000220.html">[Zcplusplus-commits] r453 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-02 06:59:29 +0200 (Wed, 02 Jun 2010)
+New Revision: 452
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+doxygen warning suppression
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-02 03:41:34 UTC (rev 451)
++++ trunk/CSupport.cpp	2010-06-02 04:59:29 UTC (rev 452)
+@@ -12973,7 +12973,7 @@
+ 				type_system::type_index tmp = types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(C_TYPE::INT);	// C: enums are int (although we'd like to extend this a bit)
+ 				if (!tmp)
+-					{	//! \test zcc\decl.C99\Error_enum_undef.h
++					{	//! \test zcc/decl.C99/Error_enum_undef.h
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;'enum &quot;);
+@@ -12988,7 +12988,7 @@
+ 			{	// can only define once
+ 			const type_system::type_index tmp = types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+-				{	//! \test zcc\decl.C99\Error_enum_multidef.h
++				{	//! \test zcc/decl.C99/Error_enum_multidef.h
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;'enum &quot;);
+@@ -13004,7 +13004,7 @@
+ 				continue;
+ 				};
+ 			// enum-specifier doesn't have a specific declaration mode
+-			//! \test zcc\decl.C99\Pass_enum_def.h
++			//! \test zcc/decl.C99/Pass_enum_def.h
+ 			const type_system::type_index tmp2 = types.register_enum_def(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 			assert(types.get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first)==tmp2);
+ 			if (!record_enum_values(*src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;(),types,tmp2,NULL,false,C99_echo_reserved_keyword,C99_intlike_literal_to_VM,C99_CondenseParseTree,C99_EvalParseTree))
+@@ -13382,8 +13382,8 @@
+ 	// think we can handle this as &quot;disallow conflicting definitions&quot;
+ 	// should be able to disable this warning (it's about bloat)
+ 	if (src.empty&lt;0&gt;())
+-		{	//! \test zcc\namespace.CPP\Warn_emptybody1.hpp
+-			//! \test zcc\namespace.CPP\Warn_emptybody2.hpp
++		{	//! \test zcc/namespace.CPP/Warn_emptybody1.hpp
++			//! \test zcc/namespace.CPP/Warn_emptybody2.hpp
+ 			//! \todo -Wno-bloat turns off 
+ 		message_header(src.index_tokens[0]);
+ 		INC_INFORM(WARN_STR);
+@@ -13500,7 +13500,7 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);	// C++: enums are own type
+ 				if (!tmp)
+ 					{	// this belongs elsewhere
+-						//! \test zcc\decl.C99\Error_enum_undef.hpp
++						//! \test zcc/decl.C99/Error_enum_undef.hpp
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INC_INFORM(&quot;'enum &quot;);
+@@ -13518,7 +13518,7 @@
+ 			const char* fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[1].token.first;
+ 			type_system::type_index tmp = types.get_id_enum(fullname);
+ 			if (tmp)
+-				{	//! \test zcc\decl.C99\Error_enum_multidef.hpp
++				{	//! \test zcc/decl.C99/Error_enum_multidef.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;'enum &quot;);
+@@ -13535,7 +13535,7 @@
+ 				continue;
+ 				};
+ 			free(namespace_name);
+-			//! \test zcc\decl.C99\Pass_enum_def.hpp
++			//! \test zcc/decl.C99/Pass_enum_def.hpp
+ 			// enum-specifier doesn't have a specific declaration mode
+ 			const type_system::type_index tmp2 = types.register_enum_def_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
+ 			assert(types.get_id_enum_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+@@ -13776,7 +13776,7 @@
+ 				// accept if: next token is an identifier, and the token after that is {} (typical namespace)
+ 				// fail otherwise
+ 			if (1&gt;=src.size&lt;0&gt;()-i)
+-				{	//! \test zcc\namespace.CPP\Error_premature1.hpp
++				{	//! \test zcc/namespace.CPP/Error_premature1.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INFORM(&quot;namespace declaration cut off by end of scope&quot;);
+@@ -13787,7 +13787,7 @@
+ 			if (	robust_token_is_char&lt;'{'&gt;(src.data&lt;0&gt;()[i+1].index_tokens[0].token)
+ 				&amp;&amp;	robust_token_is_char&lt;'}'&gt;(src.data&lt;0&gt;()[i+1].index_tokens[1].token))
+ 				{	//! handle unnamed namespace
+-					//! \test zcc\namespace.CPP\Warn_emptybody2.hpp
++					//! \test zcc/namespace.CPP/Warn_emptybody2.hpp
+ 					// regardless of official linkage, entities in anonymous namespaces aren't very accessible outside of the current translation unit;
+ 					// any reasonable linker thinks they have static linkage
+ 				src.c_array&lt;0&gt;()[i].resize&lt;2&gt;(2);
+@@ -13836,7 +13836,7 @@
+ 				continue;
+ 				};
+ 			if (!namespace_has_body)
+-				{	//! \test zcc\namespace.CPP\Error_premature2.hpp
++				{	//! \test zcc/namespace.CPP/Error_premature2.hpp
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+ 				INC_INFORM(&quot;'namespace &quot;);
+@@ -13846,7 +13846,7 @@
+ 				src.DeleteNSlotsAt&lt;0&gt;(2,i);
+ 				continue;
+ 				};
+-			//! \test zcc\namespace.CPP\Warn_emptybody1.hpp
++			//! \test zcc/namespace.CPP/Warn_emptybody1.hpp
+ 			// process namespace
+ 			// namespace name: postfix arg 1
+ 			// namespace definition body: postfix arg 2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000218.html">[Zcplusplus-commits] r451 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000220.html">[Zcplusplus-commits] r453 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#219">[ date ]</a>
+              <a href="thread.html#219">[ thread ]</a>
+              <a href="subject.html#219">[ subject ]</a>
+              <a href="author.html#219">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

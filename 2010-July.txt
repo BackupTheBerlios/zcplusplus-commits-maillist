@@ -1,0 +1,1671 @@
+From zaimoni at mail.berlios.de  Thu Jul 15 08:28:51 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 15 Jul 2010 08:28:51 +0200
+Subject: [Zcplusplus-commits] r462 - trunk
+Message-ID: <20100715062851.60021480BE5@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-15 08:28:51 +0200 (Thu, 15 Jul 2010)
+New Revision: 462
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/kleene_star.hpp
+Log:
+Change where the template bloat when using kleene_star is.  Redundant fields in kleene_star_core should be minor compared to being able to reduce template instantiations.
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-28 20:35:54 UTC (rev 461)
++++ trunk/CSupport.cpp	2010-07-15 06:28:51 UTC (rev 462)
+@@ -3313,15 +3313,15 @@
+ #undef C_ATOMIC_TYPE_IDENTIFIER_BITFLAG
+ }
+ 
+-template<size_t strict_ub_valid_detect> typename zaimoni::Loki::CheckReturnRequireRange<0,2,int>::value_type optional_keyword_choice(parse_tree& src,size_t i,kleene_star<strict_ub_valid_detect,size_t (*)(const char*)>& invariant_decl_scanner,size_t idx1,size_t idx2)
++zaimoni::Loki::CheckReturnRequireRange<0,2,int>::value_type optional_keyword_choice(parse_tree& src,size_t i,kleene_star_core<size_t (*)(const char*)>& invariant_decl_scanner,size_t idx1,size_t idx2)
+ {
+ 	size_t offset[2];
+ 	int tmp = 0;
+ 	assert(!invariant_decl_scanner.empty());
+ 	assert(src.size<0>()>i);
+ 	assert(src.size<0>()-i>=invariant_decl_scanner.size());
+-	assert(strict_ub_valid_detect>idx1);
+-	assert(strict_ub_valid_detect>idx2);
++	assert(invariant_decl_scanner.strict_ub()>idx1);
++	assert(invariant_decl_scanner.strict_ub()>idx2);
+ 	if ((idx1==invariant_decl_scanner[0])<invariant_decl_scanner.count(idx1))
+ 		{
+ 		++tmp;
+@@ -3342,13 +3342,13 @@
+ 	return tmp;
+ }
+ 
+-template<size_t ub,size_t strict_ub_valid_detect> typename zaimoni::Loki::CheckReturnRequireRange<0,ub,size_t>::value_type optional_keyword_limit(parse_tree& src,size_t i,kleene_star<strict_ub_valid_detect,size_t (*)(const char*)>& invariant_decl_scanner,size_t idx1)
++template<size_t ub> typename zaimoni::Loki::CheckReturnRequireRange<0,ub,size_t>::value_type optional_keyword_limit(parse_tree& src,size_t i,kleene_star_core<size_t (*)(const char*)>& invariant_decl_scanner,size_t idx1)
+ {
+ 	size_t tmp = 0;
+ 	assert(!invariant_decl_scanner.empty());
+ 	assert(src.size<0>()>i);
+ 	assert(src.size<0>()-i>=invariant_decl_scanner.size());
+-	assert(strict_ub_valid_detect>idx1);
++	assert(invariant_decl_scanner.strict_ub()>idx1);
+ 	while(ub>tmp && (idx1==invariant_decl_scanner[0])<invariant_decl_scanner.count(idx1))
+ 		{
+ 		size_t tmp2 = invariant_decl_scanner.scan_nofail(idx1,1);
+@@ -3359,12 +3359,12 @@
+ 	return tmp;
+ }
+ 
+-template<size_t strict_ub_valid_detect>  bool optional_keyword(parse_tree& src,size_t i,kleene_star<strict_ub_valid_detect,size_t (*)(const char*)>& invariant_decl_scanner,size_t idx1)
++bool optional_keyword(parse_tree& src,size_t i,kleene_star_core<size_t (*)(const char*)>& invariant_decl_scanner,size_t idx1)
+ {
+ 	assert(!invariant_decl_scanner.empty());
+ 	assert(src.size<0>()>i);
+ 	assert(src.size<0>()-i>=invariant_decl_scanner.size());
+-	assert(strict_ub_valid_detect>idx1);
++	assert(invariant_decl_scanner.strict_ub()>idx1);
+ 	if ((idx1==invariant_decl_scanner[0])<invariant_decl_scanner.count(idx1))
+ 		{
+ 		size_t tmp = invariant_decl_scanner.scan_nofail(idx1,1);
+
+Modified: trunk/kleene_star.hpp
+===================================================================
+--- trunk/kleene_star.hpp	2010-06-28 20:35:54 UTC (rev 461)
++++ trunk/kleene_star.hpp	2010-07-15 06:28:51 UTC (rev 462)
+@@ -13,7 +13,9 @@
+ protected:
+ 	zaimoni::autovalarray_ptr<size_t> result_scan;	// XXX should be some sort of specialized array (limited range allows compression)
+ 	classifier _detector;
+-	kleene_star_core(classifier detector) : _detector(detector) {};
++	size_t* const _detect_count;	// slightly redundant, but allows controlling
++	const size_t _strict_ub;
++	kleene_star_core(classifier detector,size_t* detect_count,size_t strict_ub) : _detector(detector),_detect_count((assert(detect_count),detect_count)),_strict_ub((assert(0<strict_ub),strict_ub)) {};
+ 	// default copy, assignment, destructor ok
+ 	size_t deleteIdx(size_t i)
+ 		{
+@@ -27,47 +29,48 @@
+ 	size_t operator[](size_t i) const {assert(size()>i);return result_scan[i];};
+ 	size_t front() const {return result_scan.front();};
+ 	size_t back() const {return result_scan.back();};
++	void clear()
++		{
++		result_scan.reset();
++		memset(_detect_count,0,sizeof(size_t)*_strict_ub);
++		}
++
+ 	bool scan(const size_t target, size_t& offset, const size_t origin = 0) const;
+ 	bool scan(const size_t target, const size_t target2, size_t& offset, size_t& offset2, const size_t origin = 0) const;
+ 	bool scan(size_t* target, size_t scan_len, size_t* offset, const size_t origin = 0) const;
+ 	size_t scan_nofail(const size_t target, const size_t origin = 0) const {size_t tmp; if (!scan(target,tmp,origin)) _fatal_code("kleene_star<...>::scan_nofail failed",3); return tmp;};
+ 	void scan_nofail(const size_t target, const size_t target2, size_t& offset, size_t& offset2, const size_t origin = 0) const{if (!scan(target,target2,offset,offset2,origin)) _fatal_code("kleene_star<...>::scan_nofail failed",3);};
+ 	void scan_nofail(size_t* target, size_t scan_len, size_t* offset, const size_t origin = 0) const{if (!scan(target,scan_len,offset,origin)) _fatal_code("kleene_star<...>::scan_nofail failed",3);};
+-};
+ 
+-template<size_t strict_ub_valid_detect, typename classifier>
+-class kleene_star : public kleene_star_core<classifier>
+-{
+-private:
+-	size_t detect_count[strict_ub_valid_detect];
+-public:
+-	kleene_star(classifier detector) : kleene_star_core<classifier>(detector) {memset(detect_count,0,sizeof(detect_count));};
+-	// default copy, assignment, destructor ok
+ 	template<class T> bool operator()(T& x)
+ 		{
+ 		size_t result = _detector(x);
+-		if (strict_ub_valid_detect<=result) return false;
++		if (_strict_ub<=result) return false;
+ 		if (!this->result_scan.InsertSlotAt(this->result_scan.size(),result))
+ 			throw std::bad_alloc();
+-		++detect_count[result];
++		++_detect_count[result];
+ 		return true;
+ 		}
+ 
+-	size_t count(size_t i) const {assert(strict_ub_valid_detect>i);return detect_count[i];};
++	size_t count(size_t i) const {assert(_strict_ub>i);return _detect_count[i];};
++	size_t strict_ub() const {return _strict_ub;};
+ 	void DeleteIdx(size_t i)
+ 		{
+-		assert(this->size()>i);
+-		--detect_count[this->deleteIdx(i)];
++		assert(size()>i);
++		--_detect_count[deleteIdx(i)];
+ 		}
+-	
+-	// conventional glue
+-	void clear()
+-		{
+-		this->result_scan.reset();
+-		memset(detect_count,0,sizeof(detect_count));
+-		}
+ };
+ 
++template<size_t strict_ub_valid_detect, typename classifier>
++class kleene_star : public kleene_star_core<classifier>
++{
++private:
++	size_t detect_count[strict_ub_valid_detect];
++public:
++	kleene_star(classifier detector) : kleene_star_core<classifier>(detector,detect_count,strict_ub_valid_detect) {memset(detect_count,0,sizeof(detect_count));};
++	// default copy, assignment, destructor ok
++};
++
+ template<typename classifier>
+ bool kleene_star_core<classifier>::scan(const size_t target, size_t& offset, const size_t origin) const
+ {
+
+
+
+From zaimoni at mail.berlios.de  Tue Jul 27 07:45:20 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue, 27 Jul 2010 07:45:20 +0200
+Subject: [Zcplusplus-commits] r463 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <20100727054520.79D6C480EC8@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-27 07:45:20 +0200 (Tue, 27 Jul 2010)
+New Revision: 463
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_dup_typedef.in
+   trunk/tests/zcc/decl.C99/Error_dup_typedef.h
+   trunk/tests/zcc/decl.C99/Error_dup_typedef.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+two more test cases
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-15 06:28:51 UTC (rev 462)
++++ trunk/CSupport.cpp	2010-07-27 05:45:20 UTC (rev 463)
+@@ -3483,7 +3483,7 @@
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_typedef.h
+ 					if (!have_warned_about_typedef)
+ 						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset].index_tokens[0]);
+@@ -3820,7 +3820,7 @@
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1<invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_typedef.h
+ 					if (!have_warned_about_typedef)
+ 						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data<0>()[i+offset+using_linkage].index_tokens[0]);
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_typedef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_typedef.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_dup_typedef.h	2010-07-27 05:45:20 UTC (rev 463)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_typedef.h
++// check error for duplicate typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef typedef int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_typedef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_typedef.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Error_dup_typedef.hpp	2010-07-27 05:45:20 UTC (rev 463)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_typedef.hpp
++// check error for duplicate typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef typedef int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_dup_typedef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_dup_typedef.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Error_dup_typedef.in	2010-07-27 05:45:20 UTC (rev 463)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check error for duplicate typedef
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++typedef typedef int i;
++
+
+
+
+From zaimoni at mail.berlios.de  Tue Jul 27 23:54:49 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Tue, 27 Jul 2010 23:54:49 +0200
+Subject: [Zcplusplus-commits] r464 - trunk
+Message-ID: <20100727215449.D429F480086@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-27 23:54:49 +0200 (Tue, 27 Jul 2010)
+New Revision: 464
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+Log:
+remove obsolete bug entry, inaccurate test case note
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-07-27 05:45:20 UTC (rev 463)
++++ trunk/CPreproc.cpp	2010-07-27 21:54:49 UTC (rev 464)
+@@ -4298,7 +4298,6 @@
+ 	assert(0<x_len);
+ // C99: 6.11.9 Predefined macro names
+ // Macro names beginning with __STDC_ are reserved for future standardization.
+-//! \test Error20.hpp : #undef __STDC__
+ //! \bug should have positive test suite for named __STDC_ macros
+ 	if (7<=x_len && !strncmp(x,"__STDC_",sizeof("__STDC_")-1)) return true;
+ #/*cut-cpp*/
+@@ -4307,7 +4306,6 @@
+ #/*cut-cpp*/
+ // C++0x 17.4.3.2.2 simply prohibits all keywords as macros; prefer this to C++98.  C99/C0X is handled elsewhere, as it isn't so draconian.
+ // follow C++0x when generalizing to non-standard languages, as that's more intuitive.
+-//! \bug should have positive test suite for all supported C++ keywords
+ 	if (Lang::C!=lang_code && 0<=linear_find_lencached(x,x_len,lang.InvariantKeywords,lang.len_InvariantKeywords)) return true;
+ 	return 0<=linear_find_lencached(x,x_len,macro_locked_default,macro_locked_default_count);
+ }
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-07-27 05:45:20 UTC (rev 463)
++++ trunk/CPreproc_pp.cpp	2010-07-27 21:54:49 UTC (rev 464)
+@@ -4236,12 +4236,10 @@
+ 	assert(0<x_len);
+ // C99: 6.11.9 Predefined macro names
+ // Macro names beginning with __STDC_ are reserved for future standardization.
+-//! \test Error20.hpp : #undef __STDC__
+ //! \bug should have positive test suite for named __STDC_ macros
+ 	if (7<=x_len && !strncmp(x,"__STDC_",sizeof("__STDC_")-1)) return true;
+ // C++0x 17.4.3.2.2 simply prohibits all keywords as macros; prefer this to C++98.  C99/C0X is handled elsewhere, as it isn't so draconian.
+ // follow C++0x when generalizing to non-standard languages, as that's more intuitive.
+-//! \bug should have positive test suite for all supported C++ keywords
+ 	if (Lang::C!=lang_code && 0<=linear_find_lencached(x,x_len,lang.InvariantKeywords,lang.len_InvariantKeywords)) return true;
+ 	return 0<=linear_find_lencached(x,x_len,macro_locked_default,macro_locked_default_count);
+ }
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 04:17:39 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 04:17:39 +0200
+Subject: [Zcplusplus-commits] r465 - trunk
+Message-ID: <20100728021739.67720480086@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 04:17:39 +0200 (Wed, 28 Jul 2010)
+New Revision: 465
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.hpp
+   trunk/CPreproc_pp.cpp
+   trunk/CPreproc_pp.hpp
+Log:
+make debug mode report on non-default locked macros
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-07-27 21:54:49 UTC (rev 464)
++++ trunk/CPreproc.cpp	2010-07-28 02:17:39 UTC (rev 465)
+@@ -728,7 +728,7 @@
+ 	_preprocess(TokenList, locked_macros, macros_object, macros_object_expansion, macros_object_expansion_pre_eval, macros_function, macros_function_arglist, macros_function_expansion, macros_function_expansion_pre_eval, include_file_index, include_file_cache, min_types);
+ 
+ 	// need whitespace tokens here to force pretty-printing
+-	debug_to_stderr(TokenList,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion);
++	debug_to_stderr(TokenList,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,locked_macros);
+ 	die_on_pp_errors();
+ 	if (TokenList.empty())
+ 		{	//! \todo make this more efficient by providing a global flush-all
+@@ -4006,7 +4006,7 @@
+ }
+ 
+ void
+-CPreprocessor::debug_to_stderr(const autovalarray_ptr<Token<char>* >& TokenList,const autovalarray_ptr<char*>& macros_object, const autovalarray_ptr<Token<char>*>& macros_object_expansion, const autovalarray_ptr<char*>& macros_function, const autovalarray_ptr<Token<char>*>& macros_function_arglist, const autovalarray_ptr<Token<char>*>& macros_function_expansion) const
++CPreprocessor::debug_to_stderr(const autovalarray_ptr<Token<char>* >& TokenList,const autovalarray_ptr<char*>& macros_object, const autovalarray_ptr<Token<char>*>& macros_object_expansion, const autovalarray_ptr<char*>& macros_function, const autovalarray_ptr<Token<char>*>& macros_function_arglist, const autovalarray_ptr<Token<char>*>& macros_function_expansion,const autovalarray_ptr<char*>& locked_macros) const
+ {
+ 	// need whitespace tokens here to force pretty-printing
+ 	if (debug_mode)
+@@ -4071,7 +4071,13 @@
+ 				INC_INFORM("\n");
+ 			++i;
+ 			}
+-		//! \bug put non-default macro locks here when we get to them.
++		const size_t locked_macro_size = locked_macros.size();
++		i = 0;
++		while(i<locked_macro_size)
++			{
++			INC_INFORM("#pragma ZCC lock ");
++			INFORM(locked_macros[i++]);
++			}
+ 		};
+ }
+ 
+
+Modified: trunk/CPreproc.hpp
+===================================================================
+--- trunk/CPreproc.hpp	2010-07-27 21:54:49 UTC (rev 464)
++++ trunk/CPreproc.hpp	2010-07-28 02:17:39 UTC (rev 465)
+@@ -1,5 +1,5 @@
+ // CPreproc.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef CPREPROC_HPP
+ #define CPREPROC_HPP 1
+@@ -54,7 +54,7 @@
+ 	bool debug_mode;		//!< triggers some diagnostics
+ 
+ 	void die_on_pp_errors() const;
+-	void debug_to_stderr(const zaimoni::autovalarray_ptr<zaimoni::Token<char>* >& TokenList,const zaimoni::autovalarray_ptr<char*>& macros_object, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_object_expansion, const zaimoni::autovalarray_ptr<char*>& macros_function, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_arglist, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_expansion) const;
++	void debug_to_stderr(const zaimoni::autovalarray_ptr<zaimoni::Token<char>* >& TokenList,const zaimoni::autovalarray_ptr<char*>& macros_object, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_object_expansion, const zaimoni::autovalarray_ptr<char*>& macros_function, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_arglist, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_expansion,const zaimoni::autovalarray_ptr<char*>& locked_macros) const;
+ 	bool C99_VA_ARGS_flinch(const zaimoni::Token<char>& x, const size_t critical_offset) const;
+ 	void detailed_UNICODE_syntax(zaimoni::Token<char>& x) const;
+ 
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-07-27 21:54:49 UTC (rev 464)
++++ trunk/CPreproc_pp.cpp	2010-07-28 02:17:39 UTC (rev 465)
+@@ -704,7 +704,7 @@
+ 	_preprocess(TokenList, locked_macros, macros_object, macros_object_expansion, macros_object_expansion_pre_eval, macros_function, macros_function_arglist, macros_function_expansion, macros_function_expansion_pre_eval, include_file_index, include_file_cache, min_types);
+ 
+ 	// need whitespace tokens here to force pretty-printing
+-	debug_to_stderr(TokenList,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion);
++	debug_to_stderr(TokenList,macros_object,macros_object_expansion,macros_function,macros_function_arglist,macros_function_expansion,locked_macros);
+ 	die_on_pp_errors();
+ 	if (TokenList.empty())
+ 		{	//! \todo make this more efficient by providing a global flush-all
+@@ -3944,7 +3944,7 @@
+ }
+ 
+ void
+-CPreprocessor::debug_to_stderr(const autovalarray_ptr<Token<char>* >& TokenList,const autovalarray_ptr<char*>& macros_object, const autovalarray_ptr<Token<char>*>& macros_object_expansion, const autovalarray_ptr<char*>& macros_function, const autovalarray_ptr<Token<char>*>& macros_function_arglist, const autovalarray_ptr<Token<char>*>& macros_function_expansion) const
++CPreprocessor::debug_to_stderr(const autovalarray_ptr<Token<char>* >& TokenList,const autovalarray_ptr<char*>& macros_object, const autovalarray_ptr<Token<char>*>& macros_object_expansion, const autovalarray_ptr<char*>& macros_function, const autovalarray_ptr<Token<char>*>& macros_function_arglist, const autovalarray_ptr<Token<char>*>& macros_function_expansion,const autovalarray_ptr<char*>& locked_macros) const
+ {
+ 	// need whitespace tokens here to force pretty-printing
+ 	if (debug_mode)
+@@ -4009,7 +4009,13 @@
+ 				INC_INFORM("\n");
+ 			++i;
+ 			}
+-		//! \bug put non-default macro locks here when we get to them.
++		const size_t locked_macro_size = locked_macros.size();
++		i = 0;
++		while(i<locked_macro_size)
++			{
++			INC_INFORM("#pragma ZCC lock ");
++			INFORM(locked_macros[i++]);
++			}
+ 		};
+ }
+ 
+
+Modified: trunk/CPreproc_pp.hpp
+===================================================================
+--- trunk/CPreproc_pp.hpp	2010-07-27 21:54:49 UTC (rev 464)
++++ trunk/CPreproc_pp.hpp	2010-07-28 02:17:39 UTC (rev 465)
+@@ -1,5 +1,5 @@
+ // CPreproc_pp.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef CPREPROC_HPP
+ #define CPREPROC_HPP 1
+@@ -54,7 +54,7 @@
+ 	bool debug_mode;		//!< triggers some diagnostics
+ 
+ 	void die_on_pp_errors() const;
+-	void debug_to_stderr(const zaimoni::autovalarray_ptr<zaimoni::Token<char>* >& TokenList,const zaimoni::autovalarray_ptr<char*>& macros_object, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_object_expansion, const zaimoni::autovalarray_ptr<char*>& macros_function, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_arglist, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_expansion) const;
++	void debug_to_stderr(const zaimoni::autovalarray_ptr<zaimoni::Token<char>* >& TokenList,const zaimoni::autovalarray_ptr<char*>& macros_object, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_object_expansion, const zaimoni::autovalarray_ptr<char*>& macros_function, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_arglist, const zaimoni::autovalarray_ptr<zaimoni::Token<char>*>& macros_function_expansion,const zaimoni::autovalarray_ptr<char*>& locked_macros) const;
+ 	bool C99_VA_ARGS_flinch(const zaimoni::Token<char>& x, const size_t critical_offset) const;
+ 	void detailed_UNICODE_syntax(zaimoni::Token<char>& x) const;
+ 
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 05:44:14 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 05:44:14 +0200
+Subject: [Zcplusplus-commits] r466 - trunk
+Message-ID: <20100728034415.21056480133@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 05:44:14 +0200 (Wed, 28 Jul 2010)
+New Revision: 466
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+Log:
+reduce indentation
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-07-28 02:17:39 UTC (rev 465)
++++ trunk/CPreproc.cpp	2010-07-28 03:44:14 UTC (rev 466)
+@@ -4281,20 +4281,17 @@
+ void
+ CPreprocessor::truncate_illegal_tokens(Token<char>& x,const int directive_type,const size_t critical_offset)
+ {
+-	if (x.size()>critical_offset)
++	if (x.size()<=critical_offset) return;
++	if (x.size()-critical_offset>strspn(x.data()+critical_offset,lang.WhiteSpace+1))
+ 		{
+-		const size_t skip_ws2 = strspn(x.data()+critical_offset,lang.WhiteSpace+1);
+-		if (x.size()-critical_offset>skip_ws2)
+-			{
+-			message_header(x);
+-			INC_INFORM(ERR_STR);
+-			INC_INFORM("#");
+-			INC_INFORM(valid_directives[directive_type].first);
+-			INFORM(" is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)");
+-			zcc_errors.inc_error();
+-			}
+-		x.lslice(critical_offset);
++		message_header(x);
++		INC_INFORM(ERR_STR);
++		INC_INFORM("#");
++		INC_INFORM(valid_directives[directive_type].first);
++		INFORM(" is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)");
++		zcc_errors.inc_error();
+ 		}
++	x.lslice(critical_offset);
+ }
+ 
+ bool
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-07-28 02:17:39 UTC (rev 465)
++++ trunk/CPreproc_pp.cpp	2010-07-28 03:44:14 UTC (rev 466)
+@@ -4219,20 +4219,17 @@
+ void
+ CPreprocessor::truncate_illegal_tokens(Token<char>& x,const int directive_type,const size_t critical_offset)
+ {
+-	if (x.size()>critical_offset)
++	if (x.size()<=critical_offset) return;
++	if (x.size()-critical_offset>strspn(x.data()+critical_offset,lang.WhiteSpace+1))
+ 		{
+-		const size_t skip_ws2 = strspn(x.data()+critical_offset,lang.WhiteSpace+1);
+-		if (x.size()-critical_offset>skip_ws2)
+-			{
+-			message_header(x);
+-			INC_INFORM(ERR_STR);
+-			INC_INFORM("#");
+-			INC_INFORM(valid_directives[directive_type].first);
+-			INFORM(" is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)");
+-			zcc_errors.inc_error();
+-			}
+-		x.lslice(critical_offset);
++		message_header(x);
++		INC_INFORM(ERR_STR);
++		INC_INFORM("#");
++		INC_INFORM(valid_directives[directive_type].first);
++		INFORM(" is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)");
++		zcc_errors.inc_error();
+ 		}
++	x.lslice(critical_offset);
+ }
+ 
+ bool
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 06:58:14 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 06:58:14 +0200
+Subject: [Zcplusplus-commits] r467 - trunk
+Message-ID: <20100728045814.6C04948054C@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 06:58:14 +0200 (Wed, 28 Jul 2010)
+New Revision: 467
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+object size reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 03:44:14 UTC (rev 466)
++++ trunk/CSupport.cpp	2010-07-28 04:58:14 UTC (rev 467)
+@@ -10716,74 +10716,85 @@
+ 		}
+ }
+ 
+-void C99_condense_const_volatile_onto_type(parse_tree& src)
++static void _condense_const_volatile_onto_type(parse_tree& src,size_t& i,kleene_star_core<size_t (*)(const parse_tree&)>& invariant_decl_scanner,const char* const warn_const,const char* const warn_volatile)
+ {
+-	assert(src.is_raw_list());
+-	size_t i = 0;
+-	kleene_star<STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&)> invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
+-	do	if (PARSE_TYPE & src.data<0>()[i].flags)
+-			{
+-			size_t offset = 0;
+-			bool have_warned_too_many_types = false;
+-			bool have_warned_about_const = false;
+-			bool have_warned_about_volatile = false;
++	size_t offset = 0;
++	bool have_warned_too_many_types = false;
++	bool have_warned_about_const = false;
++	bool have_warned_about_volatile = false;
+ 
+-			while(0<i-offset && invariant_decl_scanner(src.data<0>()[i- ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
++	while(0<i-offset && invariant_decl_scanner(src.data<0>()[i- ++offset]))
++		switch(invariant_decl_scanner[offset-1])
++		{
++		case C99_CPP_CONST_IDX:
++			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
++			src.DeleteIdx<0>(i-- -offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		case C99_CPP_VOLATILE_IDX:
++			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
++			src.DeleteIdx<0>(i-- -offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		default:
++			if (invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
+ 				{
+-				case STATIC_SIZE(C99_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{
+-						message_header(src.data<0>()[i-offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM("multiple types in decl-specifier sequence, discarding extra types");
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx<0>(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const type qualifier (C99 6.7.3p4)");
+-					src.DeleteIdx<0>(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile type qualifier (C99 6.7.3p4)");
+-					src.DeleteIdx<0>(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
++				if (!have_warned_too_many_types)
++					{
++					message_header(src.data<0>()[i-offset].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INFORM("multiple types in decl-specifier sequence, discarding extra types");
++					zcc_errors.inc_error();
++					have_warned_too_many_types = true;
++					}
++				src.DeleteIdx<0>(i-- -offset);
++				invariant_decl_scanner.DeleteIdx(--offset);
++				continue;
+ 				}
++		}
+ 
+-			invariant_decl_scanner.clear();
+-			offset = 0;
+-			while(src.size<0>()-i>offset+1 && invariant_decl_scanner(src.data<0>()[i+ ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
++	invariant_decl_scanner.clear();
++	offset = 0;
++	while(src.size<0>()-i>offset+1 && invariant_decl_scanner(src.data<0>()[i+ ++offset]))
++		switch(invariant_decl_scanner[offset-1])
++		{
++		case C99_CPP_CONST_IDX:
++			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
++			src.DeleteIdx<0>(i+offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		case C99_CPP_VOLATILE_IDX:
++			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
++			src.DeleteIdx<0>(i+offset);
++			invariant_decl_scanner.DeleteIdx(--offset);
++			continue;
++		default:
++			if (invariant_decl_scanner.strict_ub()-1==invariant_decl_scanner[offset-1])
+ 				{
+-				case STATIC_SIZE(C99_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{
+-						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM("multiple types in decl-specifier sequence, discarding extra types");
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx<0>(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const type qualifier (C99 6.7.3p4)");
+-					src.DeleteIdx<0>(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile type qualifier (C99 6.7.3p4)");
+-					src.DeleteIdx<0>(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
++				if (!have_warned_too_many_types)
++					{
++					message_header(src.data<0>()[i-offset].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INFORM("multiple types in decl-specifier sequence, discarding extra types");
++					zcc_errors.inc_error();
++					have_warned_too_many_types = true;
++					}
++				src.DeleteIdx<0>(i-- -offset);
++				invariant_decl_scanner.DeleteIdx(--offset);
++				continue;
+ 				}
+-			}
++		}
++
++	invariant_decl_scanner.clear();
++}
++
++void C99_condense_const_volatile_onto_type(parse_tree& src)
++{
++	assert(src.is_raw_list());
++	size_t i = 0;
++	kleene_star<STATIC_SIZE(C99_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&)> invariant_decl_scanner(C99_type_or_invariant_decl_specifier);
++	do	if (PARSE_TYPE & src.data<0>()[i].flags)
++			_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,"removing redundant const type qualifier (C99 6.7.3p4)","removing redundant volatile type qualifier (C99 6.7.3p4)");
+ 	while(src.size<0>()> ++i);
+ }
+ 
+@@ -10793,68 +10804,7 @@
+ 	size_t i = 0;
+ 	kleene_star<STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+1,size_t (*)(const parse_tree&)> invariant_decl_scanner(CPP0X_type_or_invariant_decl_specifier);
+ 	do	if (PARSE_TYPE & src.data<0>()[i].flags)
+-			{
+-			size_t offset = 0;
+-			bool have_warned_too_many_types = false;
+-			bool have_warned_about_const = false;
+-			bool have_warned_about_volatile = false;
+-
+-			while(0<i-offset && invariant_decl_scanner(src.data<0>()[i- ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
+-				{
+-				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{	//! \bug need test case
+-						message_header(src.data<0>()[i-offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM("multiple types in decl-specifier sequence, discarding extra types");
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx<0>(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const cv-qualifier (C++0X 7.1.6.1p1)");
+-					src.DeleteIdx<0>(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)");
+-					src.DeleteIdx<0>(i-- -offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				}
+-
+-			invariant_decl_scanner.clear();
+-			offset = 0;
+-			while(src.size<0>()-i>offset+1 && invariant_decl_scanner(src.data<0>()[i+ ++offset]))
+-				switch(invariant_decl_scanner[offset-1])
+-				{
+-				case STATIC_SIZE(CPP0X_nontype_decl_specifier_list):
+-					if (!have_warned_too_many_types)
+-						{	//! \bug need test case
+-						message_header(src.data<0>()[i+offset].index_tokens[0]);
+-						INC_INFORM(ERR_STR);
+-						INFORM("multiple types in decl-specifier sequence, discarding extra types");
+-						zcc_errors.inc_error();
+-						have_warned_too_many_types = true;
+-						}
+-					src.DeleteIdx<0>(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					return;
+-				case C99_CPP_CONST_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,"removing redundant const cv-qualifier (C++0X 7.1.6.1p1)");
+-					src.DeleteIdx<0>(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				case C99_CPP_VOLATILE_IDX:	//! \bug need test case
+-					record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,"removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)");
+-					src.DeleteIdx<0>(i+offset);
+-					invariant_decl_scanner.DeleteIdx(--offset);
+-					continue;
+-				}
+-			}
++			_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,"removing redundant const cv-qualifier (C++0X 7.1.6.1p1)","removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)");
+ 	while(src.size<0>()> ++i);
+ }
+ 
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 07:05:12 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 07:05:12 +0200
+Subject: [Zcplusplus-commits] r468 - trunk
+Message-ID: <20100728050512.DDECE48054C@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 07:05:12 +0200 (Wed, 28 Jul 2010)
+New Revision: 468
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+formal bugfix
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 04:58:14 UTC (rev 467)
++++ trunk/CSupport.cpp	2010-07-28 05:05:12 UTC (rev 468)
+@@ -10759,12 +10759,12 @@
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+ 		case C99_CPP_CONST_IDX:
+-			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
++			record_qualifier_or_warn(src,type_spec::_const,i,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx<0>(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
+-			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
++			record_qualifier_or_warn(src,type_spec::_volatile,i,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx<0>(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+@@ -10773,7 +10773,7 @@
+ 				{
+ 				if (!have_warned_too_many_types)
+ 					{
+-					message_header(src.data<0>()[i-offset].index_tokens[0]);
++					message_header(src.data<0>()[i+offset].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM("multiple types in decl-specifier sequence, discarding extra types");
+ 					zcc_errors.inc_error();
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 07:24:11 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 07:24:11 +0200
+Subject: [Zcplusplus-commits] r469 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <20100728052411.75B1648054C@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 07:24:11 +0200 (Wed, 28 Jul 2010)
+New Revision: 469
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in
+   trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in
+   trunk/tests/zcc/decl.C99/Warn_dup_const2.h
+   trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_const3.h
+   trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h
+   trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+test cases to exercise the formal fix
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 05:05:12 UTC (rev 468)
++++ trunk/CSupport.cpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -10727,11 +10727,19 @@
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+ 		case C99_CPP_CONST_IDX:
++			//! \test decl.C99/Warn_dup_const.h
++			//! \test decl.C99/Warn_dup_const.hpp
++			//! \test decl.C99/Warn_dup_const2.h
++			//! \test decl.C99/Warn_dup_const2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i,i-offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx<0>(i-- -offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
++			//! \test decl.C99/Warn_dup_volatile.h
++			//! \test decl.C99/Warn_dup_volatile.hpp
++			//! \test decl.C99/Warn_dup_volatile2.h
++			//! \test decl.C99/Warn_dup_volatile2.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i,i-offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx<0>(i-- -offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+@@ -10759,11 +10767,19 @@
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+ 		case C99_CPP_CONST_IDX:
++			//! \test decl.C99/Warn_dup_const2.h
++			//! \test decl.C99/Warn_dup_const2.hpp
++			//! \test decl.C99/Warn_dup_const3.h
++			//! \test decl.C99/Warn_dup_const3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_const,i,i+offset,have_warned_about_const,warn_const);
+ 			src.DeleteIdx<0>(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+ 			continue;
+ 		case C99_CPP_VOLATILE_IDX:
++			//! \test decl.C99/Warn_dup_volatile2.h
++			//! \test decl.C99/Warn_dup_volatile2.hpp
++			//! \test decl.C99/Warn_dup_volatile3.h
++			//! \test decl.C99/Warn_dup_volatile3.hpp
+ 			record_qualifier_or_warn(src,type_spec::_volatile,i,i+offset,have_warned_about_volatile,warn_volatile);
+ 			src.DeleteIdx<0>(i+offset);
+ 			invariant_decl_scanner.DeleteIdx(--offset);
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const2.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const2.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const2.h
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const2.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const2.hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const3.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const3.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const3.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const3.h
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile int const const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_const3.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_const3.hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile int const const i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile2.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile2.h
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int volatile i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile2.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile2.hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int volatile i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile3.h	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile3.h
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const int volatile volatile i;
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp	                        (rev 0)
++++ trunk/tests/zcc/decl.C99/Warn_dup_volatile3.hpp	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++// decl.C99\Warn_dup_volatile3.hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const int volatile volatile i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_const2.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int const i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_const3.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate const
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++volatile int const const i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_volatile2.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const volatile int volatile i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in	                        (rev 0)
++++ trunk/tests/zcc.in/decl.C99/Warn_dup_volatile3.in	2010-07-28 05:24:11 UTC (rev 469)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check warning for duplicate volatile
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++const int volatile volatile i;
++
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 07:40:17 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 07:40:17 +0200
+Subject: [Zcplusplus-commits] r470 - trunk
+Message-ID: <20100728054017.6C1F548054C@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 07:40:17 +0200 (Wed, 28 Jul 2010)
+New Revision: 470
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+formal bugfix
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 05:24:11 UTC (rev 469)
++++ trunk/CSupport.cpp	2010-07-28 05:40:17 UTC (rev 470)
+@@ -10723,6 +10723,7 @@
+ 	bool have_warned_about_const = false;
+ 	bool have_warned_about_volatile = false;
+ 
++	assert(PARSE_TYPE & src.data<0>()[i].flags);
+ 	while(0<i-offset && invariant_decl_scanner(src.data<0>()[i- ++offset]))
+ 		switch(invariant_decl_scanner[offset-1])
+ 		{
+@@ -10795,7 +10796,7 @@
+ 					zcc_errors.inc_error();
+ 					have_warned_too_many_types = true;
+ 					}
+-				src.DeleteIdx<0>(i-- -offset);
++				src.DeleteIdx<0>(i-- +offset);
+ 				invariant_decl_scanner.DeleteIdx(--offset);
+ 				continue;
+ 				}
+
+
+
+From zaimoni at mail.berlios.de  Wed Jul 28 23:51:33 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Wed, 28 Jul 2010 23:51:33 +0200
+Subject: [Zcplusplus-commits] r471 - trunk
+Message-ID: <20100728215133.4FC1F480BE8@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-28 23:51:33 +0200 (Wed, 28 Jul 2010)
+New Revision: 471
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+reference existing test case
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-28 05:40:17 UTC (rev 470)
++++ trunk/CSupport.cpp	2010-07-28 21:51:33 UTC (rev 471)
+@@ -12999,7 +12999,7 @@
+ 						base_enum_type = C_TYPE::ULLONG;
+ 					case C_TYPE::ULLONG:
+ 						if (target_machine->unsigned_max<virtual_machine::std_int_long_long>()>=latest_value) break;
+-					default:	//! \bug needs test case
++					default:	//! \test decl.C99\Error_enum_overflow.hpp
+ 						message_header(src.data<0>()[origin-2].index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INFORM("enumeration requires values above UINTMAX_MAX, underlying type doesn't exist (C++0X 7.2p6)");
+
+
+
+From zaimoni at mail.berlios.de  Thu Jul 29 04:35:25 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 29 Jul 2010 04:35:25 +0200
+Subject: [Zcplusplus-commits] r472 - trunk
+Message-ID: <20100729023525.CC088480BE8@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-29 04:35:25 +0200 (Thu, 29 Jul 2010)
+New Revision: 472
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+Log:
+indentation/lines of code reduction
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-07-28 21:51:33 UTC (rev 471)
++++ trunk/CPreproc.cpp	2010-07-29 02:35:25 UTC (rev 472)
+@@ -90,32 +90,30 @@
+ 
+ static void init_fixed_system_include_search(void)
+ {
+-	if (!fixed_system_include_exists_init)
+-		{
+-		char filepath[FILENAME_MAX];
+-		char workpath[FILENAME_MAX];
+-		size_t i = STATIC_SIZE(fixed_system_include_search);
+-		do	{
+-			--i;
+-			assert(!is_empty_string(fixed_system_include_search[i]));
+-			if ('.'==fixed_system_include_search[i][0] && FILENAME_MAX>strlen(self_path)+strlen(fixed_system_include_search[i])+1)
+-				{	// obviously relative path
+-				z_dirname(workpath,self_path);
+-				strcat(workpath,ZAIMONI_PATH_SEP);
+-				strcat(workpath,fixed_system_include_search[i]);
+-				char* exists = z_realpath(filepath,workpath);
+-				if (NULL!=exists && !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				}
+-			else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
+-				{	// absolute path, current drive
+-				char* exists = z_realpath(filepath,fixed_system_include_search[i]);
+-				if (NULL!=exists && !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				};
++	if (fixed_system_include_exists_init) return;
++	char filepath[FILENAME_MAX];
++	char workpath[FILENAME_MAX];
++	size_t i = STATIC_SIZE(fixed_system_include_search);
++	do	{
++		--i;
++		assert(!is_empty_string(fixed_system_include_search[i]));
++		if ('.'==fixed_system_include_search[i][0] && FILENAME_MAX>strlen(self_path)+strlen(fixed_system_include_search[i])+1)
++			{	// obviously relative path
++			z_dirname(workpath,self_path);
++			strcat(workpath,ZAIMONI_PATH_SEP);
++			strcat(workpath,fixed_system_include_search[i]);
++			char* exists = z_realpath(filepath,workpath);
++			if (exists && !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
+ 			}
+-		while(0<i);
++		else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
++			{	// absolute path, current drive
++			char* exists = z_realpath(filepath,fixed_system_include_search[i]);
++			if (exists && !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
++			};
+ 		}
++	while(0<i);
+ }
+ 
+ #define LEXER_STRICT_UB (Lexer::CPlusPlus+1)
+@@ -2303,16 +2301,14 @@
+ 
+ static void _complete_string_character_literal(Token<char>& x,const char delim, const char* const end_error)
+ {
+-	if (delim!=x.back())
+-		{
+-		message_header2(x,x.original_line.second);
+-		INC_INFORM(ERR_STR);
+-		INC_INFORM("unterminated");
+-		if ('L'==x.front()) INC_INFORM(" wide");
+-		INFORM(end_error);
+-		zcc_errors.inc_error();
+-		x.append(delim);
+-		}
++	if (delim==x.back()) return;
++	message_header2(x,x.original_line.second);
++	INC_INFORM(ERR_STR);
++	INC_INFORM("unterminated");
++	if ('L'==x.front()) INC_INFORM(" wide");
++	INFORM(end_error);
++	zcc_errors.inc_error();
++	x.append(delim);
+ }
+ 
+ static void complete_string_character_literal(Token<char>& x)
+@@ -3995,14 +3991,12 @@
+ 
+ void CPreprocessor::die_on_pp_errors() const
+ {
+-	if (0<zcc_errors.err_count())
+-		{
+-		INC_INFORM("FATAL: ");
+-		INC_INFORM(zcc_errors.err_count());
+-		INC_INFORM(" preprocessing error");
+-		INFORM((1==zcc_errors.err_count()) ? "\n" : "s\n");
+-		exit(EXIT_FAILURE);
+-		};
++	if (0>=zcc_errors.err_count()) return;
++	INC_INFORM("FATAL: ");
++	INC_INFORM(zcc_errors.err_count());
++	INC_INFORM(" preprocessing error");
++	INFORM((1==zcc_errors.err_count()) ? "\n" : "s\n");
++	exit(EXIT_FAILURE);
+ }
+ 
+ void
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-07-28 21:51:33 UTC (rev 471)
++++ trunk/CPreproc_pp.cpp	2010-07-29 02:35:25 UTC (rev 472)
+@@ -83,32 +83,30 @@
+ 
+ static void init_fixed_system_include_search(void)
+ {
+-	if (!fixed_system_include_exists_init)
+-		{
+-		char filepath[FILENAME_MAX];
+-		char workpath[FILENAME_MAX];
+-		size_t i = STATIC_SIZE(fixed_system_include_search);
+-		do	{
+-			--i;
+-			assert(!is_empty_string(fixed_system_include_search[i]));
+-			if ('.'==fixed_system_include_search[i][0] && FILENAME_MAX>strlen(self_path)+strlen(fixed_system_include_search[i])+1)
+-				{	// obviously relative path
+-				z_dirname(workpath,self_path);
+-				strcat(workpath,ZAIMONI_PATH_SEP);
+-				strcat(workpath,fixed_system_include_search[i]);
+-				char* exists = z_realpath(filepath,workpath);
+-				if (NULL!=exists && !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				}
+-			else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
+-				{	// absolute path, current drive
+-				char* exists = z_realpath(filepath,fixed_system_include_search[i]);
+-				if (NULL!=exists && !access(exists,F_OK))
+-					actual_system_include_search[i] = register_string(filepath);
+-				};
++	if (fixed_system_include_exists_init) return;
++	char filepath[FILENAME_MAX];
++	char workpath[FILENAME_MAX];
++	size_t i = STATIC_SIZE(fixed_system_include_search);
++	do	{
++		--i;
++		assert(!is_empty_string(fixed_system_include_search[i]));
++		if ('.'==fixed_system_include_search[i][0] && FILENAME_MAX>strlen(self_path)+strlen(fixed_system_include_search[i])+1)
++			{	// obviously relative path
++			z_dirname(workpath,self_path);
++			strcat(workpath,ZAIMONI_PATH_SEP);
++			strcat(workpath,fixed_system_include_search[i]);
++			char* exists = z_realpath(filepath,workpath);
++			if (exists && !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
+ 			}
+-		while(0<i);
++		else if (ZAIMONI_PATH_SEP[0]==fixed_system_include_search[i][0])
++			{	// absolute path, current drive
++			char* exists = z_realpath(filepath,fixed_system_include_search[i]);
++			if (exists && !access(exists,F_OK))
++				actual_system_include_search[i] = register_string(filepath);
++			};
+ 		}
++	while(0<i);
+ }
+ 
+ #define LEXER_STRICT_UB (Lexer::CPlusPlus+1)
+@@ -2241,16 +2239,14 @@
+ 
+ static void _complete_string_character_literal(Token<char>& x,const char delim, const char* const end_error)
+ {
+-	if (delim!=x.back())
+-		{
+-		message_header2(x,x.original_line.second);
+-		INC_INFORM(ERR_STR);
+-		INC_INFORM("unterminated");
+-		if ('L'==x.front()) INC_INFORM(" wide");
+-		INFORM(end_error);
+-		zcc_errors.inc_error();
+-		x.append(delim);
+-		}
++	if (delim==x.back()) return;
++	message_header2(x,x.original_line.second);
++	INC_INFORM(ERR_STR);
++	INC_INFORM("unterminated");
++	if ('L'==x.front()) INC_INFORM(" wide");
++	INFORM(end_error);
++	zcc_errors.inc_error();
++	x.append(delim);
+ }
+ 
+ static void complete_string_character_literal(Token<char>& x)
+@@ -3933,14 +3929,12 @@
+ 
+ void CPreprocessor::die_on_pp_errors() const
+ {
+-	if (0<zcc_errors.err_count())
+-		{
+-		INC_INFORM("FATAL: ");
+-		INC_INFORM(zcc_errors.err_count());
+-		INC_INFORM(" preprocessing error");
+-		INFORM((1==zcc_errors.err_count()) ? "\n" : "s\n");
+-		exit(EXIT_FAILURE);
+-		};
++	if (0>=zcc_errors.err_count()) return;
++	INC_INFORM("FATAL: ");
++	INC_INFORM(zcc_errors.err_count());
++	INC_INFORM(" preprocessing error");
++	INFORM((1==zcc_errors.err_count()) ? "\n" : "s\n");
++	exit(EXIT_FAILURE);
+ }
+ 
+ void
+
+
+
+From zaimoni at mail.berlios.de  Thu Jul 29 21:56:30 2010
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Thu, 29 Jul 2010 21:56:30 +0200
+Subject: [Zcplusplus-commits] r473 - trunk
+Message-ID: <20100729195630.50BD5480BF1@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2010-07-29 21:56:29 +0200 (Thu, 29 Jul 2010)
+New Revision: 473
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+Log:
+indentation, and lines of code, reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-07-29 02:35:25 UTC (rev 472)
++++ trunk/CSupport.cpp	2010-07-29 19:56:29 UTC (rev 473)
+@@ -98,14 +98,12 @@
+ template<size_t i> void register_token(parse_tree& x)
+ {
+ 	BOOST_STATIC_ASSERT(STATIC_SIZE(x.index_tokens)>i);
+-	if (x.own_index_token<i>())
+-		{
+-		const char* tmp = register_substring(x.index_tokens[i].token.first,x.index_tokens[i].token.second);
+-		assert(tmp!=x.index_tokens[i].token.first);
+-		free(const_cast<char*>(x.index_tokens[i].token.first));
+-		x.index_tokens[i].token.first = tmp;
+-		x.control_index_token<i>(false);
+-		}
++	if (!x.own_index_token<i>()) return;
++	const char* const tmp = register_substring(x.index_tokens[i].token.first,x.index_tokens[i].token.second);
++	assert(tmp!=x.index_tokens[i].token.first);
++	free(const_cast<char*>(x.index_tokens[i].token.first));
++	x.index_tokens[i].token.first = tmp;
++	x.control_index_token<i>(false);
+ }
+ 
+ /* need for compiler implementation */
+@@ -1989,9 +1987,8 @@
+ 
+ size_t LengthOfCPurePreprocessingOperatorPunctuation(const char* const x)
+ {
+-	assert(NULL!=x);
+-	assert('\0'!=*x);
+-	if (NULL!=strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
++	assert(x && *x);
++	if (strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
+ 	const errr i = linear_reverse_find_prefix_in_lencached(x,valid_pure_preprocessing_op_punc+NONATOMIC_PREPROC_OP_LB,C_PREPROC_OP_STRICT_UB-NONATOMIC_PREPROC_OP_LB);
+ 	if (0<=i) return valid_pure_preprocessing_op_punc[i+NONATOMIC_PREPROC_OP_LB].second;
+ 	return 0;
+@@ -1999,9 +1996,8 @@
+ 
+ size_t LengthOfCPPPurePreprocessingOperatorPunctuation(const char* const x)
+ {
+-	assert(NULL!=x);
+-	assert('\0'!=*x);
+-	if (NULL!=strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
++	assert(x && *x);
++	if (strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
+ 	const errr i = linear_reverse_find_prefix_in_lencached(x,valid_pure_preprocessing_op_punc+NONATOMIC_PREPROC_OP_LB,CPP_PREPROC_OP_STRICT_UB-NONATOMIC_PREPROC_OP_LB);
+ 	if (0<=i) return valid_pure_preprocessing_op_punc[i+NONATOMIC_PREPROC_OP_LB].second;
+ 	return 0;
+@@ -2038,8 +2034,8 @@
+ 
+ static void _bad_syntax_tokenized(const char* const x, size_t x_len, lex_flags& flags, const char* const src_filename, size_t line_no, func_traits<signed int (*)(const char* const, size_t)>::function_type find_pp_code)
+ {
+-	assert(NULL!=x);
+-	assert(NULL!=src_filename && '\0'!= *src_filename);
++	assert(x);
++	assert(src_filename && *src_filename);
+ 	assert(x_len<=strlen(x));
+ 	assert((C_TESTFLAG_PP_NUMERAL | C_TESTFLAG_PP_OP_PUNC | C_TESTFLAG_STRING_LITERAL | C_TESTFLAG_CHAR_LITERAL | C_TESTFLAG_IDENTIFIER) & flags);
+ 
+@@ -2057,13 +2053,9 @@
+ 		{
+ 		union_quartet<C_PPIntCore,C_PPFloatCore,C_PPDecimalFloat,C_PPHexFloat> test;
+ 		if 		(C_PPDecimalFloat::is(x,x_len,test.third))
+-			{
+ 			flags |= C_TESTFLAG_FLOAT | C_TESTFLAG_DECIMAL;
+-			}
+ 		else if	(C_PPHexFloat::is(x,x_len,test.fourth))
+-			{
+ 			flags |= C_TESTFLAG_FLOAT | C_TESTFLAG_HEXADECIMAL;
+-			}
+ 		else if (C_PPIntCore::is(x,x_len,test.first))
+ 			{
+ 			assert(C_PPIntCore::ULL>=test.first.hinted_type);
+@@ -7593,20 +7585,17 @@
+ 			lhs_test %= rhs_test;
+ 			if (0!=lhs_test && rhs_negative!=lhs_negative)
+ 				{
+-				if (bool_options[boolopt::int_neg_div_rounds_away_from_zero])
+-					{
+-					rhs_test -= lhs_test;
+-					lhs_test = rhs_test;
+-					}
+-				else{
+-					// convert to parsed - literal
++				if (!bool_options[boolopt::int_neg_div_rounds_away_from_zero])
++					{	// convert to parsed - literal
+ 					parse_tree tmp;
+ 					VM_to_literal(tmp,lhs_test,src,types);
+ 
+ 					src.DeleteIdx<1>(0);
+ 					force_unary_negative_literal(src,tmp);
+ 					return true;
+-					}
++					};
++				rhs_test -= lhs_test;
++				lhs_test = rhs_test;
+ 				};
+ 
+ 			res_int = lhs_test;
+@@ -8735,20 +8724,15 @@
+ 				BOOST_STATIC_ASSERT(!(C99_RELATION_SUBTYPE_GTE%2));
+ 				use_unsigned_compare = false;
+ 				if (!lhs_zero)
+-					{
+ 					result = lhs_negative ? (op_uses_less_than ? "1" : "0") : (op_uses_less_than ? "0" : "1");
+-					}
+-				else if (rhs_zero)
+-					{
+-					result = (C99_RELATION_SUBTYPE_LTE<=src.subtype) ? "1" : "0"; 	// low-level, check with static assertions
+-					// is above correct?
++				else if (!rhs_zero)
++					result = rhs_negative ? (op_uses_less_than ? "0" : "1") : (op_uses_less_than ? "1" : "0");
++				else{	// is below correct?
+ 					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LTE<=C99_RELATION_SUBTYPE_GTE);
+ 					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LT<C99_RELATION_SUBTYPE_LTE);
+ 					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_GT<C99_RELATION_SUBTYPE_LTE);
+-					}
+-				else{
+-					result = rhs_negative ? (op_uses_less_than ? "0" : "1") : (op_uses_less_than ? "1" : "0");
+-					}
++					result = (C99_RELATION_SUBTYPE_LTE<=src.subtype) ? "1" : "0"; 	// low-level, check with static assertions					
++					}				
+ 				}
+ 			};
+ 		if (use_unsigned_compare)
+@@ -10946,26 +10930,25 @@
+ static void CPP_handle_pragma_relay(parse_tree& src)
+ {
+ 	assert(src.is_raw_list());
+-	if (!src.empty<0>())
+-		{
+-		bool typeid_is_ok = false;	// has to be enabled in #include <typeinfo>
+-		size_t i = 0;
+-		do	{
+-			if (src.data<0>()[i].is_atomic())
+-				{
+-				const errr Idx = linear_find(src.data<0>()[i].index_tokens[0].token.first, src.data<0>()[i].index_tokens[0].token.second,pragma_relay_keywords,PRAGMA_RELAY_KEYWORDS_STRICT_UB);
+-				if (0<=Idx)
+-					{	// react to any relay keywords that actually mean anything here
+-					if (RELAY_ZCC_ENABLE_TYPEID==Idx) typeid_is_ok = true;
+-					src.DeleteIdx<0>(i);
+-					}
+-				else if (!typeid_is_ok && token_is_string<6>(src.data<0>()[i].index_tokens[0].token,"typeid"))
+-					//! \test staticassert.C1X/Error_typeid_no_typeinfo.hpp
+-					simple_error(src.c_array<0>()[i]," requires #include <typeinfo> first (C++0X 5.2.8p6)");
++	// early return implied never to happen by assert, but don't want risk of undefined behavior in release mode
++	if (src.empty<0>()) return;
++	bool typeid_is_ok = false;	// has to be enabled in #include <typeinfo>
++	size_t i = 0;
++	do	{
++		if (src.data<0>()[i].is_atomic())
++			{
++			const errr Idx = linear_find(src.data<0>()[i].index_tokens[0].token.first, src.data<0>()[i].index_tokens[0].token.second,pragma_relay_keywords,PRAGMA_RELAY_KEYWORDS_STRICT_UB);
++			if (0<=Idx)
++				{	// react to any relay keywords that actually mean anything here
++				if (RELAY_ZCC_ENABLE_TYPEID==Idx) typeid_is_ok = true;
++				src.DeleteIdx<0>(i);
+ 				}
++			else if (!typeid_is_ok && token_is_string<6>(src.data<0>()[i].index_tokens[0].token,"typeid"))
++				//! \test staticassert.C1X/Error_typeid_no_typeinfo.hpp
++				simple_error(src.c_array<0>()[i]," requires #include <typeinfo> first (C++0X 5.2.8p6)");
+ 			}
+-		while(src.size<0>()> ++i);
+ 		}
++	while(src.size<0>()> ++i);
+ }
+ 
+ //! \todo check that the fact all literals are already legal-form is used
+@@ -11060,13 +11043,9 @@
+ 			if (index_src_is_char && target_machine->signed_max<virtual_machine::std_int_char>()<tmp)
+ 				{
+ 				if (tmp.to_uint()-1==target_machine->signed_max<virtual_machine::std_int_char>())
+-					{
+ 					INFORM("(does this source code want char to act like signed char, with integer representation sign-and-magnitude?)");
+-					}
+ 				else if (tmp==target_machine->unsigned_max<virtual_machine::std_int_char>())
+-					{
+ 					INFORM("(does this source code want char to act like signed char, with integer representation one's complement?)");
+-					}
+ 				}
+ 			src.flags |= parse_tree::INVALID;
+ 			zcc_errors.inc_error();
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-07-29 02:35:25 UTC (rev 472)
++++ trunk/CSupport_pp.cpp	2010-07-29 19:56:29 UTC (rev 473)
+@@ -84,14 +84,12 @@
+ template<size_t i> void register_token(parse_tree& x)
+ {
+ 	BOOST_STATIC_ASSERT(STATIC_SIZE(x.index_tokens)>i);
+-	if (x.own_index_token<i>())
+-		{
+-		const char* tmp = register_substring(x.index_tokens[i].token.first,x.index_tokens[i].token.second);
+-		assert(tmp!=x.index_tokens[i].token.first);
+-		free(const_cast<char*>(x.index_tokens[i].token.first));
+-		x.index_tokens[i].token.first = tmp;
+-		x.control_index_token<i>(false);
+-		}
++	if (!x.own_index_token<i>()) return;
++	const char* const tmp = register_substring(x.index_tokens[i].token.first,x.index_tokens[i].token.second);
++	assert(tmp!=x.index_tokens[i].token.first);
++	free(const_cast<char*>(x.index_tokens[i].token.first));
++	x.index_tokens[i].token.first = tmp;
++	x.control_index_token<i>(false);
+ }
+ 
+ /* need for compiler implementation */
+@@ -1752,9 +1750,8 @@
+ 
+ size_t LengthOfCPurePreprocessingOperatorPunctuation(const char* const x)
+ {
+-	assert(NULL!=x);
+-	assert('\0'!=*x);
+-	if (NULL!=strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
++	assert(x && *x);
++	if (strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
+ 	const errr i = linear_reverse_find_prefix_in_lencached(x,valid_pure_preprocessing_op_punc+NONATOMIC_PREPROC_OP_LB,C_PREPROC_OP_STRICT_UB-NONATOMIC_PREPROC_OP_LB);
+ 	if (0<=i) return valid_pure_preprocessing_op_punc[i+NONATOMIC_PREPROC_OP_LB].second;
+ 	return 0;
+@@ -1762,9 +1759,8 @@
+ 
+ size_t LengthOfCPPPurePreprocessingOperatorPunctuation(const char* const x)
+ {
+-	assert(NULL!=x);
+-	assert('\0'!=*x);
+-	if (NULL!=strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
++	assert(x && *x);
++	if (strchr(ATOMIC_PREPROC_PUNC,*x)) return 1;
+ 	const errr i = linear_reverse_find_prefix_in_lencached(x,valid_pure_preprocessing_op_punc+NONATOMIC_PREPROC_OP_LB,CPP_PREPROC_OP_STRICT_UB-NONATOMIC_PREPROC_OP_LB);
+ 	if (0<=i) return valid_pure_preprocessing_op_punc[i+NONATOMIC_PREPROC_OP_LB].second;
+ 	return 0;
+@@ -1801,8 +1797,8 @@
+ 
+ static void _bad_syntax_tokenized(const char* const x, size_t x_len, lex_flags& flags, const char* const src_filename, size_t line_no, func_traits<signed int (*)(const char* const, size_t)>::function_type find_pp_code)
+ {
+-	assert(NULL!=x);
+-	assert(NULL!=src_filename && '\0'!= *src_filename);
++	assert(x);
++	assert(src_filename && *src_filename);
+ 	assert(x_len<=strlen(x));
+ 	assert((C_TESTFLAG_PP_NUMERAL | C_TESTFLAG_PP_OP_PUNC | C_TESTFLAG_STRING_LITERAL | C_TESTFLAG_CHAR_LITERAL | C_TESTFLAG_IDENTIFIER) & flags);
+ 
+@@ -1820,13 +1816,9 @@
+ 		{
+ 		union_quartet<C_PPIntCore,C_PPFloatCore,C_PPDecimalFloat,C_PPHexFloat> test;
+ 		if 		(C_PPDecimalFloat::is(x,x_len,test.third))
+-			{
+ 			flags |= C_TESTFLAG_FLOAT | C_TESTFLAG_DECIMAL;
+-			}
+ 		else if	(C_PPHexFloat::is(x,x_len,test.fourth))
+-			{
+ 			flags |= C_TESTFLAG_FLOAT | C_TESTFLAG_HEXADECIMAL;
+-			}
+ 		else if (C_PPIntCore::is(x,x_len,test.first))
+ 			{
+ 			assert(C_PPIntCore::ULL>=test.first.hinted_type);
+@@ -5772,20 +5764,17 @@
+ 			lhs_test %= rhs_test;
+ 			if (0!=lhs_test && rhs_negative!=lhs_negative)
+ 				{
+-				if (bool_options[boolopt::int_neg_div_rounds_away_from_zero])
+-					{
+-					rhs_test -= lhs_test;
+-					lhs_test = rhs_test;
+-					}
+-				else{
+-					// convert to parsed - literal
++				if (!bool_options[boolopt::int_neg_div_rounds_away_from_zero])
++					{	// convert to parsed - literal
+ 					parse_tree tmp;
+ 					VM_to_literal(tmp,lhs_test,src,types);
+ 
+ 					src.DeleteIdx<1>(0);
+ 					force_unary_negative_literal(src,tmp);
+ 					return true;
+-					}
++					};
++				rhs_test -= lhs_test;
++				lhs_test = rhs_test;
+ 				};
+ 
+ 			res_int = lhs_test;
+@@ -6844,20 +6833,15 @@
+ 				BOOST_STATIC_ASSERT(!(C99_RELATION_SUBTYPE_GTE%2));
+ 				use_unsigned_compare = false;
+ 				if (!lhs_zero)
+-					{
+ 					result = lhs_negative ? (op_uses_less_than ? "1" : "0") : (op_uses_less_than ? "0" : "1");
+-					}
+-				else if (rhs_zero)
+-					{
+-					result = (C99_RELATION_SUBTYPE_LTE<=src.subtype) ? "1" : "0"; 	// low-level, check with static assertions
+-					// is above correct?
++				else if (!rhs_zero)
++					result = rhs_negative ? (op_uses_less_than ? "0" : "1") : (op_uses_less_than ? "1" : "0");
++				else{	// is below correct?
+ 					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LTE<=C99_RELATION_SUBTYPE_GTE);
+ 					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_LT<C99_RELATION_SUBTYPE_LTE);
+ 					BOOST_STATIC_ASSERT(C99_RELATION_SUBTYPE_GT<C99_RELATION_SUBTYPE_LTE);
+-					}
+-				else{
+-					result = rhs_negative ? (op_uses_less_than ? "0" : "1") : (op_uses_less_than ? "1" : "0");
+-					}
++					result = (C99_RELATION_SUBTYPE_LTE<=src.subtype) ? "1" : "0"; 	// low-level, check with static assertions					
++					}				
+ 				}
+ 			};
+ 		if (use_unsigned_compare)
+@@ -8750,13 +8734,9 @@
+ 			if (index_src_is_char && target_machine->signed_max<virtual_machine::std_int_char>()<tmp)
+ 				{
+ 				if (tmp.to_uint()-1==target_machine->signed_max<virtual_machine::std_int_char>())
+-					{
+ 					INFORM("(does this source code want char to act like signed char, with integer representation sign-and-magnitude?)");
+-					}
+ 				else if (tmp==target_machine->unsigned_max<virtual_machine::std_int_char>())
+-					{
+ 					INFORM("(does this source code want char to act like signed char, with integer representation one's complement?)");
+-					}
+ 				}
+ 			src.flags |= parse_tree::INVALID;
+ 			zcc_errors.inc_error();
+
+
+

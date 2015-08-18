@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r647 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r647%20-%20trunk&In-Reply-To=%3C20110526183434.4BACD481357%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000413.html">
+   <LINK REL="Next"  HREF="000415.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r647 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r647%20-%20trunk&In-Reply-To=%3C20110526183434.4BACD481357%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r647 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu May 26 20:34:34 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000413.html">[Zcplusplus-commits] r646 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000415.html">[Zcplusplus-commits] r648 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#414">[ date ]</a>
+              <a href="thread.html#414">[ thread ]</a>
+              <a href="subject.html#414">[ subject ]</a>
+              <a href="author.html#414">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-05-26 20:34:33 +0200 (Thu, 26 May 2011)
+New Revision: 647
+
+Modified:
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+Log:
+__zcc_linkage wants to know active namespace, like properly parsing identifiers does
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2011-05-23 02:38:33 UTC (rev 646)
++++ trunk/ParseTree.cpp	2011-05-26 18:34:33 UTC (rev 647)
+@@ -9,6 +9,7 @@
+ 
+ bool (*parse_tree::hook_INC_INFORM)(const parse_tree&amp;) = NULL;
+ type_system* parse_tree::types = NULL;
++const char* parse_tree::active_namespace = NULL;
+ 
+ // in case we have to debug memory corruption
+ // #define IRRATIONAL_CAUTION 1
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2011-05-23 02:38:33 UTC (rev 646)
++++ trunk/ParseTree.hpp	2011-05-26 18:34:33 UTC (rev 647)
+@@ -53,6 +53,9 @@
+     // language-specific helpers for INC_INFORM
+     static bool (*hook_INC_INFORM)(const parse_tree&amp;);
+     static type_system* types;
++
++    // other parsing assistance
++    static const char* active_namespace;	// for C++ and similar languages 
+     
+ 	void MoveInto(parse_tree&amp; dest);
+ 	void OverwriteInto(parse_tree&amp; dest);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000413.html">[Zcplusplus-commits] r646 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000415.html">[Zcplusplus-commits] r648 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#414">[ date ]</a>
+              <a href="thread.html#414">[ thread ]</a>
+              <a href="subject.html#414">[ subject ]</a>
+              <a href="author.html#414">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

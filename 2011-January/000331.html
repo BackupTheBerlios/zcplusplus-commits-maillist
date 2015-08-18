@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r564 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r564%20-%20trunk&In-Reply-To=%3C20110109220500.02BEC480BEC%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000330.html">
+   <LINK REL="Next"  HREF="000332.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r564 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r564%20-%20trunk&In-Reply-To=%3C20110109220500.02BEC480BEC%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r564 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  9 23:04:59 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000330.html">[Zcplusplus-commits] r563 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000332.html">[Zcplusplus-commits] r565 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#331">[ date ]</a>
+              <a href="thread.html#331">[ thread ]</a>
+              <a href="subject.html#331">[ subject ]</a>
+              <a href="author.html#331">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-09 23:04:59 +0100 (Sun, 09 Jan 2011)
+New Revision: 564
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+be more consistent about using those tmp variables
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-09 21:49:15 UTC (rev 563)
++++ trunk/CSupport.cpp	2011-01-09 22:04:59 UTC (rev 564)
+@@ -14385,7 +14385,7 @@
+ 					{
+ 					if (const C_union_struct_def* const fatal_def = parse_tree::types-&gt;get_C_structdef(tmp))
+ 						{	//! \test zcc/decl.C99/Error_struct_multidef.hpp
+-						message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++						message_header(tmp2.index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INC_INFORM(&quot;'struct &quot;);
+ 						INC_INFORM(tmp2.index_tokens[1].token.first,tmp2.index_tokens[1].token.second);
+@@ -14438,7 +14438,7 @@
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(src.data&lt;0&gt;()[i+k],&quot;enum&quot;));
++					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -14634,7 +14634,7 @@
+ 					{
+ 					if (const C_union_struct_def* const fatal_def = parse_tree::types-&gt;get_C_structdef(tmp))
+ 						{	//! \test zcc/decl.C99/Error_class_multidef.hpp
+-						message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++						message_header(tmp2.index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INC_INFORM(&quot;'class &quot;);
+ 						INC_INFORM(tmp2.index_tokens[1].token.first,tmp2.index_tokens[1].token.second);
+@@ -14742,7 +14742,7 @@
+ 				// parse the union and upgrade it to a full definition
+ 				const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(tmp);
+ 				assert(tmp3);
+-				const parse_tree&amp; tmp2 =  src.data&lt;0&gt;()[i+k];				
++				parse_tree&amp; tmp2 =  src.c_array&lt;0&gt;()[i+k];				
+ 				C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,tmp2.index_tokens[0].logical_line,tmp2.index_tokens[0].src_filename);
+ 				//! \todo record field structure, etc.
+ 				parse_tree::types-&gt;upgrade_decl_to_def(tmp,tmp4);
+@@ -14760,7 +14760,7 @@
+ 					//! \test decl.C99/Error_class_anon_def_const_volatile4.hpp
+ 					//! \test decl.C99/Error_class_anon_def_const_volatile5.hpp
+ 					//! \test decl.C99/Error_class_anon_def_const_volatile6.hpp
+-					CPP0X_flush_const_volatile_without_object(src.c_array&lt;0&gt;()[i+k]);
++					CPP0X_flush_const_volatile_without_object(tmp2);
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_class.hpp
+ 					message_header(tmp2.index_tokens[0]);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-09 21:49:15 UTC (rev 563)
++++ trunk/CSupport.cpp.in	2011-01-09 22:04:59 UTC (rev 564)
+@@ -14532,7 +14532,7 @@
+ 					{
+ 					if (const C_union_struct_def* const fatal_def = parse_tree::types-&gt;get_C_structdef(tmp))
+ 						{	//! \test zcc/decl.C99/Error_struct_multidef.hpp
+-						message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++						message_header(tmp2.index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INC_INFORM(&quot;'struct &quot;);
+ 						INC_INFORM(tmp2.index_tokens[1].token.first,tmp2.index_tokens[1].token.second);
+@@ -14585,7 +14585,7 @@
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+-					assert(is_C99_named_specifier(src.data&lt;0&gt;()[i+k],&quot;enum&quot;));
++					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+ 					continue;
+ 					}
+@@ -14781,7 +14781,7 @@
+ 					{
+ 					if (const C_union_struct_def* const fatal_def = parse_tree::types-&gt;get_C_structdef(tmp))
+ 						{	//! \test zcc/decl.C99/Error_class_multidef.hpp
+-						message_header(src.data&lt;0&gt;()[i+k].index_tokens[0]);
++						message_header(tmp2.index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+ 						INC_INFORM(&quot;'class &quot;);
+ 						INC_INFORM(tmp2.index_tokens[1].token.first,tmp2.index_tokens[1].token.second);
+@@ -14889,7 +14889,7 @@
+ 				// parse the union and upgrade it to a full definition
+ 				const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(tmp);
+ 				assert(tmp3);
+-				const parse_tree&amp; tmp2 =  src.data&lt;0&gt;()[i+k];				
++				parse_tree&amp; tmp2 =  src.c_array&lt;0&gt;()[i+k];				
+ 				C_union_struct_def* tmp4 = new C_union_struct_def(*tmp3,tmp2.index_tokens[0].logical_line,tmp2.index_tokens[0].src_filename);
+ 				//! \todo record field structure, etc.
+ 				parse_tree::types-&gt;upgrade_decl_to_def(tmp,tmp4);
+@@ -14907,7 +14907,7 @@
+ 					//! \test decl.C99/Error_class_anon_def_const_volatile4.hpp
+ 					//! \test decl.C99/Error_class_anon_def_const_volatile5.hpp
+ 					//! \test decl.C99/Error_class_anon_def_const_volatile6.hpp
+-					CPP0X_flush_const_volatile_without_object(src.c_array&lt;0&gt;()[i+k]);
++					CPP0X_flush_const_volatile_without_object(tmp2);
+ 					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
+ 					//! \test zcc/decl.C99/Warn_inaccessible_class.hpp
+ 					message_header(tmp2.index_tokens[0]);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000330.html">[Zcplusplus-commits] r563 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000332.html">[Zcplusplus-commits] r565 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#331">[ date ]</a>
+              <a href="thread.html#331">[ thread ]</a>
+              <a href="subject.html#331">[ subject ]</a>
+              <a href="author.html#331">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

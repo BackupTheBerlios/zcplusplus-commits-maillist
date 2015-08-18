@@ -1,0 +1,1651 @@
+From zaimoni at mail.berlios.de  Fri Oct 16 19:52:53 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Fri, 16 Oct 2009 19:52:53 +0200
+Subject: [Zcplusplus-commits] r265 - trunk
+Message-ID: <200910161752.n9GHqrZS028409@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-16 19:52:49 +0200 (Fri, 16 Oct 2009)
+New Revision: 265
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.hpp
+Log:
+centralize handling of static asserts
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-09-30 00:37:40 UTC (rev 264)
++++ trunk/CSupport.cpp	2009-10-16 17:52:49 UTC (rev 265)
+@@ -9997,6 +9997,138 @@
+ 	return iter-first;
+ }
+ 
++static void C99_CPP_handle_static_assertion(parse_tree& src,type_system& types,PP_auxfunc& langinfo,const size_t i,const char* const err)
++{
++	assert(err && *err);
++	// find the next ';'
++	const size_t j = i+span_to_semicolon(src.data<0>()+i,src.end<0>());
++	if (src.size<0>()<=j)
++		{	//! \test zcc/staticassert.C99/Error_scope1.h, zcc/staticassert.C99/Error_scope1.hpp
++			//! \test zcc/staticassert.C99/Error_scope2.h, zcc/staticassert.C99/Error_scope2.hpp
++		message_header(src.data<0>()[i].index_tokens[0]);
++		INC_INFORM(ERR_STR);
++		INFORM("static assertion cut off by end of scope");
++		zcc_errors.inc_error();
++		src.DeleteNSlotsAt<0>(j-i,i);
++		return;
++		};
++	if (   !is_naked_parentheses_pair(src.data<0>()[i+1])
++		|| 3>src.data<0>()[i+1].size<0>()
++		|| !robust_token_is_char<','>(src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-2])
++		|| !src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].is_atomic()
++		|| C_TESTFLAG_STRING_LITERAL!=src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].flags)
++		{	//! \test zcc/staticassert.C99/Error_badarg1.h, zcc/staticassert.C99/Error_badarg1.hpp
++			//! \test zcc/staticassert.C99/Error_badarg2.h, zcc/staticassert.C99/Error_badarg2.hpp
++			//! \test zcc/staticassert.C99/Error_badarg3.h, zcc/staticassert.C99/Error_badarg3.hpp
++			//! \test zcc/staticassert.C99/Error_badarg5.h, zcc/staticassert.C99/Error_badarg5.hpp
++			//! \test zcc/staticassert.C99/Error_badarg6.h, zcc/staticassert.C99/Error_badarg6.hpp
++			//! \test zcc/staticassert.C99/Error_badarg7.h, zcc/staticassert.C99/Error_badarg7.hpp
++		message_header(src.data<0>()[i].index_tokens[0]);
++		INC_INFORM(ERR_STR);
++		INFORM("malformed static assertion");
++		zcc_errors.inc_error();
++		src.DeleteNSlotsAt<0>(j-i+1,i);
++		return;
++		};
++	if (2!=j-i)
++		{	//! \test zcc/staticassert.C99/Error_badarg4.h, zcc/staticassert.C99/Error_badarg4.hpp
++		message_header(src.data<0>()[i].index_tokens[0]);
++		INC_INFORM(ERR_STR);
++		INFORM("garbage between static assertion arguments and terminating ;");
++		zcc_errors.inc_error();
++		src.DeleteNSlotsAt<0>(j-i+1,i);
++		return;
++		};
++	// actually use the static assertion correctly.
++	parse_tree_class parsetree;
++	{
++	const size_t k = src.data<0>()[i+1].size<0>()-2;
++	if (!parsetree.resize<0>(k))
++		{
++		message_header(src.data<0>()[i].index_tokens[0]);
++		INC_INFORM(ERR_STR);
++		_fatal("insufficient RAM to parse static assertion");
++		};
++	zaimoni::autotransform_n<void (*)(parse_tree&,const parse_tree&)>(parsetree.c_array<0>(),src.data<0>()[i+1].data<0>(),k,value_copy);
++	}
++	// init above correctly
++	// snip from Condense
++	const size_t starting_errors = zcc_errors.err_count();
++	(langinfo.LocateExpression)(parsetree,SIZE_MAX,types);
++	if (starting_errors==zcc_errors.err_count())
++		{
++		while(parsetree.is_raw_list() && 1==parsetree.size<0>()) parsetree.eval_to_arg<0>(0);
++		// end snip from Condense
++		// snip from CPreproc
++		if (!parsetree.is_atomic() && !(langinfo.EvalParseTree)(parsetree,types))
++			{
++			parsetree.destroy();	// efficiency
++			message_header(src.data<0>()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(err);
++			zcc_errors.inc_error();
++			src.DeleteNSlotsAt<0>(j-i+1,i);
++			return;
++			}
++		(langinfo.PPHackTree)(parsetree,types);
++		// final, when above is working properly
++		if (!parsetree.is_atomic())
++			{	//! \bug need test cases
++			parsetree.destroy();	// efficiency
++			message_header(src.data<0>()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(err);
++			zcc_errors.inc_error();
++			src.DeleteNSlotsAt<0>(j-i+1,i);
++			return;
++			}
++		// end snip from CPreproc
++		bool is_true = false;
++		if (!(langinfo.LiteralConvertsToBool)(parsetree,is_true))
++			{	//! \bug need test cases
++			parsetree.destroy();	// efficiency
++			message_header(src.data<0>()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			INFORM(err);
++			zcc_errors.inc_error();
++			src.DeleteNSlotsAt<0>(j-i+1,i);
++			return;
++			};
++		parsetree.destroy();	// efficiency
++		//! \test zcc/staticassert.C1X/Pass_autosucceed.h, zcc/staticassert.C1X/Pass_autosucceed.hpp
++		if (!is_true)
++			{	//! \test zcc/staticassert.C1X/Error_autofail.h, zcc/staticassert.C1X/Error_autofail.hpp
++			message_header(src.data<0>()[i].index_tokens[0]);
++			INC_INFORM(ERR_STR);
++			// hmm...really should unescape string before emitting
++			const size_t tmp_size = LengthOfCStringLiteral(src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.second);
++			if (1U>=tmp_size || 'L'== *src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first)
++				{	//! \todo handle wide-strings later
++				INFORM("(static assertion failure)");
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt<0>(j-i+1,i);
++				return;
++				};
++
++			char* tmp = _new_buffer<char>(tmp_size);
++			if (NULL==tmp)
++				{
++				INFORM("(static assertion failure)");
++				zcc_errors.inc_error();
++				src.DeleteNSlotsAt<0>(j-i+1,i);
++				return;
++				}
++			UnescapeCString(tmp,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first+1,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.second-2);
++			INFORM(tmp);
++			free(tmp);
++			zcc_errors.inc_error();
++			src.DeleteNSlotsAt<0>(j-i+1,i);
++			return;
++			};
++		}
++	src.DeleteNSlotsAt<0>(j-i+1,i);
++}
++
+ // will need: "function-type vector"
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -10026,133 +10158,7 @@
+ 		// C static assertion scanner
+ 		if (robust_token_is_string<14>(src.data<0>()[i].index_tokens[0].token,"_Static_Assert"))
+ 			{	// _Static_Assert ( constant-expression , string-literal ) ;
+-			// find the next ';'
+-			const size_t j = i+span_to_semicolon(src.data<0>()+i,src.end<0>());
+-			if (src.size<0>()<=j)
+-				{	//! \test zcc/staticassert.C99/Error_scope1.h
+-					//! \test zcc/staticassert.C99/Error_scope2.h
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("static assertion cut off by end of scope");
+-				zcc_errors.inc_error();
+-				src.DeleteNSlotsAt<0>(j-i,i);
+-				continue;
+-				};
+-			if (   !is_naked_parentheses_pair(src.data<0>()[i+1])
+-				|| 3>src.data<0>()[i+1].size<0>()
+-				|| !robust_token_is_char<','>(src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-2])
+-				|| !src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].is_atomic()
+-				|| C_TESTFLAG_STRING_LITERAL!=src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].flags)
+-				{	//! \test zcc/staticassert.C99/Error_badarg1.h
+-					//! \test zcc/staticassert.C99/Error_badarg2.h
+-					//! \test zcc/staticassert.C99/Error_badarg3.h
+-					//! \test zcc/staticassert.C99/Error_badarg5.h
+-					//! \test zcc/staticassert.C99/Error_badarg6.h
+-					//! \test zcc/staticassert.C99/Error_badarg7.h
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("malformed static assertion");
+-				zcc_errors.inc_error();
+-				src.DeleteNSlotsAt<0>(j-i+1,i);
+-				continue;
+-				};
+-			if (2!=j-i)
+-				{	//! \test zcc/staticassert.C99/Error_badarg4.h
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("garbage between static assertion arguments and terminating ;");
+-				zcc_errors.inc_error();
+-				src.DeleteNSlotsAt<0>(j-i+1,i);
+-				continue;
+-				};
+-			// actually use the static assertion correctly.
+-			parse_tree_class parsetree;
+-			{
+-			const size_t k = src.data<0>()[i+1].size<0>()-2;
+-			if (!parsetree.resize<0>(k))
+-				{
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				_fatal("insufficient RAM to parse static assertion");
+-				};
+-			zaimoni::autotransform_n<void (*)(parse_tree&,const parse_tree&)>(parsetree.c_array<0>(),src.data<0>()[i+1].data<0>(),k,value_copy);
+-			}
+-			// init above correctly
+-			// snip from Condense
+-			const size_t starting_errors = zcc_errors.err_count();
+-			C99_locate_expressions(parsetree,SIZE_MAX,types);
+-			if (starting_errors==zcc_errors.err_count())
+-				{
+-				while(parsetree.is_raw_list() && 1==parsetree.size<0>()) parsetree.eval_to_arg<0>(0);
+-				// end snip from Condense
+-				// snip from CPreproc
+-				if (!parsetree.is_atomic() && !C99_EvalParseTree(parsetree,types))
+-					{
+-					parsetree.destroy();	// efficiency
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					INFORM(" : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)");
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					}
+-				C99_PPHackTree(parsetree,types);
+-				// final, when above is working properly
+-				if (!parsetree.is_atomic())
+-					{	//! \bug need test cases
+-					parsetree.destroy();	// efficiency
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					INFORM(" : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)");
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					}
+-				// end snip from CPreproc
+-				bool is_true = false;
+-				if (!C99_literal_converts_to_bool(parsetree,is_true))
+-					{	//! \bug need test cases
+-					parsetree.destroy();	// efficiency
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					INFORM(" : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)");
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					};
+-				parsetree.destroy();	// efficiency
+-				//! \test zcc/staticassert.C1X/Pass_autosucceed.h
+-				if (!is_true)
+-					{	//! \test zcc/staticassert.C1X/Error_autofail.h
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					// hmm...really should unescape string before emitting
+-					const size_t tmp_size = LengthOfCStringLiteral(src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.second);
+-					if (1U>=tmp_size || 'L'== *src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first)
+-						{	//! \todo handle wide-strings later
+-						INFORM("(static assertion failure)");
+-						zcc_errors.inc_error();
+-						src.DeleteNSlotsAt<0>(j-i+1,i);
+-						continue;
+-						};
+-					
+-					char* tmp = _new_buffer<char>(tmp_size);
+-					if (NULL==tmp)
+-						{
+-						INFORM("(static assertion failure)");
+-						zcc_errors.inc_error();
+-						src.DeleteNSlotsAt<0>(j-i+1,i);
+-						continue;
+-						}
+-					UnescapeCString(tmp,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first+1,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.second-2);
+-					INFORM(tmp);
+-					free(tmp);
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					};
+-				}
+-			src.DeleteNSlotsAt<0>(j-i+1,i);
++			C99_CPP_handle_static_assertion(src,types,*CLexer->pp_support,i," : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)");
+ 			continue;
+ 			};
+ 		// general declaration scanner 
+@@ -10393,131 +10399,7 @@
+ 		// C++ static assertion scanner
+ 		if (robust_token_is_string<13>(src.data<0>()[i].index_tokens[0].token,"static_assert"))
+ 			{	// static_assert ( constant-expression , string-literal ) ;
+-			// find the next ';'
+-			const size_t j = i+span_to_semicolon(src.data<0>()+i,src.end<0>());
+-			if (src.size<0>()<=j)
+-				{	//! \test zcc/staticassert.C99/Error_scope1.hpp
+-					//! \test zcc/staticassert.C99/Error_scope2.hpp
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("static assertion cut off by end of scope");
+-				zcc_errors.inc_error();
+-				src.DeleteNSlotsAt<0>(j-i,i);
+-				continue;
+-				};
+-			if (   !is_naked_parentheses_pair(src.data<0>()[i+1])
+-				|| 3>src.data<0>()[i+1].size<0>()
+-				|| !robust_token_is_char<','>(src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-2])
+-				|| !src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].is_atomic()
+-				|| C_TESTFLAG_STRING_LITERAL!=src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].flags)
+-				{	//! \test zcc/staticassert.C99/Error_badarg1.hpp
+-					//! \test zcc/staticassert.C99/Error_badarg2.hpp
+-					//! \test zcc/staticassert.C99/Error_badarg3.hpp
+-					//! \test zcc/staticassert.C99/Error_badarg5.hpp
+-					//! \test zcc/staticassert.C99/Error_badarg6.hpp
+-					//! \test zcc/staticassert.C99/Error_badarg7.hpp
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("malformed static assertion");
+-				zcc_errors.inc_error();
+-				src.DeleteNSlotsAt<0>(j-i+1,i);
+-				continue;
+-				};
+-			if (2!=j-i)
+-				{	//! \test zcc/staticassert.C99/Error_badarg4.hpp
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("garbage between static assertion arguments and terminating ;");
+-				zcc_errors.inc_error();
+-				src.DeleteNSlotsAt<0>(j-i+1,i);
+-				continue;
+-				};
+-			// actually use the static assertion correctly.
+-			parse_tree_class parsetree;
+-			{	// work on a copy of the argument list
+-			const size_t k = src.data<0>()[i+1].size<0>()-2;
+-			if (!parsetree.resize<0>(k))
+-				{
+-				message_header(src.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				_fatal("insufficient RAM to parse static assertion");
+-				};
+-			zaimoni::autotransform_n<void (*)(parse_tree&,const parse_tree&)>(parsetree.c_array<0>(),src.data<0>()[i+1].data<0>(),k,value_copy);
+-			}
+-			// snip from Condense
+-			const size_t starting_errors = zcc_errors.err_count();
+-			CPP_locate_expressions(parsetree,SIZE_MAX,types);
+-			if (starting_errors==zcc_errors.err_count())
+-				{
+-				while(parsetree.is_raw_list() && 1==parsetree.size<0>()) parsetree.eval_to_arg<0>(0);
+-				// end snip from Condense
+-				// snip from CPreproc
+-				if (!parsetree.is_atomic() && !CPP_EvalParseTree(parsetree,types))
+-					{
+-					parsetree.destroy();	// efficiency
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					INFORM(" : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)");
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					}
+-				CPP_PPHackTree(parsetree,types);
+-				if (!parsetree.is_atomic())
+-					{	//! \bug need test cases
+-					parsetree.destroy();	// efficiency
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					INFORM(" : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)");
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					}
+-				// end snip from CPreproc
+-				bool is_true = false;
+-				if (!CPP_literal_converts_to_bool(parsetree,is_true))
+-					{	//! \bug need test cases
+-					parsetree.destroy();	// efficiency
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					INFORM(" : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)");
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					};
+-				parsetree.destroy();	// efficiency
+-				//! \test zcc/staticassert.C1X/Pass_autosucceed.hpp
+-				if (!is_true)
+-					{	//! \test zcc/staticassert.C1X/Error_autofail.hpp
+-					message_header(src.data<0>()[i].index_tokens[0]);
+-					INC_INFORM(ERR_STR);
+-					// hmm...really should unescape string before emitting
+-					const size_t tmp_size = LengthOfCStringLiteral(src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.second);
+-					if (1U>=tmp_size || 'L'== *src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first)
+-						{	//! \todo handle wide-strings later
+-						INFORM("(static assertion failure)");
+-						zcc_errors.inc_error();
+-						src.DeleteNSlotsAt<0>(j-i+1,i);
+-						continue;
+-						};
+-					
+-					char* tmp = _new_buffer<char>(tmp_size);
+-					if (NULL==tmp)
+-						{
+-						INFORM("(static assertion failure)");
+-						zcc_errors.inc_error();
+-						src.DeleteNSlotsAt<0>(j-i+1,i);
+-						continue;
+-						}
+-					UnescapeCString(tmp,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.first+1,src.data<0>()[i+1].data<0>()[src.data<0>()[i+1].size<0>()-1].index_tokens[0].token.second-2);
+-					INFORM(tmp);
+-					free(tmp);
+-					zcc_errors.inc_error();
+-					src.DeleteNSlotsAt<0>(j-i+1,i);
+-					continue;
+-					};
+-				}
+-			src.DeleteNSlotsAt<0>(j-i+1,i);
++			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer->pp_support,i," : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)");
+ 			continue;
+ 			};
+ 		// namespace scanner
+@@ -10868,7 +10750,9 @@
+ 	C99_echo_reserved_keyword,
+ 	C99_echo_reserved_symbol,
+ 	C99_ContextFreeParse,
+-	C99_ContextParse
++	C99_ContextParse,
++	C99_locate_expressions,
++	C99_literal_converts_to_bool
+ 	};
+ 
+ PP_auxfunc CPlusPlus_aux
+@@ -10887,7 +10771,9 @@
+ 	CPP_echo_reserved_keyword,
+ 	CPP_echo_reserved_symbol,
+ 	CPP_ContextFreeParse,
+-	CPP_ContextParse
++	CPP_ContextParse,
++	CPP_locate_expressions,
++	CPP_literal_converts_to_bool
+ 	};
+ 
+ #if 0
+
+Modified: trunk/CSupport.hpp
+===================================================================
+--- trunk/CSupport.hpp	2009-09-30 00:37:40 UTC (rev 264)
++++ trunk/CSupport.hpp	2009-10-16 17:52:49 UTC (rev 265)
+@@ -126,6 +126,9 @@
+ 	func_traits<const char* (*)(const char* x,size_t x_len)>::function_ref_type EchoReservedSymbol;
+ 	func_traits<void (*)(parse_tree&,const type_system&)>::function_ref_type ContextFreeParse;		// return true iff no errors
+ 	func_traits<void (*)(parse_tree&,type_system&)>::function_ref_type ContextParse;		// return true iff no errors
++	// zcc 0.0.3
++	func_traits<void (*)(parse_tree&,const size_t,const type_system&)>::function_ref_type LocateExpression;
++	func_traits<bool (*)(const parse_tree&, bool&)>::function_ref_type LiteralConvertsToBool;
+ };
+ 
+ }
+
+
+
+From zaimoni at mail.berlios.de  Sat Oct 17 07:56:49 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 17 Oct 2009 07:56:49 +0200
+Subject: [Zcplusplus-commits] r266 - trunk
+Message-ID: <200910170556.n9H5unPZ010305@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-17 07:56:43 +0200 (Sat, 17 Oct 2009)
+New Revision: 266
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+make ..._reserved_... functions check what they mean; reject keywords as C++ namespace components
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-16 17:52:49 UTC (rev 265)
++++ trunk/CSupport.cpp	2009-10-17 05:56:43 UTC (rev 266)
+@@ -538,10 +538,6 @@
+ 	do	if (x_len==valid_keyword[C_KEYWORD_NONSTRICT_LB + --i].second && !strncmp(valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+ 			return valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first;
+ 	while(0<i);
+-	i = C_PREPROC_OP_STRICT_UB;
+-	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second && !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+-			return valid_pure_preprocessing_op_punc[i].first;
+-	while(0<i);
+ 	return NULL;
+ }
+ 
+@@ -553,10 +549,6 @@
+ 	do	if (x_len==valid_keyword[CPP_KEYWORD_NONSTRICT_LB + --i].second && !strncmp(valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+ 			return valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first;
+ 	while(0<i);
+-	i = CPP_PREPROC_OP_STRICT_UB;
+-	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second && !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+-			return valid_pure_preprocessing_op_punc[i].first;
+-	while(0<i);
+ 	return NULL;
+ }
+ 
+@@ -564,11 +556,7 @@
+ {
+ 	assert(NULL!=x);
+ 	assert(x_len<=strlen(x));
+-	size_t i = C_KEYWORD_STRICT_UB-C_KEYWORD_NONSTRICT_LB;
+-	do	if (x_len==valid_keyword[C_KEYWORD_NONSTRICT_LB + --i].second && !strncmp(valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+-			return valid_keyword[C_KEYWORD_NONSTRICT_LB + i].first;
+-	while(0<i);
+-	i = C_PREPROC_OP_STRICT_UB;
++	size_t i = C_PREPROC_OP_STRICT_UB;
+ 	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second && !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+ 			return valid_pure_preprocessing_op_punc[i].first;
+ 	while(0<i);
+@@ -579,11 +567,7 @@
+ {
+ 	assert(NULL!=x);
+ 	assert(x_len<=strlen(x));
+-	size_t i = CPP_KEYWORD_STRICT_UB-CPP_KEYWORD_NONSTRICT_LB;
+-	do	if (x_len==valid_keyword[CPP_KEYWORD_NONSTRICT_LB + --i].second && !strncmp(valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first,x,x_len))
+-			return valid_keyword[CPP_KEYWORD_NONSTRICT_LB + i].first;
+-	while(0<i);
+-	i = CPP_PREPROC_OP_STRICT_UB;
++	size_t i = CPP_PREPROC_OP_STRICT_UB;
+ 	do	if (x_len==valid_pure_preprocessing_op_punc[--i].second && !strncmp(valid_pure_preprocessing_op_punc[i].first,x,x_len))
+ 			return valid_pure_preprocessing_op_punc[i].first;
+ 	while(0<i);
+@@ -9690,6 +9674,7 @@
+ {
+ 	if (!x.is_atomic()) return false;
+ 	if (PARSE_PRIMARY_TYPE & x.flags) return false;
++	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+ 	if (C_TESTFLAG_IDENTIFIER & x.index_tokens[0].flags) return true;
+ 	if (token_is_string<2>(x.index_tokens[0].token,"::")) return true;
+ 	return false;
+
+
+
+From zaimoni at mail.berlios.de  Sat Oct 17 08:28:25 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 17 Oct 2009 08:28:25 +0200
+Subject: [Zcplusplus-commits] r267 - trunk
+Message-ID: <200910170628.n9H6SPxo020351@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-17 08:28:15 +0200 (Sat, 17 Oct 2009)
+New Revision: 267
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+tune up usage of robust_token_is_char
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 05:56:43 UTC (rev 266)
++++ trunk/CSupport.cpp	2009-10-17 06:28:15 UTC (rev 267)
+@@ -1607,8 +1607,7 @@
+ 
+ template<char c> inline bool robust_token_is_char(const parse_tree& x)
+ {
+-	return x.is_atomic()
+-		&& robust_token_is_char<c>(x.index_tokens[0].token);
++	return x.is_atomic() && token_is_char<c>(x.index_tokens[0].token);
+ }
+ 
+ //! \todo if we have an asphyxiates_left_brace, suppress_naked_brackets_and_braces goes obsolete
+@@ -10180,7 +10179,7 @@
+ 					src.DeleteNSlotsAt<0>(decl_count,i);
+ 				return;
+ 				};
+-			if (src.data<0>()[i+decl_count].is_atomic() && token_is_char<';'>(src.data<0>()[i+decl_count].index_tokens[0].token))
++			if (robust_token_is_char<';'>(src.data<0>()[i+decl_count]))
+ 				{	// C99 7p2 error: must declare something
+ 					//! \test zcc/decl.C99/Error_extern_semicolon.h
+ 					//! \test zcc/decl.C99/Error_static_semicolon.h
+@@ -10304,7 +10303,7 @@
+ 					};
+ 				//! \todo function declarations can be self-terminating
+ 				// ;: done
+-				if (src.data<0>()[i+decl_count+decl_offset].is_atomic() && token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset].index_tokens[0].token))
++				if (robust_token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset]))
+ 					{
+ 					src.c_array<0>()[i+decl_count+decl_offset].flags |= parse_tree::GOOD_LINE_BREAK;
+ 					++decl_offset;
+@@ -10312,14 +10311,14 @@
+ 					};
+ 				// ,: iterate
+ 				// anything else: error
+-				if (!src.data<0>()[i+decl_count+decl_offset].is_atomic() || !token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset].index_tokens[0].token))
++				if (!robust_token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset]))
+ 					{
+ 					message_header(src.data<0>()[i+decl_count+decl_offset].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM("declaration disoriented by missing , (C99 6.7p1)");
+ 					// find the next semicolon
+ 					size_t j = i+decl_count+decl_offset;
+-					while((!src.data<0>()[j].is_atomic() || !token_is_char<';'>(src.data<0>()[j].index_tokens[0].token)) && src.size<0>()> ++j);
++					while(!robust_token_is_char<';'>(src.data<0>()[j]) && src.size<0>()> ++j);
+ 					src.DeleteNSlotsAt<0>(j-(i+decl_count+decl_offset),i+decl_count+decl_offset-1);
+ 					continue;
+ 					}
+@@ -10545,7 +10544,7 @@
+ 					src.DeleteNSlotsAt<0>(decl_count,i);
+ 				return;
+ 				};
+-			if (src.data<0>()[i+decl_count].is_atomic() && token_is_char<';'>(src.data<0>()[i+decl_count].index_tokens[0].token))
++			if (robust_token_is_char<';'>(src.data<0>()[i+decl_count]))
+ 				{	// must declare something
+ 					//! \test zcc/decl.C99/Error_extern_semicolon.hpp
+ 					//! \test zcc/decl.C99/Error_static_semicolon.hpp
+@@ -10684,7 +10683,7 @@
+ 					};
+ 				//! \todo function declarations can be self-terminating
+ 				// ;: done
+-				if (src.data<0>()[i+decl_count+decl_offset].is_atomic() && token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset].index_tokens[0].token))
++				if (robust_token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset]))
+ 					{
+ 					src.c_array<0>()[i+decl_count+decl_offset].flags |= parse_tree::GOOD_LINE_BREAK;
+ 					++decl_offset;
+@@ -10692,14 +10691,14 @@
+ 					};
+ 				// ,: iterate
+ 				// anything else: error
+-				if (!src.data<0>()[i+decl_count+decl_offset].is_atomic() || !token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset].index_tokens[0].token))
++				if (!robust_token_is_char<';'>(src.data<0>()[i+decl_count+decl_offset]))
+ 					{
+ 					message_header(src.data<0>()[i+decl_count+decl_offset].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					INFORM("declaration disoriented by missing , (C++98 7p1)");
+ 					// find the next semicolon
+ 					size_t j = i+decl_count+decl_offset;
+-					while((!src.data<0>()[j].is_atomic() || !token_is_char<';'>(src.data<0>()[j].index_tokens[0].token)) && src.size<0>()> ++j);
++					while(!robust_token_is_char<';'>(src.data<0>()[j]) && src.size<0>()> ++j);
+ 					src.DeleteNSlotsAt<0>(j-(i+decl_count+decl_offset),i+decl_count+decl_offset-1);
+ 					continue;
+ 					}
+
+
+
+From zaimoni at mail.berlios.de  Sat Oct 17 20:40:02 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sat, 17 Oct 2009 20:40:02 +0200
+Subject: [Zcplusplus-commits] r268 - trunk
+Message-ID: <200910171840.n9HIe2PW017505@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-17 20:39:59 +0200 (Sat, 17 Oct 2009)
+New Revision: 268
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+minor strengthening of token testing for parse_tree
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 06:28:15 UTC (rev 267)
++++ trunk/CSupport.cpp	2009-10-17 18:39:59 UTC (rev 268)
+@@ -1526,6 +1526,28 @@
+ 	return targ_len==x.second && !strncmp(x.first,target,targ_len);
+ }
+ 
++static inline bool
++token_is_string(const POD_pair<const char*,size_t>& x,const char* const target)
++{
++	assert(NULL!=target);
++	assert(NULL!=x.first);
++	const size_t targ_len = strlen(target);
++	return targ_len==x.second && !strncmp(x.first,target,targ_len);
++}
++
++template<size_t targ_len>
++static inline bool
++robust_token_is_string(const parse_tree& x,const char* const target)
++{
++	return x.is_atomic() && token_is_string<targ_len>(x.index_tokens[0].token,target);
++}
++
++static inline bool
++robust_token_is_string(const parse_tree& x,const char* const target)
++{
++	return x.is_atomic() && token_is_string(x.index_tokens[0].token,target);
++}
++
+ template<char c>
+ static inline bool
+ token_is_char(const POD_pair<const char*,size_t>& x)
+@@ -2976,9 +2998,10 @@
+ 
+ /* strict type categories of parsing */
+ #define PARSE_PRIMARY_TYPE ((lex_flags)(1)<<(sizeof(lex_flags)*CHAR_BIT-19))
++#define PARSE_UNION_TYPE ((lex_flags)(1)<<(sizeof(lex_flags)*CHAR_BIT-20))
+ 
+ // check for collision with lowest three bits
+-BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB>=19);
++BOOST_STATIC_ASSERT(sizeof(lex_flags)*CHAR_BIT-parse_tree::PREDEFINED_STRICT_UB>=20);
+ 
+ /* nonstrict expression types */
+ #define PARSE_POSTFIX_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION)
+@@ -3000,7 +3023,7 @@
+ #define PARSE_EXPRESSION (PARSE_PRIMARY_EXPRESSION | PARSE_STRICT_POSTFIX_EXPRESSION | PARSE_STRICT_UNARY_EXPRESSION | PARSE_STRICT_CAST_EXPRESSION | PARSE_STRICT_PM_EXPRESSION | PARSE_STRICT_MULT_EXPRESSION | PARSE_STRICT_ADD_EXPRESSION | PARSE_STRICT_SHIFT_EXPRESSION | PARSE_STRICT_RELATIONAL_EXPRESSION | PARSE_STRICT_EQUALITY_EXPRESSION | PARSE_STRICT_BITAND_EXPRESSION | PARSE_STRICT_BITXOR_EXPRESSION | PARSE_STRICT_BITOR_EXPRESSION | PARSE_STRICT_LOGICAND_EXPRESSION | PARSE_STRICT_LOGICOR_EXPRESSION | PARSE_STRICT_CONDITIONAL_EXPRESSION | PARSE_STRICT_ASSIGNMENT_EXPRESSION | PARSE_STRICT_COMMA_EXPRESSION)
+ 
+ /* nonstrict type categories */
+-#define PARSE_TYPE PARSE_PRIMARY_TYPE
++#define PARSE_TYPE (PARSE_PRIMARY_TYPE | PARSE_UNION_TYPE)
+ 
+ /* already-parsed */
+ #define PARSE_OBVIOUS (PARSE_EXPRESSION | PARSE_TYPE | parse_tree::INVALID)
+@@ -9548,14 +9571,14 @@
+ }
+ 
+ //! \todo does this need to be in ParseTree.hpp?
+-size_t 
++static size_t 
+ flush_token(parse_tree& x, const size_t i, const size_t n, const char* const target)
+ {
+ 	assert(x.size<0>()>i);
+ 	assert(x.size<0>()-i>=n);
+ 	size_t offset = 0;
+ 	size_t j = 0;
+-	do	if (robust_token_is_string(x.data<0>()[i+j].index_tokens[0].token,target))
++	do	if (robust_token_is_string(x.data<0>()[i+j],target))
+ 			++offset;
+ 		else if (0<offset)
+ 			x.c_array<0>()[i+j-offset] = x.data<0>()[i+j];
+@@ -10140,7 +10163,7 @@
+ 		{
+ 		conserve_tokens(src.c_array<0>()[i]);
+ 		// C static assertion scanner
+-		if (robust_token_is_string<14>(src.data<0>()[i].index_tokens[0].token,"_Static_Assert"))
++		if (robust_token_is_string<14>(src.data<0>()[i],"_Static_Assert"))
+ 			{	// _Static_Assert ( constant-expression , string-literal ) ;
+ 			C99_CPP_handle_static_assertion(src,types,*CLexer->pp_support,i," : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)");
+ 			continue;
+@@ -10381,7 +10404,7 @@
+ 		{
+ 		conserve_tokens(src.c_array<0>()[i]);
+ 		// C++ static assertion scanner
+-		if (robust_token_is_string<13>(src.data<0>()[i].index_tokens[0].token,"static_assert"))
++		if (robust_token_is_string<13>(src.data<0>()[i],"static_assert"))
+ 			{	// static_assert ( constant-expression , string-literal ) ;
+ 			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer->pp_support,i," : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)");
+ 			continue;
+@@ -10391,7 +10414,7 @@
+ 		// C++0X has inline namespaces; ignore these for now (well, maybe not: consuming the inline will prevent problems)
+ 		// C++0X has more complicated using namespace directives: ignore these for now
+ 		// basic namespace; C++98 and C++0X agree on what this is
+-		if (robust_token_is_string<9>(src.data<0>()[i].index_tokens[0].token,"namespace"))
++		if (robust_token_is_string<9>(src.data<0>()[i],"namespace"))
+ 			{	// fail if: end of token stream
+ 				// fail if: next token is a type
+ 				// accept if: next token is {} (unnamed namespace)
+
+
+
+From zaimoni at mail.berlios.de  Sun Oct 18 00:23:13 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 18 Oct 2009 00:23:13 +0200
+Subject: [Zcplusplus-commits] r269 - trunk
+Message-ID: <200910172223.n9HMND0s008719@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-18 00:23:09 +0200 (Sun, 18 Oct 2009)
+New Revision: 269
+
+Modified:
+   trunk/CSupport.cpp
+Log:
+handle nested-name-specifier syntax in the context-free parsing stage
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 18:39:59 UTC (rev 268)
++++ trunk/CSupport.cpp	2009-10-17 22:23:09 UTC (rev 269)
+@@ -3447,7 +3447,27 @@
+ 			&&	src.empty<1>() && src.empty<2>();
+ }
+ 
++static bool is_naked_brace_pair(const parse_tree& src)
++{
++	return		robust_token_is_char<'{'>(src.index_tokens[0].token)
++			&&	robust_token_is_char<'}'>(src.index_tokens[1].token)
+ #ifndef NDEBUG
++			&&	NULL!=src.index_tokens[0].src_filename && NULL!=src.index_tokens[1].src_filename
++#endif
++			&&	src.empty<1>() && src.empty<2>();
++}
++
++static bool is_naked_bracket_pair(const parse_tree& src)
++{
++	return		robust_token_is_char<'['>(src.index_tokens[0].token)
++			&&	robust_token_is_char<']'>(src.index_tokens[1].token)
++#ifndef NDEBUG
++			&&	NULL!=src.index_tokens[0].src_filename && NULL!=src.index_tokens[1].src_filename
++#endif
++			&&	src.empty<1>() && src.empty<2>();
++}
++
++#ifndef NDEBUG
+ static bool is_array_deref_strict(const parse_tree& src)
+ {
+ 	return		robust_token_is_char<'['>(src.index_tokens[0].token)
+@@ -8897,6 +8917,131 @@
+ 	C99_notice_primary_type(src);
+ }
+ 
++bool CPP_ok_for_toplevel_qualified_name(const parse_tree& x)
++{
++	if (!x.is_atomic()) return false;
++	if (PARSE_PRIMARY_TYPE & x.flags) return false;
++	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
++	if (C_TESTFLAG_IDENTIFIER & x.index_tokens[0].flags) return true;
++	if (token_is_string<2>(x.index_tokens[0].token,"::")) return true;
++	return false;
++}
++
++void CPP_notice_scope_glue(parse_tree& src)
++{
++	assert(!src.empty<0>());
++	size_t i = 0;
++	{
++	size_t offset = 0;
++	while(i+offset<src.size<0>())
++		{
++		if (robust_token_is_string<2>(src.data<0>()[i],"::"))
++			{
++			const bool is_global = (0<i) && !CPP_ok_for_toplevel_qualified_name(src.data<0>()[i-1]);
++			size_t resize_to = src.data<0>()[i].index_tokens[0].token.second;
++			size_t forward_span = 0;
++			bool last_scope = true;
++			bool have_suppressed_consecutive_scope = false;
++			while(i+offset+forward_span+1<src.size<0>() && CPP_ok_for_toplevel_qualified_name(src.data<0>()[i+forward_span+1]))
++				{
++				const bool this_scope = robust_token_is_string<2>(src.data<0>()[i+forward_span+1],"::");
++				if (!last_scope && !this_scope) break;
++				if (last_scope && this_scope)
++					{
++					if (!have_suppressed_consecutive_scope)
++						{	//! \test zcc/decl.C99/Error_consecutive_doublecolon_type.hpp
++						simple_error(src.c_array<0>()[i]," consecutive :: operators in nested-name-specifier");
++						have_suppressed_consecutive_scope = true;
++						}
++					// remove from parse
++					src.DestroyNAtAndRotateTo<0>(1,i+forward_span,src.size<0>()-offset);
++					offset += 1;
++					continue;
++					}
++				last_scope = this_scope;
++				++forward_span;
++				resize_to += src.data<0>()[i+forward_span].index_tokens[0].token.second;
++				};
++			// assemble this into something identifier-like
++			if (!is_global)
++				{
++				--i;
++				++forward_span;
++				resize_to += src.data<0>()[i].index_tokens[0].token.second;
++				};
++			if (0<forward_span)
++				{
++				char* tmp = _new_buffer<char>(ZAIMONI_LEN_WITH_NULL(resize_to));
++				if (NULL==tmp)
++					{
++					if (0==offset) throw std::bad_alloc();
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					tmp = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(resize_to));
++					};
++				strncpy(tmp,src.data<0>()[i].index_tokens[0].token.first,src.data<0>()[i].index_tokens[0].token.second);
++				size_t j = 1;
++				do	strncat(tmp,src.data<0>()[i+j].index_tokens[0].token.first,src.data<0>()[i+j].index_tokens[0].token.second);
++				while(forward_span>= ++j);
++				const char* tmp2 = is_string_registered(tmp);
++				if (NULL==tmp2)
++					{
++					src.c_array<0>()[i].grab_index_token_from_str_literal<0>(tmp,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
++					src.c_array<0>()[i].control_index_token<0>(true);
++					}
++				else{
++					free(tmp);
++					src.c_array<0>()[i].grab_index_token_from_str_literal<0>(tmp2,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
++					};
++				j = 1;
++				do	src.c_array<0>()[i+j].destroy();
++				while(forward_span>= ++j);
++				src.DestroyNAtAndRotateTo<0>(forward_span,i+1,src.size<0>()-offset);
++				offset += forward_span;
++				};
++			if (last_scope)
++				{	// might be able to save: new, delete, operator ___, destructor name
++				if (	i+offset+1>=src.size<0>()
++					||	(   !robust_token_is_string<3>(src.data<0>()[i+1],"new")
++						 && !robust_token_is_string<6>(src.data<0>()[i+1],"delete")
++						 && !robust_token_is_string<8>(src.data<0>()[i+1],"operator")
++						 && !robust_token_is_char<'~'>(src.data<0>()[i+1])))	// no, compl does not interoperate for destructor names
++					//! \test zcc/decl.C99/Error_doublecolon_type.hpp
++					simple_error(src.c_array<0>()[i]," nested-name-specifier ending in ::");
++				}
++			};
++		++i;
++		};
++	if (0<offset) src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++	}
++
++	// efficiency tuning: we have to have no empty slots at top level before recursing,
++	// to mitigate risk of dynamic memory allocation failure
++	i = 0;
++	while(i<src.size<0>())
++		{
++		if (is_naked_parentheses_pair(src.data<0>()[i]))
++			{
++			if (!src.data<0>()[i].empty<0>())
++				// recurse into (...)
++				CPP_notice_scope_glue(src.c_array<0>()[i]);
++			}
++		else if (is_naked_brace_pair(src.data<0>()[i]))
++			{
++			if (!src.data<0>()[i].empty<0>())
++				// recurse into {...}
++				CPP_notice_scope_glue(src.c_array<0>()[i]);
++			}
++		else if (is_naked_bracket_pair(src.data<0>()[i]))
++			{
++			if (!src.data<0>()[i].empty<0>())
++				// recurse into [...]
++				CPP_notice_scope_glue(src.c_array<0>()[i]);
++			}
++		++i;
++		};
++}
++
+ //! \todo check that the fact all literals are already legal-form is used
+ static void CPP_ContextFreeParse(parse_tree& src,const type_system& types)
+ {
+@@ -8906,6 +9051,7 @@
+ 	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	CPP_notice_scope_glue(src);
+ }
+ 
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+@@ -9627,6 +9773,8 @@
+ 		// handle typedefs
+ 		if (check_for_typedef(base_type,x.index_tokens[0].token.first,types)) return true;
+ 		//! \todo handle other known types
++		// note: we have to handle typedefs of unions/structs, anonymous or otherwise ....
++		// worse, the typedef need not be *before* the union/struct declaration
+ 		return false;
+ 		};
+ 	bool analyze_flags_global(parse_tree& x, size_t i, size_t& decl_count)
+@@ -9692,49 +9840,6 @@
+ 	void value_copy_type(type_spec& dest) const {value_copy(dest,base_type);};
+ };
+ 
+-bool CPP_ok_for_toplevel_qualified_name(const parse_tree& x)
+-{
+-	if (!x.is_atomic()) return false;
+-	if (PARSE_PRIMARY_TYPE & x.flags) return false;
+-	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
+-	if (C_TESTFLAG_IDENTIFIER & x.index_tokens[0].flags) return true;
+-	if (token_is_string<2>(x.index_tokens[0].token,"::")) return true;
+-	return false;
+-}
+-
+-bool CPP_locate_qualified_name(parse_tree& x, size_t i)
+-{
+-	assert(x.size<0>()>i);
+-	if (!CPP_ok_for_toplevel_qualified_name(x.data<0>()[i])) return NULL;
+-	size_t span = 1;
+-	size_t resize_to = x.data<0>()[i].index_tokens[0].token.second;
+-	while(x.size<0>()-i>span && CPP_ok_for_toplevel_qualified_name(x.data<0>()[i+span]) && (C_TESTFLAG_IDENTIFIER & x.data<0>()[i+span].index_tokens[0].flags ? token_is_string<2>(x.data<0>()[i+span-1].index_tokens[0].token,"::") : !token_is_string<2>(x.data<0>()[i+span-1].index_tokens[0].token,"::")))
+-		resize_to += x.data<0>()[i+span++].index_tokens[0].token.second;
+-
+-	//! \todo handle templates later
+-	if (1<=span && token_is_string<2>(x.data<0>()[i+span-1].index_tokens[0].token,"::")) x.c_array<0>()[i].flags |= parse_tree::INVALID;
+-	if (1>=span) return span;
+-	{
+-	char* tmp = _new_buffer_nonNULL_throws<char>(ZAIMONI_LEN_WITH_NULL(resize_to));
+-	strncpy(tmp,x.data<0>()[i].index_tokens[0].token.first,x.data<0>()[i].index_tokens[0].token.second);
+-	size_t j = 1;
+-	do	strncat(tmp,x.data<0>()[i+j].index_tokens[0].token.first,x.data<0>()[i+j].index_tokens[0].token.second);
+-	while(span> ++j);
+-	const char* tmp2 = is_string_registered(tmp);
+-	if (NULL==tmp2)
+-		{
+-		x.c_array<0>()[i].grab_index_token_from_str_literal<0>(tmp,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
+-		x.c_array<0>()[i].control_index_token<0>(true);
+-		}
+-	else{
+-		free(tmp);
+-		x.c_array<0>()[i].grab_index_token_from_str_literal<0>(tmp2,C_TESTFLAG_IDENTIFIER);	// well...not really, but it'll substitute for one
+-		}
+-	}
+-	x.DeleteNSlotsAt<0>(span-1,i+1);
+-	return true;
+-}
+-
+ //! \todo belongs elsewhere
+ size_t count_disjoint_substring_instances(const char* const src,const char* const match)
+ {
+@@ -9807,16 +9912,11 @@
+ 			}
+ 		{	// handle typedefs
+ 		// determine what fully-qualified name would be
+-		if (CPP_locate_qualified_name(x,i))
++		if (   x.data<0>()[i].is_atomic()
++			&& !(PARSE_TYPE & x.data<0>()[i].flags)
++			&& !CPP_echo_reserved_keyword(x.data<0>()[i].index_tokens[0].token.first,x.data<0>()[i].index_tokens[0].token.second)
++			&& (C_TESTFLAG_IDENTIFIER & x.data<0>()[i].index_tokens[0].flags))
+ 			{
+-			if (parse_tree::INVALID & x.data<0>()[i].flags)
+-				{	//! \test zcc/decl.C99/Error_doublecolon_type.hpp
+-				message_header(x.data<0>()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM("qualified-name may not end in :: (C++98 7.1.5.3p1, 5.1p8)");
+-				zcc_errors.inc_error();
+-				return false;
+-				};
+ 			if (!strncmp(x.data<0>()[i].index_tokens[0].token.first,"::",2))
+ 				{	// fully-qualified
+ 				assert(2<x.data<0>()[i].index_tokens[0].token.second);
+
+
+
+From zaimoni at mail.berlios.de  Sun Oct 18 00:56:45 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 18 Oct 2009 00:56:45 +0200
+Subject: [Zcplusplus-commits] r270 - trunk/tests/zcc/decl.C99
+Message-ID: <200910172256.n9HMujGf003410@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-18 00:56:30 +0200 (Sun, 18 Oct 2009)
+New Revision: 270
+
+Added:
+   trunk/tests/zcc/decl.C99/Error_consecutive_doublecolon_type.hpp
+Modified:
+   trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp
+Log:
+test coverage for nested-name-specifier error
+
+Added: trunk/tests/zcc/decl.C99/Error_consecutive_doublecolon_type.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_consecutive_doublecolon_type.hpp	2009-10-17 22:23:09 UTC (rev 269)
++++ trunk/tests/zcc/decl.C99/Error_consecutive_doublecolon_type.hpp	2009-10-17 22:56:30 UTC (rev 270)
+@@ -0,0 +1,7 @@
++// decl.C99\Error_consecutive_doublecolon_type.hpp
++// declaration with (repairable) invalid fully-qualified name
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++#include <cstddef>
++
++static std:: ::size_t i;
+
+Modified: trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp	2009-10-17 22:23:09 UTC (rev 269)
++++ trunk/tests/zcc/decl.C99/Error_doublecolon_type.hpp	2009-10-17 22:56:30 UTC (rev 270)
+@@ -1,5 +1,5 @@
+ // decl.C99\Error_doublecolon_type.hpp
+-// declaration with too many storage qualifiers
++// declaration with invalid fully-qualified name
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+ static std:: ;
+
+
+
+From zaimoni at mail.berlios.de  Sun Oct 18 07:34:33 2009
+From: zaimoni at mail.berlios.de (zaimoni at mail.berlios.de)
+Date: Sun, 18 Oct 2009 07:34:33 +0200
+Subject: [Zcplusplus-commits] r271 - in trunk: . tests/zcc/decl.C99
+	tests/zcc.in/decl.C99
+Message-ID: <200910180534.n9I5YX9w004414@sheep.berlios.de>
+
+Author: zaimoni
+Date: 2009-10-18 07:34:07 +0200 (Sun, 18 Oct 2009)
+New Revision: 271
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in
+   trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in
+   trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in
+   trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in
+   trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in
+   trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_truncate1.h
+   trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_truncate2.h
+   trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_truncate1.h
+   trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_truncate2.h
+   trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp
+   trunk/tests/zcc/decl.C99/Error_union_truncate1.h
+   trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp
+   trunk/tests/zcc/decl.C99/Error_union_truncate2.h
+   trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+internal formatting at the context-free parsing stage for enum/class/struct/union
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/CSupport.cpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -3835,6 +3835,271 @@
+ 			&&	1==src.size<2>() && (PARSE_EXPRESSION & src.data<2>()->flags);
+ }
+ 
++#ifndef NDEBUG
++static bool is_C99_anonymous_specifier(const parse_tree& src,const char* const spec_name)
++{
++	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
++#ifndef NDEBUG
++			&&	NULL!=src.index_tokens[0].src_filename
++#endif
++			&&	NULL==src.index_tokens[1].token.first
++			&&	src.empty<0>()
++			&&	src.empty<1>()
++			&&	1==src.size<2>() && is_naked_brace_pair(src));
++		return true;
++	return false;
++}
++
++static bool is_C99_named_specifier(const parse_tree& src,const char* const spec_name)
++{
++	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
++#ifndef NDEBUG
++			&&	NULL!=src.index_tokens[0].src_filename
++#endif
++			&&	NULL!=src.index_tokens[1].token.first
++			&&	src.empty<0>()
++			&&	src.empty<1>()
++			&&	src.empty<2>());
++		return true;
++	return false;
++}
++
++static bool is_C99_named_specifier_definition(const parse_tree& src,const char* const spec_name)
++{
++	if (	robust_token_is_string(src.index_tokens[0].token,spec_name)
++#ifndef NDEBUG
++			&&	NULL!=src.index_tokens[0].src_filename
++#endif
++			&&	NULL!=src.index_tokens[1].token.first
++			&&	src.empty<0>()
++			&&	src.empty<1>()
++			&&	1==src.size<2>() && is_naked_brace_pair(src));
++		return true;
++	return false;
++}
++#endif
++
++static bool C99_looks_like_identifier(const parse_tree& x)
++{
++	if (!x.is_atomic()) return false;
++	if (PARSE_TYPE & x.flags) return false;
++	if (C99_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
++	if (C_TESTFLAG_IDENTIFIER & x.index_tokens[0].flags) return true;
++	return false;
++}
++
++static bool CPP_looks_like_identifier(const parse_tree& x)
++{
++	if (!x.is_atomic()) return false;
++	if (PARSE_TYPE & x.flags) return false;
++	if (CPP_echo_reserved_keyword(x.index_tokens[0].token.first,x.index_tokens[0].token.second)) return false;
++	if (C_TESTFLAG_IDENTIFIER & x.index_tokens[0].flags) return true;
++	return false;
++}
++
++static void make_target_postfix_arg(parse_tree& src,size_t& offset,const size_t i,const size_t j)
++{
++	parse_tree* tmp = (0==offset ? _new_buffer_nonNULL_throws<parse_tree>(1) :  _new_buffer<parse_tree>(1));
++	if (NULL==tmp)
++		{	// need that slack space now
++		src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++		offset = 0;
++		tmp = _new_buffer_nonNULL_throws<parse_tree>(1);
++		}
++	*tmp = src.data<0>()[j];
++	src.c_array<0>()[i].fast_set_arg<2>(tmp);
++	src.c_array<0>()[j].clear();
++}
++
++void C99_notice_struct_union_enum(parse_tree& src)
++{
++	assert(!src.empty<0>());
++	size_t i = 0;
++	size_t offset = 0;
++	while(i+offset<src.size<0>())
++		{
++		const char* const tmp2 = robust_token_is_string<4>(src.data<0>()[i],"enum") ? "enum"
++							: robust_token_is_string<6>(src.data<0>()[i],"struct") ? "struct"
++							: robust_token_is_string<5>(src.data<0>()[i],"union") ? "union" : 0;
++		if (tmp2)
++			{
++			if (1>=src.size<0>()-(i+offset))
++				{	// unterminated declaration
++					//! \test zcc/decl.C99/Error_enum_truncate1.h
++				message_header(src.data<0>()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(" specifier cut off by end of scope (");
++				INFORM(strcmp(tmp2,"enum") ? "C99 6.7.2.1p1)" : "C99 6.7.2.2p1)");
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo<0>(1,i,src.size<0>()-offset);
++				offset += 1;
++				continue;
++				};
++			if (is_naked_brace_pair(src.data<0>()[i+1]))
++				{	// anonymous: postfix arg {...}
++				make_target_postfix_arg(src,offset,i,i+1);
++				src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
++				offset += 1;
++				assert(is_C99_anonymous_specifier(src.data<0>()[i],tmp2));
++				if (!src.data<0>()[i].data<2>()->empty<0>())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					C99_notice_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
++					};
++				continue;
++				};
++			if (!C99_looks_like_identifier(src.data<0>()[i+1]))
++				{	//! \test zcc/decl.C99/Error_enum_truncate2.h
++				message_header(src.data<0>()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(" neither specifier nor definition (");
++				INFORM(strcmp(tmp2,"enum") ? "C99 6.7.2.1p1)" : "C99 6.7.2.2p1)");
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo<0>(1,i,src.size<0>()-offset);
++				offset += 1;
++				continue;
++				};
++			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
++			src.c_array<0>()[i+1].clear();
++			if (2<src.size<0>()-(i+offset) && is_naked_brace_pair(src.data<0>()[i+2]))
++				{
++				make_target_postfix_arg(src,offset,i,i+2);
++				src.DestroyNAtAndRotateTo<0>(2,i+1,src.size<0>()-offset);
++				offset += 2;
++				assert(is_C99_named_specifier_definition(src.data<0>()[i],tmp2));
++				if (!src.data<0>()[i].data<2>()->empty<0>())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					C99_notice_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
++					};
++				continue;
++				};
++			src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
++			offset += 1;
++			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
++			continue;
++			}
++		else if (   is_naked_parentheses_pair(src.data<0>()[i])
++				 || is_naked_brace_pair(src.data<0>()[i])
++				 || is_naked_bracket_pair(src.data<0>()[i]))
++			{
++			if (!src.data<0>()[i].empty<0>())
++				{	// recurse into (...)
++				if (0<offset)
++					{
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					};
++				C99_notice_struct_union_enum(src.c_array<0>()[i]);
++				}
++			}
++		++i;
++		};
++	if (0<offset) src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++}
++
++void CPP_notice_class_struct_union_enum(parse_tree& src)
++{
++	assert(!src.empty<0>());
++	size_t i = 0;
++	size_t offset = 0;
++	while(i+offset<src.size<0>())
++		{
++		const char* const tmp2 = robust_token_is_string<4>(src.data<0>()[i],"enum") ? "enum"
++							: robust_token_is_string<6>(src.data<0>()[i],"struct") ? "struct"
++							: robust_token_is_string<5>(src.data<0>()[i],"union") ? "union"
++							: robust_token_is_string<5>(src.data<0>()[i],"class") ? "class" : 0;
++		if (tmp2)
++			{
++			if (1>=src.size<0>()-(i+offset))
++				{	// unterminated declaration
++					//! \test zcc/decl.C99/Error_enum_truncate1.h
++				message_header(src.data<0>()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(" specifier cut off by end of scope (");
++				INFORM(strcmp(tmp2,"enum") ? "C++98 9p1)" : "C++98 7.2p1)");
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo<0>(1,i,src.size<0>()-offset);
++				offset += 1;
++				continue;
++				};
++			if (is_naked_brace_pair(src.data<0>()[i+1]))
++				{	// anonymous: postfix arg {...}
++				make_target_postfix_arg(src,offset,i,i+1);
++				src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
++				offset += 1;
++				assert(is_C99_anonymous_specifier(src.data<0>()[i],tmp2));
++				if (!src.data<0>()[i].data<2>()->empty<0>())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					CPP_notice_class_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
++					};
++				continue;
++				};
++			if (!CPP_looks_like_identifier(src.data<0>()[i+1]))
++				{	//! \test zcc/decl.C99/Error_enum_truncate2.h
++				message_header(src.data<0>()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(tmp2);
++				INC_INFORM(" neither specifier nor definition (");
++				INFORM(strcmp(tmp2,"enum") ? "C++98 9p1)" : "C++98 7.2p1)");
++				zcc_errors.inc_error();
++				// remove from parse
++				src.DestroyNAtAndRotateTo<0>(1,i,src.size<0>()-offset);
++				offset += 1;
++				continue;
++				};
++			src.c_array<0>()[i].grab_index_token_from<1,0>(src.c_array<0>()[i+1]);
++			src.c_array<0>()[i].grab_index_token_location_from<1,0>(src.data<0>()[i+1]);
++			src.c_array<0>()[i+1].clear();
++			if (2<src.size<0>()-(i+offset) && is_naked_brace_pair(src.data<0>()[i+2]))
++				{
++				make_target_postfix_arg(src,offset,i,i+1);
++				src.DestroyNAtAndRotateTo<0>(2,i+1,src.size<0>()-offset);
++				offset += 2;
++				assert(is_C99_named_specifier_definition(src.data<0>()[i],tmp2));
++				if (!src.data<0>()[i].data<2>()->empty<0>())
++					{	// recurse into { ... }
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					CPP_notice_class_struct_union_enum(*src.c_array<0>()[i].c_array<2>());
++					};
++				continue;
++				};
++			src.DestroyNAtAndRotateTo<0>(1,i+1,src.size<0>()-offset);
++			offset += 1;
++			assert(is_C99_named_specifier(src.data<0>()[i],tmp2));
++			continue;
++			}
++		else if (   is_naked_parentheses_pair(src.data<0>()[i])
++				 || is_naked_brace_pair(src.data<0>()[i])
++				 || is_naked_bracket_pair(src.data<0>()[i]))
++			{
++			if (!src.data<0>()[i].empty<0>())
++				{	// recurse into (...)/{...}/[...]
++				if (0<offset)
++					{
++					src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++					offset = 0;
++					};
++				CPP_notice_class_struct_union_enum(src.c_array<0>()[i]);
++				}
++			}
++		++i;
++		};
++	if (0<offset) src.DeleteNSlotsAt<0>(offset,src.size<0>()-offset);
++}
++
+ bool convert_to(unsigned_fixed_int<VM_MAX_BIT_PLATFORM>& dest,const C_PPIntCore& src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+@@ -8915,6 +9180,8 @@
+ 	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	C99_notice_primary_type(src);
++	// struct/union/enum specifiers can occur in all sorts of strange places
++	C99_notice_struct_union_enum(src);
+ }
+ 
+ bool CPP_ok_for_toplevel_qualified_name(const parse_tree& x)
+@@ -9051,7 +9318,10 @@
+ 	if (!_match_pairs(src)) return;
+ 	// handle core type specifiers
+ 	CPP_notice_primary_type(src);
++	// do context-free part of qualified-names
+ 	CPP_notice_scope_glue(src);
++	// class/struct/union/enum specifiers can occur in all sorts of strange places
++	CPP_notice_class_struct_union_enum(src);
+ }
+ 
+ //! \test if.C99/Pass_zero.hpp, if.C99/Pass_zero.h
+
+Added: trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_class_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_class_truncate1.hpp
++// incomplete class declaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class
+
+Added: trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_class_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,5 @@
++// decl.C99\Error_class_truncate2.hpp
++// incomplete class declaration
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class %
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate1.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate1.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate1.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate1.h
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate1.hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate2.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate2.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate2.h
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_enum_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_truncate2.hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate1.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate1.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate1.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate1.h
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate1.hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate2.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate2.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate2.h
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_struct_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_struct_truncate2.hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate1.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate1.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate1.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate1.h
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate1.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate1.hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate2.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate2.h	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate2.h	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate2.h
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union %
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc/decl.C99/Error_union_truncate2.hpp	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_union_truncate2.hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union %
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_truncate1.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_truncate2.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete enum tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum %
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_struct_truncate1.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_struct_truncate2.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete struct tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct %
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_union_truncate1.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in	2009-10-17 22:56:30 UTC (rev 270)
++++ trunk/tests/zcc.in/decl.C99/Error_union_truncate2.in	2009-10-18 05:34:07 UTC (rev 271)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// incomplete union tag
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union %
++
+
+
+

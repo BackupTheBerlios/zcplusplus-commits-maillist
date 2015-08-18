@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r641 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r641%20-%20trunk&In-Reply-To=%3C20110428142305.2D654480D07%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000407.html">
+   <LINK REL="Next"  HREF="000409.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r641 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r641%20-%20trunk&In-Reply-To=%3C20110428142305.2D654480D07%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r641 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 28 16:23:04 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000407.html">[Zcplusplus-commits] r640 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000409.html">[Zcplusplus-commits] r642 - trunk/tests/cpp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#408">[ date ]</a>
+              <a href="thread.html#408">[ thread ]</a>
+              <a href="subject.html#408">[ subject ]</a>
+              <a href="author.html#408">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-28 16:23:04 +0200 (Thu, 28 Apr 2011)
+New Revision: 641
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+Log:
+object size reduction, MingW32 4.3.3 release mode
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-04-28 10:56:20 UTC (rev 640)
++++ trunk/CPreproc.cpp	2011-04-28 14:23:04 UTC (rev 641)
+@@ -534,9 +534,9 @@
+ 	assert(!is_empty_string(Text));
+ 	size_t i = STATIC_SIZE(valid_directives);
+ 	do	{
+-		--i;
+-		if (!strncmp(valid_directives[i].first,Text,valid_directives[i].second)
+-			&amp;&amp; (valid_directives[i].second==strlen(Text) || lang.IsWS(Text[valid_directives[i].second])))
++		const POD_pair&lt;const char*,size_t&gt;&amp; x = valid_directives[--i]; 
++		if (!strncmp(x.first,Text,x.second)
++			&amp;&amp; (x.second==strlen(Text) || lang.IsWS(Text[x.second])))
+ 			return i;
+ 		}
+ 	while(0&lt;i);
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-04-28 10:56:20 UTC (rev 640)
++++ trunk/CPreproc.cpp.in	2011-04-28 14:23:04 UTC (rev 641)
+@@ -556,9 +556,9 @@
+ 	assert(!is_empty_string(Text));
+ 	size_t i = STATIC_SIZE(valid_directives);
+ 	do	{
+-		--i;
+-		if (!strncmp(valid_directives[i].first,Text,valid_directives[i].second)
+-			&amp;&amp; (valid_directives[i].second==strlen(Text) || lang.IsWS(Text[valid_directives[i].second])))
++		const POD_pair&lt;const char*,size_t&gt;&amp; x = valid_directives[--i]; 
++		if (!strncmp(x.first,Text,x.second)
++			&amp;&amp; (x.second==strlen(Text) || lang.IsWS(Text[x.second])))
+ 			return i;
+ 		}
+ 	while(0&lt;i);
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-04-28 10:56:20 UTC (rev 640)
++++ trunk/CPreproc_pp.cpp	2011-04-28 14:23:04 UTC (rev 641)
+@@ -518,9 +518,9 @@
+ 	assert(!is_empty_string(Text));
+ 	size_t i = STATIC_SIZE(valid_directives);
+ 	do	{
+-		--i;
+-		if (!strncmp(valid_directives[i].first,Text,valid_directives[i].second)
+-			&amp;&amp; (valid_directives[i].second==strlen(Text) || lang.IsWS(Text[valid_directives[i].second])))
++		const POD_pair&lt;const char*,size_t&gt;&amp; x = valid_directives[--i]; 
++		if (!strncmp(x.first,Text,x.second)
++			&amp;&amp; (x.second==strlen(Text) || lang.IsWS(Text[x.second])))
+ 			return i;
+ 		}
+ 	while(0&lt;i);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000407.html">[Zcplusplus-commits] r640 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000409.html">[Zcplusplus-commits] r642 - trunk/tests/cpp
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#408">[ date ]</a>
+              <a href="thread.html#408">[ thread ]</a>
+              <a href="subject.html#408">[ subject ]</a>
+              <a href="author.html#408">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

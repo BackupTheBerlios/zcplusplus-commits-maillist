@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r493 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r493%20-%20trunk&In-Reply-To=%3C20101012202847.2DC3E481142%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000259.html">
+   <LINK REL="Next"  HREF="000261.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r493 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r493%20-%20trunk&In-Reply-To=%3C20101012202847.2DC3E481142%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r493 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Oct 12 22:28:47 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000259.html">[Zcplusplus-commits] r492 - trunk/Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000261.html">[Zcplusplus-commits] r494 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#260">[ date ]</a>
+              <a href="thread.html#260">[ thread ]</a>
+              <a href="subject.html#260">[ subject ]</a>
+              <a href="author.html#260">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-12 22:28:46 +0200 (Tue, 12 Oct 2010)
+New Revision: 493
+
+Modified:
+   trunk/type_system.hpp
+   trunk/type_system_pp.hpp
+Log:
+adjust in a field for use counts
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2010-10-08 19:10:35 UTC (rev 492)
++++ trunk/type_system.hpp	2010-10-12 20:28:46 UTC (rev 493)
+@@ -34,7 +34,7 @@
+ 	const size_t int_priority_size;
+ private:
+ #/*cut-cpp*/
+-	typedef zaimoni::POD_triple&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt; &gt; dynamic_type_format;
++	typedef zaimoni::POD_quartet&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt;, size_t&gt; dynamic_type_format;
+ 	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+ 	zaimoni::weakautovalarray_ptr&lt;const char*&gt; inline_namespace_alias_targets;
+@@ -46,8 +46,8 @@
+ 	void operator=(const type_system&amp; src);
+ public:
+ 	type_system(const zaimoni::POD_pair&lt;const char* const,size_t&gt;* _core_types,size_t _core_types_size,const type_index* _int_priority,size_t _int_priority_size)
+-	:	core_types((assert(NULL!=_core_types),_core_types)),
+-		int_priority((assert(NULL!=_int_priority),_int_priority)),
++	:	core_types((assert(_core_types),_core_types)),
++		int_priority((assert(_int_priority),_int_priority)),
+ 		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
+ 		int_priority_size((assert(0&lt;_int_priority_size),_int_priority_size)) {};
+ 
+@@ -139,6 +139,7 @@
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+ #/*cut-cpp*/
+ private:
++	const char* _name(type_index id) const;
+ #/*cut-cpp*/
+ 	type_index _get_id_union(const char* x) const;
+ 	type_index _get_id_union_CPP(const char* x) const;
+@@ -148,9 +149,6 @@
+ 	type_index _get_id_struct_class_CPP(const char* x) const;
+ 	enum_def* _get_enum_def(type_index i) const;
+ 	
+-#/*cut-cpp*/
+-	const char* _name(type_index id) const;
+-#/*cut-cpp*/
+ 	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
+ 	const enumerator_info* _get_enumerator_CPP(const char* alias) const;
+
+Modified: trunk/type_system_pp.hpp
+===================================================================
+--- trunk/type_system_pp.hpp	2010-10-08 19:10:35 UTC (rev 492)
++++ trunk/type_system_pp.hpp	2010-10-12 20:28:46 UTC (rev 493)
+@@ -24,8 +24,8 @@
+ 	void operator=(const type_system&amp; src);
+ public:
+ 	type_system(const zaimoni::POD_pair&lt;const char* const,size_t&gt;* _core_types,size_t _core_types_size,const type_index* _int_priority,size_t _int_priority_size)
+-	:	core_types((assert(NULL!=_core_types),_core_types)),
+-		int_priority((assert(NULL!=_int_priority),_int_priority)),
++	:	core_types((assert(_core_types),_core_types)),
++		int_priority((assert(_int_priority),_int_priority)),
+ 		core_types_size((assert(0&lt;_core_types_size),_core_types_size)),
+ 		int_priority_size((assert(0&lt;_int_priority_size),_int_priority_size)) {};
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000259.html">[Zcplusplus-commits] r492 - trunk/Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000261.html">[Zcplusplus-commits] r494 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#260">[ date ]</a>
+              <a href="thread.html#260">[ thread ]</a>
+              <a href="subject.html#260">[ subject ]</a>
+              <a href="author.html#260">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

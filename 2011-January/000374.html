@@ -1,0 +1,118 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r607 - trunk/doc
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r607%20-%20trunk/doc&In-Reply-To=%3C20110129050426.2D629480BF8%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000373.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r607 - trunk/doc</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r607%20-%20trunk/doc&In-Reply-To=%3C20110129050426.2D629480BF8%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r607 - trunk/doc">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Jan 29 06:04:26 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000373.html">[Zcplusplus-commits] r606 - in trunk: . lib
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#374">[ date ]</a>
+              <a href="thread.html#374">[ thread ]</a>
+              <a href="subject.html#374">[ subject ]</a>
+              <a href="author.html#374">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-29 06:04:25 +0100 (Sat, 29 Jan 2011)
+New Revision: 607
+
+Modified:
+   trunk/doc/OPTIONS.txt
+Log:
+update options listing
+
+Modified: trunk/doc/OPTIONS.txt
+===================================================================
+--- trunk/doc/OPTIONS.txt	2011-01-27 02:47:09 UTC (rev 606)
++++ trunk/doc/OPTIONS.txt	2011-01-29 05:04:25 UTC (rev 607)
+@@ -1,4 +1,4 @@
+-Z.C++ 0.0.3 zcc
++Z.C++ 0.0.7 zcc
+ usage: zcc [options] infile
+ boolean options
+  --test: final internal state to stderr
+@@ -13,12 +13,19 @@
+  --int-neg-div-rounds-away-from-zero: make -3/-2==-2 contrary to C99 recommendation
+  -Wc-c++-compat: Warn when something legal in C/C++ would be an error in C++/C for C/C++
+  -Wbackport: Warn when something legal would be an error under an older standard
++
+ override-default options
+  -x: language override
+  --system-include: unpreprocessed #include&lt;...&gt; to stdout
+  -fmax-errors: how many errors are too many (default 100)
++ -ferror-limit: how many errors are too many (default 100)
++ --target-char-bit: target CHAR_BIT
++ --target-sizeof-short: target sizeof(short), sizeof(unsigned short)
++ --target-sizeof-int: target sizeof(int), sizeof(unsigned int)
++ --target-sizeof-long: target sizeof(long), sizeof(unsigned long)
++ --target-sizeof-long-long: target sizeof(long long), sizeof(unsigned long long)
+ 
+-Z.C++ 0.0.3 z_cpp
++Z.C++ 0.0.7 z_cpp
+ usage: z_cpp [options] infile
+ boolean options
+  --test: final internal state to stderr
+@@ -31,10 +38,17 @@
+  -fsigned-char: char acts like signed char
+  -funsigned-char: char acts like unsigned char (default)
+  --int-neg-div-rounds-away-from-zero: make -3/-2==-2 contrary to C99 recommendation
++
+ override-default options
+  -x: language override
+  --system-include: unpreprocessed #include&lt;...&gt; to stdout
+  -fmax-errors: how many errors are too many (default 100)
++ -ferror-limit: how many errors are too many (default 100)
++ --target-char-bit: target CHAR_BIT
++ --target-sizeof-short: target sizeof(short), sizeof(unsigned short)
++ --target-sizeof-int: target sizeof(int), sizeof(unsigned int)
++ --target-sizeof-long: target sizeof(long), sizeof(unsigned long)
++ --target-sizeof-long-long: target sizeof(long long), sizeof(unsigned long long)
+ 
+ Z.C++ cmp 0.1
+ usage: cmp [options] file1 file2
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000373.html">[Zcplusplus-commits] r606 - in trunk: . lib
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#374">[ date ]</a>
+              <a href="thread.html#374">[ thread ]</a>
+              <a href="subject.html#374">[ subject ]</a>
+              <a href="author.html#374">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

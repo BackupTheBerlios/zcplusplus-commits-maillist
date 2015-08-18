@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r434 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r434%20-%20trunk&In-Reply-To=%3C201005160902.o4G92hSa015180%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000200.html">
+   <LINK REL="Next"  HREF="000202.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r434 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r434%20-%20trunk&In-Reply-To=%3C201005160902.o4G92hSa015180%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r434 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun May 16 11:02:43 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000200.html">[Zcplusplus-commits] r433 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert
+</A></li>
+        <LI>Next message: <A HREF="000202.html">[Zcplusplus-commits] r435 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#201">[ date ]</a>
+              <a href="thread.html#201">[ thread ]</a>
+              <a href="subject.html#201">[ subject ]</a>
+              <a href="author.html#201">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-16 11:02:40 +0200 (Sun, 16 May 2010)
+New Revision: 434
+
+Modified:
+   trunk/ZParser.cpp
+Log:
+RAM conservation fix
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2010-05-15 20:48:37 UTC (rev 433)
++++ trunk/ZParser.cpp	2010-05-16 09:02:40 UTC (rev 434)
+@@ -116,15 +116,15 @@
+ 					const char* tmp = (C_TESTFLAG_IDENTIFIER==pretokenized[0].third ? lang.pp_support-&gt;EchoReservedKeyword(TokenList.front()-&gt;data()+pretokenized[i].first,pretokenized[0].second) : NULL);
+ 					if (tmp)
+ 						{
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].token.first = tmp;
+-						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].control_index_token&lt;0&gt;(false);
++						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].token.first = tmp;
++						ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].control_index_token&lt;0&gt;(false);
+ 						}
+ 					else{
+ 						tmp = (C_TESTFLAG_PP_OP_PUNC &amp; pretokenized[0].third ? lang.pp_support-&gt;EchoReservedSymbol(TokenList.front()-&gt;data()+pretokenized[i].first,pretokenized[0].second) : NULL);
+ 						if (tmp)
+ 							{
+-							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].index_tokens[0].token.first = tmp;
+-							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size].control_index_token&lt;0&gt;(false);
++							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].index_tokens[0].token.first = tmp;
++							ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size+i].control_index_token&lt;0&gt;(false);
+ 							}
+ 						else{
+ 							char* tmp2 = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(pretokenized[i].second));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000200.html">[Zcplusplus-commits] r433 - in trunk: .	tests/zcc/default/staticassert tests/zcc.in/default/staticassert
+</A></li>
+	<LI>Next message: <A HREF="000202.html">[Zcplusplus-commits] r435 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#201">[ date ]</a>
+              <a href="thread.html#201">[ thread ]</a>
+              <a href="subject.html#201">[ subject ]</a>
+              <a href="author.html#201">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

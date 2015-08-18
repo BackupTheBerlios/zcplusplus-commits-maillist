@@ -1,0 +1,279 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r345 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r345%20-%20trunk&In-Reply-To=%3C201003072117.o27LHabW023171%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000111.html">
+   <LINK REL="Next"  HREF="000113.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r345 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r345%20-%20trunk&In-Reply-To=%3C201003072117.o27LHabW023171%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r345 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar  7 22:17:36 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000111.html">[Zcplusplus-commits] r344 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000113.html">[Zcplusplus-commits] r346 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#112">[ date ]</a>
+              <a href="thread.html#112">[ thread ]</a>
+              <a href="subject.html#112">[ subject ]</a>
+              <a href="author.html#112">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-07 22:17:24 +0100 (Sun, 07 Mar 2010)
+New Revision: 345
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.hpp
+   trunk/CSupport_pp.cpp
+   trunk/CSupport_pp.hpp
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+   trunk/type_system_pp.cpp
+   trunk/type_system_pp.hpp
+Log:
+const correctness, debug check
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/CSupport.cpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -12156,7 +12156,6 @@
+ 	LengthOfCSystemHeader,
+ 	CPurePreprocessingOperatorPunctuationCode,
+ 	CPurePreprocessingOperatorPunctuationFlags,
+-	LengthOfCStringLiteral,
+ 	C_like_BalancingCheck,
+ 	C99_ControlExpressionContextFreeErrorCount,
+ 	C99_CondenseParseTree,
+@@ -12179,7 +12178,6 @@
+ 	LengthOfCPPSystemHeader,
+ 	CPPPurePreprocessingOperatorPunctuationCode,
+ 	CPPPurePreprocessingOperatorPunctuationFlags,
+-	LengthOfCStringLiteral,
+ 	C_like_BalancingCheck,
+ 	CPP_ControlExpressionContextFreeErrorCount,
+ 	CPP_CondenseParseTree,
+
+Modified: trunk/CSupport.hpp
+===================================================================
+--- trunk/CSupport.hpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/CSupport.hpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -83,7 +83,6 @@
+ 	func_traits&lt;size_t (*)(const char*)&gt;::function_ref_type LengthOfSystemHeader;			// non-zero iff system header exactly matched
+ 	func_traits&lt;signed int (*)(const char* const x, size_t x_len)&gt;::function_ref_type EncodePPOpPunc;	// encode pp op/punc; 0&gt;= if not found
+ 	func_traits&lt;unsigned int (*)(signed int)&gt;::function_ref_type GetPPOpPuncFlags;			// returns flag set, 0 if nothing matched
+-	func_traits&lt;size_t (*)(const char*,size_t)&gt;::function_ref_type LengthOfStringLiteral;	// returns length of string literal as an array of its char type
+ 	func_traits&lt;bool (*)(const weak_token*,size_t,bool,bool)&gt;::function_ref_type BalancingErrorCheck;		// slow; returns true if any errors found
+ 	func_traits&lt;bool (*)(const weak_token*,size_t,bool,bool)&gt;::function_ref_type ControlExpressionContextFreeErrorCheck;	// returns true if any errors found
+ 	func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type CondenseParseTree;	// returns number of errors detected
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/CSupport_pp.cpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -10229,7 +10229,6 @@
+ 	LengthOfCSystemHeader,
+ 	CPurePreprocessingOperatorPunctuationCode,
+ 	CPurePreprocessingOperatorPunctuationFlags,
+-	LengthOfCStringLiteral,
+ 	C_like_BalancingCheck,
+ 	C99_ControlExpressionContextFreeErrorCount,
+ 	C99_CondenseParseTree,
+@@ -10244,7 +10243,6 @@
+ 	LengthOfCPPSystemHeader,
+ 	CPPPurePreprocessingOperatorPunctuationCode,
+ 	CPPPurePreprocessingOperatorPunctuationFlags,
+-	LengthOfCStringLiteral,
+ 	C_like_BalancingCheck,
+ 	CPP_ControlExpressionContextFreeErrorCount,
+ 	CPP_CondenseParseTree,
+
+Modified: trunk/CSupport_pp.hpp
+===================================================================
+--- trunk/CSupport_pp.hpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/CSupport_pp.hpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -1,4 +1,4 @@
+-// CSupport.hpp
++// CSupport_pp.hpp
+ // support for C/C++ language parsing
+ // (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+@@ -83,7 +83,6 @@
+ 	func_traits&lt;size_t (*)(const char*)&gt;::function_ref_type LengthOfSystemHeader;			// non-zero iff system header exactly matched
+ 	func_traits&lt;signed int (*)(const char* const x, size_t x_len)&gt;::function_ref_type EncodePPOpPunc;	// encode pp op/punc; 0&gt;= if not found
+ 	func_traits&lt;unsigned int (*)(signed int)&gt;::function_ref_type GetPPOpPuncFlags;			// returns flag set, 0 if nothing matched
+-	func_traits&lt;size_t (*)(const char*,size_t)&gt;::function_ref_type LengthOfStringLiteral;	// returns length of string literal as an array of its char type
+ 	func_traits&lt;bool (*)(const weak_token*,size_t,bool,bool)&gt;::function_ref_type BalancingErrorCheck;		// slow; returns true if any errors found
+ 	func_traits&lt;bool (*)(const weak_token*,size_t,bool,bool)&gt;::function_ref_type ControlExpressionContextFreeErrorCheck;	// returns true if any errors found
+ 	func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type CondenseParseTree;	// returns number of errors detected
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/type_system.cpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -1,5 +1,5 @@
+ // type_system.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #/*cut-cpp*/
+ #include &quot;type_system.hpp&quot;
+@@ -383,6 +383,7 @@
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	assert(src_filename &amp;&amp; *src_filename);
++	assert(type);
+ 	errr tmp = binary_find(alias,strlen(alias),enumerator_registry.data(),enumerator_registry.size());
+ 	assert(0&gt;tmp);		// error to call with conflicting prior definition
+ 	if (0&lt;=tmp) return;	// conflicting prior definition
+@@ -397,6 +398,7 @@
+ {
+ 	assert(name &amp;&amp; *name);
+ 	assert(src_filename &amp;&amp; *src_filename);
++	assert(type);
+ 
+ 	// use active namespace if present
+ 	if (active_namespace &amp;&amp; *active_namespace)
+@@ -411,7 +413,11 @@
+ 	//! \todo: strip off trailing inline namespaces
+ 	// &lt;unknown&gt; is the hack for anonymous namespaces taken from GCC, it's always inline
+ 	errr tmp = binary_find(alias,strlen(alias),enumerator_registry.data(),enumerator_registry.size());
+-	if (0&lt;=tmp) return &amp;enumerator_registry[tmp];
++	if (0&lt;=tmp)
++		{
++		assert(get_enum_def(enumerator_registry[tmp].second.first.first));
++		return &amp;enumerator_registry[tmp];
++		}
+ 	return NULL;
+ }
+ 
+@@ -798,7 +804,7 @@
+ 	return register_enum_def(name,logical_line,src_filename);
+ }
+ 
+-const function_type* type_system::get_functype(type_system::type_index i)
++const function_type* type_system::get_functype(type_system::type_index i)  const
+ {
+ 	if (core_types_size&gt;=i) return NULL;
+ 	i -= core_types_size;
+@@ -809,7 +815,7 @@
+ 	return tmp.third.first.first;
+ }
+ 
+-const union_struct_decl* type_system::get_structdecl(type_system::type_index i)
++const union_struct_decl* type_system::get_structdecl(type_system::type_index i)  const
+ {
+ 	if (core_types_size&gt;=i) return NULL;
+ 	i -= core_types_size;
+@@ -820,7 +826,7 @@
+ 	return tmp.third.first.second;
+ }
+ 
+-const C_union_struct_def* type_system::get_C_structdef(type_system::type_index i)
++const C_union_struct_def* type_system::get_C_structdef(type_system::type_index i)  const
+ {
+ 	if (core_types_size&gt;=i) return NULL;
+ 	i -= core_types_size;
+@@ -831,7 +837,7 @@
+ 	return tmp.third.first.third;
+ }
+ 
+-const enum_def* type_system::get_enum_def(type_index i)
++const enum_def* type_system::get_enum_def(type_index i)  const
+ {
+ 	if (core_types_size&gt;=i) return NULL;
+ 	i -= core_types_size;
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/type_system.hpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -1,5 +1,5 @@
+ // type_system.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef TYPE_SYSTEM_HPP
+ #define TYPE_SYSTEM_HPP 1
+@@ -117,10 +117,10 @@
+ 	type_index register_C_structdef_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename, int keyword);
+ 	type_index register_enum_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
+ 	type_index register_enum_def_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename);
+-	const function_type* get_functype(type_index i);
+-	const union_struct_decl* get_structdecl(type_index i);
+-	const C_union_struct_def* get_C_structdef(type_index i);
+-	const enum_def* get_enum_def(type_index i);
++	const function_type* get_functype(type_index i) const;
++	const union_struct_decl* get_structdecl(type_index i) const;
++	const C_union_struct_def* get_C_structdef(type_index i) const;
++	const enum_def* get_enum_def(type_index i) const;
+ 	void upgrade_decl_to_def(type_index i,C_union_struct_def*&amp; src);
+ #/*cut-cpp*/
+ private:
+
+Modified: trunk/type_system_pp.cpp
+===================================================================
+--- trunk/type_system_pp.cpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/type_system_pp.cpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -1,5 +1,5 @@
+ // type_system_pp.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;type_system_pp.hpp&quot;
+ #include &quot;enum_type.hpp&quot;
+
+Modified: trunk/type_system_pp.hpp
+===================================================================
+--- trunk/type_system_pp.hpp	2010-03-07 03:11:18 UTC (rev 344)
++++ trunk/type_system_pp.hpp	2010-03-07 21:17:24 UTC (rev 345)
+@@ -1,5 +1,5 @@
+ // type_system_pp.hpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef TYPE_SYSTEM_HPP
+ #define TYPE_SYSTEM_HPP 1
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000111.html">[Zcplusplus-commits] r344 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000113.html">[Zcplusplus-commits] r346 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#112">[ date ]</a>
+              <a href="thread.html#112">[ thread ]</a>
+              <a href="subject.html#112">[ subject ]</a>
+              <a href="author.html#112">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,501 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r679 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r679%20-%20trunk&In-Reply-To=%3C20110729145923.2F0FB4812A7%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000445.html">
+   
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r679 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r679%20-%20trunk&In-Reply-To=%3C20110729145923.2F0FB4812A7%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r679 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Jul 29 16:59:22 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000445.html">[Zcplusplus-commits] r678 - trunk
+</A></li>
+        
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#446">[ date ]</a>
+              <a href="thread.html#446">[ thread ]</a>
+              <a href="subject.html#446">[ subject ]</a>
+              <a href="author.html#446">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-07-29 16:59:22 +0200 (Fri, 29 Jul 2011)
+New Revision: 679
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+   trunk/type_system.hpp
+   trunk/type_system.hpp.in
+Log:
+represent linkage when cataloging objects and functions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-07-28 18:33:14 UTC (rev 678)
++++ trunk/CSupport.cpp	2011-07-29 14:59:22 UTC (rev 679)
+@@ -12842,7 +12842,7 @@
+ 			zcc_errors.inc_error();
+ 			return false;
+ 			};
+-		if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_object(fullname))
++		if (const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(fullname))
+ 			{	// C++: One Definition Rule
+ 				//! \bug needs test cases 
+ 			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14095,7 +14095,7 @@
+ 					{	// typedef
+ 					register_token&lt;0&gt;(*initdecl_identifier);
+ 					// verify that there is no prior definition
+-					if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_object(initdecl_identifier-&gt;index_tokens[0].token.first))
++					if (const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(initdecl_identifier-&gt;index_tokens[0].token.first))
+ 						{	//! \bug needs test case
+ 						message_header(initdecl_identifier-&gt;index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+@@ -14194,7 +14194,8 @@
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
+-							// no effect on pre-existing declaration, other than to convert no-linkage to extern (implies masking non-object/function declaraton, review what's going on)
++							// no effect on pre-existing declaration, other than to convert no-linkage to extern (if this can indeed be tripped)
++							// we need a cross-lang warning if there is a pre-existing static declaration, as this will error in C++
+ 						}
+ 					else{	// something else: C99 defaults to extern no matter what for global functions and objects.
+ 							// we need a cross-lang warning for const objects as C++ will default to static then
+@@ -15668,7 +15669,7 @@
+ 					const char* fullname = namespace_name ? namespace_name : initdecl_identifier-&gt;index_tokens[0].token.first;
+ 					// We could run an is_string_registered check to try to conserve RAM, but in this case conserving RAM 
+ 					// doesn't actually reduce maximum RAM loading before the types.set_typedef_CPP call.
+-					if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_object(fullname))
++					if (const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(fullname))
+ 						{	//! \bug needs test case
+ 						message_header(initdecl_identifier-&gt;index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+@@ -15771,14 +15772,22 @@
+ 						};
+ 					free(namespace_name);
+ #if 0
++					// so...type_system needs to handle following when registering an object/function as well
++					// linkage: static/internal, extern/external
++					// external linkage class: C, C++
++					// it is an error to have more than one object definition
++					// it is an error to have more than one function type (including parameter list) for a given identifier with C linkage
++					// obviously C cannot name most things with C++ linkage
+ 					if (C99_CPP0X_DECLSPEC_STATIC &amp; declFind.get_flags())
+ 						{	// explicit static.
++							// pre-existing extern declaration is an error: C++0X 7.1.1p8
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
++							// pre-existing static declaration is an error: C++0X 7.1.1p8
+ 						}
+ 					else{	// something else: C++ defaults to extern no matter what for global functions and objects.
+-							// const defaults to static.  All others default to enclosing namespace.
++							// const objects default to static.  All others default to enclosing namespace.  
+ 							// we need a cross-lang warning for global const objects as C will default to extern then
+ 							// redeclaration will go with whatever was there previously
+ 						}
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-07-28 18:33:14 UTC (rev 678)
++++ trunk/CSupport.cpp.in	2011-07-29 14:59:22 UTC (rev 679)
+@@ -12990,7 +12990,7 @@
+ 			zcc_errors.inc_error();
+ 			return false;
+ 			};
+-		if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_object(fullname))
++		if (const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(fullname))
+ 			{	// C++: One Definition Rule
+ 				//! \bug needs test cases 
+ 			message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+@@ -14243,7 +14243,7 @@
+ 					{	// typedef
+ 					register_token&lt;0&gt;(*initdecl_identifier);
+ 					// verify that there is no prior definition
+-					if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_object(initdecl_identifier-&gt;index_tokens[0].token.first))
++					if (const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(initdecl_identifier-&gt;index_tokens[0].token.first))
+ 						{	//! \bug needs test case
+ 						message_header(initdecl_identifier-&gt;index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+@@ -14342,7 +14342,8 @@
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
+-							// no effect on pre-existing declaration, other than to convert no-linkage to extern (implies masking non-object/function declaraton, review what's going on)
++							// no effect on pre-existing declaration, other than to convert no-linkage to extern (if this can indeed be tripped)
++							// we need a cross-lang warning if there is a pre-existing static declaration, as this will error in C++
+ 						}
+ 					else{	// something else: C99 defaults to extern no matter what for global functions and objects.
+ 							// we need a cross-lang warning for const objects as C++ will default to static then
+@@ -15816,7 +15817,7 @@
+ 					const char* fullname = namespace_name ? namespace_name : initdecl_identifier-&gt;index_tokens[0].token.first;
+ 					// We could run an is_string_registered check to try to conserve RAM, but in this case conserving RAM 
+ 					// doesn't actually reduce maximum RAM loading before the types.set_typedef_CPP call.
+-					if (const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* const tmp = parse_tree::types-&gt;get_object(fullname))
++					if (const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(fullname))
+ 						{	//! \bug needs test case
+ 						message_header(initdecl_identifier-&gt;index_tokens[0]);
+ 						INC_INFORM(ERR_STR);
+@@ -15919,14 +15920,22 @@
+ 						};
+ 					free(namespace_name);
+ #if 0
++					// so...type_system needs to handle following when registering an object/function as well
++					// linkage: static/internal, extern/external
++					// external linkage class: C, C++
++					// it is an error to have more than one object definition
++					// it is an error to have more than one function type (including parameter list) for a given identifier with C linkage
++					// obviously C cannot name most things with C++ linkage
+ 					if (C99_CPP0X_DECLSPEC_STATIC &amp; declFind.get_flags())
+ 						{	// explicit static.
++							// pre-existing extern declaration is an error: C++0X 7.1.1p8
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
++							// pre-existing static declaration is an error: C++0X 7.1.1p8
+ 						}
+ 					else{	// something else: C++ defaults to extern no matter what for global functions and objects.
+-							// const defaults to static.  All others default to enclosing namespace.
++							// const objects default to static.  All others default to enclosing namespace.  
+ 							// we need a cross-lang warning for global const objects as C will default to extern then
+ 							// redeclaration will go with whatever was there previously
+ 						}
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-07-28 18:33:14 UTC (rev 678)
++++ trunk/type_system.cpp	2011-07-29 14:59:22 UTC (rev 679)
+@@ -464,7 +464,7 @@
+ }
+ 
+ // implement C/C++ object system
+-void type_system::set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src)
++void type_system::set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage)
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	assert(filename &amp;&amp; *filename);
+@@ -474,12 +474,12 @@
+ #if UINTMAX_MAX==SIZE_MAX
+ 	if (-1==tmp) _fatal(&quot;implementation limit exceeded (objects registered at once)&quot;);
+ #endif
+-	zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; tmp2 = {alias, {src, filename, lineno}};
++	zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt; tmp2 = {alias, {src, filename, lineno, _linkage}};
+ 	if (!object_registry.InsertSlotAt(BINARY_SEARCH_DECODE_INSERTION_POINT(tmp),tmp2)) throw std::bad_alloc();
+ 	src.clear();
+ }
+ 
+-void type_system::set_object_CPP(const char* name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src)
++void type_system::set_object_CPP(const char* name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage)
+ {
+ 	assert(name &amp;&amp; *name);
+ 	assert(filename &amp;&amp; *filename);
+@@ -488,13 +488,14 @@
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return set_object(name,filename,lineno,src);
++	// C++, so C++ linkage by default
++	return set_object(name,filename,lineno,src,_linkage);
+ }
+ 
+ const char* type_system::get_object_name(const type_index base_type_index) const
+ {
+-	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* iter = object_registry.begin();
+-	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* const iter_end = object_registry.end();
++	const zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt;* iter = object_registry.begin();
++	const zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt;* const iter_end = object_registry.end();
+ 	while(iter!=iter_end)
+ 		{
+ 		if (iter-&gt;second.first.is_type(base_type_index))
+@@ -504,7 +505,7 @@
+ 	return NULL;
+ }
+ 
+-const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_object(const char* const alias) const
++const type_system::object_type_loc_linkage* type_system::get_object(const char* const alias) const
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	//! \todo: strip off trailing inline namespaces
+@@ -514,9 +515,9 @@
+ 	return NULL;
+ }
+ 
+-const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::_get_object_CPP(const char* const alias) const
++const type_system::object_type_loc_linkage* type_system::_get_object_CPP(const char* const alias) const
+ {
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = get_object(alias);
++	const object_type_loc_linkage* tmp = get_object(alias);
+ 	if (tmp) return tmp;
+ 
+ 	// hmm...not an exact match
+@@ -532,7 +533,7 @@
+ 	return get_object(inline_namespace_alias_map.data()[tmp2.first].second);
+ }
+ 
+-const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_object_CPP(const char* alias,const char* active_namespace) const
++const type_system::object_type_loc_linkage* type_system::get_object_CPP(const char* alias,const char* active_namespace) const
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 
+@@ -547,7 +548,7 @@
+ 		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
+ 		if (is_string_registered(tmp_alias))
+ 			{	// registered, so could be indexed
+-			const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp2 = _get_object_CPP(tmp_alias);
++			const object_type_loc_linkage* tmp2 = _get_object_CPP(tmp_alias);
+ 			if (tmp2) return (free(tmp_alias),tmp2);
+ 			}
+ 
+@@ -559,7 +560,7 @@
+ 			size_t i = extra_namespaces;
+ 			do	{
+ 				namespace_concatenate(tmp_alias,alias,active_namespace,intra_namespace[--i]-active_namespace,&quot;::&quot;);
+-				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp2 = _get_object_CPP(tmp_alias);
++				const object_type_loc_linkage* tmp2 = _get_object_CPP(tmp_alias);
+ 				if (tmp2) return (free(tmp_alias),tmp2);
+ 				}
+ 			while(0&lt;i);
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-07-28 18:33:14 UTC (rev 678)
++++ trunk/type_system.cpp.in	2011-07-29 14:59:22 UTC (rev 679)
+@@ -479,7 +479,7 @@
+ }
+ 
+ // implement C/C++ object system
+-void type_system::set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src)
++void type_system::set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage)
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	assert(filename &amp;&amp; *filename);
+@@ -489,12 +489,12 @@
+ #if UINTMAX_MAX==SIZE_MAX
+ 	if (-1==tmp) _fatal(&quot;implementation limit exceeded (objects registered at once)&quot;);
+ #endif
+-	zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; tmp2 = {alias, {src, filename, lineno}};
++	zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt; tmp2 = {alias, {src, filename, lineno, _linkage}};
+ 	if (!object_registry.InsertSlotAt(BINARY_SEARCH_DECODE_INSERTION_POINT(tmp),tmp2)) throw std::bad_alloc();
+ 	src.clear();
+ }
+ 
+-void type_system::set_object_CPP(const char* name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src)
++void type_system::set_object_CPP(const char* name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage)
+ {
+ 	assert(name &amp;&amp; *name);
+ 	assert(filename &amp;&amp; *filename);
+@@ -503,13 +503,14 @@
+ 	if (active_namespace &amp;&amp; *active_namespace)
+ 		name = construct_canonical_name_and_aliasing_CPP(name,strlen(name),active_namespace,strlen(active_namespace));
+ 
+-	return set_object(name,filename,lineno,src);
++	// C++, so C++ linkage by default
++	return set_object(name,filename,lineno,src,_linkage);
+ }
+ 
+ const char* type_system::get_object_name(const type_index base_type_index) const
+ {
+-	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* iter = object_registry.begin();
+-	const zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt;* const iter_end = object_registry.end();
++	const zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt;* iter = object_registry.begin();
++	const zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt;* const iter_end = object_registry.end();
+ 	while(iter!=iter_end)
+ 		{
+ 		if (iter-&gt;second.first.is_type(base_type_index))
+@@ -519,7 +520,7 @@
+ 	return NULL;
+ }
+ 
+-const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_object(const char* const alias) const
++const type_system::object_type_loc_linkage* type_system::get_object(const char* const alias) const
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	//! \todo: strip off trailing inline namespaces
+@@ -529,9 +530,9 @@
+ 	return NULL;
+ }
+ 
+-const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::_get_object_CPP(const char* const alias) const
++const type_system::object_type_loc_linkage* type_system::_get_object_CPP(const char* const alias) const
+ {
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = get_object(alias);
++	const object_type_loc_linkage* tmp = get_object(alias);
+ 	if (tmp) return tmp;
+ 
+ 	// hmm...not an exact match
+@@ -547,7 +548,7 @@
+ 	return get_object(inline_namespace_alias_map.data()[tmp2.first].second);
+ }
+ 
+-const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_object_CPP(const char* alias,const char* active_namespace) const
++const type_system::object_type_loc_linkage* type_system::get_object_CPP(const char* alias,const char* active_namespace) const
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 
+@@ -562,7 +563,7 @@
+ 		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
+ 		if (is_string_registered(tmp_alias))
+ 			{	// registered, so could be indexed
+-			const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp2 = _get_object_CPP(tmp_alias);
++			const object_type_loc_linkage* tmp2 = _get_object_CPP(tmp_alias);
+ 			if (tmp2) return (free(tmp_alias),tmp2);
+ 			}
+ 
+@@ -574,7 +575,7 @@
+ 			size_t i = extra_namespaces;
+ 			do	{
+ 				namespace_concatenate(tmp_alias,alias,active_namespace,intra_namespace[--i]-active_namespace,&quot;::&quot;);
+-				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp2 = _get_object_CPP(tmp_alias);
++				const object_type_loc_linkage* tmp2 = _get_object_CPP(tmp_alias);
+ 				if (tmp2) return (free(tmp_alias),tmp2);
+ 				}
+ 			while(0&lt;i);
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2011-07-28 18:33:14 UTC (rev 678)
++++ trunk/type_system.hpp	2011-07-29 14:59:22 UTC (rev 679)
+@@ -20,6 +20,13 @@
+ 	// { {type, representation, value}, {filename, location }}
+ 	// uchar_blob is a POD backing store for unsigned_var_int here
+ 	typedef zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;zaimoni::POD_triple&lt;type_index,unsigned char,uchar_blob&gt;, zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;size_t,size_t&gt; &gt; &gt; &gt; enumerator_info;
++	typedef zaimoni::POD_quartet&lt;type_spec,const char*,size_t,size_t&gt; object_type_loc_linkage;
++	enum linkage {
++		linkage_none = 0,	// no linkage
++		linkage_static,		// internal linkage
++		linkage_extern_C,	// external linkage, C
++		linkage_extern_CPP	// external linkage, C++ 
++	};
+ 
+ 	const zaimoni::POD_pair&lt;const char* const,size_t&gt;* const core_types;
+ 	const type_index* const int_priority;
+@@ -29,7 +36,7 @@
+ 	typedef zaimoni::POD_quartet&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt;, size_t&gt; dynamic_type_format;
+ 	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+-	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; object_registry;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt; &gt; object_registry;
+ 	zaimoni::weakautovalarray_ptr&lt;const char*&gt; inline_namespace_alias_targets;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,const char*&gt; &gt; inline_namespace_alias_map;
+ 	zaimoni::autovalarray_ptr&lt;enumerator_info&gt; enumerator_registry;
+@@ -111,11 +118,11 @@
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+-	void set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
+-	void set_object_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
++	void set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage);	// invalidates src
++	void set_object_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage);	// invalidates src
+ 	const char* get_object_name(const type_index base_type_index) const;
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_object(const char* const alias) const;
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_object_CPP(const char* alias,const char* active_namespace) const;
++	const object_type_loc_linkage* get_object(const char* const alias) const;
++	const object_type_loc_linkage* get_object_CPP(const char* alias,const char* active_namespace) const;
+ 	
+ 	void set_enumerator_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename,unsigned char representation,const uchar_blob&amp; src,type_index type);
+ 	void set_enumerator_def_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename,unsigned char representation,const uchar_blob&amp; src,type_index type);
+@@ -160,7 +167,7 @@
+ 	
+ 	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_object_CPP(const char* alias) const;
++	const object_type_loc_linkage* _get_object_CPP(const char* alias) const;
+ 	const enumerator_info* _get_enumerator_CPP(const char* alias) const;
+ 	bool is_inline_namespace_CPP(const char* active_namespace, size_t active_namespace_len) const;
+ 	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
+
+Modified: trunk/type_system.hpp.in
+===================================================================
+--- trunk/type_system.hpp.in	2011-07-28 18:33:14 UTC (rev 678)
++++ trunk/type_system.hpp.in	2011-07-29 14:59:22 UTC (rev 679)
+@@ -31,6 +31,13 @@
+ 	// { {type, representation, value}, {filename, location }}
+ 	// uchar_blob is a POD backing store for unsigned_var_int here
+ 	typedef zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;zaimoni::POD_triple&lt;type_index,unsigned char,uchar_blob&gt;, zaimoni::POD_pair&lt;const char*,zaimoni::POD_pair&lt;size_t,size_t&gt; &gt; &gt; &gt; enumerator_info;
++	typedef zaimoni::POD_quartet&lt;type_spec,const char*,size_t,size_t&gt; object_type_loc_linkage;
++	enum linkage {
++		linkage_none = 0,	// no linkage
++		linkage_static,		// internal linkage
++		linkage_extern_C,	// external linkage, C
++		linkage_extern_CPP	// external linkage, C++ 
++	};
+ #/*cut-cpp*/
+ 
+ 	const zaimoni::POD_pair&lt;const char* const,size_t&gt;* const core_types;
+@@ -42,7 +49,7 @@
+ 	typedef zaimoni::POD_quartet&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt;, size_t&gt; dynamic_type_format;
+ 	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
+-	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; object_registry;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,object_type_loc_linkage &gt; &gt; object_registry;
+ 	zaimoni::weakautovalarray_ptr&lt;const char*&gt; inline_namespace_alias_targets;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,const char*&gt; &gt; inline_namespace_alias_map;
+ 	zaimoni::autovalarray_ptr&lt;enumerator_info&gt; enumerator_registry;
+@@ -133,11 +140,11 @@
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+-	void set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
+-	void set_object_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
++	void set_object(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage);	// invalidates src
++	void set_object_CPP(const char* const name, const char* const active_namespace, const char* filename, const size_t lineno, type_spec&amp; src, type_system::linkage _linkage);	// invalidates src
+ 	const char* get_object_name(const type_index base_type_index) const;
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_object(const char* const alias) const;
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_object_CPP(const char* alias,const char* active_namespace) const;
++	const object_type_loc_linkage* get_object(const char* const alias) const;
++	const object_type_loc_linkage* get_object_CPP(const char* alias,const char* active_namespace) const;
+ 	
+ 	void set_enumerator_def(const char* alias, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename,unsigned char representation,const uchar_blob&amp; src,type_index type);
+ 	void set_enumerator_def_CPP(const char* name, const char* active_namespace, zaimoni::POD_pair&lt;size_t,size_t&gt; logical_line, const char* src_filename,unsigned char representation,const uchar_blob&amp; src,type_index type);
+@@ -184,7 +191,7 @@
+ 	
+ 	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
+-	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_object_CPP(const char* alias) const;
++	const object_type_loc_linkage* _get_object_CPP(const char* alias) const;
+ 	const enumerator_info* _get_enumerator_CPP(const char* alias) const;
+ 	bool is_inline_namespace_CPP(const char* active_namespace, size_t active_namespace_len) const;
+ 	const char* canonical_name_is_inline_namespace_alias_target(const char* name, size_t name_len, const char* active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len) const;
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000445.html">[Zcplusplus-commits] r678 - trunk
+</A></li>
+	
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#446">[ date ]</a>
+              <a href="thread.html#446">[ thread ]</a>
+              <a href="subject.html#446">[ subject ]</a>
+              <a href="author.html#446">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r388 - in trunk: Zaimoni.STL	Zaimoni.STL/LexParse Zaimoni.STL/OS Zaimoni.STL/OS/Win32	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log	Zaimoni.STL/core.RAM lib
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r388%20-%20in%20trunk%3A%20Zaimoni.STL%0A%09Zaimoni.STL/LexParse%20Zaimoni.STL/OS%20Zaimoni.STL/OS/Win32%0A%09Zaimoni.STL/Pure.C%20Zaimoni.STL/Pure.C/stdio.log%0A%09Zaimoni.STL/core.RAM%20lib&In-Reply-To=%3C201004220632.o3M6WEsn021437%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000154.html">
+   <LINK REL="Next"  HREF="000156.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r388 - in trunk: Zaimoni.STL	Zaimoni.STL/LexParse Zaimoni.STL/OS Zaimoni.STL/OS/Win32	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log	Zaimoni.STL/core.RAM lib</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r388%20-%20in%20trunk%3A%20Zaimoni.STL%0A%09Zaimoni.STL/LexParse%20Zaimoni.STL/OS%20Zaimoni.STL/OS/Win32%0A%09Zaimoni.STL/Pure.C%20Zaimoni.STL/Pure.C/stdio.log%0A%09Zaimoni.STL/core.RAM%20lib&In-Reply-To=%3C201004220632.o3M6WEsn021437%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r388 - in trunk: Zaimoni.STL	Zaimoni.STL/LexParse Zaimoni.STL/OS Zaimoni.STL/OS/Win32	Zaimoni.STL/Pure.C Zaimoni.STL/Pure.C/stdio.log	Zaimoni.STL/core.RAM lib">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Apr 22 08:32:14 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000154.html">[Zcplusplus-commits] r387 - in trunk: . Zaimoni.STL/Pure.C
+</A></li>
+        <LI>Next message: <A HREF="000156.html">[Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#155">[ date ]</a>
+              <a href="thread.html#155">[ thread ]</a>
+              <a href="subject.html#155">[ subject ]</a>
+              <a href="author.html#155">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-22 08:32:06 +0200 (Thu, 22 Apr 2010)
+New Revision: 388
+
+Added:
+   trunk/lib/host.zcc/
+Modified:
+   trunk/Zaimoni.STL/LexParse/GNUmakefile
+   trunk/Zaimoni.STL/Makefile
+   trunk/Zaimoni.STL/OS/GNUmakefile
+   trunk/Zaimoni.STL/OS/Win32/GNUmakefile
+   trunk/Zaimoni.STL/POSIX.inc
+   trunk/Zaimoni.STL/Pure.C/GNUmakefile
+   trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile
+   trunk/Zaimoni.STL/core.RAM/GNUmakefile
+Log:
+start simplifying the build process
+
+Modified: trunk/Zaimoni.STL/LexParse/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/GNUmakefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/LexParse/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -18,6 +18,7 @@
+ 	rm -f *.a *.o
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
++host_install: $(addprefix ../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(addprefix $(libdir)/, $(LIBS))
+@@ -44,3 +45,9 @@
+ $(libdir)/libz_langconf_iso.a: libz_langconf_iso.a
+ 	cp libz_langconf_iso.a $(libdir)/libz_langconf_iso.a
+ 
++../../$(host_libdir)/libz_langconf.a: libz_langconf.a
++	cp libz_langconf.a ../../$(host_libdir)/libz_langconf.a
++
++../../$(host_libdir)/libz_langconf_iso.a: libz_langconf_iso.a
++	cp libz_langconf_iso.a ../../$(host_libdir)/libz_langconf_iso.a
++
+
+Modified: trunk/Zaimoni.STL/Makefile
+===================================================================
+--- trunk/Zaimoni.STL/Makefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/Makefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -1,6 +1,7 @@
+ # POSIX makefile for Zaimoni.STL
+ # POSIX requires make sets $(MAKE)
+-# pure.C must be done first: Pure.C/auto_int.h is a generated file
++# pure.C must be done first: Pure.C/auto_int.h, Pure.C/comptest.h
++#  are generated files
+ 
+ # GNU targets we know about
+ all:
+@@ -31,3 +32,11 @@
+ 	cd OS; $(MAKE) uninstall
+ 	cd OS; cd Win32; $(MAKE) uninstall
+ 
++# use this to avoid polluting host compiler with our libraries
++host_install:
++	cd pure.C; $(MAKE) host_install; cd stdio.log; $(MAKE) host_install
++	cd core.RAM; $(MAKE) host_install
++	cd LexParse; $(MAKE) host_install
++	cd OS; $(MAKE) host_install
++	cd OS; cd Win32; $(MAKE) host_install
++
+
+Modified: trunk/Zaimoni.STL/OS/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/OS/GNUmakefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/OS/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -19,6 +19,7 @@
+ 	rm -f *.a *.o
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
++host_install: $(addprefix ../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(addprefix $(libdir)/, $(LIBS))
+@@ -37,3 +38,6 @@
+ $(libdir)/libz_log_adapter.a: libz_log_adapter.a
+ 	cp libz_log_adapter.a $(libdir)/libz_log_adapter.a
+ 
++../../$(host_libdir)/libz_log_adapter.a: libz_log_adapter.a
++	cp libz_log_adapter.a ../../$(host_libdir)/libz_log_adapter.a
++
+
+Modified: trunk/Zaimoni.STL/OS/Win32/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/OS/Win32/GNUmakefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/OS/Win32/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -18,6 +18,7 @@
+ 	rm -f *.a *.o
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
++host_install: $(addprefix ../../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(addprefix $(libdir)/, $(LIBS))
+@@ -29,12 +30,9 @@
+ libz_mutex.a: mutex.o
+ 	$(AR) -ru libz_mutex.a mutex.o
+ 
+-#define lib_install
+-#$(libdir)/$(1): $(1)
+-#	cp $(1) $(libdir)/$(1)
+-#endef
+-
+-#$(foreach lib,$(LIBS),$(eval(call lib_install,$(lib))))
+ $(libdir)/libz_mutex.a: libz_mutex.a
+ 	cp libz_mutex.a $(libdir)/libz_mutex.a
+ 
++../../../$(host_libdir)/libz_mutex.a: libz_mutex.a
++	cp libz_mutex.a ../../../$(host_libdir)/libz_mutex.a
++
+
+Modified: trunk/Zaimoni.STL/POSIX.inc
+===================================================================
+--- trunk/Zaimoni.STL/POSIX.inc	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/POSIX.inc	2010-04-22 06:32:06 UTC (rev 388)
+@@ -5,6 +5,10 @@
+ includedir = $(exec_prefix)/include
+ libdir = $(exec_prefix)/lib
+ 
++# install host-built libraries here for Z.C++ here
++# (stage 1 of three-stage bootstrap)
++host_libdir = lib/host.zcc
++
+ AR = ar
+ CC = gcc
+ CXX = g++
+
+Modified: trunk/Zaimoni.STL/Pure.C/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/GNUmakefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/Pure.C/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -17,6 +17,7 @@
+ 	rm -f *.a *.o auto_int.h comptest.h
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
++host_install: $(addprefix ../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(libdir)/libz_format_util.a
+@@ -54,3 +55,9 @@
+ $(libdir)/libz_stdio_c.a: libz_stdio_c.a
+ 	cp libz_stdio_c.a $(libdir)/libz_stdio_c.a
+ 
++../../$(host_libdir)/libz_format_util.a: libz_format_util.a
++	cp libz_format_util.a ../../$(host_libdir)/libz_format_util.a
++	
++../../$(host_libdir)/libz_stdio_c.a: libz_stdio_c.a
++	cp libz_stdio_c.a ../../$(host_libdir)/libz_stdio_c.a
++
+
+Modified: trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/Pure.C/stdio.log/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -17,6 +17,7 @@
+ 	rm -f *.a *.o
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
++host_install: $(addprefix ../../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(addprefix $(libdir)/, $(LIBS))
+@@ -28,6 +29,9 @@
+ libz_stdio_log.a: fatal.o fatal_code.o inform.o inc_inform.o log.o
+ 	$(AR) -ru libz_stdio_log.a fatal.o fatal_code.o inform.o inc_inform.o log.o
+ 
+-$(libdir)/libz_stdio_log.a: libz_stdio_log.a
+-	cp libz_stdio_log.a $(libdir)/libz_stdio_log.a
++../../../$(libdir)/libz_stdio_log.a: libz_stdio_log.a
++	cp libz_stdio_log.a ../../../$(libdir)/libz_stdio_log.a
+ 
++../../../$(host_libdir)/libz_stdio_log.a: libz_stdio_log.a
++	cp libz_stdio_log.a ../../../$(host_libdir)/libz_stdio_log.a
++	
+
+Modified: trunk/Zaimoni.STL/core.RAM/GNUmakefile
+===================================================================
+--- trunk/Zaimoni.STL/core.RAM/GNUmakefile	2010-04-22 05:10:03 UTC (rev 387)
++++ trunk/Zaimoni.STL/core.RAM/GNUmakefile	2010-04-22 06:32:06 UTC (rev 388)
+@@ -18,6 +18,7 @@
+ 	rm -f *.a *.o
+ 
+ install: $(addprefix $(libdir)/, $(LIBS))
++host_install: $(addprefix ../../$(host_libdir)/, $(LIBS))
+ 
+ uninstall:
+ 	rm -f $(libdir)/libz_memory.a
+@@ -42,3 +43,9 @@
+ $(libdir)/libz_memory_c.a: libz_memory_c.a
+ 	cp libz_memory_c.a $(libdir)/libz_memory_c.a
+ 
++../../$(host_libdir)/libz_memory.a: libz_memory.a
++	cp libz_memory.a ../../$(host_libdir)/libz_memory.a
++
++../../$(host_libdir)/libz_memory_c.a: libz_memory_c.a
++	cp libz_memory_c.a ../../$(host_libdir)/libz_memory_c.a
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000154.html">[Zcplusplus-commits] r387 - in trunk: . Zaimoni.STL/Pure.C
+</A></li>
+	<LI>Next message: <A HREF="000156.html">[Zcplusplus-commits] r389 - in trunk: . Zaimoni.STL/Pure.C
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#155">[ date ]</a>
+              <a href="thread.html#155">[ thread ]</a>
+              <a href="subject.html#155">[ subject ]</a>
+              <a href="author.html#155">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

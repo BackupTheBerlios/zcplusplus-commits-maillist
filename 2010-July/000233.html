@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r466 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-July/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r466%20-%20trunk&In-Reply-To=%3C20100728034415.21056480133%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000232.html">
+   <LINK REL="Next"  HREF="000234.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r466 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r466%20-%20trunk&In-Reply-To=%3C20100728034415.21056480133%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r466 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jul 28 05:44:14 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000232.html">[Zcplusplus-commits] r465 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000234.html">[Zcplusplus-commits] r467 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#233">[ date ]</a>
+              <a href="thread.html#233">[ thread ]</a>
+              <a href="subject.html#233">[ subject ]</a>
+              <a href="author.html#233">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-07-28 05:44:14 +0200 (Wed, 28 Jul 2010)
+New Revision: 466
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc_pp.cpp
+Log:
+reduce indentation
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2010-07-28 02:17:39 UTC (rev 465)
++++ trunk/CPreproc.cpp	2010-07-28 03:44:14 UTC (rev 466)
+@@ -4281,20 +4281,17 @@
+ void
+ CPreprocessor::truncate_illegal_tokens(Token&lt;char&gt;&amp; x,const int directive_type,const size_t critical_offset)
+ {
+-	if (x.size()&gt;critical_offset)
++	if (x.size()&lt;=critical_offset) return;
++	if (x.size()-critical_offset&gt;strspn(x.data()+critical_offset,lang.WhiteSpace+1))
+ 		{
+-		const size_t skip_ws2 = strspn(x.data()+critical_offset,lang.WhiteSpace+1);
+-		if (x.size()-critical_offset&gt;skip_ws2)
+-			{
+-			message_header(x);
+-			INC_INFORM(ERR_STR);
+-			INC_INFORM(&quot;#&quot;);
+-			INC_INFORM(valid_directives[directive_type].first);
+-			INFORM(&quot; is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)&quot;);
+-			zcc_errors.inc_error();
+-			}
+-		x.lslice(critical_offset);
++		message_header(x);
++		INC_INFORM(ERR_STR);
++		INC_INFORM(&quot;#&quot;);
++		INC_INFORM(valid_directives[directive_type].first);
++		INFORM(&quot; is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)&quot;);
++		zcc_errors.inc_error();
+ 		}
++	x.lslice(critical_offset);
+ }
+ 
+ bool
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2010-07-28 02:17:39 UTC (rev 465)
++++ trunk/CPreproc_pp.cpp	2010-07-28 03:44:14 UTC (rev 466)
+@@ -4219,20 +4219,17 @@
+ void
+ CPreprocessor::truncate_illegal_tokens(Token&lt;char&gt;&amp; x,const int directive_type,const size_t critical_offset)
+ {
+-	if (x.size()&gt;critical_offset)
++	if (x.size()&lt;=critical_offset) return;
++	if (x.size()-critical_offset&gt;strspn(x.data()+critical_offset,lang.WhiteSpace+1))
+ 		{
+-		const size_t skip_ws2 = strspn(x.data()+critical_offset,lang.WhiteSpace+1);
+-		if (x.size()-critical_offset&gt;skip_ws2)
+-			{
+-			message_header(x);
+-			INC_INFORM(ERR_STR);
+-			INC_INFORM(&quot;#&quot;);
+-			INC_INFORM(valid_directives[directive_type].first);
+-			INFORM(&quot; is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)&quot;);
+-			zcc_errors.inc_error();
+-			}
+-		x.lslice(critical_offset);
++		message_header(x);
++		INC_INFORM(ERR_STR);
++		INC_INFORM(&quot;#&quot;);
++		INC_INFORM(valid_directives[directive_type].first);
++		INFORM(&quot; is trailed by illegal preprocessing tokens; discarding them. (C99 6.10p1/C++98 16p1)&quot;);
++		zcc_errors.inc_error();
+ 		}
++	x.lslice(critical_offset);
+ }
+ 
+ bool
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000232.html">[Zcplusplus-commits] r465 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000234.html">[Zcplusplus-commits] r467 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#233">[ date ]</a>
+              <a href="thread.html#233">[ thread ]</a>
+              <a href="subject.html#233">[ subject ]</a>
+              <a href="author.html#233">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

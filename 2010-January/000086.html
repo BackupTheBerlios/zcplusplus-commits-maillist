@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r319%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201001030154.o031svhf026340%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000085.html">
+   <LINK REL="Next"  HREF="000087.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r319%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201001030154.o031svhf026340%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r319 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Jan  3 02:54:57 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000085.html">[Zcplusplus-commits] r318 - in trunk: . Zaimoni.STL tools
+</A></li>
+        <LI>Next message: <A HREF="000087.html">[Zcplusplus-commits] r320 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#86">[ date ]</a>
+              <a href="thread.html#86">[ thread ]</a>
+              <a href="subject.html#86">[ subject ]</a>
+              <a href="author.html#86">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-01-03 02:54:51 +0100 (Sun, 03 Jan 2010)
+New Revision: 319
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/Zaimoni.STL/AutoPtr.hpp
+   trunk/type_spec.cpp
+Log:
+ISO build fixes (should compile now)
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-01-02 09:10:26 UTC (rev 318)
++++ trunk/CSupport.cpp	2010-01-03 01:54:51 UTC (rev 319)
+@@ -4664,11 +4664,7 @@
+ #endif
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		parse_tree* const tmp2 = src.c_array&lt;0&gt;();
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.args[0].first = tmp;
+-#else
+ 		src.args[0] = tmp;
+-#endif
+ 		return tmp2;
+ 		};
+ 	return _new_buffer_nonNULL_throws&lt;parse_tree&gt;(1);
+@@ -4686,11 +4682,7 @@
+ #endif
+ 		src.c_array&lt;0&gt;()-&gt;destroy();
+ 		free(src.c_array&lt;0&gt;());
+-#ifdef ZAIMONI_FORCE_ISO
+-		src.args[0].first = tmp;
+-#else
+ 		src.args[0] = tmp;
+-#endif
+ 		}
+ }
+ 
+
+Modified: trunk/Zaimoni.STL/AutoPtr.hpp
+===================================================================
+--- trunk/Zaimoni.STL/AutoPtr.hpp	2010-01-02 09:10:26 UTC (rev 318)
++++ trunk/Zaimoni.STL/AutoPtr.hpp	2010-01-03 01:54:51 UTC (rev 319)
+@@ -170,7 +170,7 @@
+ 	explicit _meta_weakautoarray_ptr(T*&amp; src,size_t src_size) : _ptr(src),_size(src_size) {src = NULL;};
+ 	explicit _meta_weakautoarray_ptr(size_t n) : _ptr(n ? _new_buffer_nonNULL_throws&lt;T&gt;(n) : NULL),_size(n) {};
+ 	explicit _meta_weakautoarray_ptr(const std::nothrow_t&amp; tracer, size_t n) : _ptr(_new_buffer&lt;T&gt;(n)),_size(n) {};
+-	explicit _meta_weakautoarray_ptr(_meta_weakautoarray_ptr&amp; src) : _ptr(NULL),_size(0) {*this=src;};
++	explicit _meta_weakautoarray_ptr(const _meta_weakautoarray_ptr&amp; src) : _ptr(NULL),_size(0) {*this=src;};
+ #endif
+ 	~_meta_weakautoarray_ptr() {_weak_flush(_ptr);};
+ 
+@@ -184,7 +184,11 @@
+ 	void MoveInto(_meta_weakautoarray_ptr&lt;T&gt;&amp; dest) {dest.reset(_ptr);};
+ 
+ 	void TransferOutAndNULL(T*&amp; Target) {_weak_flush(Target); Target = _ptr; this-&gt;NULLPtr();}
++#ifndef ZAIMONI_FORCE_ISO
+ 	bool Resize(size_t n) {return _weak_resize(_ptr,n);};
++#else
++	bool Resize(size_t n) {return _weak_resize(_ptr,_size,n);};
++#endif
+ 	void FastDeleteIdx(size_t n) {_weak_delete_idx(_ptr,n);};
+ #ifndef ZAIMONI_FORCE_ISO
+ 	void DeleteIdx(size_t n) {_safe_weak_delete_idx(_ptr,n);};
+@@ -278,7 +282,7 @@
+ #ifndef ZAIMONI_FORCE_ISO
+ 	const weakautovalarray_ptr_throws&amp; operator=(T* src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
+ #endif
+-	const weakautovalarray_ptr_throws&amp; operator=(weakautovalarray_ptr_throws&amp; src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
++	const weakautovalarray_ptr_throws&amp; operator=(const weakautovalarray_ptr_throws&amp; src) {_meta_weakautoarray_ptr&lt;T&gt;::operator=(src); return *this;};
+ 
+ 	friend void zaimoni::swap(weakautovalarray_ptr_throws&amp; lhs, weakautovalarray_ptr_throws&amp; rhs) {lhs.swap(rhs);};
+ };
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2010-01-02 09:10:26 UTC (rev 318)
++++ trunk/type_spec.cpp	2010-01-03 01:54:51 UTC (rev 319)
+@@ -21,17 +21,25 @@
+ 	if (_size==pointer_power) return;
+ 	assert(0&lt;_size);
+ 	const bool shrinking = _size&lt;pointer_power;
++	const size_t pointer_power_copy = pointer_power;
+ 	const size_t old_ptr_power = pointer_power_after_array_decay();
+ 	const size_t new_ptr_power = old_ptr_power+(_size-pointer_power);	// modulo arithmetic
+ 	unsigned char* tmp_first = (shrinking || sizeof(unsigned char*)&gt;new_ptr_power) ? NULL : zaimoni::_new_buffer_nonNULL_throws&lt;unsigned char&gt;(new_ptr_power+1);
++#ifndef ZAIMONI_FORCE_ISO
+ 	if (!zaimoni::_resize(extent_vector,_size))
++#else
++	if (!zaimoni::_resize(extent_vector,pointer_power,_size))
++#endif
+ 		{
+ 		free(tmp_first);
+ 		throw std::bad_alloc();
+ 		};
++#ifndef ZAIMONI_FORCE_ISO
++	pointer_power = _size;
++#endif
+ 	if (!shrinking)
+ 		{
+-		memset(extent_vector+pointer_power,0,sizeof(uintmax_t)*(_size-pointer_power));
++		memset(extent_vector+pointer_power_copy,0,sizeof(uintmax_t)*(_size-pointer_power_copy));
+ 		if (NULL!=tmp_first)
+ 			{
+ 			memcpy(tmp_first,sizeof(unsigned char*)&gt;old_ptr_power ? q_vector.second : q_vector.first,old_ptr_power+1);
+@@ -65,13 +73,19 @@
+ 		}
+ 	else{
+ 		if (shrinking)
++#ifndef ZAIMONI_FORCE_ISO
+ 			ZAIMONI_PASSTHROUGH_ASSERT(zaimoni::_resize(q_vector.first,new_ptr_power+1));
++#else
++			{
++			size_t tmp_size = old_ptr_power+1;
++			ZAIMONI_PASSTHROUGH_ASSERT(zaimoni::_resize(q_vector.first,tmp_size,new_ptr_power+1));
++			}
++#endif
+ 		else{
+ 			free(q_vector.first);
+ 			q_vector.first = tmp_first;
+ 			}
+ 		}
+-	pointer_power = _size;
+ }
+ 
+ // XXX properly operator= in C++, but type_spec has to be POD
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000085.html">[Zcplusplus-commits] r318 - in trunk: . Zaimoni.STL tools
+</A></li>
+	<LI>Next message: <A HREF="000087.html">[Zcplusplus-commits] r320 - trunk/Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#86">[ date ]</a>
+              <a href="thread.html#86">[ thread ]</a>
+              <a href="subject.html#86">[ subject ]</a>
+              <a href="author.html#86">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

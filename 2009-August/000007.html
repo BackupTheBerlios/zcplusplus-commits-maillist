@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r240%20-%20in%20trunk/lib%3A%20zc%2B%2B/include%20zcc/include&In-Reply-To=%3C200908260747.n7Q7lUlv026777%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000006.html">
+   <LINK REL="Next"  HREF="000008.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r240%20-%20in%20trunk/lib%3A%20zc%2B%2B/include%20zcc/include&In-Reply-To=%3C200908260747.n7Q7lUlv026777%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r240 - in trunk/lib: zc++/include zcc/include">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Aug 26 09:47:30 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000006.html">[Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools
+</A></li>
+        <LI>Next message: <A HREF="000008.html">[Zcplusplus-commits] r241 - in trunk/Zaimoni.STL: . OS Pure.C	Pure.C/stdio.log
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#7">[ date ]</a>
+              <a href="thread.html#7">[ thread ]</a>
+              <a href="subject.html#7">[ subject ]</a>
+              <a href="author.html#7">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-08-26 09:47:24 +0200 (Wed, 26 Aug 2009)
+New Revision: 240
+
+Modified:
+   trunk/lib/zc++/include/ciso646
+   trunk/lib/zc++/include/cstdbool
+   trunk/lib/zcc/include/iso646.h
+   trunk/lib/zcc/include/stdbool.h
+Log:
+license phrasing tweak (Boost is same as MIT)
+
+Modified: trunk/lib/zc++/include/ciso646
+===================================================================
+--- trunk/lib/zc++/include/ciso646	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zc++/include/ciso646	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ // ciso646
+ // not-that-useful wrapper for iso646.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-// This file is subject to the Boost licence.
+-
+ #ifndef __CISO646__
+ #define __CISO646__ 1
+ #pragma ZCC lock __CISO646__
+
+Modified: trunk/lib/zc++/include/cstdbool
+===================================================================
+--- trunk/lib/zc++/include/cstdbool	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zc++/include/cstdbool	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ // cstdbool
+ // wrapper for stdbool.h
++// (C)2009 Kenneth Boyd, license: MIT.txt
+ 
+-// This file is subject to the Boost licence.
+-
+ #ifndef __CSTDBOOL__
+ #define __CSTDBOOL__ 1
+ #pragma ZCC lock __CSTDBOOL__
+
+Modified: trunk/lib/zcc/include/iso646.h
+===================================================================
+--- trunk/lib/zcc/include/iso646.h	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zcc/include/iso646.h	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ /* iso646.h */
+ /* C99 7.9: define following macros (which are reserved keywords in C++) */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
+ 
+-/* This file is subject to the Boost licence. */
+-
+ #ifndef __ISO646_H__
+ #define __ISO646_H__ 1
+ #pragma ZCC lock __ISO646_H__
+
+Modified: trunk/lib/zcc/include/stdbool.h
+===================================================================
+--- trunk/lib/zcc/include/stdbool.h	2009-08-25 23:21:39 UTC (rev 239)
++++ trunk/lib/zcc/include/stdbool.h	2009-08-26 07:47:24 UTC (rev 240)
+@@ -1,8 +1,7 @@
+ /* stdbool.h */
+ /* C99 7.16: define following macros: __bool_true_false_are_defined, bool, true, false */
++/* (C)2009 Kenneth Boyd, license: MIT.txt */
+ 
+-/* This file is subject to the Boost licence. */
+-
+ #ifndef __STDBOOL_H__
+ #define __STDBOOL_H__ 1
+ #pragma ZCC lock __STDBOOL_H__
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000006.html">[Zcplusplus-commits] r239 - in trunk: Zaimoni.STL tools
+</A></li>
+	<LI>Next message: <A HREF="000008.html">[Zcplusplus-commits] r241 - in trunk/Zaimoni.STL: . OS Pure.C	Pure.C/stdio.log
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#7">[ date ]</a>
+              <a href="thread.html#7">[ thread ]</a>
+              <a href="subject.html#7">[ subject ]</a>
+              <a href="author.html#7">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r358 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r358%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201003260305.o2Q35jWU004344%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000124.html">
+   <LINK REL="Next"  HREF="000126.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r358 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r358%20-%20in%20trunk%3A%20.%20tests/zcc/staticassert.C1X%0A%09tests/zcc.in/staticassert.C1X&In-Reply-To=%3C201003260305.o2Q35jWU004344%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r358 - in trunk: . tests/zcc/staticassert.C1X	tests/zcc.in/staticassert.C1X">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Mar 26 04:05:45 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000124.html">[Zcplusplus-commits] r357 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000126.html">[Zcplusplus-commits] r359 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#125">[ date ]</a>
+              <a href="thread.html#125">[ thread ]</a>
+              <a href="subject.html#125">[ subject ]</a>
+              <a href="author.html#125">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-26 04:05:36 +0100 (Fri, 26 Mar 2010)
+New Revision: 358
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+   trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+Log:
+make % handle enumerators
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/CSupport.cpp	2010-03-26 03:05:36 UTC (rev 358)
+@@ -860,7 +860,7 @@
+ 	if (0==type_code.pointer_power_after_array_decay())	// pointers do not have a standard conversion to integers
+ 		{
+ 		tmp.first = default_promote_type(type_code.base_type_index ARG_TYPES);
+-		tmp.second = (C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=type_code.base_type_index);
++		tmp.second = (C_TYPE::BOOL&lt;=tmp.first &amp;&amp; C_TYPE::INTEGERLIKE&gt;=tmp.first);
+ 		}
+ 	return tmp;
+ }
+@@ -4383,7 +4383,7 @@
+  *         pointer constant
+  */
+ static int is_null_pointer_constant(const parse_tree&amp; src,intlike_literal_to_VM_func&amp; intlike_literal_to_VM SIG_CONST_TYPES)
+-{	//! \bug doesn't recognize enumerators with value zero
++{
+ 	if (!converts_to_integerlike(src.type_code ARG_TYPES)) return 0;
+ 	umaxint tmp;
+ 	if (intlike_literal_to_VM(tmp,src ARG_TYPES)) return tmp==0;
+@@ -6367,7 +6367,7 @@
+ 		parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
+ 		inspect_potential_paren_primary_expression(tmp_c_array[0]);
+ 		inspect_potential_paren_primary_expression(tmp_c_array[2]);
+-		if (	(PARSE_MULT_EXPRESSION &amp; tmp_c_array[0].flags)
++		if ((PARSE_MULT_EXPRESSION &amp; tmp_c_array[0].flags)
+ 			&amp;&amp;	(PARSE_PM_EXPRESSION &amp; tmp_c_array[2].flags))
+ 			{
+ 			assemble_binary_infix_arguments(src,i,PARSE_STRICT_MULT_EXPRESSION);	// tmp_c_array goes invalid here
+@@ -6735,8 +6735,8 @@
+ static bool _mod_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_MOD==src.subtype &amp;&amp; is_C99_mult_operator_expression&lt;'%'&gt;(src));
+-	const POD_pair&lt;size_t,bool&gt; lhs = default_promotion_is_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES);
+-	const POD_pair&lt;size_t,bool&gt; rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES);
++	POD_pair&lt;size_t,bool&gt; lhs = default_promotion_is_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES);
++	POD_pair&lt;size_t,bool&gt; rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES);
+ 	if (!lhs.second)
+ 		{	//! \test default/Error_if_control33.hpp, default/Error_if_control33.h
+ 			//! \test default/Error_if_control34.hpp, default/Error_if_control34.h
+@@ -6748,6 +6748,20 @@
+ 		simple_error(src,&quot; has nonintegral RHS (C99 6.5.5p2, C++98 5.6p2)&quot;);
+ 		return false;
+ 		};
++#/*cut-cpp*/
++	if (is_noticed_enumerator(*src.data&lt;1&gt;(),types))
++		{
++		if (!enumerator_to_integer_representation(*src.c_array&lt;1&gt;(),types)) return false;
++		lhs = default_promotion_is_integerlike(src.data&lt;1&gt;()-&gt;type_code,types);
++		assert(lhs.second);
++		}
++	if (is_noticed_enumerator(*src.data&lt;2&gt;(),types)) 
++		{
++		if (!enumerator_to_integer_representation(*src.c_array&lt;2&gt;(),types)) return false;
++		rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code,types);
++		assert(rhs.second);
++		}
++#/*cut-cpp*/
+ 	src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+ 	return true;
+ }
+@@ -10602,6 +10616,10 @@
+ 			// XXX would be handy to keep the tmp around, consider as time optimization XXX
+ 			}
+ 		}
++	size_t i = x.size&lt;0&gt;();
++	while(0&lt;i) notice_enumerator_CPP(x.c_array&lt;0&gt;()[--i],types,active_namespace);
++	assert(x.empty&lt;1&gt;());	// expand these into loops if needed
++	assert(x.empty&lt;2&gt;());
+ }
+ 
+ static void C99_CPP_handle_static_assertion(parse_tree&amp; src,type_system&amp; types,PP_auxfunc&amp; langinfo,const size_t i,const char* const err,const char* const active_namespace)
+@@ -10904,8 +10922,8 @@
+ 	unsigned_var_int latest_value(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned_var_int prior_value(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ 	unsigned char current_enumerator_type = C_TYPE::INT;
+-//	bool cpp_using_negative = false;
+-//	bool cpp_using_above_LLONG_MAX = false;
++	unsigned char base_enum_type = C_TYPE::INT;
++	bool cpp_using_negative = false;
+ 	i = 0;
+ 	while(src.size&lt;0&gt;()&gt;i)
+ 		{	// require identifier that is neither keyword nor a primitive type
+@@ -10952,6 +10970,7 @@
+ 					if (bool_options[boolopt::warnings_are_errors])
+ 						zcc_errors.inc_error();
+ 					}
++				}
+ 			else{	// C
+ 				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 				INC_INFORM(ERR_STR);
+@@ -11135,9 +11154,43 @@
+ 			types.set_enumerator_def_CPP(src.data&lt;0&gt;()[origin-2].index_tokens[0].token.first, active_namespace,src.data&lt;0&gt;()[origin-2].index_tokens[0].logical_line,src.data&lt;0&gt;()[origin-2].index_tokens[0].src_filename,current_enumerator_type,latest_value_copy,enum_type_index);
+ 		else
+ 			types.set_enumerator_def(src.data&lt;0&gt;()[origin-2].index_tokens[0].token.first,src.data&lt;0&gt;()[origin-2].index_tokens[0].logical_line,src.data&lt;0&gt;()[origin-2].index_tokens[0].src_filename,current_enumerator_type,latest_value_copy,enum_type_index);
++		if (allow_empty &amp;&amp; !cpp_using_negative)
++			{
++			const promote_aux test(current_enumerator_type,types);
++			if (test.is_signed &amp;&amp; latest_value.test(test.bitcount-1))
++				{
++				cpp_using_negative = true;
++				switch(base_enum_type)
++				{
++				case C_TYPE::INT:
++				case C_TYPE::LONG:
++				case C_TYPE::LLONG:
++					break;	// these three are already signed, no representation change incurred
++				case C_TYPE::UINT:
++					if (target_machine-&gt;C_sizeof_int()&lt;target_machine-&gt;C_sizeof_long())
++						{
++						base_enum_type = C_TYPE::LONG;
++						break;
++						}
++				case C_TYPE::ULONG:
++					if (target_machine-&gt;C_sizeof_long()&lt;target_machine-&gt;C_sizeof_long_long())
++						{
++						base_enum_type = C_TYPE::LLONG;
++						break;
++						}
++				default:	//! \bug needs test case
++					message_header(src.data&lt;0&gt;()[origin-2].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INFORM(&quot;enumeration requires both negative values and values above INTMAX_MAX, underlying type doesn't exist (C++0X 7.2p6)&quot;);
++					zcc_errors.inc_error();
++					return false;
++				}
++				}
++			}
+ 		}
+ 		}
+ 	// now ok to crunch underlying type/machine representation
++	types.set_enum_underlying_type(enum_type_index,allow_empty ? base_enum_type : C_TYPE::INT);
+ 	return true;
+ }
+ 
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/CSupport_pp.cpp	2010-03-26 03:05:36 UTC (rev 358)
+@@ -790,7 +790,7 @@
+ 	if (0==type_code.pointer_power_after_array_decay())	// pointers do not have a standard conversion to integers
+ 		{
+ 		tmp.first = default_promote_type(type_code.base_type_index ARG_TYPES);
+-		tmp.second = (C_TYPE::BOOL&lt;=type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;=type_code.base_type_index);
++		tmp.second = (C_TYPE::BOOL&lt;=tmp.first &amp;&amp; C_TYPE::INTEGERLIKE&gt;=tmp.first);
+ 		}
+ 	return tmp;
+ }
+@@ -3992,7 +3992,7 @@
+  *         pointer constant
+  */
+ static int is_null_pointer_constant(const parse_tree&amp; src,intlike_literal_to_VM_func&amp; intlike_literal_to_VM SIG_CONST_TYPES)
+-{	//! \bug doesn't recognize enumerators with value zero
++{
+ 	if (!converts_to_integerlike(src.type_code ARG_TYPES)) return 0;
+ 	umaxint tmp;
+ 	if (intlike_literal_to_VM(tmp,src ARG_TYPES)) return tmp==0;
+@@ -5847,7 +5847,7 @@
+ 		parse_tree* const tmp_c_array = src.c_array&lt;0&gt;()+(i-1);
+ 		inspect_potential_paren_primary_expression(tmp_c_array[0]);
+ 		inspect_potential_paren_primary_expression(tmp_c_array[2]);
+-		if (	(PARSE_MULT_EXPRESSION &amp; tmp_c_array[0].flags)
++		if ((PARSE_MULT_EXPRESSION &amp; tmp_c_array[0].flags)
+ 			&amp;&amp;	(PARSE_PM_EXPRESSION &amp; tmp_c_array[2].flags))
+ 			{
+ 			assemble_binary_infix_arguments(src,i,PARSE_STRICT_MULT_EXPRESSION);	// tmp_c_array goes invalid here
+@@ -6215,8 +6215,8 @@
+ static bool _mod_expression_typecheck(parse_tree&amp; src SIG_CONST_TYPES)
+ {
+ 	assert(C99_MULT_SUBTYPE_MOD==src.subtype &amp;&amp; is_C99_mult_operator_expression&lt;'%'&gt;(src));
+-	const POD_pair&lt;size_t,bool&gt; lhs = default_promotion_is_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES);
+-	const POD_pair&lt;size_t,bool&gt; rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES);
++	POD_pair&lt;size_t,bool&gt; lhs = default_promotion_is_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES);
++	POD_pair&lt;size_t,bool&gt; rhs = default_promotion_is_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES);
+ 	if (!lhs.second)
+ 		{	//! \test default/Error_if_control33.hpp, default/Error_if_control33.h
+ 			//! \test default/Error_if_control34.hpp, default/Error_if_control34.h
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-26 03:05:36 UTC (rev 358)
+@@ -27,4 +27,9 @@
+ _Static_Assert(!~ULONG_MAX,&quot;automatic success has failed&quot;);
+ _Static_Assert(!~ULLONG_MAX,&quot;automatic success has failed&quot;);
+ 
++// check %
++_Static_Assert(1%2,&quot;automatic success has failed&quot;);
++_Static_Assert(!(0%2),&quot;automatic success has failed&quot;);
++_Static_Assert(!(1%1),&quot;automatic success has failed&quot;);
++_Static_Assert(!(0%1),&quot;automatic success has failed&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-26 03:05:36 UTC (rev 358)
+@@ -27,4 +27,9 @@
+ static_assert(!~ULONG_MAX,&quot;automatic success has failed&quot;);
+ static_assert(!~ULLONG_MAX,&quot;automatic success has failed&quot;);
+ 
++// check %
++static_assert(1%2,&quot;automatic success has failed&quot;);
++static_assert(!(0%2),&quot;automatic success has failed&quot;);
++static_assert(!(1%1),&quot;automatic success has failed&quot;);
++static_assert(!(0%1),&quot;automatic success has failed&quot;);
+ 
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-26 03:05:36 UTC (rev 358)
+@@ -4,7 +4,8 @@
+ enum test {
+ 	neg_one = -1,
+ 	zero,
+-	one
++	one,
++	two
+ }
+ 
+ _Static_Assert(neg_one,&quot;automatic success has failed&quot;);
+@@ -20,3 +21,10 @@
+ 
+ // check unary !
+ _Static_Assert(!zero,&quot;automatic success has failed&quot;);
++
++// check %
++_Static_Assert(one%two,&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero%two),&quot;automatic success has failed&quot;);
++_Static_Assert(!(one%one),&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero%one),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-26 03:05:36 UTC (rev 358)
+@@ -4,7 +4,8 @@
+ enum test {
+ 	neg_one = -1,
+ 	zero,
+-	one
++	one,
++	two
+ }
+ 
+ static_assert(neg_one,&quot;automatic success has failed&quot;);
+@@ -20,3 +21,10 @@
+ 
+ // check unary !
+ static_assert(!zero,&quot;automatic success has failed&quot;);
++
++// check %
++static_assert(one%two,&quot;automatic success has failed&quot;);
++static_assert(!(zero%two),&quot;automatic success has failed&quot;);
++static_assert(!(one%one),&quot;automatic success has failed&quot;);
++static_assert(!(zero%one),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_autosuccess.in	2010-03-26 03:05:36 UTC (rev 358)
+@@ -28,4 +28,9 @@
+ STATIC_ASSERT(!~ULONG_MAX,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(!~ULLONG_MAX,&quot;automatic success has failed&quot;);
+ 
++// check %
++STATIC_ASSERT(1%2,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0%2),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(1%1),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(0%1),&quot;automatic success has failed&quot;);
+ 
+
+Modified: trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-03-26 03:04:50 UTC (rev 357)
++++ trunk/tests/zcc.in/staticassert.C1X/Pass_enum_autosuccess.in	2010-03-26 03:05:36 UTC (rev 358)
+@@ -5,7 +5,8 @@
+ enum test {
+ 	neg_one = -1,
+ 	zero,
+-	one
++	one,
++	two
+ }
+ 
+ STATIC_ASSERT(neg_one,&quot;automatic success has failed&quot;);
+@@ -21,3 +22,10 @@
+ 
+ // check unary !
+ STATIC_ASSERT(!zero,&quot;automatic success has failed&quot;);
++
++// check %
++STATIC_ASSERT(one%two,&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero%two),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(one%one),&quot;automatic success has failed&quot;);
++STATIC_ASSERT(!(zero%one),&quot;automatic success has failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000124.html">[Zcplusplus-commits] r357 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000126.html">[Zcplusplus-commits] r359 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#125">[ date ]</a>
+              <a href="thread.html#125">[ thread ]</a>
+              <a href="subject.html#125">[ subject ]</a>
+              <a href="author.html#125">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

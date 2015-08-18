@@ -1,0 +1,489 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r682 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r682%20-%20trunk&In-Reply-To=%3C20110830183228.A9EAE4811B9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000448.html">
+   <LINK REL="Next"  HREF="000450.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r682 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r682%20-%20trunk&In-Reply-To=%3C20110830183228.A9EAE4811B9%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r682 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 30 20:32:28 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000448.html">[Zcplusplus-commits] r681 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000450.html">[Zcplusplus-commits] r683 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#449">[ date ]</a>
+              <a href="thread.html#449">[ thread ]</a>
+              <a href="subject.html#449">[ subject ]</a>
+              <a href="author.html#449">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-08-30 20:32:28 +0200 (Tue, 30 Aug 2011)
+New Revision: 682
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+turn on object registry
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-08-30 18:31:45 UTC (rev 681)
++++ trunk/CSupport.cpp	2011-08-30 18:32:28 UTC (rev 682)
+@@ -14187,20 +14187,95 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-#if 0
++					// all declarations must agree regarding _Thread_local (C1X 6.7.1p3), which does not apply to functions (C1X 6.9.1p4...only extern, static work for functions)
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(initdecl_identifier-&gt;index_tokens[0].token.first);
++					if (tmp &amp;&amp; tmp-&gt;first!=bootstrap)
++						{	// check pre-existing type; want compatible types, in particular
++							// multiple translation units is not an issue here: C1X 6.2.7
++							// * enumerations cause implementation-defined weirdness: C1X 6.7.2.2p4 
++							// * qualifiers: C1X 6.7.3p10
++							// * functions: C1X 6.7.6.2p15
++							// reject incompatible prior type as undefined behavior
++						message_header(initdecl_identifier-&gt;index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;already defined with some other type (this error needs to implement proper incompatible type rejection) (C99 6.2.7 and related)&quot;);
++						INC_INFORM(tmp-&gt;second);
++						INC_INFORM(&quot;:&quot;);
++						INC_INFORM(tmp-&gt;third);
++						INFORM(&quot;: prior declaration here&quot;);
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with _Thread_local at this point
+ 					if (C99_CPP0X_DECLSPEC_STATIC &amp; declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration will invoke undefined behavior [C1X 6.2.2p7], so error out then
++						if (tmp)
++							{
++							if (type_system::linkage_static!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;already defined with some linkage other than static at global scope: undefined behavior (C1X 6.2.2p7)&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object(initdecl_identifier-&gt;index_tokens[0].token.first, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
+ 							// no effect on pre-existing declaration, other than to convert no-linkage to extern (if this can indeed be tripped)
+ 							// we need a cross-lang warning if there is a pre-existing static declaration, as this will error in C++
++explicit_extern:		if (tmp)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility] &amp;&amp; type_system::linkage_extern_C!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM(&quot;already defined with some linkage other than extern at global scope: no effect in C, C++ would error&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							//! \bug need test case								
++							// redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object(initdecl_identifier-&gt;index_tokens[0].token.first, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_C);
++							}
+ 						}
+ 					else{	// something else: C99 defaults to extern no matter what for global functions and objects.
+ 							// we need a cross-lang warning for const objects as C++ will default to static then
++						if (bool_options[boolopt::warn_crosslang_compatibility] &amp;&amp; bootstrap.CPP_global_linkage_is_static())
++							{	//! \bug need test case
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INFORM(&quot;global const objects have default linkage extern in C, static in C++&quot;);
++							if (bool_options[boolopt::warnings_are_errors])
++								{	//! \bug need test case
++								zcc_errors.inc_error();
++								return;
++								}
++							}
++						goto explicit_extern;	// handle as extern
+ 						};
+-#endif						
+ 					};
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+@@ -15770,28 +15845,102 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-					free(namespace_name);
+-#if 0
+ 					// so...type_system needs to handle following when registering an object/function as well
+ 					// linkage: static/internal, extern/external
+ 					// external linkage class: C, C++
+ 					// it is an error to have more than one object definition
+ 					// it is an error to have more than one function type (including parameter list) for a given identifier with C linkage
++					// all declarations must agree regarding thread_local (C++0X 7.1.1p1), which cannot apply to functions (C++0X 7.1.1p4; only extern and static work)
+ 					// obviously C cannot name most things with C++ linkage
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(fullname);
++					//! \todo react to overloaded function issues here
++					free(namespace_name);
++					if (tmp &amp;&amp; tmp-&gt;first!=bootstrap)
++						{	// check pre-existing type
++						message_header(initdecl_identifier-&gt;index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;already defined with some other type (this error needs to implement proper incompatible type rejection)&quot;);
++						INC_INFORM(tmp-&gt;second);
++						INC_INFORM(&quot;:&quot;);
++						INC_INFORM(tmp-&gt;third);
++						INFORM(&quot;: prior declaration here&quot;);
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with thread_local here
++					//! \todo deal with extern &quot;C&quot;, etc. (should be passing current default language for linkage in, should be reading linkage overrides for declFind)
+ 					if (C99_CPP0X_DECLSPEC_STATIC &amp; declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration is an error: C++0X 7.1.1p8
++explicit_static:		if (tmp)
++							{
++							if (type_system::linkage_static!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;already defined with some linkage other than static at global scope (C++0X 7.1.1p8)&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case								
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object_CPP(initdecl_identifier-&gt;index_tokens[0].token.first, active_namespace, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
+ 							// pre-existing static declaration is an error: C++0X 7.1.1p8
++explicit_extern:		if (tmp)
++							{
++							if (type_system::linkage_extern_CPP!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;already defined with some linkage other than extern at global scope (C++0X 7.1.1p8)&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already extern, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object_CPP(initdecl_identifier-&gt;index_tokens[0].token.first, active_namespace, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_CPP);
++							}
+ 						}
+ 					else{	// something else: C++ defaults to extern no matter what for global functions and objects.
+ 							// const objects default to static.  All others default to enclosing namespace.  
+ 							// we need a cross-lang warning for global const objects as C will default to extern then
+ 							// redeclaration will go with whatever was there previously
++						bool default_static = bootstrap.CPP_global_linkage_is_static();
++						if (default_static)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility])
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM(&quot;global const objects have default linkage extern in C, static in C++&quot;);
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							goto explicit_static;	// handle as static	
++							};
++						goto explicit_extern;	// handle as extern
+ 						}
+-#endif					
+ 				};
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-08-30 18:31:45 UTC (rev 681)
++++ trunk/CSupport.cpp.in	2011-08-30 18:32:28 UTC (rev 682)
+@@ -14335,20 +14335,95 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-#if 0
++					// all declarations must agree regarding _Thread_local (C1X 6.7.1p3), which does not apply to functions (C1X 6.9.1p4...only extern, static work for functions)
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(initdecl_identifier-&gt;index_tokens[0].token.first);
++					if (tmp &amp;&amp; tmp-&gt;first!=bootstrap)
++						{	// check pre-existing type; want compatible types, in particular
++							// multiple translation units is not an issue here: C1X 6.2.7
++							// * enumerations cause implementation-defined weirdness: C1X 6.7.2.2p4 
++							// * qualifiers: C1X 6.7.3p10
++							// * functions: C1X 6.7.6.2p15
++							// reject incompatible prior type as undefined behavior
++						message_header(initdecl_identifier-&gt;index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;already defined with some other type (this error needs to implement proper incompatible type rejection) (C99 6.2.7 and related)&quot;);
++						INC_INFORM(tmp-&gt;second);
++						INC_INFORM(&quot;:&quot;);
++						INC_INFORM(tmp-&gt;third);
++						INFORM(&quot;: prior declaration here&quot;);
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with _Thread_local at this point
+ 					if (C99_CPP0X_DECLSPEC_STATIC &amp; declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration will invoke undefined behavior [C1X 6.2.2p7], so error out then
++						if (tmp)
++							{
++							if (type_system::linkage_static!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;already defined with some linkage other than static at global scope: undefined behavior (C1X 6.2.2p7)&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object(initdecl_identifier-&gt;index_tokens[0].token.first, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
+ 							// no effect on pre-existing declaration, other than to convert no-linkage to extern (if this can indeed be tripped)
+ 							// we need a cross-lang warning if there is a pre-existing static declaration, as this will error in C++
++explicit_extern:		if (tmp)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility] &amp;&amp; type_system::linkage_extern_C!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM(&quot;already defined with some linkage other than extern at global scope: no effect in C, C++ would error&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							//! \bug need test case								
++							// redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object(initdecl_identifier-&gt;index_tokens[0].token.first, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_C);
++							}
+ 						}
+ 					else{	// something else: C99 defaults to extern no matter what for global functions and objects.
+ 							// we need a cross-lang warning for const objects as C++ will default to static then
++						if (bool_options[boolopt::warn_crosslang_compatibility] &amp;&amp; bootstrap.CPP_global_linkage_is_static())
++							{	//! \bug need test case
++							message_header(initdecl_identifier-&gt;index_tokens[0]);
++							INC_INFORM(WARN_STR);
++							INFORM(&quot;global const objects have default linkage extern in C, static in C++&quot;);
++							if (bool_options[boolopt::warnings_are_errors])
++								{	//! \bug need test case
++								zcc_errors.inc_error();
++								return;
++								}
++							}
++						goto explicit_extern;	// handle as extern
+ 						};
+-#endif						
+ 					};
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+@@ -15918,28 +15993,102 @@
+ 						zcc_errors.inc_error();
+ 						return;
+ 						};
+-					free(namespace_name);
+-#if 0
+ 					// so...type_system needs to handle following when registering an object/function as well
+ 					// linkage: static/internal, extern/external
+ 					// external linkage class: C, C++
+ 					// it is an error to have more than one object definition
+ 					// it is an error to have more than one function type (including parameter list) for a given identifier with C linkage
++					// all declarations must agree regarding thread_local (C++0X 7.1.1p1), which cannot apply to functions (C++0X 7.1.1p4; only extern and static work)
+ 					// obviously C cannot name most things with C++ linkage
++					const type_system::object_type_loc_linkage* const tmp = parse_tree::types-&gt;get_object(fullname);
++					//! \todo react to overloaded function issues here
++					free(namespace_name);
++					if (tmp &amp;&amp; tmp-&gt;first!=bootstrap)
++						{	// check pre-existing type
++						message_header(initdecl_identifier-&gt;index_tokens[0]);
++						INC_INFORM(ERR_STR);
++						INFORM(&quot;already defined with some other type (this error needs to implement proper incompatible type rejection)&quot;);
++						INC_INFORM(tmp-&gt;second);
++						INC_INFORM(&quot;:&quot;);
++						INC_INFORM(tmp-&gt;third);
++						INFORM(&quot;: prior declaration here&quot;);
++						zcc_errors.inc_error();
++						return;
++						};
++					//! \todo deal with thread_local here
++					//! \todo deal with extern &quot;C&quot;, etc. (should be passing current default language for linkage in, should be reading linkage overrides for declFind)
+ 					if (C99_CPP0X_DECLSPEC_STATIC &amp; declFind.get_flags())
+ 						{	// explicit static.
+ 							// pre-existing extern declaration is an error: C++0X 7.1.1p8
++explicit_static:		if (tmp)
++							{
++							if (type_system::linkage_static!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;already defined with some linkage other than static at global scope (C++0X 7.1.1p8)&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case								
++							// if we were already static, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object_CPP(initdecl_identifier-&gt;index_tokens[0].token.first, active_namespace, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_static);
++							}
+ 						}
+ 					else if (C99_CPP0X_DECLSPEC_EXTERN &amp; declFind.get_flags())
+ 						{	// explicit extern.
+ 							// pre-existing static declaration is an error: C++0X 7.1.1p8
++explicit_extern:		if (tmp)
++							{
++							if (type_system::linkage_extern_CPP!=tmp-&gt;fourth)
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(ERR_STR);
++								INFORM(&quot;already defined with some linkage other than extern at global scope (C++0X 7.1.1p8)&quot;);
++								INC_INFORM(tmp-&gt;second);
++								INC_INFORM(&quot;:&quot;);
++								INC_INFORM(tmp-&gt;third);
++								INFORM(&quot;: prior declaration here&quot;);
++								zcc_errors.inc_error();
++								return;
++								}
++							//! \bug need test case
++							// if we were already extern, redeclaration so ignore
++							}
++						else{	// new declaration
++								// this will have to be modified to pass in _Thread_local as well
++							parse_tree::types-&gt;set_object_CPP(initdecl_identifier-&gt;index_tokens[0].token.first, active_namespace, initdecl_identifier-&gt;index_tokens[0].src_filename, initdecl_identifier-&gt;index_tokens[0].logical_line.first, bootstrap, type_system::linkage_extern_CPP);
++							}
+ 						}
+ 					else{	// something else: C++ defaults to extern no matter what for global functions and objects.
+ 							// const objects default to static.  All others default to enclosing namespace.  
+ 							// we need a cross-lang warning for global const objects as C will default to extern then
+ 							// redeclaration will go with whatever was there previously
++						bool default_static = bootstrap.CPP_global_linkage_is_static();
++						if (default_static)
++							{
++							if (bool_options[boolopt::warn_crosslang_compatibility])
++								{	//! \bug need test case
++								message_header(initdecl_identifier-&gt;index_tokens[0]);
++								INC_INFORM(WARN_STR);
++								INFORM(&quot;global const objects have default linkage extern in C, static in C++&quot;);
++								if (bool_options[boolopt::warnings_are_errors])
++									{	//! \bug need test case
++									zcc_errors.inc_error();
++									return;
++									}
++								}
++							goto explicit_static;	// handle as static	
++							};
++						goto explicit_extern;	// handle as extern
+ 						}
+-#endif					
+ 				};
+ 				decl_offset += initdecl_span;
+ 				if (src.size&lt;0&gt;()-(i+decl_count)&lt;=decl_offset)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000448.html">[Zcplusplus-commits] r681 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000450.html">[Zcplusplus-commits] r683 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#449">[ date ]</a>
+              <a href="thread.html#449">[ thread ]</a>
+              <a href="subject.html#449">[ subject ]</a>
+              <a href="author.html#449">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

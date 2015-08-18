@@ -1,0 +1,432 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r638 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r638%20-%20trunk&In-Reply-To=%3C20110427132807.0DC144813D7%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000404.html">
+   <LINK REL="Next"  HREF="000406.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r638 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r638%20-%20trunk&In-Reply-To=%3C20110427132807.0DC144813D7%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r638 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr 27 15:28:06 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000404.html">[Zcplusplus-commits] r637 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000406.html">[Zcplusplus-commits] r639 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#405">[ date ]</a>
+              <a href="thread.html#405">[ thread ]</a>
+              <a href="subject.html#405">[ subject ]</a>
+              <a href="author.html#405">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-04-27 15:28:06 +0200 (Wed, 27 Apr 2011)
+New Revision: 638
+
+Modified:
+   trunk/CPreproc.cpp
+   trunk/CPreproc.cpp.in
+   trunk/CPreproc_pp.cpp
+Log:
+object file size reduction for MingW32 4.3.3
+
+Modified: trunk/CPreproc.cpp
+===================================================================
+--- trunk/CPreproc.cpp	2011-04-26 19:45:13 UTC (rev 637)
++++ trunk/CPreproc.cpp	2011-04-27 13:28:06 UTC (rev 638)
+@@ -4239,8 +4239,7 @@
+ 	return 0&lt;=linear_find_lencached(x,x_len,macro_locked_default,macro_locked_default_count);
+ }
+ 
+-size_t
+-CPreprocessor::function_macro_argument_span(const char* const x) const
++size_t CPreprocessor::function_macro_argument_span(const char* const x) const
+ {
+ 	assert(!is_empty_string(x));
+ 	if ('('!=x[0]) return 0;
+@@ -4533,23 +4532,23 @@
+ 	return false;
+ }
+ 
+-void
+-CPreprocessor::object_macro_concatenate(Token&lt;char&gt;&amp; x)
++void CPreprocessor::object_macro_concatenate(Token&lt;char&gt;&amp; x)
+ {	//! \pre: x is normalized
+ 	//! \test cpp/default/Preprocess_macro_novar_concatenate.hpp, cpp/default/Preprocess_macro_novar_concatenate.h
+ 	if (4&gt;x.size()) return;
+ 	assert(!strpbrk(x.data(),lang.WhiteSpace+2));	// check for normalization
+ 	assert(!strchr(x.data(),'\n'));					// check for normalization
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+-	if (lang.line_lex_find(x.data(),x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
++	const char* const x_data = x.data();
++	if (lang.line_lex_find(x_data,x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x_data,x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
+ 		{
+ 		assert(!pretokenized.empty());
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.front().first,pretokenized.front().second));
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.back().first, pretokenized.back().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.front().first,pretokenized.front().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.back().first, pretokenized.back().second));
+ 		size_t i = pretokenized.size();
+ 		do	{
+ 			--i;
+-			if (detect_C_concatenation_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			if (detect_C_concatenation_op(x_data+pretokenized[i].first,pretokenized[i].second))
+ 				{
+ 				assert(0&lt;i &amp;&amp; pretokenized.size()-1&gt;i);
+ 				if (_concatenate_single(x,pretokenized.data()+(i-1),lang)) --i;
+@@ -4566,29 +4565,31 @@
+ 	if (4&gt;x.size()) return;
+ 	assert(!strpbrk(x.data(),lang.WhiteSpace+2));	// check for normalization
+ 	assert(!strchr(x.data(),'\n'));	// check for normalization
++	const char* const x_data = x.data();
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+-	if (lang.line_lex_find(x.data(),x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
++	if (lang.line_lex_find(x_data,x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x_data,x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
+ 		{
+ 		assert(!pretokenized.empty());
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.front().first,pretokenized.front().second));
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.back().first, pretokenized.back().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.front().first,pretokenized.front().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.back().first, pretokenized.back().second));
+ 		size_t i = pretokenized.size();
+ 		do	{
+ 			--i;
+-			if (detect_C_concatenation_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			if (detect_C_concatenation_op(x_data+pretokenized[i].first,pretokenized[i].second))
+ 				{
+ 				assert(0&lt;i &amp;&amp; pretokenized.size()-1&gt;i);
+-				const bool before_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i-1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x.data()+pretokenized[i-1].first,pretokenized[i-1].second) : false;
++				const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; tmp = pretokenized[i-1];
++				const bool before_token_is_parameter = (C_TESTFLAG_IDENTIFIER==tmp.third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x_data+tmp.first,tmp.second) : false;
+ 
+-				if (detect_C_stringize_op(x.data()+pretokenized[i+1].first,pretokenized[i+1].second))
++				if (detect_C_stringize_op(x_data+pretokenized[i+1].first,pretokenized[i+1].second))
+ 					{
+ 					message_header(x);
+ 					INFORM(&quot;warning: order of evaluation of # and ## operators is undefined; evaluating # first (C99 6.10.3.2p2/C++98 16.3.2p2)&quot;);
+ 					message_header(x);
+ 					// would like these to be errors, but C99 requires accepting
+ 					if (   !before_token_is_parameter						// not a parameter at all
+-						|| (1U&lt;=pretokenized[i-1].first &amp;&amp; '#'==x.data()[pretokenized[i-1].first-1])
+-						|| (2U&lt;=pretokenized[i-1].first &amp;&amp; '%'==x.data()[pretokenized[i-1].first-2] &amp;&amp; ':'==x.data()[pretokenized[i-1].first-1]))	// stringized parameter
++						|| (1U&lt;=tmp.first &amp;&amp; '#'==x_data[tmp.first-1])
++						|| (2U&lt;=tmp.first &amp;&amp; '%'==x_data[tmp.first-2] &amp;&amp; ':'==x_data[tmp.first-1]))	// stringized parameter
+ 						{	//! \test Warn_autofail_concatenation1.hpp
+ 							//! \test default.nonconforming/Error_autofail_concatenation1.hpp
+ 							//! \test Warn_autofail_concatenation2.hpp
+@@ -4600,7 +4601,7 @@
+ 							//! \test default.nonconforming/Error_empty_parameter_concatenation1.hpp
+ 						INC_INFORM((bool_options[boolopt::pedantic]) ? WARN_STR : ERR_STR);
+ 						INC_INFORM(&quot;concatenation fails at macro invocation if parameter &quot;);
+-						INC_INFORM(x.data()+pretokenized[i-1].first,pretokenized[i-1].second);
++						INC_INFORM(x_data+tmp.first,tmp.second);
+ 						INC_INFORM(&quot; is not empty.&quot;);
+ 						}
+ 					INFORM((bool_options[boolopt::pedantic]) ? &quot;&quot; : &quot; (ZCPP nonconforming pragmatism)&quot;);
+@@ -4612,13 +4613,13 @@
+ 
+ 				// will not be be able to complete concatenation against a parameter, bail
+ 				// accept some inefficiency in a weird case to avoid code duplication
+-				const bool after_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i+1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x.data()+pretokenized[i+1].first,pretokenized[i+1].second) : false;
++				const bool after_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i+1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x_data+pretokenized[i+1].first,pretokenized[i+1].second) : false;
+ 
+ 				// Of course, C/C++ can't concatenate a string with anything except an empty parameter.
+ 				if (before_token_is_parameter)
+ 					{
+-					if (	(1U&lt;=pretokenized[i-1].first &amp;&amp; '#'==x.data()[pretokenized[i-1].first-1])
+-						|| 	(2U&lt;=pretokenized[i-1].first &amp;&amp; '%'==x.data()[pretokenized[i-1].first-2] &amp;&amp; ':'==x.data()[pretokenized[i-1].first-1]))
++					if (	(1U&lt;=tmp.first &amp;&amp; '#'==x_data[tmp.first-1])
++						|| 	(2U&lt;=tmp.first &amp;&amp; '%'==x_data[tmp.first-2] &amp;&amp; ':'==x_data[tmp.first-1]))
+ 						{	// stringized parameter
+ 						message_header(x);
+ 						INFORM(&quot;warning: order of evaluation of # and ## operators is undefined; evaluating # first (C99 6.10.3.2p2/C++98 16.3.2p2)&quot;);
+@@ -4628,7 +4629,7 @@
+ 							{	//! \test Warn_autofail_concatenation3.hpp
+ 								//! \test default.nonconforming/Error_autofail_concatenation3.hpp
+ 							INC_INFORM(&quot;concatenation fails at macro invocation if parameter &quot;);
+-							INC_INFORM(x.data()+pretokenized[i+1].first,pretokenized[i+1].second);
++							INC_INFORM(x_data+pretokenized[i+1].first,pretokenized[i+1].second);
+ 							INC_INFORM(&quot; is not empty.&quot;);
+ 							}
+ 						else	//! \test Warn_empty_parameter_concatenation2.hpp
+
+Modified: trunk/CPreproc.cpp.in
+===================================================================
+--- trunk/CPreproc.cpp.in	2011-04-26 19:45:13 UTC (rev 637)
++++ trunk/CPreproc.cpp.in	2011-04-27 13:28:06 UTC (rev 638)
+@@ -4292,8 +4292,7 @@
+ 	return 0&lt;=linear_find_lencached(x,x_len,macro_locked_default,macro_locked_default_count);
+ }
+ 
+-size_t
+-CPreprocessor::function_macro_argument_span(const char* const x) const
++size_t CPreprocessor::function_macro_argument_span(const char* const x) const
+ {
+ 	assert(!is_empty_string(x));
+ 	if ('('!=x[0]) return 0;
+@@ -4586,23 +4585,23 @@
+ 	return false;
+ }
+ 
+-void
+-CPreprocessor::object_macro_concatenate(Token&lt;char&gt;&amp; x)
++void CPreprocessor::object_macro_concatenate(Token&lt;char&gt;&amp; x)
+ {	//! \pre: x is normalized
+ 	//! \test cpp/default/Preprocess_macro_novar_concatenate.hpp, cpp/default/Preprocess_macro_novar_concatenate.h
+ 	if (4&gt;x.size()) return;
+ 	assert(!strpbrk(x.data(),lang.WhiteSpace+2));	// check for normalization
+ 	assert(!strchr(x.data(),'\n'));					// check for normalization
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+-	if (lang.line_lex_find(x.data(),x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
++	const char* const x_data = x.data();
++	if (lang.line_lex_find(x_data,x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x_data,x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
+ 		{
+ 		assert(!pretokenized.empty());
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.front().first,pretokenized.front().second));
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.back().first, pretokenized.back().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.front().first,pretokenized.front().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.back().first, pretokenized.back().second));
+ 		size_t i = pretokenized.size();
+ 		do	{
+ 			--i;
+-			if (detect_C_concatenation_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			if (detect_C_concatenation_op(x_data+pretokenized[i].first,pretokenized[i].second))
+ 				{
+ 				assert(0&lt;i &amp;&amp; pretokenized.size()-1&gt;i);
+ 				if (_concatenate_single(x,pretokenized.data()+(i-1),lang)) --i;
+@@ -4619,29 +4618,31 @@
+ 	if (4&gt;x.size()) return;
+ 	assert(!strpbrk(x.data(),lang.WhiteSpace+2));	// check for normalization
+ 	assert(!strchr(x.data(),'\n'));	// check for normalization
++	const char* const x_data = x.data();
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+-	if (lang.line_lex_find(x.data(),x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
++	if (lang.line_lex_find(x_data,x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x_data,x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
+ 		{
+ 		assert(!pretokenized.empty());
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.front().first,pretokenized.front().second));
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.back().first, pretokenized.back().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.front().first,pretokenized.front().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.back().first, pretokenized.back().second));
+ 		size_t i = pretokenized.size();
+ 		do	{
+ 			--i;
+-			if (detect_C_concatenation_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			if (detect_C_concatenation_op(x_data+pretokenized[i].first,pretokenized[i].second))
+ 				{
+ 				assert(0&lt;i &amp;&amp; pretokenized.size()-1&gt;i);
+-				const bool before_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i-1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x.data()+pretokenized[i-1].first,pretokenized[i-1].second) : false;
++				const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; tmp = pretokenized[i-1];
++				const bool before_token_is_parameter = (C_TESTFLAG_IDENTIFIER==tmp.third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x_data+tmp.first,tmp.second) : false;
+ 
+-				if (detect_C_stringize_op(x.data()+pretokenized[i+1].first,pretokenized[i+1].second))
++				if (detect_C_stringize_op(x_data+pretokenized[i+1].first,pretokenized[i+1].second))
+ 					{
+ 					message_header(x);
+ 					INFORM(&quot;warning: order of evaluation of # and ## operators is undefined; evaluating # first (C99 6.10.3.2p2/C++98 16.3.2p2)&quot;);
+ 					message_header(x);
+ 					// would like these to be errors, but C99 requires accepting
+ 					if (   !before_token_is_parameter						// not a parameter at all
+-						|| (1U&lt;=pretokenized[i-1].first &amp;&amp; '#'==x.data()[pretokenized[i-1].first-1])
+-						|| (2U&lt;=pretokenized[i-1].first &amp;&amp; '%'==x.data()[pretokenized[i-1].first-2] &amp;&amp; ':'==x.data()[pretokenized[i-1].first-1]))	// stringized parameter
++						|| (1U&lt;=tmp.first &amp;&amp; '#'==x_data[tmp.first-1])
++						|| (2U&lt;=tmp.first &amp;&amp; '%'==x_data[tmp.first-2] &amp;&amp; ':'==x_data[tmp.first-1]))	// stringized parameter
+ 						{	//! \test Warn_autofail_concatenation1.hpp
+ 							//! \test default.nonconforming/Error_autofail_concatenation1.hpp
+ 							//! \test Warn_autofail_concatenation2.hpp
+@@ -4653,7 +4654,7 @@
+ 							//! \test default.nonconforming/Error_empty_parameter_concatenation1.hpp
+ 						INC_INFORM((bool_options[boolopt::pedantic]) ? WARN_STR : ERR_STR);
+ 						INC_INFORM(&quot;concatenation fails at macro invocation if parameter &quot;);
+-						INC_INFORM(x.data()+pretokenized[i-1].first,pretokenized[i-1].second);
++						INC_INFORM(x_data+tmp.first,tmp.second);
+ 						INC_INFORM(&quot; is not empty.&quot;);
+ 						}
+ 					INFORM((bool_options[boolopt::pedantic]) ? &quot;&quot; : &quot; (ZCPP nonconforming pragmatism)&quot;);
+@@ -4665,13 +4666,13 @@
+ 
+ 				// will not be be able to complete concatenation against a parameter, bail
+ 				// accept some inefficiency in a weird case to avoid code duplication
+-				const bool after_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i+1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x.data()+pretokenized[i+1].first,pretokenized[i+1].second) : false;
++				const bool after_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i+1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x_data+pretokenized[i+1].first,pretokenized[i+1].second) : false;
+ 
+ 				// Of course, C/C++ can't concatenate a string with anything except an empty parameter.
+ 				if (before_token_is_parameter)
+ 					{
+-					if (	(1U&lt;=pretokenized[i-1].first &amp;&amp; '#'==x.data()[pretokenized[i-1].first-1])
+-						|| 	(2U&lt;=pretokenized[i-1].first &amp;&amp; '%'==x.data()[pretokenized[i-1].first-2] &amp;&amp; ':'==x.data()[pretokenized[i-1].first-1]))
++					if (	(1U&lt;=tmp.first &amp;&amp; '#'==x_data[tmp.first-1])
++						|| 	(2U&lt;=tmp.first &amp;&amp; '%'==x_data[tmp.first-2] &amp;&amp; ':'==x_data[tmp.first-1]))
+ 						{	// stringized parameter
+ 						message_header(x);
+ 						INFORM(&quot;warning: order of evaluation of # and ## operators is undefined; evaluating # first (C99 6.10.3.2p2/C++98 16.3.2p2)&quot;);
+@@ -4681,7 +4682,7 @@
+ 							{	//! \test Warn_autofail_concatenation3.hpp
+ 								//! \test default.nonconforming/Error_autofail_concatenation3.hpp
+ 							INC_INFORM(&quot;concatenation fails at macro invocation if parameter &quot;);
+-							INC_INFORM(x.data()+pretokenized[i+1].first,pretokenized[i+1].second);
++							INC_INFORM(x_data+pretokenized[i+1].first,pretokenized[i+1].second);
+ 							INC_INFORM(&quot; is not empty.&quot;);
+ 							}
+ 						else	//! \test Warn_empty_parameter_concatenation2.hpp
+
+Modified: trunk/CPreproc_pp.cpp
+===================================================================
+--- trunk/CPreproc_pp.cpp	2011-04-26 19:45:13 UTC (rev 637)
++++ trunk/CPreproc_pp.cpp	2011-04-27 13:28:06 UTC (rev 638)
+@@ -4197,8 +4197,7 @@
+ 	return 0&lt;=linear_find_lencached(x,x_len,macro_locked_default,macro_locked_default_count);
+ }
+ 
+-size_t
+-CPreprocessor::function_macro_argument_span(const char* const x) const
++size_t CPreprocessor::function_macro_argument_span(const char* const x) const
+ {
+ 	assert(!is_empty_string(x));
+ 	if ('('!=x[0]) return 0;
+@@ -4491,23 +4490,23 @@
+ 	return false;
+ }
+ 
+-void
+-CPreprocessor::object_macro_concatenate(Token&lt;char&gt;&amp; x)
++void CPreprocessor::object_macro_concatenate(Token&lt;char&gt;&amp; x)
+ {	//! \pre: x is normalized
+ 	//! \test cpp/default/Preprocess_macro_novar_concatenate.hpp, cpp/default/Preprocess_macro_novar_concatenate.h
+ 	if (4&gt;x.size()) return;
+ 	assert(!strpbrk(x.data(),lang.WhiteSpace+2));	// check for normalization
+ 	assert(!strchr(x.data(),'\n'));					// check for normalization
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+-	if (lang.line_lex_find(x.data(),x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
++	const char* const x_data = x.data();
++	if (lang.line_lex_find(x_data,x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x_data,x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
+ 		{
+ 		assert(!pretokenized.empty());
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.front().first,pretokenized.front().second));
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.back().first, pretokenized.back().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.front().first,pretokenized.front().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.back().first, pretokenized.back().second));
+ 		size_t i = pretokenized.size();
+ 		do	{
+ 			--i;
+-			if (detect_C_concatenation_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			if (detect_C_concatenation_op(x_data+pretokenized[i].first,pretokenized[i].second))
+ 				{
+ 				assert(0&lt;i &amp;&amp; pretokenized.size()-1&gt;i);
+ 				if (_concatenate_single(x,pretokenized.data()+(i-1),lang)) --i;
+@@ -4524,29 +4523,31 @@
+ 	if (4&gt;x.size()) return;
+ 	assert(!strpbrk(x.data(),lang.WhiteSpace+2));	// check for normalization
+ 	assert(!strchr(x.data(),'\n'));	// check for normalization
++	const char* const x_data = x.data();
+ 	autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt; pretokenized;
+-	if (lang.line_lex_find(x.data(),x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x.data(),x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
++	if (lang.line_lex_find(x_data,x.size(),&quot;##&quot;,sizeof(&quot;##&quot;)-1,pretokenized) || lang.line_lex_find(x_data,x.size(),&quot;%:%:&quot;,sizeof(&quot;%:%:&quot;)-1,pretokenized))
+ 		{
+ 		assert(!pretokenized.empty());
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.front().first,pretokenized.front().second));
+-		assert(!detect_C_concatenation_op(x.data()+pretokenized.back().first, pretokenized.back().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.front().first,pretokenized.front().second));
++		assert(!detect_C_concatenation_op(x_data+pretokenized.back().first, pretokenized.back().second));
+ 		size_t i = pretokenized.size();
+ 		do	{
+ 			--i;
+-			if (detect_C_concatenation_op(x.data()+pretokenized[i].first,pretokenized[i].second))
++			if (detect_C_concatenation_op(x_data+pretokenized[i].first,pretokenized[i].second))
+ 				{
+ 				assert(0&lt;i &amp;&amp; pretokenized.size()-1&gt;i);
+-				const bool before_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i-1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x.data()+pretokenized[i-1].first,pretokenized[i-1].second) : false;
++				const POD_triple&lt;size_t,size_t,lex_flags&gt;&amp; tmp = pretokenized[i-1];
++				const bool before_token_is_parameter = (C_TESTFLAG_IDENTIFIER==tmp.third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x_data+tmp.first,tmp.second) : false;
+ 
+-				if (detect_C_stringize_op(x.data()+pretokenized[i+1].first,pretokenized[i+1].second))
++				if (detect_C_stringize_op(x_data+pretokenized[i+1].first,pretokenized[i+1].second))
+ 					{
+ 					message_header(x);
+ 					INFORM(&quot;warning: order of evaluation of # and ## operators is undefined; evaluating # first (C99 6.10.3.2p2/C++98 16.3.2p2)&quot;);
+ 					message_header(x);
+ 					// would like these to be errors, but C99 requires accepting
+ 					if (   !before_token_is_parameter						// not a parameter at all
+-						|| (1U&lt;=pretokenized[i-1].first &amp;&amp; '#'==x.data()[pretokenized[i-1].first-1])
+-						|| (2U&lt;=pretokenized[i-1].first &amp;&amp; '%'==x.data()[pretokenized[i-1].first-2] &amp;&amp; ':'==x.data()[pretokenized[i-1].first-1]))	// stringized parameter
++						|| (1U&lt;=tmp.first &amp;&amp; '#'==x_data[tmp.first-1])
++						|| (2U&lt;=tmp.first &amp;&amp; '%'==x_data[tmp.first-2] &amp;&amp; ':'==x_data[tmp.first-1]))	// stringized parameter
+ 						{	//! \test Warn_autofail_concatenation1.hpp
+ 							//! \test default.nonconforming/Error_autofail_concatenation1.hpp
+ 							//! \test Warn_autofail_concatenation2.hpp
+@@ -4558,7 +4559,7 @@
+ 							//! \test default.nonconforming/Error_empty_parameter_concatenation1.hpp
+ 						INC_INFORM((bool_options[boolopt::pedantic]) ? WARN_STR : ERR_STR);
+ 						INC_INFORM(&quot;concatenation fails at macro invocation if parameter &quot;);
+-						INC_INFORM(x.data()+pretokenized[i-1].first,pretokenized[i-1].second);
++						INC_INFORM(x_data+tmp.first,tmp.second);
+ 						INC_INFORM(&quot; is not empty.&quot;);
+ 						}
+ 					INFORM((bool_options[boolopt::pedantic]) ? &quot;&quot; : &quot; (ZCPP nonconforming pragmatism)&quot;);
+@@ -4570,13 +4571,13 @@
+ 
+ 				// will not be be able to complete concatenation against a parameter, bail
+ 				// accept some inefficiency in a weird case to avoid code duplication
+-				const bool after_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i+1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x.data()+pretokenized[i+1].first,pretokenized[i+1].second) : false;
++				const bool after_token_is_parameter = (C_TESTFLAG_IDENTIFIER==pretokenized[i+1].third) ? SIZE_MAX!=lang.lex_find(arglist.data(),arglist.size(),x_data+pretokenized[i+1].first,pretokenized[i+1].second) : false;
+ 
+ 				// Of course, C/C++ can't concatenate a string with anything except an empty parameter.
+ 				if (before_token_is_parameter)
+ 					{
+-					if (	(1U&lt;=pretokenized[i-1].first &amp;&amp; '#'==x.data()[pretokenized[i-1].first-1])
+-						|| 	(2U&lt;=pretokenized[i-1].first &amp;&amp; '%'==x.data()[pretokenized[i-1].first-2] &amp;&amp; ':'==x.data()[pretokenized[i-1].first-1]))
++					if (	(1U&lt;=tmp.first &amp;&amp; '#'==x_data[tmp.first-1])
++						|| 	(2U&lt;=tmp.first &amp;&amp; '%'==x_data[tmp.first-2] &amp;&amp; ':'==x_data[tmp.first-1]))
+ 						{	// stringized parameter
+ 						message_header(x);
+ 						INFORM(&quot;warning: order of evaluation of # and ## operators is undefined; evaluating # first (C99 6.10.3.2p2/C++98 16.3.2p2)&quot;);
+@@ -4586,7 +4587,7 @@
+ 							{	//! \test Warn_autofail_concatenation3.hpp
+ 								//! \test default.nonconforming/Error_autofail_concatenation3.hpp
+ 							INC_INFORM(&quot;concatenation fails at macro invocation if parameter &quot;);
+-							INC_INFORM(x.data()+pretokenized[i+1].first,pretokenized[i+1].second);
++							INC_INFORM(x_data+pretokenized[i+1].first,pretokenized[i+1].second);
+ 							INC_INFORM(&quot; is not empty.&quot;);
+ 							}
+ 						else	//! \test Warn_empty_parameter_concatenation2.hpp
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000404.html">[Zcplusplus-commits] r637 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000406.html">[Zcplusplus-commits] r639 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#405">[ date ]</a>
+              <a href="thread.html#405">[ thread ]</a>
+              <a href="subject.html#405">[ subject ]</a>
+              <a href="author.html#405">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

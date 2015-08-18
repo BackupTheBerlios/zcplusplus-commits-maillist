@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r599 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r599%20-%20trunk&In-Reply-To=%3C20110126194503.118CE48065D%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000365.html">
+   <LINK REL="Next"  HREF="000367.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r599 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r599%20-%20trunk&In-Reply-To=%3C20110126194503.118CE48065D%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r599 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Jan 26 20:45:02 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000365.html">[Zcplusplus-commits] r598 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000367.html">[Zcplusplus-commits] r600 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#366">[ date ]</a>
+              <a href="thread.html#366">[ thread ]</a>
+              <a href="subject.html#366">[ subject ]</a>
+              <a href="author.html#366">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-26 20:45:02 +0100 (Wed, 26 Jan 2011)
+New Revision: 599
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+lines of code reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-26 19:27:24 UTC (rev 598)
++++ trunk/CSupport.cpp	2011-01-26 19:45:02 UTC (rev 599)
+@@ -13072,6 +13072,14 @@
+ 	_condense_const_volatile_onto_type_preparsed(src,i,k,invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+ }
+ 
++static void enumeration_already_defined(const type_system::type_index x)
++{
++	const enum_def* const tmp = parse_tree::types-&gt;get_enum_def(x);
++	assert(tmp);
++	message_header(*tmp);
++	INFORM(&quot;prior definition here&quot;);
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -13221,10 +13229,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -13337,10 +13342,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -13469,10 +13471,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -13585,10 +13584,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -13712,10 +13708,7 @@
+ 					INC_INFORM(&quot;'enum &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -14398,10 +14391,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -14517,10 +14507,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -14650,10 +14637,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -14767,10 +14751,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -14898,10 +14879,7 @@
+ 					INC_INFORM(&quot;class &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+@@ -15014,10 +14992,7 @@
+ 					INC_INFORM(&quot;class &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -15143,10 +15118,7 @@
+ 					INC_INFORM(&quot;'enum &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-26 19:27:24 UTC (rev 598)
++++ trunk/CSupport.cpp.in	2011-01-26 19:45:02 UTC (rev 599)
+@@ -13216,6 +13216,14 @@
+ 	_condense_const_volatile_onto_type_preparsed(src,i,k,invariant_decl_scanner,&quot;removing redundant const type qualifier (C99 6.7.3p4)&quot;,&quot;removing redundant volatile type qualifier (C99 6.7.3p4)&quot;);
+ }
+ 
++static void enumeration_already_defined(const type_system::type_index x)
++{
++	const enum_def* const tmp = parse_tree::types-&gt;get_enum_def(x);
++	assert(tmp);
++	message_header(*tmp);
++	INFORM(&quot;prior definition here&quot;);
++}
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -13365,10 +13373,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -13481,10 +13486,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -13613,10 +13615,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -13729,10 +13728,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C99 6.7.2.3p2)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -13856,10 +13852,7 @@
+ 					INC_INFORM(&quot;'enum &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -14542,10 +14535,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -14661,10 +14651,7 @@
+ 					INC_INFORM(&quot;union &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -14794,10 +14781,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+@@ -14911,10 +14895,7 @@
+ 					INC_INFORM(&quot;struct &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -15042,10 +15023,7 @@
+ 					INC_INFORM(&quot;class &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					pre_invariant_decl_scanner.reclassify(k--,STATIC_SIZE(CPP0X_nontype_decl_specifier_list)+ENUM_NAME);
+@@ -15158,10 +15136,7 @@
+ 					INC_INFORM(&quot;class &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot; declared as enumeration (C++98 One Definition Rule)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.set_index_token_from_str_literal&lt;0&gt;(&quot;enum&quot;);
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+@@ -15287,10 +15262,7 @@
+ 					INC_INFORM(&quot;'enum &quot;);
+ 					INC_INFORM(tmp2.index_tokens[1]);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
+-					const enum_def* const tmp3 = parse_tree::types-&gt;get_enum_def(fatal_def);
+-					assert(tmp3);
+-					message_header(*tmp3);
+-					INFORM(&quot;prior definition here&quot;);
++					enumeration_already_defined(fatal_def);
+ 					zcc_errors.inc_error();
+ 					tmp2.DeleteIdx&lt;2&gt;(0);
+ 					assert(is_C99_named_specifier(tmp2,&quot;enum&quot;));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000365.html">[Zcplusplus-commits] r598 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000367.html">[Zcplusplus-commits] r600 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#366">[ date ]</a>
+              <a href="thread.html#366">[ thread ]</a>
+              <a href="subject.html#366">[ subject ]</a>
+              <a href="author.html#366">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

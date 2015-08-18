@@ -1,0 +1,1438 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r335 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r335%20-%20trunk&In-Reply-To=%3C201003030804.o2384Utw015205%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000107.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r335 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r335%20-%20trunk&In-Reply-To=%3C201003030804.o2384Utw015205%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r335 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Mar  3 09:04:30 CET 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000107.html">[Zcplusplus-commits] r336 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#102">[ date ]</a>
+              <a href="thread.html#102">[ thread ]</a>
+              <a href="subject.html#102">[ subject ]</a>
+              <a href="author.html#102">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-03 09:04:22 +0100 (Wed, 03 Mar 2010)
+New Revision: 335
+
+Modified:
+   trunk/CPUInfo.cpp
+   trunk/CPUInfo.hpp
+   trunk/CPreproc_autogen.cpp
+   trunk/CSupport.cpp
+Log:
+introduce typedef to reduce code bloat from supporting ZCC_LEGACY_FIXED_INT
+
+Modified: trunk/CPUInfo.cpp
+===================================================================
+--- trunk/CPUInfo.cpp	2010-02-17 15:45:35 UTC (rev 334)
++++ trunk/CPUInfo.cpp	2010-03-03 08:04:22 UTC (rev 335)
+@@ -43,8 +43,7 @@
+ 	while(std_int_long_long&gt; ++i);
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-bool CPUInfo::trap_int(const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const
++bool CPUInfo::trap_int(const umaxint&amp; src_int,std_int_enum machine_type) const
+ {
+ 	switch(machine_type)
+ 	{
+@@ -56,43 +55,11 @@
+ 	const unsigned int bitcount = C_bit(machine_type);
+ 	const int target_bytecount = bitcount/CHAR_BIT;
+ 	const unsigned int target_bitcount = bitcount%CHAR_BIT;
++#ifdef ZCC_LEGACY_FIXED_INT
+ 	assert(VM_MAX_BIT_PLATFORM&gt;=bitcount &amp;&amp; 1&lt;=bitcount);
+-
+-	switch(C_signed_int_representation())
+-	{
+-	case ones_complement:	{	// bitwise all-ones may be trap (-0)
+-							if (0&lt;target_bytecount &amp;&amp; target_bytecount&gt;std::count(src_int._x,src_int._x+target_bytecount,UCHAR_MAX)) return false;
+-							return 0==target_bitcount || (UCHAR_MAX&gt;&gt;(CHAR_BIT-target_bitcount))==((UCHAR_MAX&gt;&gt;(CHAR_BIT-target_bitcount)) &amp; src_int._x[target_bytecount]);
+-							}
+-	case twos_complement:		// sign bit only set may be trap -(2^N)
+-	case sign_and_magnitude:{	// sign bit only set may be trap (-0)
+-							if (0==target_bitcount)
+-								{
+-								if (1&lt;target_bytecount &amp;&amp; target_bytecount-1&gt;std::count(src_int._x,src_int._x+(target_bytecount-1U),0)) return false;
+-								return (1U&lt;&lt;(CHAR_BIT-1))==src_int._x[target_bytecount-1];
+-								}
+-							else{
+-								if (0&lt;target_bytecount &amp;&amp; target_bytecount&gt;std::count(src_int._x,src_int._x+target_bytecount,0)) return false;
+-								return (1U&lt;&lt;(CHAR_BIT-1-target_bitcount))==((UCHAR_MAX&gt;&gt;(CHAR_BIT-target_bitcount)) &amp; src_int._x[target_bytecount]);
+-								}
+-							}
+-	}
+-	return false;
+-}
+ #else
+-bool CPUInfo::trap_int(const unsigned_var_int&amp; src_int,std_int_enum machine_type) const
+-{
+-	switch(machine_type)
+-	{
+-	default: return false;
+-	case std_int_int:
+-	case std_int_long:
+-	case std_int_long_long:;
+-	}
+-	const unsigned int bitcount = C_bit(machine_type);
+-	const int target_bytecount = bitcount/CHAR_BIT;
+-	const unsigned int target_bitcount = bitcount%CHAR_BIT;
+ 	assert(C_bit&lt;std_int_long_long&gt;()&gt;=bitcount &amp;&amp; 1&lt;=bitcount);
++#endif
+ 
+ 	switch(C_signed_int_representation())
+ 	{
+@@ -115,10 +82,8 @@
+ 	}
+ 	return false;
+ }
+-#endif
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-void CPUInfo::signed_additive_inverse(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const
++void CPUInfo::signed_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const
+ {
+ 	assert(machine_type);
+ 	const int signed_int_rep = C_signed_int_representation();
+@@ -127,60 +92,39 @@
+ 		src_int.toggle(C_bit(machine_type)-1);
+ 		return;
+ 		}
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(unsigned_max(machine_type));
++	umaxint tmp(unsigned_max(machine_type));
+ 	tmp -= src_int;
+ 	if (twos_complement==signed_int_rep)
+ 		{
+ 		tmp += 1;
+ 		tmp.mask_to(C_bit(machine_type));
+ 		}
++#ifdef ZCC_LEGACY_FIXED_INT
+ 	src_int = tmp;
+-}
+ #else
+-void CPUInfo::signed_additive_inverse(unsigned_var_int&amp; src_int,std_int_enum machine_type) const
+-{
+-	assert(machine_type);
+-	const int signed_int_rep = C_signed_int_representation();
+-	if (sign_and_magnitude==signed_int_rep)
+-		{
+-		src_int.toggle(C_bit(machine_type)-1);
+-		return;
+-		}
+-	unsigned_var_int tmp(unsigned_max(machine_type));
+-	tmp -= src_int;
+-	if (twos_complement==signed_int_rep)
+-		{
+-		tmp += 1;
+-		tmp.mask_to(C_bit(machine_type));
+-		}
+ 	tmp.MoveInto(src_int);
+-}
+ #endif
++}
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-void CPUInfo::unsigned_additive_inverse(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const
++void CPUInfo::unsigned_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const
+ {
+ 	assert(machine_type);
+ 	assert(src_int&lt;=unsigned_max(machine_type));
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp(0);
++#ifdef ZCC_LEGACY_FIXED_INT
++	umaxint tmp(0);
++#else
++	umaxint tmp(0,src_int.size());
++#endif
+ 	tmp -= src_int;
+ 	tmp.mask_to(C_bit(machine_type));
++#ifdef ZCC_LEGACY_FIXED_INT
+ 	src_int = tmp;
+-}
+ #else
+-void CPUInfo::unsigned_additive_inverse(unsigned_var_int&amp; src_int,std_int_enum machine_type) const
+-{
+-	assert(machine_type);
+-	assert(src_int&lt;=unsigned_max(machine_type));
+-	unsigned_var_int tmp(0,src_int.size());
+-	tmp -= src_int;
+-	tmp.mask_to(C_bit(machine_type));
+ 	tmp.MoveInto(src_int);
+-}
+ #endif
++}
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-bool CPUInfo::C_promote_integer(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const
++bool CPUInfo::C_promote_integer(umaxint&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const
+ {
+ 	if (src_type.is_signed &amp;&amp; x.test(src_type.bitcount-1))
+ 		{
+@@ -192,20 +136,6 @@
+ 		};
+ 	return dest_type.is_signed &amp;&amp; x.test(dest_type.bitcount-1);
+ }
+-#else
+-bool CPUInfo::C_promote_integer(unsigned_var_int&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const
+-{
+-	if (src_type.is_signed &amp;&amp; x.test(src_type.bitcount-1))
+-		{
+-		if (!dest_type.is_signed)
+-			// unsigned integer result: C99 6.3.1.3p2 dictates modulo conversion to unsigned
+-			C_cast_signed_to_unsigned(x,src_type.machine_type);
+-		else if (dest_type.bitcount&gt;src_type.bitcount)
+-			sign_extend(x,src_type.machine_type,dest_type.machine_type);
+-		};
+-	return dest_type.is_signed &amp;&amp; x.test(dest_type.bitcount-1);
+-}
+-#endif
+ 
+ }	// end namespace virtual_machine
+ 
+
+Modified: trunk/CPUInfo.hpp
+===================================================================
+--- trunk/CPUInfo.hpp	2010-02-17 15:45:35 UTC (rev 334)
++++ trunk/CPUInfo.hpp	2010-03-03 08:04:22 UTC (rev 335)
+@@ -51,6 +51,12 @@
+ #define VM_MAX_BIT_PLATFORM target_machine-&gt;C_bit&lt;virtual_machine::std_int_long_long&gt;()
+ #endif
+ 
++#ifdef ZCC_LEGACY_FIXED_INT
++	typedef unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; umaxint;
++#else
++	typedef unsigned_var_int umaxint;
++#endif	
++
+ // names of macro parameters match names of constructor variables
+ // target wchar_t is assumed to be an unsigned integral type
+ // we first try to choose the smallest type that can represent a 32-bit UNICODE point
+@@ -76,13 +82,8 @@
+ 	CPUInfo(const CPUInfo&amp; src);		// disable copy-construction
+ 	void operator=(const CPUInfo&amp; src);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; unsigned_maxima[std_int_enum_max];
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; signed_maxima[std_int_enum_max];
+-#else
+-	unsigned_var_int unsigned_maxima[std_int_enum_max];
+-	unsigned_var_int signed_maxima[std_int_enum_max];
+-#endif
++	umaxint unsigned_maxima[std_int_enum_max];
++	umaxint signed_maxima[std_int_enum_max];
+ 
+ 	const unsigned short char_bit;
+ 	const unsigned short sizeof_short;
+@@ -126,26 +127,15 @@
+ 																	(std_int_long==x) ? C_char_bit()*C_sizeof_long() : C_char_bit()*C_sizeof_long_long() ;}
+ 
+ 	signed_int_rep C_signed_int_representation() const {return (signed_int_rep)(signed_int_representation &amp; 3U);};
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	bool trap_int(const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const;
+-	void signed_additive_inverse(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const;
+-	void unsigned_additive_inverse(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const;
+-	void sign_extend(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type_from,std_int_enum machine_type_to) const
+-#else
+-	bool trap_int(const unsigned_var_int&amp; src_int,std_int_enum machine_type) const;
+-	void signed_additive_inverse(unsigned_var_int&amp; src_int,std_int_enum machine_type) const;
+-	void unsigned_additive_inverse(unsigned_var_int&amp; src_int,std_int_enum machine_type) const;
+-	void sign_extend(unsigned_var_int&amp; src_int,std_int_enum machine_type_from,std_int_enum machine_type_to) const
+-#endif
++	bool trap_int(const umaxint&amp; src_int,std_int_enum machine_type) const;
++	void signed_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const;
++	void unsigned_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const;
++	void sign_extend(umaxint&amp; src_int,std_int_enum machine_type_from,std_int_enum machine_type_to) const
+ 		{
+ 		signed_additive_inverse(src_int,machine_type_from);
+ 		signed_additive_inverse(src_int,machine_type_to);
+ 		};
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	void C_cast_signed_to_unsigned(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,std_int_enum machine_type) const
+-#else
+-	void C_cast_signed_to_unsigned(unsigned_var_int&amp; src_int,std_int_enum machine_type) const
+-#endif
++	void C_cast_signed_to_unsigned(umaxint&amp; src_int,std_int_enum machine_type) const
+ 		{	// C99 6.3.1.3p2 dictates modulo conversion to unsigned
+ 		if (twos_complement!=C_signed_int_representation() &amp;&amp; src_int.test(C_bit(machine_type)-1))
+ 			{
+@@ -160,24 +150,13 @@
+ 	// use different functions for ptrdiff_t and size_t to future-proof (e.g., DOS has ptrdiff 2 bytes but can go larger than that in object size in some memory models)
+ 	std_int_enum ptrdiff_t_type() const {return (std_int_enum)((signed_int_representation&gt;&gt;7) &amp; 7U);};
+ 	std_int_enum size_t_type() const {return (std_int_enum)((signed_int_representation&gt;&gt;7) &amp; 7U);};
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; unsigned_max(std_int_enum x) const {return unsigned_maxima[x-1];};
+-	template&lt;std_int_enum x&gt; const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; unsigned_max() const {return unsigned_maxima[x-1];}
+-	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; signed_max(std_int_enum x) const {return signed_maxima[x-1];};
+-	template&lt;std_int_enum x&gt; const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; signed_max() const {return signed_maxima[x-1];}
+-#else
+-	const unsigned_var_int&amp; unsigned_max(std_int_enum x) const {return unsigned_maxima[x-1];};
+-	template&lt;std_int_enum x&gt; const unsigned_var_int&amp; unsigned_max() const {return unsigned_maxima[x-1];}
+-	const unsigned_var_int&amp; signed_max(std_int_enum x) const {return signed_maxima[x-1];};
+-	template&lt;std_int_enum x&gt; const unsigned_var_int&amp; signed_max() const {return signed_maxima[x-1];}
+-#endif
++	const umaxint&amp; unsigned_max(std_int_enum x) const {return unsigned_maxima[x-1];};
++	template&lt;std_int_enum x&gt; const umaxint&amp; unsigned_max() const {return unsigned_maxima[x-1];}
++	const umaxint&amp; signed_max(std_int_enum x) const {return signed_maxima[x-1];};
++	template&lt;std_int_enum x&gt; const umaxint&amp; signed_max() const {return signed_maxima[x-1];}
+ 
+ 	// return value is weird...it's true iff the promoted x is a negative numeral
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	bool C_promote_integer(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const;
+-#else
+-	bool C_promote_integer(unsigned_var_int&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const;
+-#endif
++	bool C_promote_integer(umaxint&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const;
+ };
+ 
+ #undef SELECT_TARGET_WCHAR_T
+
+Modified: trunk/CPreproc_autogen.cpp
+===================================================================
+--- trunk/CPreproc_autogen.cpp	2010-02-17 15:45:35 UTC (rev 334)
++++ trunk/CPreproc_autogen.cpp	2010-03-03 08:04:22 UTC (rev 335)
+@@ -9,6 +9,8 @@
+ #include &quot;Zaimoni.STL/LexParse/Token.hpp&quot;
+ #include &quot;Zaimoni.STL/pure.C/format_util.h&quot;
+ 
++using virtual_machine::umaxint;
++
+ #ifndef ZCC_LEGACY_FIXED_INT
+ // XXX adjust VM_MAX_BIT_PLATFORM to work inside of CPreprocessor XXX
+ #undef VM_MAX_BIT_PLATFORM
+@@ -454,11 +456,7 @@
+ 		if (1==target_machine.C_sizeof_int()) tmp[LIMITS_CHAR_MAX_LINE]-&gt;append('U');
+ 		}
+ 	// signed character limits
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; s_max(target_machine.signed_max&lt;virtual_machine::std_int_char&gt;());
+-#else
+-	unsigned_var_int s_max(target_machine.signed_max&lt;virtual_machine::std_int_char&gt;());
+-#endif
++	umaxint s_max(target_machine.signed_max&lt;virtual_machine::std_int_char&gt;());
+ 	tmp[LIMITS_SCHAR_MAX_LINE]-&gt;append(z_ucharint_toa(s_max,buf+1,10)-1);
+ 	if (target_machine.char_is_signed_char()) tmp[LIMITS_CHAR_MAX_LINE]-&gt;append(buf);
+ 	const bool twos_complement_non_trapping = virtual_machine::twos_complement==target_machine.C_signed_int_representation() &amp;&amp; !bool_options[boolopt::int_traps];
+@@ -756,11 +754,7 @@
+ 	zaimoni::autovalarray_ptr_throws&lt;char&gt; signed_min_metabuf(virtual_machine::std_int_enum_max*(2+(VM_MAX_BIT_PLATFORM/3)+4));
+ #endif
+ 	char* signed_min_buf[virtual_machine::std_int_enum_max] = {signed_min_metabuf, signed_min_metabuf+(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+2*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+3*(2+(VM_MAX_BIT_PLATFORM/3)+2), signed_min_metabuf+4*(2+(VM_MAX_BIT_PLATFORM/3)+2)};
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp_VM;
+-#else
+-	unsigned_var_int tmp_VM;
+-#endif
++	umaxint tmp_VM;
+ 	if (target_is_twos_complement &amp;&amp; !bool_options[boolopt::int_traps])
+ 		{
+ 		*signed_min_buf[0] = '-';
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-02-17 15:45:35 UTC (rev 334)
++++ trunk/CSupport.cpp	2010-03-03 08:04:22 UTC (rev 335)
+@@ -29,6 +29,7 @@
+ #include &quot;CheckReturn.hpp&quot;
+ 
+ using namespace zaimoni;
++using virtual_machine::umaxint;
+ 
+ #define C_OCTAL_DIGITS &quot;01234567&quot;
+ #define C_HEXADECIMAL_DIGITS &quot;0123456789ABCDEFabcdef&quot;
+@@ -2450,11 +2451,7 @@
+ 	return (ub&lt;hex_len) ? ub : hex_len;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; eval_hex_escape(const char* src, size_t src_len)
+-#else
+-static unsigned_var_int eval_hex_escape(const char* src, size_t src_len)
+-#endif
++static umaxint eval_hex_escape(const char* src, size_t src_len)
+ {
+ 	assert(NULL!=src);
+ 	assert(0&lt;src_len);
+@@ -2464,11 +2461,7 @@
+ 	unsigned_var_int tmp(0,unsigned_var_int::bytes_from_bits(VM_MAX_BIT_PLATFORM));
+ #endif
+ #ifndef NDEBUG
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; uchar_max(target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;());
+-#else
+-	unsigned_var_int uchar_max(target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;());
+-#endif
++	umaxint uchar_max(target_machine-&gt;unsigned_max&lt;virtual_machine::std_int_long_long&gt;());
+ 	uchar_max &gt;&gt;= 4;
+ #endif
+ 	do	{
+@@ -2638,11 +2631,7 @@
+ 		}
+ 	if ('&quot;' != *(x++)) return false;
+ 	if (0 == --x_len) return true;	// empty string is legal
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; uchar_max = target_machine-&gt;unsigned_max((wide_string) ? target_machine-&gt;UNICODE_wchar_t() : virtual_machine::std_int_char);
+-#else
+-	const unsigned_var_int&amp; uchar_max = target_machine-&gt;unsigned_max((wide_string) ? target_machine-&gt;UNICODE_wchar_t() : virtual_machine::std_int_char);
+-#endif
++	const umaxint&amp; uchar_max = target_machine-&gt;unsigned_max((wide_string) ? target_machine-&gt;UNICODE_wchar_t() : virtual_machine::std_int_char);
+ 
+ 	size_t i = 0;
+ 	do	{
+@@ -2669,11 +2658,7 @@
+ 		}
+ 	if ('\'' != *(x++)) return false;
+ 	if (0 == --x_len) return false;	// empty character literal is illegal
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; uchar_max = target_machine-&gt;unsigned_max((wide_string) ? target_machine-&gt;UNICODE_wchar_t() : virtual_machine::std_int_char);
+-#else
+-	const unsigned_var_int&amp; uchar_max = target_machine-&gt;unsigned_max((wide_string) ? target_machine-&gt;UNICODE_wchar_t() : virtual_machine::std_int_char);
+-#endif
++	const umaxint&amp; uchar_max = target_machine-&gt;unsigned_max((wide_string) ? target_machine-&gt;UNICODE_wchar_t() : virtual_machine::std_int_char);
+ 
+ 	size_t i = 0;
+ 	do	{
+@@ -4123,11 +4108,7 @@
+ 	if (0&lt;offset) src.DeleteNSlotsAt&lt;0&gt;(offset,src.size&lt;0&gt;()-offset);
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-bool convert_to(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest,const C_PPIntCore&amp; src)
+-#else
+-bool convert_to(unsigned_var_int&amp; dest,const C_PPIntCore&amp; src)
+-#endif
++bool convert_to(umaxint&amp; dest,const C_PPIntCore&amp; src)
+ {
+ 	assert(8==src.radix || 10==src.radix || 16==src.radix);
+ 	assert(NULL!=src.ptr &amp;&amp; 0&lt;src.digit_span);
+@@ -4169,17 +4150,9 @@
+ }
+ 
+ // forward-declare to handle recursion
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool C99_intlike_literal_to_VM(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest, const parse_tree&amp; src);
+-#else
+-static bool C99_intlike_literal_to_VM(unsigned_var_int&amp; dest, const parse_tree&amp; src);
+-#endif
++static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool _C99_intlike_literal_to_VM(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest, const parse_tree&amp; src)
+-#else
+-static bool _C99_intlike_literal_to_VM(unsigned_var_int&amp; dest, const parse_tree&amp; src)
+-#endif
++static bool _C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+ {
+ 	assert(C_TYPE::INTEGERLIKE!=src.type_code.base_type_index);
+ 
+@@ -4194,13 +4167,8 @@
+ 			assert(old.bitcount&gt;=lhs.bitcount);
+ 			if (lhs.is_signed)
+ 				{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_int;
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-				unsigned_var_int lhs_int;
+-				unsigned_var_int rhs_int;
+-#endif
++				umaxint lhs_int;
++				umaxint rhs_int;
+ 				if (	C99_intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;())
+ 					&amp;&amp;	C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
+ 					{
+@@ -4241,11 +4209,7 @@
+ 	return true;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool _CPP_intlike_literal_to_VM(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest, const parse_tree&amp; src)
+-#else
+-static bool _CPP_intlike_literal_to_VM(unsigned_var_int&amp; dest, const parse_tree&amp; src)
+-#endif
++static bool _CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+ {
+ 	//! \todo: similar code for handling LLONG_MIN as above.  Need that only for zcc; can't test in preprocessor as the true reserved word won't make it this far.
+ 	if (!src.is_atomic()) return false;
+@@ -4290,11 +4254,7 @@
+ 	return ret;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool C99_intlike_literal_to_VM(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest, const parse_tree&amp; src)
+-#else
+-static bool C99_intlike_literal_to_VM(unsigned_var_int&amp; dest, const parse_tree&amp; src)
+-#endif
++static bool C99_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+ {
+ 	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src);
+ 
+@@ -4313,11 +4273,7 @@
+ 	return true;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool CPP_intlike_literal_to_VM(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; dest, const parse_tree&amp; src)
+-#else
+-static bool CPP_intlike_literal_to_VM(unsigned_var_int&amp; dest, const parse_tree&amp; src)
+-#endif
++static bool CPP_intlike_literal_to_VM(umaxint&amp; dest, const parse_tree&amp; src)
+ {
+ 	const POD_pair&lt;const parse_tree*,bool&gt; actual = _find_intlike_literal(&amp;src);
+ 
+@@ -4345,18 +4301,10 @@
+  * \return -1 : can't decide quickly whether this is a null 
+  *         pointer constant
+  */
+-#ifdef ZCC_LEGACY_FIXED_INT
+-int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++int is_null_pointer_constant(const parse_tree&amp; src, func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (!converts_to_integerlike(src.type_code)) return 0;
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp;
+-#else
+-	unsigned_var_int tmp;
+-#endif
++	umaxint tmp;
+ 	if (intlike_literal_to_VM(tmp,src)) return tmp==0;
+ 	return -1;
+ }
+@@ -4385,11 +4333,7 @@
+ 			src.type_code.set_type(C_TYPE::INTEGERLIKE);
+ 			C_PPIntCore parse_tmp;
+ 			ZAIMONI_PASSTHROUGH_ASSERT(C_PPIntCore::is(src.index_tokens[0].token.first,src.index_tokens[0].token.second,parse_tmp));
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp;
+-#else
+-			unsigned_var_int tmp;
+-#endif
++			umaxint tmp;
+ 			const unsigned char type_hint = parse_tmp.hinted_type;
+ 			const bool no_signed = 1==type_hint%2;
+ 			const bool no_unsigned = !no_signed &amp;&amp; 10==parse_tmp.radix;
+@@ -5225,11 +5169,7 @@
+ // can't do much syntax-checking or immediate-evaluation here because of binary +/-
+ // unary +/- syntax checking out out of place as it's needed by all of the unary operators
+ // return code is true for success, false for memory failure
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool VM_to_token(const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,const size_t base_type_index,POD_pair&lt;char*,lex_flags&gt;&amp; dest)
+-#else
+-static bool VM_to_token(const unsigned_var_int&amp; src_int,const size_t base_type_index,POD_pair&lt;char*,lex_flags&gt;&amp; dest)
+-#endif
++static bool VM_to_token(const umaxint&amp; src_int,const size_t base_type_index,POD_pair&lt;char*,lex_flags&gt;&amp; dest)
+ {
+ 	const char* const suffix = literal_suffix(base_type_index);
+ #ifdef ZCC_LEGACY_FIXED_INT
+@@ -5263,11 +5203,7 @@
+ }
+ 
+ // return code is true for success, false for memory failure
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool VM_to_literal(parse_tree&amp; dest, const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+-#else
+-static bool VM_to_literal(parse_tree&amp; dest, const unsigned_var_int&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+-#endif
++static bool VM_to_literal(parse_tree&amp; dest, const umaxint&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	POD_pair&lt;char*,lex_flags&gt; new_token;
+ 	if (!VM_to_token(src_int,src.type_code.base_type_index,new_token)) return false;
+@@ -5326,11 +5262,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_C99_unary_operator_expression&lt;'-'&gt;(src));
+ 	bool is_true = false;
+@@ -5346,11 +5278,7 @@
+ 		{	// unsigned...we're fine
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 		const type_spec old_type = src.type_code;
+-#ifdef ZCC_LEGACY_FIXED_INT
+-		unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-#else
+-		unsigned_var_int res_int;
+-#endif
++		umaxint res_int;
+ 		intlike_literal_to_VM(res_int,*src.data&lt;2&gt;());
+ 		target_machine-&gt;unsigned_additive_inverse(res_int,machine_type);
+ 
+@@ -5653,11 +5581,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool int_has_trapped(parse_tree&amp; src,const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,bool hard_error)
+-#else
+-static bool int_has_trapped(parse_tree&amp; src,const unsigned_var_int&amp; src_int,bool hard_error)
+-#endif
++static bool int_has_trapped(parse_tree&amp; src,const umaxint&amp; src_int,bool hard_error)
+ {
+ 	assert(C_TYPE::INT&lt;=src.type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;src.type_code.base_type_index);
+ 	// check for trap representation for signed types
+@@ -5767,11 +5691,7 @@
+ // eventually recover enough memory for this to complete.
+ static bool construct_twos_complement_int_min(parse_tree&amp; dest, const type_system&amp; types, const virtual_machine::std_int_enum machine_type, const parse_tree&amp; src_loc)
+ {
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp_int(target_machine-&gt;signed_max(machine_type));
+-#else
+-	unsigned_var_int tmp_int(target_machine-&gt;signed_max(machine_type));	// of course, throwing constructor gets in the way
+-#endif
++	umaxint tmp_int(target_machine-&gt;signed_max(machine_type));
+ 	parse_tree* const tmp = _new_buffer&lt;parse_tree&gt;(1);	// XXX we recycle this variable later
+ 	if (NULL==tmp) return false;
+ 	if (!VM_to_literal(*tmp,tmp_int,src_loc,types)) return false;
+@@ -5823,19 +5743,11 @@
+ 	return true;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-#else
+-	unsigned_var_int res_int;
+-#endif
++	umaxint res_int;
+ 	if (intlike_literal_to_VM(res_int,*src.data&lt;2&gt;())) 
+ 		{
+ 		const type_spec old_type = src.type_code;
+@@ -6260,11 +6172,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+@@ -6293,13 +6201,8 @@
+ 		return true;
+ 		};
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int res_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint res_int;
++	umaxint rhs_int;
+ 	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+ 	if (lhs_converted &amp;&amp; 1==res_int)
+@@ -6327,15 +6230,9 @@
+ 		const bool rhs_negative = target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ 		if (old.is_signed)
+ 			{	// signed integer result: overflow is undefined
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-			unsigned_var_int lhs_test(res_int);
+-			unsigned_var_int rhs_test(rhs_int);
+-			unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++			umaxint lhs_test(res_int);
++			umaxint rhs_test(rhs_int);
++			umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 			const bool tweak_ub = rhs_negative!=lhs_negative &amp;&amp; virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation() &amp;&amp; !bool_options[boolopt::int_traps];
+ 			if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_test,old.machine_type);
+ 			if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+@@ -6388,11 +6285,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+@@ -6430,13 +6323,8 @@
+ 		//! \todo change target for formal verification; would like to inject a constraint against div-by-integer-zero here
+ 		};
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int res_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint res_int;
++	umaxint rhs_int;
+ 	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+@@ -6461,15 +6349,9 @@
+ 		const bool rhs_negative = target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ 		if (old.is_signed)
+ 			{	// signed integer result
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-			unsigned_var_int lhs_test(res_int);
+-			unsigned_var_int rhs_test(rhs_int);
+-			unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++			umaxint lhs_test(res_int);
++			umaxint rhs_test(rhs_int);
++			umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 			if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_test,old.machine_type);
+ 			if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+ 			if (rhs_negative!=lhs_negative &amp;&amp; virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation()) ub += 1;
+@@ -6497,11 +6379,7 @@
+ 			bool round_away = false;
+ 			if (rhs_negative!=lhs_negative &amp;&amp; bool_options[boolopt::int_neg_div_rounds_away_from_zero])
+ 				{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_mod_test(lhs_test);
+-#else
+-				unsigned_var_int lhs_mod_test(lhs_test);
+-#endif
++				umaxint lhs_mod_test(lhs_test);
+ 				lhs_mod_test %= rhs_test;
+ 				round_away = 0!=lhs_mod_test;
+ 				}
+@@ -6544,11 +6422,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+@@ -6586,13 +6460,8 @@
+ 		//! \todo change target for formal verification; would like to inject a constraint against div-by-integer-zero here
+ 		};
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int res_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint res_int;
++	umaxint rhs_int;
+ 	const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+ 	if (rhs_converted &amp;&amp; rhs_int==1)
+@@ -6619,15 +6488,9 @@
+ 		const bool rhs_negative = target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ 		if (old.is_signed)
+ 			{	// signed integer result
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-			unsigned_var_int lhs_test(res_int);
+-			unsigned_var_int rhs_test(rhs_int);
+-			unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++			umaxint lhs_test(res_int);
++			umaxint rhs_test(rhs_int);
++			umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 			if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_test,old.machine_type);
+ 			if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+ 			if (rhs_negative!=lhs_negative &amp;&amp; virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation()) ub += 1;
+@@ -6920,11 +6783,7 @@
+ 
+ // this one hides a slight inefficiency: negative literals take 2 dynamic memory allocations, positive literals take one
+ // return code is true for success, false for memory failure
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool VM_to_signed_literal(parse_tree&amp; x,const bool is_negative, const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+-#else
+-static bool VM_to_signed_literal(parse_tree&amp; x,const bool is_negative, const unsigned_var_int&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+-#endif
++static bool VM_to_signed_literal(parse_tree&amp; x,const bool is_negative, const umaxint&amp; src_int,const parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	if (is_negative)
+ 		{
+@@ -6938,11 +6797,7 @@
+ 	return true;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+ 
+@@ -6974,13 +6829,8 @@
+ 				src.type_code = old_type;
+ 				return true;
+ 				};
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-			unsigned_var_int res_int;
+-			unsigned_var_int rhs_int;
+-#endif
++			umaxint res_int;
++			umaxint rhs_int;
+ 			const promote_aux old(old_type.base_type_index);
+ 			const promote_aux lhs(src.data&lt;1&gt;()-&gt;type_code.base_type_index);
+ 			assert(old.bitcount&gt;=lhs.bitcount);
+@@ -6994,15 +6844,9 @@
+ 				{
+ 				if (old.is_signed)
+ 					{	// signed integer result
+-#ifdef ZCC_LEGACY_FIXED_INT
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-					unsigned_var_int lhs_test(res_int);
+-					unsigned_var_int rhs_test(rhs_int);
+-					unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++					umaxint lhs_test(res_int);
++					umaxint rhs_test(rhs_int);
++					umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 					bool result_is_negative = false;
+ 					if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_test,old.machine_type);
+ 					if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+@@ -7099,11 +6943,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+ 
+@@ -7139,13 +6979,8 @@
+ 				src.type_code = old_type;
+ 				return true;
+ 				}
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-			unsigned_var_int res_int;
+-			unsigned_var_int rhs_int;
+-#endif
++			umaxint res_int;
++			umaxint rhs_int;
+ 			const bool lhs_converted = intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+ 			const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+@@ -7161,15 +6996,9 @@
+ 				const bool rhs_negative = target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ 				if (old.is_signed)
+ 					{	// signed integer result
+-#ifdef ZCC_LEGACY_FIXED_INT
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-					unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-					unsigned_var_int lhs_test(res_int);
+-					unsigned_var_int rhs_test(rhs_int);
+-					unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++					umaxint lhs_test(res_int);
++					umaxint rhs_test(rhs_int);
++					umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 					bool result_is_negative = false;
+ 					if (rhs_negative) target_machine-&gt;signed_additive_inverse(rhs_test,old.machine_type);
+ 					if (lhs_negative) target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+@@ -7268,11 +7097,7 @@
+ 
+ // +: either both are arithmetic, or one is raw pointer and one is integer
+ // -: either both are arithmetic, or both are compatible raw pointer, or left is raw pointer and right is integer
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static void C_CPP_add_expression_easy_syntax_check(parse_tree&amp; src,const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert((C99_ADD_SUBTYPE_PLUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'+'&gt;(src)) || (C99_ADD_SUBTYPE_MINUS==src.subtype &amp;&amp; is_C99_add_operator_expression&lt;'-'&gt;(src)));
+ 	BOOST_STATIC_ASSERT(1==C99_ADD_SUBTYPE_MINUS-C99_ADD_SUBTYPE_PLUS);
+@@ -7517,11 +7342,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -7546,11 +7367,7 @@
+ 			}
+ 		};
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint rhs_int;
+ 	if (intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
+ 		{
+ 		const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(old_type.base_type_index);
+@@ -7571,11 +7388,7 @@
+ 			};
+ 		if (undefined_behavior) return false;
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-		unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-#else
+-		unsigned_var_int res_int;
+-#endif
++		umaxint res_int;
+ 		if (intlike_literal_to_VM(res_int,*src.data&lt;1&gt;()))
+ 			{
+ 			// note that incoming negative signed integers are not handled by this code path
+@@ -7700,23 +7513,14 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_relation_expression(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_GT-C99_RELATION_SUBTYPE_LT);
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_LTE-C99_RELATION_SUBTYPE_GT);
+ 	BOOST_STATIC_ASSERT(1==C99_RELATION_SUBTYPE_GTE-C99_RELATION_SUBTYPE_LTE);
+ 	assert(C99_RELATION_SUBTYPE_LT&lt;=src.subtype &amp;&amp; C99_RELATION_SUBTYPE_GTE&gt;=src.subtype);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int lhs_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint lhs_int;
++	umaxint rhs_int;
+ 
+ 	const bool lhs_converted = intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;());
+ 	const bool rhs_converted = intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+@@ -7898,21 +7702,12 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_equality_expression(parse_tree&amp; src, const type_system&amp; types, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {	
+ 	BOOST_STATIC_ASSERT(1==C99_EQUALITY_SUBTYPE_NEQ-C99_EQUALITY_SUBTYPE_EQ);
+ 	assert(C99_EQUALITY_SUBTYPE_EQ&lt;=src.subtype &amp;&amp; C99_EQUALITY_SUBTYPE_NEQ&gt;=src.subtype);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int lhs_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint lhs_int;
++	umaxint rhs_int;
+ 	const unsigned int integer_literal_case = 	  converts_to_integer(src.data&lt;1&gt;()-&gt;type_code)
+ 											+	2*converts_to_integer(src.data&lt;2&gt;()-&gt;type_code);
+ 	const bool is_equal_op = src.subtype==C99_EQUALITY_SUBTYPE_EQ;
+@@ -8135,11 +7930,7 @@
+ 	return false;
+ }
+ 
+-#if ZCC_LEGACY_FIXED_INT
+-static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -8168,21 +7959,12 @@
+ 		return true;
+ 		};
+ 
+-#if ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int lhs_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint lhs_int;
++	umaxint rhs_int;
+ 	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
+ 		{
+ 		const promote_aux old(old_type.base_type_index);
+-#if ZCC_LEGACY_FIXED_INT
+-		unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int(lhs_int);
+-#else
+-		unsigned_var_int res_int(lhs_int);
+-#endif
++		umaxint res_int(lhs_int);
+ 		res_int &amp;= rhs_int;
+ 
+ 		// check for trap representation for signed types
+@@ -8323,11 +8105,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -8356,22 +8134,13 @@
+ 			}
+ 		};
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int lhs_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint lhs_int;
++	umaxint rhs_int;
+ 	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
+ 		{
+ 		const type_spec old_type = src.type_code;
+ 		const promote_aux old(old_type.base_type_index);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-		unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int(lhs_int);
+-#else
+-		unsigned_var_int res_int(lhs_int);
+-#endif
++		umaxint res_int(lhs_int);
+ 		res_int ^= rhs_int;
+ //		res_int.mask_to(target_machine-&gt;C_bit(machine_type));	// shouldn't need this
+ 
+@@ -8504,11 +8273,7 @@
+ 	return false;
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code));
+@@ -8537,22 +8302,13 @@
+ 			}
+ 		};
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_int;
+-	unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-	unsigned_var_int lhs_int;
+-	unsigned_var_int rhs_int;
+-#endif
++	umaxint lhs_int;
++	umaxint rhs_int;
+ 	if (intlike_literal_to_VM(lhs_int,*src.data&lt;1&gt;()) &amp;&amp; intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;()))
+ 		{
+ 		const type_spec old_type = src.type_code;
++		umaxint res_int(lhs_int);
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-		unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int(lhs_int);
+-#else
+-		unsigned_var_int res_int(lhs_int);
+-#endif
+ 		res_int |= rhs_int;
+ //		res_int.mask_to(target_machine-&gt;C_bit(machine_type));	// shouldn't need this
+ 		if 		(res_int==lhs_int)
+@@ -9637,11 +9393,7 @@
+ #endif
+ }
+ 
+-#ifdef ZCC_LEGACY_FIXED_INT
+-static void eval_string_literal_deref(parse_tree&amp; src,const type_system&amp; types,const POD_pair&lt;const char*,size_t&gt;&amp; str_lit,const unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp; tmp,bool is_negative,bool index_src_is_char)
+-#else
+-static void eval_string_literal_deref(parse_tree&amp; src,const type_system&amp; types,const POD_pair&lt;const char*,size_t&gt;&amp; str_lit,const unsigned_var_int&amp; tmp,bool is_negative,bool index_src_is_char)
+-#endif
++static void eval_string_literal_deref(parse_tree&amp; src,const type_system&amp; types,const POD_pair&lt;const char*,size_t&gt;&amp; str_lit,const umaxint&amp; tmp,bool is_negative,bool index_src_is_char)
+ {
+ 	const size_t strict_ub = LengthOfCStringLiteral(str_lit.first,str_lit.second);
+ 	// C99 6.2.6.2p3 -0 is not actually allowed to generate the bitpattern -0, so no trapping
+@@ -9702,11 +9454,7 @@
+ eval_array_deref(parse_tree&amp; src,const type_system&amp; types,
+ 				 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 				 func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type literal_converts_to_integer,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-				 func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-				 func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++				 func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (!is_array_deref(src)) return false;
+ 	// crunch __[...]
+@@ -9719,11 +9467,7 @@
+ 										(C_TESTFLAG_STRING_LITERAL==src.data&lt;1&gt;()-&gt;index_tokens[0].flags) ? 1 : UINT_MAX;
+ 		if (UINT_MAX&gt;str_index)
+ 			{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; tmp; 
+-#else
+-			unsigned_var_int tmp; 
+-#endif
++			umaxint tmp; 
+ 			if (!intlike_literal_to_VM(tmp,*src.data(1-str_index))) return false;
+ 			const size_t promoted_type = default_promote_type(src.type_code.base_type_index);
+ 			const virtual_machine::std_int_enum machine_type = (virtual_machine::std_int_enum)((promoted_type-C_TYPE::INT)/2+virtual_machine::std_int_int);
+@@ -9748,11 +9492,7 @@
+ 			//! \test default/Pass_if_zero.h
+ 			//! \test default/Pass_if_nonzero.hpp
+ 			//! \test default/Pass_if_nonzero.h
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			eval_string_literal_deref(src,types,src.data&lt;2&gt;()-&gt;index_tokens[0].token,unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;(0),false,false);
+-#else
+-			eval_string_literal_deref(src,types,src.data&lt;2&gt;()-&gt;index_tokens[0].token,unsigned_var_int(0),false,false);
+-#endif
++			eval_string_literal_deref(src,types,src.data&lt;2&gt;()-&gt;index_tokens[0].token,umaxint(0),false,false);
+ 			return true;
+ 			}
+ 		}
+@@ -9775,11 +9515,7 @@
+ static bool eval_bitwise_compl(	parse_tree&amp; src, const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 								func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-								func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-								func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_complement_expression(src))
+ 		{
+@@ -9803,11 +9539,7 @@
+ static bool eval_unary_minus(parse_tree&amp; src, const type_system&amp; types,
+ 							 func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							 func_traits&lt;bool (*)(const parse_tree&amp;, bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							 func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							 func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							 func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_unary_operator_expression&lt;'-'&gt;(src))
+ 		{
+@@ -9820,11 +9552,7 @@
+ static bool eval_mult_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-								func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-								func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'*'&gt;(src))
+ 		{
+@@ -9838,11 +9566,7 @@
+ static bool eval_div_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-								func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-								func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'/'&gt;(src))
+ 		{
+@@ -9856,11 +9580,7 @@
+ static bool eval_mod_expression(parse_tree&amp; src,const type_system&amp; types,
+ 								func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 								func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-								func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-								func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++								func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_mult_operator_expression&lt;'%'&gt;(src))
+ 		{
+@@ -9875,11 +9595,7 @@
+ static bool eval_add_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_add_operator_expression&lt;'+'&gt;(src))
+ 		{
+@@ -9893,11 +9609,7 @@
+ static bool eval_sub_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_add_operator_expression&lt;'-'&gt;(src))
+ 		{
+@@ -9911,11 +9623,7 @@
+ static bool eval_shift(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_shift_expression(src))
+ 		{
+@@ -9928,11 +9636,7 @@
+ 
+ static bool eval_relation_expression(parse_tree&amp; src,const type_system&amp; types,
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_C99_relation_expression(src))
+ 		{
+@@ -9947,11 +9651,7 @@
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_equality_expression,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_equality_expression(src))
+ 		{
+@@ -9966,11 +9666,7 @@
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_AND_expression,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_AND_expression(src))
+ 		{
+@@ -9985,11 +9681,7 @@
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_XOR_expression,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_XOR_expression(src))
+ 		{
+@@ -10004,11 +9696,7 @@
+ 							func_traits&lt;bool (*)(parse_tree&amp;,const type_system&amp;)&gt;::function_ref_type EvalParseTree,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_OR_expression,
+ 							func_traits&lt;bool (*)(const parse_tree&amp;,bool&amp;)&gt;::function_ref_type literal_converts_to_bool,
+-#ifdef ZCC_LEGACY_FIXED_INT
+-							func_traits&lt;bool (*)(unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt;&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#else
+-							func_traits&lt;bool (*)(unsigned_var_int&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+-#endif
++							func_traits&lt;bool (*)(umaxint&amp;,const parse_tree&amp;)&gt;::function_ref_type intlike_literal_to_VM)
+ {
+ 	if (is_bitwise_OR_expression(src))
+ 		{
+@@ -10168,13 +9856,8 @@
+ 			};
+ 		if (non_representable_int_min)
+ 			{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-			unsigned_var_int res_int;
+-			unsigned_var_int rhs_int;
+-#endif
++			umaxint res_int;
++			umaxint rhs_int;
+ 			const bool lhs_converted = C99_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+ 			const bool rhs_converted = C99_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+@@ -10195,15 +9878,9 @@
+ 				target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ #endif
+ 				assert(lhs_negative &amp;&amp; !rhs_negative);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-				unsigned_var_int lhs_test(res_int);
+-				unsigned_var_int rhs_test(rhs_int);
+-				unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++				umaxint lhs_test(res_int);
++				umaxint rhs_test(rhs_int);
++				umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 				target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+ 				ub += 1;
+ 				assert(ub&gt;=lhs_test &amp;&amp; ub&gt;=rhs_test);
+@@ -10247,13 +9924,8 @@
+ 			};
+ 		if (non_representable_int_min)
+ 			{
+-#ifdef ZCC_LEGACY_FIXED_INT
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; res_int;
+-			unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_int;
+-#else
+-			unsigned_var_int res_int;
+-			unsigned_var_int rhs_int;
+-#endif
++			umaxint res_int;
++			umaxint rhs_int;
+ 			const bool lhs_converted = CPP_intlike_literal_to_VM(res_int,*src.data&lt;1&gt;());
+ 			const bool rhs_converted = CPP_intlike_literal_to_VM(rhs_int,*src.data&lt;2&gt;());
+ 			if (lhs_converted &amp;&amp; rhs_converted)
+@@ -10274,15 +9946,9 @@
+ 				target_machine-&gt;C_promote_integer(rhs_int,rhs,old);
+ #endif
+ 				assert(lhs_negative &amp;&amp; !rhs_negative);
+-#ifdef ZCC_LEGACY_FIXED_INT
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; lhs_test(res_int);
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; rhs_test(rhs_int);
+-				unsigned_fixed_int&lt;VM_MAX_BIT_PLATFORM&gt; ub(target_machine-&gt;signed_max(old.machine_type));
+-#else
+-				unsigned_var_int lhs_test(res_int);
+-				unsigned_var_int rhs_test(rhs_int);
+-				unsigned_var_int ub(target_machine-&gt;signed_max(old.machine_type));
+-#endif
++				umaxint lhs_test(res_int);
++				umaxint rhs_test(rhs_int);
++				umaxint ub(target_machine-&gt;signed_max(old.machine_type));
+ 				target_machine-&gt;signed_additive_inverse(lhs_test,old.machine_type);
+ 				ub += 1;
+ 				assert(ub&gt;=lhs_test &amp;&amp; ub&gt;=rhs_test);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000107.html">[Zcplusplus-commits] r336 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#102">[ date ]</a>
+              <a href="thread.html#102">[ thread ]</a>
+              <a href="subject.html#102">[ subject ]</a>
+              <a href="author.html#102">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

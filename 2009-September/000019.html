@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r252 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r252%20-%20trunk&In-Reply-To=%3C200909200513.n8K5DCFj021371%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000018.html">
+   <LINK REL="Next"  HREF="000020.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r252 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r252%20-%20trunk&In-Reply-To=%3C200909200513.n8K5DCFj021371%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r252 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Sep 20 07:13:12 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000018.html">[Zcplusplus-commits] r251 - trunk/POSIX/cmp
+</A></li>
+        <LI>Next message: <A HREF="000020.html">[Zcplusplus-commits] r253 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#19">[ date ]</a>
+              <a href="thread.html#19">[ thread ]</a>
+              <a href="subject.html#19">[ subject ]</a>
+              <a href="author.html#19">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-20 07:13:04 +0200 (Sun, 20 Sep 2009)
+New Revision: 252
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+   trunk/zcc.cpp
+Log:
+create a default output of zcc when no errors: source transform
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-09-11 03:49:03 UTC (rev 251)
++++ trunk/CSupport.cpp	2009-09-20 05:13:04 UTC (rev 252)
+@@ -9578,6 +9578,7 @@
+ 				// ;: done
+ 				if (src.data&lt;0&gt;()[i+decl_count+decl_offset].is_atomic() &amp;&amp; token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count+decl_offset].index_tokens[0].token))
+ 					{
++					src.c_array&lt;0&gt;()[i+decl_count+decl_offset].flags |= parse_tree::GOOD_LINE_BREAK;
+ 					++decl_offset;
+ 					break;
+ 					};
+@@ -9686,6 +9687,7 @@
+ 				// GCC uses &lt;unknown&gt; and handles uniqueness at link time
+ 				src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0].grab_index_token_from_str_literal&lt;0&gt;(&quot;&lt;unknown&gt;&quot;,C_TESTFLAG_IDENTIFIER);	// pretend it's an identifier
+ 				src.c_array&lt;0&gt;()[i].c_array&lt;2&gt;()[0].grab_index_token_location_from&lt;0,0&gt;(src.data&lt;0&gt;()[i].data&lt;2&gt;()[1]);	// inject it at where the namespace body starts
++				src.c_array&lt;0&gt;()[i].flags |= parse_tree::GOOD_LINE_BREAK;
+ 				assert(is_CPP_namespace(src.data&lt;0&gt;()[i]));
+ 
+ 				if (active_namespace)
+@@ -9745,6 +9747,7 @@
+ 			src.c_array&lt;0&gt;()[i+1].clear();
+ 			src.c_array&lt;0&gt;()[i+2].clear();
+ 			src.DeleteNSlotsAt&lt;0&gt;(2,i+1);
++			src.c_array&lt;0&gt;()[i].flags |= parse_tree::GOOD_LINE_BREAK;
+ 			assert(is_CPP_namespace(src.data&lt;0&gt;()[i]));
+ 			// handle named namespace
+ 			if (NULL==active_namespace)
+@@ -9950,6 +9953,7 @@
+ 				// ;: done
+ 				if (src.data&lt;0&gt;()[i+decl_count+decl_offset].is_atomic() &amp;&amp; token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+decl_count+decl_offset].index_tokens[0].token))
+ 					{
++					src.c_array&lt;0&gt;()[i+decl_count+decl_offset].flags |= parse_tree::GOOD_LINE_BREAK;
+ 					++decl_offset;
+ 					break;
+ 					};
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2009-09-11 03:49:03 UTC (rev 251)
++++ trunk/ParseTree.cpp	2009-09-20 05:13:04 UTC (rev 252)
+@@ -215,26 +215,69 @@
+ #define USER_MASK (ULONG_MAX-((1U&lt;&lt;parse_tree::PREDEFINED_STRICT_UB)-1))
+ 	const lex_flags my_rank = src.flags &amp; USER_MASK;
+ 	bool need_parens = (1==src.size&lt;1&gt;()) ? my_rank&gt;(src.data&lt;1&gt;()-&gt;flags &amp; USER_MASK) : false;
++	bool need_space = false;
+ 	if (need_parens) INC_INFORM('(');
+ 	size_t i = 0;
+-	while(src.size&lt;1&gt;()&gt;i) INC_INFORM(src.data&lt;1&gt;()[i++]);
+-	if (need_parens) INC_INFORM(')');
++	while(src.size&lt;1&gt;()&gt;i)
++		{
++		if (need_space) INC_INFORM(' ');
++		need_space = !(src.data&lt;1&gt;()[i].flags &amp; parse_tree::GOOD_LINE_BREAK);
++		INC_INFORM(src.data&lt;1&gt;()[i++]);
++		}
++	if (need_parens)
++		{
++		INC_INFORM(')');
++		need_space = false;
++		};
+ 	// first index token
+-	if (NULL!=src.index_tokens[0].token.first) INC_INFORM(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
++	if (NULL!=src.index_tokens[0].token.first)
++		{
++		if (need_space) INC_INFORM(' ');
++		INC_INFORM(src.index_tokens[0].token.first,src.index_tokens[0].token.second);
++		need_space = true;
++		}
+ 	// infix data
+ 	need_parens = (1==src.size&lt;0&gt;()) ? my_rank&gt;(src.data&lt;0&gt;()-&gt;flags &amp; USER_MASK) : false;
+-	if (need_parens) INC_INFORM('(');
++	if (need_parens)
++		{
++		INC_INFORM('(');
++		need_space = false;
++		}
+ 	i = 0;
+-	while(src.size&lt;0&gt;()&gt;i) INC_INFORM(src.data&lt;0&gt;()[i++]);
+-	if (need_parens) INC_INFORM(')');
++	while(src.size&lt;0&gt;()&gt;i)
++		{
++		if (need_space) INC_INFORM(' ');
++		need_space = !(src.data&lt;0&gt;()[i].flags &amp; parse_tree::GOOD_LINE_BREAK);
++		INC_INFORM(src.data&lt;0&gt;()[i++]);
++		}
++	if (need_parens)
++		{
++		INC_INFORM(')');
++		need_space = false;
++		};
+ 	// second index token
+-	if (NULL!=src.index_tokens[1].token.first) INC_INFORM(src.index_tokens[1].token.first,src.index_tokens[1].token.second);
++	if (NULL!=src.index_tokens[1].token.first)
++		{
++		if (need_space) INC_INFORM(' ');
++		INC_INFORM(src.index_tokens[1].token.first,src.index_tokens[1].token.second);
++		need_space = true;
++		}
+ 	// postfix data
+ 	need_parens = (1==src.size&lt;2&gt;()) ? my_rank&gt;(src.data&lt;2&gt;()-&gt;flags &amp; USER_MASK) : false;
+-	if (need_parens) INC_INFORM('(');
++	if (need_parens)
++		{
++		INC_INFORM('(');
++		need_space = false;
++		}
+ 	i = 0;
+-	while(src.size&lt;2&gt;()&gt;i) INC_INFORM(src.data&lt;2&gt;()[i++]);
++	while(src.size&lt;2&gt;()&gt;i)
++		{
++		if (need_space) INC_INFORM(' ');
++		need_space = !(src.data&lt;2&gt;()[i].flags &amp; parse_tree::GOOD_LINE_BREAK);
++		INC_INFORM(src.data&lt;2&gt;()[i++]);
++		}
+ 	if (need_parens) INC_INFORM(')');
++	if (src.flags &amp; parse_tree::GOOD_LINE_BREAK) INC_INFORM('\n');
+ #undef USER_MASK
+ }
+ 
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2009-09-11 03:49:03 UTC (rev 251)
++++ trunk/ParseTree.hpp	2009-09-20 05:13:04 UTC (rev 252)
+@@ -36,8 +36,9 @@
+ 	enum core_flags {	// standardize bitflag use
+ 		INVALID = (1&lt;&lt;2),	// invalid node
+ 		CONSTANT_EXPRESSION = (1&lt;&lt;3),	// compile-time constant expression
++		GOOD_LINE_BREAK = (1&lt;&lt;4),	// good place for a line break in INC_INFORM
+ 		RESERVED_MASK = 3,	// lowest two bits are used to track memory ownership of weak_token
+-		PREDEFINED_STRICT_UB = 4	// number of bits reserved by parse_tree
++		PREDEFINED_STRICT_UB = 5	// number of bits reserved by parse_tree
+ 	};
+ 
+ 	weak_token index_tokens[2];	//!&lt; 0: left, 1: right
+@@ -364,6 +365,6 @@
+ };
+ 
+ void INC_INFORM(const parse_tree&amp; src);
+-inline void INFORM(const parse_tree&amp; src) {INC_INFORM(src); INFORM(&quot; &quot;);}
++inline void INFORM(const parse_tree&amp; src) {INC_INFORM(src); INC_INFORM(&quot;\n&quot;);}
+ 
+ #endif
+
+Modified: trunk/zcc.cpp
+===================================================================
+--- trunk/zcc.cpp	2009-09-11 03:49:03 UTC (rev 251)
++++ trunk/zcc.cpp	2009-09-20 05:13:04 UTC (rev 252)
+@@ -416,14 +416,14 @@
+ 		//! \todo parse the resulting TokenList...
+ 		ZParser parser(target_machine,string_options[stringopt::lang]);
+ 		if (bool_options[boolopt::test]) parser.set_debug(true);
+-#if 1
+-		parser.parse(TokenList,ParsedList);
+-#else
+ 		const bool export_to_object_ok = parser.parse(TokenList,ParsedList);
+ 		if (export_to_object_ok)
+ 			{
++			// export to source code
++			const size_t ParsedList_size = ParsedList.size();
++			size_t i = 0;
++			while(i&lt;ParsedList_size) INFORM(*ParsedList[i++]);
+ 			};
+-#endif
+ 		return EXIT_SUCCESS;
+ 		}
+ 	catch(const std::bad_alloc&amp;)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000018.html">[Zcplusplus-commits] r251 - trunk/POSIX/cmp
+</A></li>
+	<LI>Next message: <A HREF="000020.html">[Zcplusplus-commits] r253 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#19">[ date ]</a>
+              <a href="thread.html#19">[ thread ]</a>
+              <a href="subject.html#19">[ subject ]</a>
+              <a href="author.html#19">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

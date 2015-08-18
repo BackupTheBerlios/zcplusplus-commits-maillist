@@ -1,0 +1,894 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r275 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r275%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C200911230822.nAN8Ms0F025119%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000041.html">
+   <LINK REL="Next"  HREF="000043.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r275 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r275%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C200911230822.nAN8Ms0F025119%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r275 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 23 09:22:54 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000041.html">[Zcplusplus-commits] r274 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000043.html">[Zcplusplus-commits] r276 - in trunk/tests: zcc zcc.in
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-23 09:22:29 +0100 (Mon, 23 Nov 2009)
+New Revision: 275
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_struct_multidef.in
+   trunk/tests/zcc.in/decl.C99/Error_union_multidef.in
+   trunk/tests/zcc.in/decl.C99/Pass_struct_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_union_def.in
+   trunk/tests/zcc.in/decl.C99/Warn_inaccessible_struct.in
+   trunk/tests/zcc.in/decl.C99/Warn_inaccessible_union.in
+   trunk/tests/zcc/decl.C99/Error_class_multidef.hpp
+   trunk/tests/zcc/decl.C99/Error_struct_multidef.h
+   trunk/tests/zcc/decl.C99/Error_struct_multidef.hpp
+   trunk/tests/zcc/decl.C99/Error_union_multidef.h
+   trunk/tests/zcc/decl.C99/Error_union_multidef.hpp
+   trunk/tests/zcc/decl.C99/Pass_class_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_struct_def.h
+   trunk/tests/zcc/decl.C99/Pass_struct_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_union_def.h
+   trunk/tests/zcc/decl.C99/Pass_union_def.hpp
+   trunk/tests/zcc/decl.C99/Warn_inaccessible_class.hpp
+   trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.h
+   trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.hpp
+   trunk/tests/zcc/decl.C99/Warn_inaccessible_union.h
+   trunk/tests/zcc/decl.C99/Warn_inaccessible_union.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+recognize when top-level non-template struct/union/class is defined, but do not actually parse definitions.  Don't handle namespaces in C++.
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/CSupport.cpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -23,6 +23,7 @@
+ #include &quot;C_PPOctalInteger.hpp&quot;
+ #include &quot;C_PPDecimalFloat.hpp&quot;
+ #include &quot;C_PPHexFloat.hpp&quot;
++#include &quot;struct_type.hpp&quot;
+ #include &quot;CheckReturn.hpp&quot;
+ 
+ using namespace zaimoni;
+@@ -3845,7 +3846,7 @@
+ 			&amp;&amp;	NULL==src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(src));
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+ }
+@@ -3859,7 +3860,7 @@
+ 			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	src.empty&lt;2&gt;());
++			&amp;&amp;	src.empty&lt;2&gt;())
+ 		return true;
+ 	return false;
+ }
+@@ -3873,7 +3874,7 @@
+ 			&amp;&amp;	NULL!=src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	src.empty&lt;1&gt;()
+-			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(src));
++			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; is_naked_brace_pair(*src.data&lt;2&gt;()))
+ 		return true;
+ 	return false;
+ }
+@@ -4064,7 +4065,7 @@
+ 			src.c_array&lt;0&gt;()[i+1].clear();
+ 			if (2&lt;src.size&lt;0&gt;()-(i+offset) &amp;&amp; is_naked_brace_pair(src.data&lt;0&gt;()[i+2]))
+ 				{
+-				make_target_postfix_arg(src,offset,i,i+1);
++				make_target_postfix_arg(src,offset,i,i+2);
+ 				src.DestroyNAtAndRotateTo&lt;0&gt;(2,i+1,src.size&lt;0&gt;()-offset);
+ 				offset += 2;
+ 				assert(is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],tmp2));
+@@ -10579,6 +10580,173 @@
+ 			C99_CPP_handle_static_assertion(src,types,*CLexer-&gt;pp_support,i,&quot; : control expression for static assertion must evaluate to a single integer constant (C1X 6.7.9p3)&quot;);
+ 			continue;
+ 			};
++		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
++		// check naked declarations first
++		if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			{
++			type_system::type_index tmp = types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
++			}
++		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			{
++			type_system::type_index tmp = types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++			src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
++			}
++		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			{	// can only define once
++			const C_union_struct_def* const tmp = types.get_C_structdef(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++			if (tmp)
++				{	//! \test zcc/decl.C99/Error_union_multidef.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(&quot;'union &quot;);
++				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
++				INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
++				zcc_errors.inc_error();
++				// now it's gone
++				// remove trailing semicolon if present
++				src.DeleteNSlotsAt&lt;0&gt;((1&lt;src.size&lt;0&gt;()-i &amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1])) ? 2 : 1,i);
++				continue;
++				}
++			}
++		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			{	// can only define once
++			const C_union_struct_def* const tmp = types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++			if (tmp)
++				{	//! \test zcc/decl.C99/Error_struct_multidef.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(ERR_STR);
++				INC_INFORM(&quot;'struct &quot;);
++				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
++				INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
++				zcc_errors.inc_error();
++				// now it's gone
++				// remove trailing semicolon if present
++				src.DeleteNSlotsAt&lt;0&gt;((1&lt;src.size&lt;0&gt;()-i &amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1])) ? 2 : 1,i);
++				continue;
++				}
++			}
++
++		if (	1&lt;src.size&lt;0&gt;()-i
++			&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
++			{	// is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;) will cause an error later, in variable parsing
++			if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++					//! \test zcc/decl.C99/Warn_inaccessible_union.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(WARN_STR);
++				INFORM(&quot;unreferenceable anonymous union declaration&quot;);
++				if (bool_options[boolopt::warnings_are_errors])
++					zcc_errors.inc_error();
++				// remove from parse
++				src.DeleteNSlotsAt&lt;0&gt;(2,i);
++				continue;
++				}
++			else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++				{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++					//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++					//! \test zcc/decl.C99/Warn_inaccessible_struct.h
++				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++				INC_INFORM(WARN_STR);
++				INFORM(&quot;unreferenceable anonymous struct declaration&quot;);
++				if (bool_options[boolopt::warnings_are_errors])
++					zcc_errors.inc_error();
++				// remove from parse
++				src.DeleteNSlotsAt&lt;0&gt;(2,i);
++				continue;
++				}
++			else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++				{	// forward-declare, fine
++				if (types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
++					{	// but if already (forward-)declared then this is a no-op
++						// think this is common enough to not warrant OAOO/DRY treatment
++					//! \bug needs test case
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(2,i);
++					continue;					
++					}
++				// forward-declare
++				//! \bug needs test case
++				union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++				assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++				assert(types.get_structdecl(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++				i += 2;
++				continue;
++				}
++			else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++				{	// forward-declare, fine
++				if (types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
++					{	// but if already (forward-)declared then this is a no-op
++						// think this is common enough to not warrant OAOO/DRY treatment
++					//! \bug needs test case
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(2,i);
++					continue;					
++					}
++				// forward-declare
++				//! \bug needs test case
++				union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++				assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++				assert(types.get_structdecl(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++				i += 2;
++				continue;
++				}
++			else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++				{	// definitions...fine
++				type_system::type_index tmp = types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				C_union_struct_def* tmp2 = NULL;
++				if (tmp)
++					{	// promoting forward-declare to definition
++						//! \bug needs test case
++					const union_struct_decl* tmp3 = types.get_structdecl(tmp);
++					assert(tmp3);
++					tmp2 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++					//! \todo record field structure, etc.
++					types.upgrade_decl_to_def(tmp,tmp2);
++					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_C_structdef(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					}
++				else{	// definition
++						//! \test zcc/decl.C99/Pass_union_def.h
++					tmp2 = new C_union_struct_def(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++					//! \todo record field structure, etc.
++					types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_C_structdef(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					}
++				i += 2;
++				continue;
++				}
++			else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++				{	// definitions...fine
++				type_system::type_index tmp = types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				C_union_struct_def* tmp2 = NULL;
++				if (tmp)
++					{	// promoting forward-declare to definition
++						//! \bug needs test case
++					const union_struct_decl* tmp3 = types.get_structdecl(tmp);
++					assert(tmp3);
++					tmp2 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++					//! \todo record field structure, etc.
++					types.upgrade_decl_to_def(tmp,tmp2);
++					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					}
++				else{	// definition
++						//! \test zcc/decl.C99/Pass_struct_def.h
++					tmp2 = new C_union_struct_def(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++					//! \todo record field structure, etc.
++					types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					}
++				i += 2;
++				continue;
++				};
++			};
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+ 		// intercept declarations as follows
+@@ -10820,6 +10988,256 @@
+ 			C99_CPP_handle_static_assertion(src,types,*CPlusPlusLexer-&gt;pp_support,i,&quot; : control expression for static assertion must be a constant convertible to bool (C++0X 7p4)&quot;);
+ 			continue;
+ 			};
++		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
++		// check naked declarations first; handle namespaces later
++		if (NULL==active_namespace)
++			{
++			if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++				{
++				type_system::type_index tmp = types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
++				}
++			else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++				{
++				type_system::type_index tmp = types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
++				}
++			else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++				{
++				type_system::type_index tmp = types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
++				}
++			else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++				{	// can only define once
++				const C_union_struct_def* const tmp = types.get_C_structdef(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++				if (tmp)
++					{	//! \test zcc/decl.C99/Error_union_multidef.hpp
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INC_INFORM(&quot;'union &quot;);
++					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
++					INFORM(&quot;' already defined (C++0X 9.1p1)&quot;);
++					zcc_errors.inc_error();
++					// now it's gone
++					// remove trailing semicolon if present
++					src.DeleteNSlotsAt&lt;0&gt;((1&lt;src.size&lt;0&gt;()-i &amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1])) ? 2 : 1,i);
++					continue;
++					}
++				}
++			else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++				{	// can only define once
++				const C_union_struct_def* const tmp = types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++				if (tmp)
++					{	//! \test zcc/decl.C99/Error_struct_multidef.hpp
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INC_INFORM(&quot;'struct &quot;);
++					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
++					INFORM(&quot;' already defined (C++0X 9.1p1)&quot;);
++					zcc_errors.inc_error();
++					// now it's gone
++					// remove trailing semicolon if present
++					src.DeleteNSlotsAt&lt;0&gt;((1&lt;src.size&lt;0&gt;()-i &amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1])) ? 2 : 1,i);
++					continue;
++					}
++				}
++			else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;class&quot;))
++				{	// can only define once
++				const C_union_struct_def* const tmp = types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++				if (tmp)
++					{	//! \test zcc/decl.C99/Error_class_multidef.hpp
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(ERR_STR);
++					INC_INFORM(&quot;'class &quot;);
++					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
++					INFORM(&quot;' already defined (C++0X 9.1p1)&quot;);
++					zcc_errors.inc_error();
++					// now it's gone
++					// remove trailing semicolon if present
++					src.DeleteNSlotsAt&lt;0&gt;((1&lt;src.size&lt;0&gt;()-i &amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1])) ? 2 : 1,i);
++					continue;
++					}
++				}
++
++			if (	1&lt;src.size&lt;0&gt;()-i
++				&amp;&amp; 	robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
++				{	// is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;) will cause an error later, in variable parsing
++				if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++					{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++						//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++						//! \test zcc/decl.C99/Warn_inaccessible_union.hpp
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;unreferenceable anonymous union declaration&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(2,i);
++					continue;
++					}
++				else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++					{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++						//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++						//! \test zcc/decl.C99/Warn_inaccessible_struct.hpp
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;unreferenceable anonymous struct declaration&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(2,i);
++					continue;
++					}
++				else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++					{	// unreferenceable declaration without static/extern/typedef...warn and optimize away
++						//! \todo do not warn for -Wno-OOAO/-Wno-DRY
++						//! \test zcc/decl.C99/Warn_inaccessible_class.hpp
++					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
++					INC_INFORM(WARN_STR);
++					INFORM(&quot;unreferenceable anonymous class declaration&quot;);
++					if (bool_options[boolopt::warnings_are_errors])
++						zcc_errors.inc_error();
++					// remove from parse
++					src.DeleteNSlotsAt&lt;0&gt;(2,i);
++					continue;
++					}
++				else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++					{	// forward-declare, fine
++					if (types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
++						{	// but if already (forward-)declared then this is a no-op
++							// think this is common enough to not warrant OAOO/DRY treatment
++						//! \bug needs test case
++						// remove from parse
++						src.DeleteNSlotsAt&lt;0&gt;(2,i);
++						continue;					
++						}
++					// forward-declare
++					//! \bug needs test case
++					union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++					types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++					assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_structdecl(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					i += 2;
++					continue;
++					}
++				else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++					{	// forward-declare, fine
++					if (types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
++						{	// but if already (forward-)declared then this is a no-op
++							// think this is common enough to not warrant OAOO/DRY treatment
++						//! \bug needs test case
++						// remove from parse
++						src.DeleteNSlotsAt&lt;0&gt;(2,i);
++						continue;					
++						}
++					// forward-declare
++					//! \bug needs test case
++					union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++					types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_structdecl(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					i += 2;
++					continue;
++					}
++				else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++					{	// forward-declare, fine
++					if (types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first))
++						{	// but if already (forward-)declared then this is a no-op
++							// think this is common enough to not warrant OAOO/DRY treatment
++						//! \bug needs test case
++						// remove from parse
++						src.DeleteNSlotsAt&lt;0&gt;(2,i);
++						continue;					
++						}
++					// forward-declare
++					//! \bug needs test case
++					union_struct_decl* tmp = new union_struct_decl(union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++					types.register_structdecl(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp);
++					assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++					assert(types.get_structdecl(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++					i += 2;
++					continue;
++					}
++				else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++					{	// definitions...fine
++					type_system::type_index tmp = types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++					C_union_struct_def* tmp2 = NULL;
++					if (tmp)
++						{	// promoting forward-declare to definition
++							//! \bug needs test case
++						const union_struct_decl* tmp3 = types.get_structdecl(tmp);
++						assert(tmp3);
++						tmp2 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++						//! \todo record field structure, etc.
++						types.upgrade_decl_to_def(tmp,tmp2);
++						assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++						assert(types.get_C_structdef(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++						}
++					else{	// definition
++							//! \test zcc/decl.C99/Pass_union_def.hpp
++						tmp2 = new C_union_struct_def(union_struct_decl::decl_union,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++						//! \todo record field structure, etc.
++						types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++						assert(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++						assert(types.get_C_structdef(types.get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++						}
++					i += 2;
++					continue;
++					}
++				else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++					{	// definitions...fine
++					type_system::type_index tmp = types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++					C_union_struct_def* tmp2 = NULL;
++					if (tmp)
++						{	// promoting forward-declare to definition
++							//! \bug needs test case
++						const union_struct_decl* tmp3 = types.get_structdecl(tmp);
++						assert(tmp3);
++						tmp2 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++						//! \todo record field structure, etc.
++						types.upgrade_decl_to_def(tmp,tmp2);
++						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++						assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++						}
++					else{	// definition
++							//! \test zcc/decl.C99/Pass_struct_def.hpp
++						tmp2 = new C_union_struct_def(union_struct_decl::decl_struct,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++						//! \todo record field structure, etc.
++						types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++						assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++						}
++					i += 2;
++					continue;
++					}
++				else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;class&quot;))
++					{	// definitions...fine
++					type_system::type_index tmp = types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
++					C_union_struct_def* tmp2 = NULL;
++					if (tmp)
++						{	// promoting forward-declare to definition
++							//! \bug needs test case
++						const union_struct_decl* tmp3 = types.get_structdecl(tmp);
++						assert(tmp3);
++						tmp2 = new C_union_struct_def(*tmp3,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++						//! \todo record field structure, etc.
++						types.upgrade_decl_to_def(tmp,tmp2);
++						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++						assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++						}
++					else{	// definition
++							//! \test zcc/decl.C99/Pass_class_def.hpp
++						tmp2 = new C_union_struct_def(union_struct_decl::decl_class,src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].logical_line,src.data&lt;0&gt;()[i].index_tokens[1].src_filename);
++						//! \todo record field structure, etc.
++						types.register_C_structdef(src.data&lt;0&gt;()[i].index_tokens[1].token.first,tmp2);
++						assert(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first));
++						assert(types.get_C_structdef(types.get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first)));
++						}
++					i += 2;
++					continue;
++					};
++				};
++			}
+ 		// namespace scanner
+ 		// need some scheme to handle unnamed namespaces (probably alphabetical counter after something illegal so unmatchable)
+ 		// C++0X has inline namespaces; ignore these for now (well, maybe not: consuming the inline will prevent problems)
+
+Added: trunk/tests/zcc/decl.C99/Error_class_multidef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_class_multidef.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Error_class_multidef.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_class_multidef.hpp
++// using multiply defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class bad_test {
++	int x_factor;
++};
++
++class bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_multidef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_multidef.h	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Error_struct_multidef.h	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_struct_multidef.h
++// using multiply defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct bad_test {
++	int x_factor;
++};
++
++struct bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_struct_multidef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_struct_multidef.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Error_struct_multidef.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_struct_multidef.hpp
++// using multiply defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct bad_test {
++	int x_factor;
++};
++
++struct bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_multidef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_multidef.h	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Error_union_multidef.h	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_union_multidef.h
++// using multiply defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++union bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Error_union_multidef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_union_multidef.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Error_union_multidef.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_union_multidef.hpp
++// using multiply defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++union bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_class_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_class_def.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Pass_class_def.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_class_def.hpp
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_struct_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_def.h	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Pass_struct_def.h	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_struct_def.h
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_struct_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_def.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Pass_struct_def.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_struct_def.hpp
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_union_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_def.h	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Pass_union_def.h	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_union_def.h
++// using singly defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_union_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_def.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Pass_union_def.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_union_def.hpp
++// using singly defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_inaccessible_class.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_inaccessible_class.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Warn_inaccessible_class.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Warn_inaccessible_class.hpp
++// inaccessible struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.h	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.h	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Warn_inaccessible_struct.h
++// inaccessible struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Warn_inaccessible_struct.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Warn_inaccessible_struct.hpp
++// inaccessible struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_inaccessible_union.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_inaccessible_union.h	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Warn_inaccessible_union.h	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Warn_inaccessible_union.h
++// inaccessible union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Warn_inaccessible_union.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Warn_inaccessible_union.hpp	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc/decl.C99/Warn_inaccessible_union.hpp	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++// decl.C99\Warn_inaccessible_union.hpp
++// inaccessible union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_struct_multidef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_struct_multidef.in	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc.in/decl.C99/Error_struct_multidef.in	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++SUFFIXES h hpp
++// using multiply defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct bad_test {
++	int x_factor;
++};
++
++struct bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_union_multidef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_union_multidef.in	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc.in/decl.C99/Error_union_multidef.in	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,12 @@
++SUFFIXES h hpp
++// using multiply defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union bad_test {
++	int x_factor;
++};
++
++union bad_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_struct_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_struct_def.in	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc.in/decl.C99/Pass_struct_def.in	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_union_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_union_def.in	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc.in/decl.C99/Pass_union_def.in	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// using singly defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_inaccessible_struct.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_inaccessible_struct.in	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc.in/decl.C99/Warn_inaccessible_struct.in	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// inaccessible struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Warn_inaccessible_union.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Warn_inaccessible_union.in	2009-11-23 08:19:23 UTC (rev 274)
++++ trunk/tests/zcc.in/decl.C99/Warn_inaccessible_union.in	2009-11-23 08:22:29 UTC (rev 275)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// inaccessible union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union {
++	int x_factor;
++};
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000041.html">[Zcplusplus-commits] r274 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000043.html">[Zcplusplus-commits] r276 - in trunk/tests: zcc zcc.in
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#42">[ date ]</a>
+              <a href="thread.html#42">[ thread ]</a>
+              <a href="subject.html#42">[ subject ]</a>
+              <a href="author.html#42">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

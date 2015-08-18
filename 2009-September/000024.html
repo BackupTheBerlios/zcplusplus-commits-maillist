@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r257 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-September/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r257%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200909242054.n8OKsLj6014944%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000023.html">
+   <LINK REL="Next"  HREF="000025.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r257 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r257%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C200909242054.n8OKsLj6014944%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r257 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Sep 24 22:54:21 CEST 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000023.html">[Zcplusplus-commits] r256 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in
+</A></li>
+        <LI>Next message: <A HREF="000025.html">[Zcplusplus-commits] r258 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#24">[ date ]</a>
+              <a href="thread.html#24">[ thread ]</a>
+              <a href="subject.html#24">[ subject ]</a>
+              <a href="author.html#24">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-09-24 22:54:14 +0200 (Thu, 24 Sep 2009)
+New Revision: 257
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+   trunk/Zaimoni.STL/Logging.h
+   trunk/type_spec.cpp
+   trunk/type_spec.hpp
+Log:
+make a few functions ACID/strong exception guarantee
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-09-24 03:03:00 UTC (rev 256)
++++ trunk/CSupport.cpp	2009-09-24 20:54:14 UTC (rev 257)
+@@ -8892,6 +8892,7 @@
+ 	return true;
+ }
+ 
++//! \todo check that the fact all literals are already legal-form is used
+ static void C99_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(src.is_raw_list());
+@@ -8901,6 +8902,7 @@
+ 	C99_notice_primary_type(src);
+ }
+ 
++//! \todo check that the fact all literals are already legal-form is used
+ static void CPP_ContextFreeParse(parse_tree&amp; src,const type_system&amp; types)
+ {
+ 	assert(src.is_raw_list());
+@@ -9539,6 +9541,7 @@
+ 		if (tmp)
+ 			{
+ 			assert(tmp!=x.index_tokens[0].token.first);
++			free(const_cast&lt;char*&gt;(x.index_tokens[0].token.first));
+ 			x.index_tokens[0].token.first = tmp;
+ 			x.control_index_token&lt;0&gt;(false);
+ 			}
+@@ -9549,6 +9552,7 @@
+ 		if (tmp)
+ 			{
+ 			assert(tmp!=x.index_tokens[1].token.first);
++			free(const_cast&lt;char*&gt;(x.index_tokens[1].token.first));
+ 			x.index_tokens[1].token.first = tmp;
+ 			x.control_index_token&lt;1&gt;(false);
+ 			}
+@@ -10011,6 +10015,7 @@
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+ // will need: typedef map: identifier |-&gt; typespec record
++//! \todo check that the fact all literals are already legal-form is used
+ static void C99_ContextParse(parse_tree&amp; src,type_system&amp; types)
+ {
+ 	//! \todo type-vectorize as part of the lexical-forward loop.  Need to handle in type_spec, which is required to be POD to allow C memory management:
+@@ -10111,7 +10116,7 @@
+ 				C99_PPHackTree(parsetree,types);
+ 				// final, when above is working properly
+ 				if (!parsetree.is_atomic())
+-					{
++					{	//! \bug need test cases
+ 					parsetree.destroy();	// efficiency
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -10123,7 +10128,7 @@
+ 				// end snip from CPreproc
+ 				bool is_true = false;
+ 				if (!C99_literal_converts_to_bool(parsetree,is_true))
+-					{
++					{	//! \bug need test cases
+ 					parsetree.destroy();	// efficiency
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -10133,8 +10138,9 @@
+ 					continue;
+ 					};
+ 				parsetree.destroy();	// efficiency
++				//! \test zcc/staticassert.C1X/Pass_autosucceed.h
+ 				if (!is_true)
+-					{	// oops
++					{	//! \test zcc/staticassert.C1X/Error_autofail.h
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					// hmm...really should unescape string before emitting
+@@ -10371,6 +10377,7 @@
+ #endif
+ 
+ // handle namespaces or else
++//! \todo check that the fact all literals are already legal-form is used
+ static void CPP_ParseNamespace(parse_tree&amp; src,type_system&amp; types,const char* const active_namespace)
+ {
+ 	//! \todo type-vectorize as part of the lexical-forward loop.  Need to handle
+@@ -10479,7 +10486,7 @@
+ 					}
+ 				CPP_PPHackTree(parsetree,types);
+ 				if (!parsetree.is_atomic())
+-					{
++					{	//! \bug need test cases
+ 					parsetree.destroy();	// efficiency
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -10491,7 +10498,7 @@
+ 				// end snip from CPreproc
+ 				bool is_true = false;
+ 				if (!CPP_literal_converts_to_bool(parsetree,is_true))
+-					{
++					{	//! \bug need test cases
+ 					parsetree.destroy();	// efficiency
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+@@ -10501,8 +10508,9 @@
+ 					continue;
+ 					};
+ 				parsetree.destroy();	// efficiency
++				//! \test zcc/staticassert.C1X/Pass_autosucceed.hpp
+ 				if (!is_true)
+-					{	// oops
++					{	//! \test zcc/staticassert.C1X/Error_autofail.hpp
+ 					message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+ 					INC_INFORM(ERR_STR);
+ 					// hmm...really should unescape string before emitting
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2009-09-24 03:03:00 UTC (rev 256)
++++ trunk/ParseTree.cpp	2009-09-24 20:54:14 UTC (rev 257)
+@@ -186,6 +186,7 @@
+ 	return true;
+ }
+ 
++// ACID; throws std::bad_alloc on failure
+ void value_copy(parse_tree&amp; dest, const parse_tree&amp; src)
+ {	// favor ACID
+ 	parse_tree_class tmp;
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2009-09-24 03:03:00 UTC (rev 256)
++++ trunk/ParseTree.hpp	2009-09-24 20:54:14 UTC (rev 257)
+@@ -356,7 +356,7 @@
+ 	void _eval_to_arg(size_t arg_idx, size_t i);
+ };
+ 
+-// wants to be ACID; throws std::bad_alloc on failure
++// ACID; throws std::bad_alloc on failure
+ void value_copy(parse_tree&amp; dest, const parse_tree&amp; src);
+ 
+ // non-virtual, intentionally
+
+Modified: trunk/Zaimoni.STL/Logging.h
+===================================================================
+--- trunk/Zaimoni.STL/Logging.h	2009-09-24 03:03:00 UTC (rev 256)
++++ trunk/Zaimoni.STL/Logging.h	2009-09-24 20:54:14 UTC (rev 257)
+@@ -15,9 +15,11 @@
+ #undef assert
+ #ifdef NDEBUG
+ #	define assert(A)	((void)0)
++#	define ZAIMONI_PASSTHROUGH_ASSERT(A)	A
+ #else
+ /* Interoperate with Microsoft: return code 3 */
+ #	define assert(A)	((A) ? (void)0 : FATAL_CODE(#A,3))
++#	define ZAIMONI_PASSTHROUGH_ASSERT(A)	((A) ? (void)0 : FATAL_CODE(#A,3))
+ #endif
+ 
+ /*!
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2009-09-24 03:03:00 UTC (rev 256)
++++ trunk/type_spec.cpp	2009-09-24 20:54:14 UTC (rev 257)
+@@ -20,11 +20,26 @@
+ {
+ 	if (_size==pointer_power) return;
+ 	assert(0&lt;_size);
+-	if (!zaimoni::_resize(extent_vector,_size)) throw std::bad_alloc();
+ 	const bool shrinking = _size&lt;pointer_power;
+ 	const size_t old_ptr_power = pointer_power_after_array_decay();
+ 	const size_t new_ptr_power = old_ptr_power+(_size-pointer_power);	// modulo arithmetic
+-	if (!shrinking) memset(extent_vector+pointer_power,0,sizeof(uintmax_t)*(_size-pointer_power));
++	unsigned char* tmp_first = (shrinking || sizeof(unsigned char*)&gt;new_ptr_power) ? NULL : zaimoni::_new_buffer_nonNULL_throws&lt;unsigned char&gt;(new_ptr_power+1);
++	if (!zaimoni::_resize(extent_vector,_size))
++		{
++		free(tmp_first);
++		throw std::bad_alloc();
++		};
++	if (!shrinking)
++		{
++		memset(extent_vector+pointer_power,0,sizeof(uintmax_t)*(_size-pointer_power));
++		if (NULL!=tmp_first)
++			{
++			memcpy(tmp_first,sizeof(unsigned char*)&gt;old_ptr_power ? qualifier_vector.second : qualifier_vector.first,old_ptr_power+1);
++			size_t i = old_ptr_power;
++			while(i&lt;new_ptr_power) qualifier_vector.first[i++] = lvalue;
++			qualifier_vector.first[new_ptr_power] = '\0';
++			}
++		};
+ 	if (sizeof(unsigned char*)&gt;old_ptr_power)
+ 		{
+ 		if (sizeof(unsigned char*)&gt;new_ptr_power)
+@@ -37,15 +52,8 @@
+ 				qualifier_vector.second[new_ptr_power] = '\0';
+ 				}
+ 			}
+-		else{
+-			unsigned char tmp[sizeof(unsigned char*)];
+-			memcpy(tmp,qualifier_vector.second,old_ptr_power+1);
+-			qualifier_vector.first = zaimoni::_new_buffer_nonNULL_throws&lt;unsigned char&gt;(new_ptr_power+1);
+-			memcpy(qualifier_vector.first,tmp,old_ptr_power+1);
+-			size_t i = old_ptr_power;
+-			while(i&lt;new_ptr_power) qualifier_vector.first[i++] = lvalue;
+-			qualifier_vector.first[new_ptr_power] = '\0';
+-			}
++		else
++			qualifier_vector.first = tmp_first;
+ 		}
+ 	else if (sizeof(unsigned char*)&gt;new_ptr_power)
+ 		{
+@@ -56,27 +64,30 @@
+ 		memcpy(qualifier_vector.second,tmp,new_ptr_power+1);
+ 		}
+ 	else{
+-		if (!zaimoni::_resize(qualifier_vector.first,new_ptr_power+1)) throw std::bad_alloc();
+ 		if (shrinking)
+-			memset(qualifier_vector.first+new_ptr_power+1,0,old_ptr_power-new_ptr_power);
++			ZAIMONI_PASSTHROUGH_ASSERT(zaimoni::_resize(qualifier_vector.first,new_ptr_power+1));
+ 		else{
+-			size_t i = old_ptr_power;
+-			while(i&lt;new_ptr_power) qualifier_vector.first[i++] = lvalue;
+-			qualifier_vector.first[new_ptr_power] = '\0';
++			free(qualifier_vector.first);
++			qualifier_vector.first = tmp_first;
+ 			}
+ 		}
+ 	pointer_power = _size;
+ }
+ 
+ // XXX properly operator= in C++, but type_spec has to be POD
++// ACID, throws std::bad_alloc on failure
+ void type_spec::value_copy(const type_spec&amp; src)
+ {
++	{
++	type_spec tmp;
++	tmp.clear();
++	tmp.base_type_index = src.base_type_index;
++	tmp.set_static_array_size(src.static_array_size);
++	tmp.set_pointer_power(src.pointer_power);
+ 	destroy();
+-	base_type_index = src.base_type_index;
+-	static_array_size = src.static_array_size;
+-	if (0&lt;src.static_array_size) qualifier_vector.second[0] |= lvalue;
++	*this = tmp;
++	}
+ 
+-	set_pointer_power(src.pointer_power);
+ 	const size_t new_ptr_power = pointer_power_after_array_decay();
+ 	if (sizeof(unsigned char*)&lt;=new_ptr_power)
+ 		memmove(qualifier_vector.first,src.qualifier_vector.first,new_ptr_power+1);
+
+Modified: trunk/type_spec.hpp
+===================================================================
+--- trunk/type_spec.hpp	2009-09-24 03:03:00 UTC (rev 256)
++++ trunk/type_spec.hpp	2009-09-24 20:54:14 UTC (rev 257)
+@@ -42,8 +42,9 @@
+ 	bool decays_to_nonnull_pointer() const {return 0==pointer_power &amp;&amp; 0&lt;static_array_size;};
+ 
+ 	void set_static_array_size(size_t _size);
+-	void set_pointer_power(size_t _size);
++	void set_pointer_power(size_t _size);	// ACID, throws std::bad_alloc on failure
+ 	void value_copy(const type_spec&amp; src);	// XXX properly operator= in C++, but type_spec has to be POD
++											// ACID, throws std::bad_alloc on failure
+ 	bool dereference();
+ 	unsigned char&amp; qualifier(size_t i) {return sizeof(unsigned char*)&gt;pointer_power_after_array_decay() ? qualifier_vector.second[i] : qualifier_vector.first[i];};
+ 	template&lt;size_t i&gt; unsigned char&amp; qualifier() {return sizeof(unsigned char*)&gt;pointer_power_after_array_decay() ? qualifier_vector.second[i] : qualifier_vector.first[i];}
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000023.html">[Zcplusplus-commits] r256 - in trunk: . tests/zcc	tests/zcc/staticassert.C1X tests/zcc.in
+</A></li>
+	<LI>Next message: <A HREF="000025.html">[Zcplusplus-commits] r258 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#24">[ date ]</a>
+              <a href="thread.html#24">[ thread ]</a>
+              <a href="subject.html#24">[ subject ]</a>
+              <a href="author.html#24">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

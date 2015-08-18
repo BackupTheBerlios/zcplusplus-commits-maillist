@@ -1,0 +1,196 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r285 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r285%20-%20trunk&In-Reply-To=%3C200911270416.nAR4G7cw000179%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000051.html">
+   <LINK REL="Next"  HREF="000053.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r285 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r285%20-%20trunk&In-Reply-To=%3C200911270416.nAR4G7cw000179%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r285 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Nov 27 05:16:07 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000051.html">[Zcplusplus-commits] r284 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000053.html">[Zcplusplus-commits] r286 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/default/has_include tests/cpp.in	tests/cpp.in/default tests/cpp.in/default/has_include
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#52">[ date ]</a>
+              <a href="thread.html#52">[ thread ]</a>
+              <a href="subject.html#52">[ subject ]</a>
+              <a href="author.html#52">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-27 05:16:02 +0100 (Fri, 27 Nov 2009)
+New Revision: 285
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/enum_type.hpp
+   trunk/struct_type.hpp
+Log:
+report location of prior definition for enum/union/struct/class
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-11-27 03:35:33 UTC (rev 284)
++++ trunk/CSupport.cpp	2009-11-27 04:16:02 UTC (rev 285)
+@@ -1066,6 +1066,20 @@
+ 	message_header(src.src_filename,src.logical_line.first);
+ }
+ 
++/* XXX this may belong with enum_type XXX */
++static void message_header(const enum_def&amp; src)
++{
++	assert(src.filename() &amp;&amp; *src.filename());
++	message_header(src.filename(),src.loc().first);
++}
++
++/* XXX this may belong with C_union_struct_def XXX */
++static void message_header(const C_union_struct_def&amp; src)
++{
++	assert(src.filename() &amp;&amp; *src.filename());
++	message_header(src.filename(),src.loc().first);
++}
++
+ // balanced character count
+ static POD_pair&lt;size_t,size_t&gt;
+ _balanced_character_count(const weak_token* tokenlist,size_t tokenlist_len,const char l_match,const char r_match)
+@@ -10712,6 +10726,8 @@
+ 				INC_INFORM(&quot;'union &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 				INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
++				message_header(*tmp);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				// now it's gone
+ 				// remove trailing semicolon if present
+@@ -10729,6 +10745,8 @@
+ 				INC_INFORM(&quot;'struct &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 				INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
++				message_header(*tmp);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				// now it's gone
+ 				// remove trailing semicolon if present
+@@ -10765,6 +10783,10 @@
+ 				INC_INFORM(&quot;'enum &quot;);
+ 				INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 				INFORM(&quot;' already defined (C99 6.7.2.3p1)&quot;);
++				const enum_def* const tmp2 = types.get_enum_def(tmp);
++				assert(tmp2);
++				message_header(*tmp2);
++				INFORM(&quot;prior definition here&quot;);
+ 				zcc_errors.inc_error();
+ 				// now it's gone
+ 				src.DeleteNSlotsAt&lt;0&gt;(1,i);
+@@ -11183,6 +11205,8 @@
+ 					INC_INFORM(&quot;'union &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
++					message_header(*tmp);
++					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// now it's gone
+ 					// remove trailing semicolon if present
+@@ -11200,6 +11224,8 @@
+ 					INC_INFORM(&quot;'struct &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
++					message_header(*tmp);
++					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// now it's gone
+ 					// remove trailing semicolon if present
+@@ -11217,6 +11243,8 @@
+ 					INC_INFORM(&quot;'class &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
++					message_header(*tmp);
++					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// now it's gone
+ 					// remove trailing semicolon if present
+@@ -11256,6 +11284,10 @@
+ 					INC_INFORM(&quot;'enum &quot;);
+ 					INC_INFORM(src.data&lt;0&gt;()[i].index_tokens[1].token.first,src.data&lt;0&gt;()[i].index_tokens[1].token.second);
+ 					INFORM(&quot;' already defined (C++98 3.2p1)&quot;);
++					const enum_def* const tmp2 = types.get_enum_def(tmp);
++					assert(tmp2);
++					message_header(*tmp2);
++					INFORM(&quot;prior definition here&quot;);
+ 					zcc_errors.inc_error();
+ 					// now it's gone
+ 					src.DeleteNSlotsAt&lt;0&gt;(1,i);
+
+Modified: trunk/enum_type.hpp
+===================================================================
+--- trunk/enum_type.hpp	2009-11-27 03:35:33 UTC (rev 284)
++++ trunk/enum_type.hpp	2009-11-27 04:16:02 UTC (rev 285)
+@@ -21,7 +21,10 @@
+ 	// default ok for: copy constructor, destructor
+ 	const enum_def&amp; operator=(const enum_def&amp; src);	// ACID/strong guarantee
+ 
++	// accessors are to make editing difficult
+ 	const char* tag() const {return _tag;};
++	const char* filename() const {return _src_filename;};
++	zaimoni::POD_pair&lt;size_t,size_t&gt; loc() const {return _logical_line;};
+ #ifndef NDEBUG
+ 	bool syntax_ok() const;
+ #endif
+
+Modified: trunk/struct_type.hpp
+===================================================================
+--- trunk/struct_type.hpp	2009-11-27 03:35:33 UTC (rev 284)
++++ trunk/struct_type.hpp	2009-11-27 04:16:02 UTC (rev 285)
+@@ -45,6 +45,9 @@
+ 	~C_union_struct_def();
+ 	const C_union_struct_def&amp; operator=(const C_union_struct_def&amp; src);
+ 
++	const char* filename() const {return _src_filename;};
++	zaimoni::POD_pair&lt;size_t,size_t&gt; loc() const {return _logical_line;};
++
+ #ifndef NDEBUG
+ 	bool syntax_ok() const;
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000051.html">[Zcplusplus-commits] r284 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000053.html">[Zcplusplus-commits] r286 - in trunk: . tests/cpp tests/cpp/default	tests/cpp/default/has_include tests/cpp.in	tests/cpp.in/default tests/cpp.in/default/has_include
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#52">[ date ]</a>
+              <a href="thread.html#52">[ thread ]</a>
+              <a href="subject.html#52">[ subject ]</a>
+              <a href="author.html#52">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

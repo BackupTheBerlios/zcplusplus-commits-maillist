@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r353 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-March/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r353%20-%20trunk&In-Reply-To=%3C201003211923.o2LJNbld030288%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000119.html">
+   <LINK REL="Next"  HREF="000121.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r353 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r353%20-%20trunk&In-Reply-To=%3C201003211923.o2LJNbld030288%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r353 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Mar 21 20:23:37 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000119.html">[Zcplusplus-commits] r352 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X
+</A></li>
+        <LI>Next message: <A HREF="000121.html">[Zcplusplus-commits] r354 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#120">[ date ]</a>
+              <a href="thread.html#120">[ thread ]</a>
+              <a href="subject.html#120">[ subject ]</a>
+              <a href="author.html#120">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-03-21 20:23:33 +0100 (Sun, 21 Mar 2010)
+New Revision: 353
+
+Modified:
+   trunk/CPUInfo.cpp
+   trunk/CPUInfo.hpp
+Log:
+identifying is_zero bitpattern for integer types is target-dependent
+
+Modified: trunk/CPUInfo.cpp
+===================================================================
+--- trunk/CPUInfo.cpp	2010-03-18 05:58:50 UTC (rev 352)
++++ trunk/CPUInfo.cpp	2010-03-21 19:23:33 UTC (rev 353)
+@@ -124,6 +124,37 @@
+ #endif
+ }
+ 
++bool CPUInfo::is_zero(const unsigned char* x, size_t x_len, const promotion_info&amp; targettype) const
++{
++	assert(x);
++	assert(0&lt;x_len);
++	assert(x_len*CHAR_BIT&gt;=targettype.bitcount);
++	if (targettype.is_signed &amp;&amp; ((1U&lt;&lt;((targettype.bitcount-1)%CHAR_BIT)) &amp; x[(targettype.bitcount-1)/CHAR_BIT]))
++		{	// negative
++		switch(C_signed_int_representation())
++		{
++		default: return false;
++		case sign_and_magnitude:
++			x_len = (targettype.bitcount-1)/CHAR_BIT;
++			if (1U&lt;&lt;((targettype.bitcount-1)%CHAR_BIT) != x[x_len]) return false;
++			while(0&lt;x_len)
++				if (0!=x[--x_len]) return false;
++			return true;
++		case ones_complement:
++			x_len = (targettype.bitcount-1)/CHAR_BIT;
++			if (UCHAR_MAX&gt;&gt;((CHAR_BIT-1)-(targettype.bitcount-1)%CHAR_BIT) != x[x_len]) return false;
++			while(0&lt;x_len)
++				if (UCHAR_MAX!=x[--x_len]) return false;
++			return true;
++		}
++		}
++	// positive
++	do	if (0!=x[--x_len]) return false;
++	while(0&lt;x_len);
++	return true;
++}
++
++
+ bool CPUInfo::C_promote_integer(umaxint&amp; x,const promotion_info&amp; src_type, const promotion_info&amp; dest_type) const
+ {
+ 	if (src_type.is_signed &amp;&amp; x.test(src_type.bitcount-1))
+
+Modified: trunk/CPUInfo.hpp
+===================================================================
+--- trunk/CPUInfo.hpp	2010-03-18 05:58:50 UTC (rev 352)
++++ trunk/CPUInfo.hpp	2010-03-21 19:23:33 UTC (rev 353)
+@@ -130,6 +130,7 @@
+ 	bool trap_int(const umaxint&amp; src_int,std_int_enum machine_type) const;
+ 	void signed_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const;
+ 	void unsigned_additive_inverse(umaxint&amp; src_int,std_int_enum machine_type) const;
++	bool is_zero(const unsigned char* x, size_t x_len, const promotion_info&amp; targettype) const;
+ 	void sign_extend(umaxint&amp; src_int,std_int_enum machine_type_from,std_int_enum machine_type_to) const
+ 		{
+ 		signed_additive_inverse(src_int,machine_type_from);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000119.html">[Zcplusplus-commits] r352 - in trunk: .	tests/zcc/default/staticassert tests/zcc/staticassert.C1X	tests/zcc.in/default/staticassert tests/zcc.in/staticassert.C1X
+</A></li>
+	<LI>Next message: <A HREF="000121.html">[Zcplusplus-commits] r354 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#120">[ date ]</a>
+              <a href="thread.html#120">[ thread ]</a>
+              <a href="subject.html#120">[ subject ]</a>
+              <a href="author.html#120">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

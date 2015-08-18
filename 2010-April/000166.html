@@ -1,0 +1,579 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r399 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r399%20-%20trunk&In-Reply-To=%3C201004300429.o3U4Tu3n025620%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000165.html">
+   <LINK REL="Next"  HREF="000167.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r399 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r399%20-%20trunk&In-Reply-To=%3C201004300429.o3U4Tu3n025620%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r399 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Apr 30 06:29:56 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000165.html">[Zcplusplus-commits] r398 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000167.html">[Zcplusplus-commits] r400 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-30 06:29:46 +0200 (Fri, 30 Apr 2010)
+New Revision: 399
+
+Modified:
+   trunk/ParseTree.cpp
+   trunk/ParseTree.hpp
+   trunk/type_spec.cpp
+   trunk/type_spec.hpp
+Log:
+memory correuption debugging harness (only for Windows)
+
+Modified: trunk/ParseTree.cpp
+===================================================================
+--- trunk/ParseTree.cpp	2010-04-28 18:44:27 UTC (rev 398)
++++ trunk/ParseTree.cpp	2010-04-30 04:29:46 UTC (rev 399)
+@@ -5,6 +5,9 @@
+ 
+ using namespace zaimoni;
+ 
++// in case we have to debug memory corruption
++// #define IRRATIONAL_CAUTION 1
++
+ bool parse_tree::is_atomic() const
+ {
+ 	return (	NULL!=index_tokens[0].token.first
+@@ -61,8 +64,168 @@
+ 	while(size&lt;1&gt;()&gt;i) if (!data&lt;1&gt;()[i++].syntax_ok()) return false;
+ 	i = 0;
+ 	while(size&lt;2&gt;()&gt;i) if (!data&lt;2&gt;()[i++].syntax_ok()) return false;
++	if (!type_code.syntax_ok()) return false;
+ 	return true;
+ }
++
++bool parse_tree::entangled_with(const type_spec&amp; x) const
++{
++	if (x.entangled_with(type_code)) return true;
++	size_t i = 0;
++	while(size&lt;0&gt;()&gt;i)
++		{
++		if (data&lt;0&gt;()[i].entangled_with(x)) return true;
++		++i;
++		}
++	i = 0;
++	while(size&lt;1&gt;()&gt;i)
++		{
++		if (data&lt;1&gt;()[i].entangled_with(x)) return true;
++		++i;
++		}
++	i = 0;
++	while(size&lt;2&gt;()&gt;i)
++		{
++		if (data&lt;2&gt;()[i].entangled_with(x)) return true;
++		++i;
++		}
++	return false;
++}
++
++bool parse_tree::entangled_with(const parse_tree&amp; x) const
++{
++	if (x.type_code.entangled_with(type_code)) return true;
++	if (args[0] &amp;&amp; x.args[0] &amp;&amp; args[0]==x.args[0]) return true;
++	if (args[0] &amp;&amp; x.args[1] &amp;&amp; args[0]==x.args[1]) return true;
++	if (args[0] &amp;&amp; x.args[2] &amp;&amp; args[0]==x.args[2]) return true;
++	if (args[1] &amp;&amp; x.args[0] &amp;&amp; args[1]==x.args[0]) return true;
++	if (args[1] &amp;&amp; x.args[1] &amp;&amp; args[1]==x.args[1]) return true;
++	if (args[1] &amp;&amp; x.args[2] &amp;&amp; args[1]==x.args[2]) return true;
++	if (args[2] &amp;&amp; x.args[0] &amp;&amp; args[2]==x.args[0]) return true;
++	if (args[2] &amp;&amp; x.args[1] &amp;&amp; args[2]==x.args[1]) return true;
++	if (args[2] &amp;&amp; x.args[2] &amp;&amp; args[2]==x.args[2]) return true;
++
++	size_t i = 0;
++	size_t j = 0;
++	while(size&lt;0&gt;()&gt;i)
++		{
++		while(x.size&lt;0&gt;()&gt;j)
++			{
++			if (data&lt;0&gt;()[i].entangled_with(x.data&lt;0&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		while(x.size&lt;1&gt;()&gt;j)
++			{
++			if (data&lt;0&gt;()[i].entangled_with(x.data&lt;1&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		while(x.size&lt;2&gt;()&gt;j)
++			{
++			if (data&lt;0&gt;()[i].entangled_with(x.data&lt;2&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		++i;
++		}
++	i = 0;
++	while(size&lt;1&gt;()&gt;i)
++		{
++		while(x.size&lt;0&gt;()&gt;j)
++			{
++			if (data&lt;1&gt;()[i].entangled_with(x.data&lt;0&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		while(x.size&lt;1&gt;()&gt;j)
++			{
++			if (data&lt;1&gt;()[i].entangled_with(x.data&lt;1&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		while(x.size&lt;2&gt;()&gt;j)
++			{
++			if (data&lt;1&gt;()[i].entangled_with(x.data&lt;2&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		++i;
++		}
++	i = 0;
++	while(size&lt;2&gt;()&gt;i)
++		{
++		while(x.size&lt;0&gt;()&gt;j)
++			{
++			if (data&lt;2&gt;()[i].entangled_with(x.data&lt;0&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		while(x.size&lt;1&gt;()&gt;j)
++			{
++			if (data&lt;2&gt;()[i].entangled_with(x.data&lt;1&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		while(x.size&lt;2&gt;()&gt;j)
++			{
++			if (data&lt;2&gt;()[i].entangled_with(x.data&lt;2&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		++i;
++		}
++	return false;
++}
++
++bool parse_tree::self_entangled() const
++{
++	if (args[0] &amp;&amp; args[1] &amp;&amp; args[0]==args[1]) return true;
++	if (args[0] &amp;&amp; args[2] &amp;&amp; args[0]==args[2]) return true;
++	if (args[1] &amp;&amp; args[2] &amp;&amp; args[1]==args[2]) return true;
++
++	size_t i = 0;
++	size_t j = 0;
++	while(size&lt;0&gt;()&gt;i)
++		{
++		if (data&lt;0&gt;()[i].self_entangled()) return true;
++		if (data&lt;0&gt;()[i].entangled_with(type_code)) return true;
++		while(i&gt;j)
++			{
++			if (data&lt;0&gt;()[i].entangled_with(data&lt;0&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		++i;
++		}
++	i = 0;
++	while(size&lt;1&gt;()&gt;i)
++		{
++		if (data&lt;1&gt;()[i].self_entangled()) return true;
++		if (data&lt;1&gt;()[i].entangled_with(type_code)) return true;
++		while(i&gt;j)
++			{
++			if (data&lt;1&gt;()[i].entangled_with(data&lt;1&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		++i;
++		}
++	i = 0;
++	while(size&lt;2&gt;()&gt;i)
++		{
++		if (data&lt;2&gt;()[i].self_entangled()) return true;
++		if (data&lt;2&gt;()[i].entangled_with(type_code)) return true;
++		while(i&gt;j)
++			{
++			if (data&lt;2&gt;()[i].entangled_with(data&lt;2&gt;()[j])) return true;
++			++j;
++			}
++		j = 0;
++		++i;
++		}
++	return false;
++}
+ #endif
+ 
+ void parse_tree::clear()
+@@ -182,6 +345,10 @@
+ 	while(0&lt;i);
+ 	src.DeleteNSlotsAt&lt;0&gt;(zap_span+1,target.first+1);
+ 	src.c_array&lt;0&gt;()[target.first] = tmp;
++#ifdef IRRATIONAL_CAUTION
++	assert(src.syntax_ok());
++	assert(!src.self_entangled());
++#endif
+ 	return true;
+ }
+ 
+@@ -232,6 +399,10 @@
+ 	dest.destroy();
+ 	dest = tmp;
+ 	tmp.clear();
++#ifdef IRRATIONAL_CAUTION
++	assert(dest.syntax_ok());
++	assert(!dest.self_entangled());
++#endif
+ }
+ 
+ void parse_tree::MoveInto(parse_tree&amp; dest)
+@@ -243,6 +414,10 @@
+ 	dest.subtype = subtype;
+ 	dest.type_code = type_code;
+ 	clear();
++#ifdef IRRATIONAL_CAUTION
++	assert(dest.syntax_ok());
++	assert(!dest.self_entangled());
++#endif
+ }
+ 
+ 
+@@ -252,6 +427,10 @@
+ 	c_array(arg_idx)[i].clear();
+ 	destroy();
+ 	*this = tmp;
++#ifdef IRRATIONAL_CAUTION
++	assert(syntax_ok());
++	assert(!self_entangled());
++#endif
+ }
+ 
+ bool parse_tree::_resize(const size_t arg_idx,size_t n)
+
+Modified: trunk/ParseTree.hpp
+===================================================================
+--- trunk/ParseTree.hpp	2010-04-28 18:44:27 UTC (rev 398)
++++ trunk/ParseTree.hpp	2010-04-30 04:29:46 UTC (rev 399)
+@@ -274,6 +274,9 @@
+ 	void core_flag_update();
+ #ifndef ZAIMONI_FORCE_ISO
+ 	bool syntax_ok() const;
++	bool entangled_with(const type_spec&amp; x) const;
++	bool entangled_with(const parse_tree&amp; x) const;
++	bool self_entangled() const;
+ #endif
+ 
+ 	template&lt;size_t dest_idx&gt; void fast_set_arg(parse_tree* src)
+
+Modified: trunk/type_spec.cpp
+===================================================================
+--- trunk/type_spec.cpp	2010-04-28 18:44:27 UTC (rev 398)
++++ trunk/type_spec.cpp	2010-04-30 04:29:46 UTC (rev 399)
+@@ -6,27 +6,18 @@
+ #include &quot;Zaimoni.STL/MetaRAM2.hpp&quot;
+ using namespace zaimoni;
+ 
+-void type_spec::set_static_array_size(size_t _size)
+-{
+-	// expand pointer_power_after_array_decay() to be ACID
+-	q_vector.resize(pointer_power+(0&lt;_size)+1);
+-	static_array_size = _size;
+-	if (0==_size) return;
+-	// XXX this may well require a more substantial recalculation XXX
+-	q_vector.front() |= lvalue;
+-}
+-
+ void type_spec::set_pointer_power(size_t _size)
+ {
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
+ 	if (_size==pointer_power) return;
+ 	assert(0&lt;_size);
+ 	const bool shrinking = _size&lt;pointer_power;
+-	const size_t pointer_power_copy = pointer_power;
+-	const size_t old_ptr_power = pointer_power_after_array_decay();
+-	const size_t new_ptr_power = old_ptr_power+(_size-pointer_power);	// modulo arithmetic
++	const size_t old_ptr_power = pointer_power;
+ 	// zaimoni::_resize always succeeds when shrinking; if it fails, then reverting q_vector's resize 
+ 	// is a shrinking operation which always succeeds.
+-	q_vector.resize(new_ptr_power+1);
++	q_vector.resize(_size+1);
+ #ifndef ZAIMONI_FORCE_ISO
+ 	if (!zaimoni::_resize(extent_vector,_size))
+ #else
+@@ -41,52 +32,73 @@
+ #endif
+ 	if (!shrinking)
+ 		{
+-		memset(extent_vector+pointer_power_copy,0,sizeof(uintmax_t)*(_size-pointer_power_copy));
++		memset(extent_vector+old_ptr_power,0,sizeof(uintmax_t)*(_size-old_ptr_power));
+ 		size_t i = old_ptr_power;
+-		while(i&lt;new_ptr_power) q_vector.c_array()[i++] = lvalue;
++		while(i&lt;_size) q_vector.c_array()[i++] = lvalue;
+ 		// q_vector.second[new_ptr_power] = '\0';	// handled by uchar_blob
+ 		};
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
+ }
+ 
++void type_spec::make_C_array(uintmax_t _size)
++{	// can't count on type_spec being initialized correctly beforehand
++	// (could be 0 coming in, but then pointer_power=0 as well coming in)
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	set_pointer_power(pointer_power+1);
++	q_vector.back() |= _array;
++	q_vector.c_array()[q_vector.size()-2] |= lvalue;
++	extent_vector[pointer_power-1] = _size;
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++}
++
++
+ // XXX properly operator= in C++, but type_spec has to be POD
+ // ACID, throws std::bad_alloc on failure
+ void value_copy(type_spec&amp; dest,const type_spec&amp; src)
+-{
++{	// again, can't count on src.syntax_ok()
++#ifndef ZAIMONI_FORCE_ISO
++	assert(src.syntax_ok());
++#endif
+ 	type_spec tmp;
+ 	tmp.clear();
+-	tmp.base_type_index = src.base_type_index;
+-	tmp.set_static_array_size(src.static_array_size);
++	tmp.set_type(src.base_type_index);
+ 	tmp.set_pointer_power(src.pointer_power);
+-	value_copy(tmp.q_vector,src.q_vector);
++	if (tmp.q_vector.size()==src.q_vector.size())
++		value_copy(tmp.q_vector,src.q_vector);
++	if (0&lt;src.pointer_power) memmove(tmp.extent_vector,src.extent_vector,src.pointer_power*sizeof(uintmax_t));
+ 	dest.destroy();
+ 	dest = tmp;
++#ifndef ZAIMONI_FORCE_ISO
++	assert(dest.syntax_ok());
++#endif
+ }
+ 
+-
+ bool type_spec::dereference()
+ {
+-	const size_t old_ptr_power = pointer_power_after_array_decay();
+-	if (0==old_ptr_power) return false;
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
++	if (0==pointer_power) return false;
+ //	q_vector.c_array()[old_ptr_power] = '\0';	// redundant, wiped by q_vector.resize()
+-	assert(lvalue &amp; q_vector.data()[old_ptr_power-1]);	// result of dereference is a C/C++ lvalue; problem is elsewhere if this triggers
+-	q_vector.resize(old_ptr_power);	// lost a level of indirection
+-	if (0&lt;pointer_power)
+-		{
++	assert(lvalue &amp; q_vector.data()[pointer_power-1]);	// result of dereference is a C/C++ lvalue; problem is elsewhere if this triggers
++	q_vector.resize(pointer_power);	// lost a level of indirection
+ #if ZAIMONI_REALLOC_TO_ZERO_IS_NULL
+-		extent_vector = REALLOC(extent_vector,--pointer_power*sizeof(*extent_vector));
++	extent_vector = REALLOC(extent_vector,--pointer_power*sizeof(*extent_vector));
+ #else
+-		if (0== --pointer_power)
+-			{
+-			FREE_AND_NULL(extent_vector);
+-			}
+-		else{
+-			extent_vector = REALLOC(extent_vector,pointer_power*sizeof(*extent_vector));
+-			}
++	if (0== --pointer_power)
++		FREE_AND_NULL(extent_vector);
++	else
++		extent_vector = REALLOC(extent_vector,pointer_power*sizeof(*extent_vector));
+ #endif
+-		return true;
+-		}
+-	assert(0&lt;static_array_size);	// other cause of non-zero pointer power after array decay
+-	static_array_size = 0;
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
+ 	return true;
+ }
+ 
+@@ -94,35 +106,73 @@
+ {
+ 	base_type_index = 0;
+ 	pointer_power = 0;
+-	static_array_size = 0;
+ 	q_vector.init(0);
+ 	extent_vector = NULL;
+ }
+ 
+ void type_spec::destroy()
+ {
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
+ 	FREE_AND_NULL(extent_vector);
+ 	q_vector.resize(0);
+ 	base_type_index = 0;
+ 	pointer_power = 0;
+-	static_array_size = 0;
+ }
+ 
+ void type_spec::set_type(size_t _base_type_index)
+ {
++#ifndef ZAIMONI_FORCE_ISO
++	assert(syntax_ok());
++#endif
+ 	FREE_AND_NULL(extent_vector);
+-	q_vector.resize(0);
++	q_vector.resize(1);
+ 	base_type_index = _base_type_index;
+ 	pointer_power = 0;
+-	static_array_size = 0;
+ }
+ 
+ bool type_spec::operator==(const type_spec&amp; rhs) const
+ {
+ 	return 	base_type_index==rhs.base_type_index
+ 		&amp;&amp;	pointer_power==rhs.pointer_power
+-		&amp;&amp; 	static_array_size==rhs.static_array_size
+ 		&amp;&amp;  q_vector==rhs.q_vector
+ 		&amp;&amp; (0==pointer_power || !memcmp(extent_vector,rhs.extent_vector,sizeof(uintmax_t)*pointer_power));
+ }
+ 
++void type_spec::MoveInto(type_spec&amp; dest)
++{
++	dest.destroy();
++	dest = *this;
++	clear();
++}
++
++void type_spec::OverwriteInto(type_spec&amp; dest)
++{
++	dest = *this;
++	clear();
++}
++
++#ifndef ZAIMONI_FORCE_ISO
++bool type_spec::syntax_ok() const
++{
++	if (0==q_vector.size() &amp;&amp; 0==pointer_power &amp;&amp; !extent_vector) return true;
++	if (pointer_power&gt;=q_vector.size() || pointer_power+1!=q_vector.size()) return false;
++	if (0==pointer_power)
++		{
++		if (extent_vector) return false;
++		}
++	else if (!_memory_block_start_valid(extent_vector))
++		return false;
++	return true;
++}
++
++bool type_spec::entangled_with(const type_spec&amp; x) const
++{
++	if (extent_vector &amp;&amp; x.extent_vector &amp;&amp; extent_vector==x.extent_vector)
++		return true;
++	//! \todo Law of Demeter would delegate the entangled check for q_vector
++	return false;
++}
++#endif
++
+
+Modified: trunk/type_spec.hpp
+===================================================================
+--- trunk/type_spec.hpp	2010-04-28 18:44:27 UTC (rev 398)
++++ trunk/type_spec.hpp	2010-04-30 04:29:46 UTC (rev 399)
+@@ -30,7 +30,6 @@
+ {
+ 	size_t base_type_index;
+ 	size_t pointer_power;		// use wrappers for altering this (affects valid memory representations) [implement]
+-	size_t static_array_size;	// C-ish, but mitigates bloating the type manager; use wrappers for altering this [implement]
+ 
+ 	uchar_blob q_vector;	// q(ualifier)_vector
+ 	uintmax_t* extent_vector;
+@@ -39,15 +38,16 @@
+ 		lvalue = 1,			// C/C++ sense, assume works for other languages
+ 		_const = (1&lt;&lt;1),	// C/C++ sense, assume works for other languages
+ 		_volatile = (1&lt;&lt;2),	// C/C++ sense, assume works for other languages
+-		_restrict = (1&lt;&lt;3)	// C99 sense, assume works for other languages
++		_restrict = (1&lt;&lt;3),	// C99 sense, assume works for other languages
++		_array = (1&lt;&lt;4)		// C99 sense, assume works for other languages
+ 	};
+ 
+-	size_t pointer_power_after_array_decay() const {return pointer_power+(0&lt;static_array_size);};
+-	bool decays_to_nonnull_pointer() const {return 0==pointer_power &amp;&amp; 0&lt;static_array_size;};
++	size_t pointer_power_after_array_decay() const {return pointer_power;};
++	bool decays_to_nonnull_pointer() const {return 0&lt;pointer_power &amp;&amp; (q_vector.back() &amp; _array);};
+ 
+-	void set_static_array_size(size_t _size);
+ 	void set_pointer_power(size_t _size);	// ACID, throws std::bad_alloc on failure
+ 	void make_C_pointer() {set_pointer_power(pointer_power+1);};
++	void make_C_array(uintmax_t _size);
+ 	bool dereference();
+ 	unsigned char&amp; qualifier(size_t i) {return q_vector.c_array()[i];};
+ 	template&lt;size_t i&gt; unsigned char&amp; qualifier() {return q_vector.c_array()[i];}
+@@ -59,6 +59,12 @@
+ 	bool operator!=(const type_spec&amp; rhs) const {return !(*this==rhs);};
+ 
+ 	static void value_copy(type_spec&amp; dest, const type_spec&amp; src) {::value_copy(dest,src);};
++	void MoveInto(type_spec&amp; dest);
++	void OverwriteInto(type_spec&amp; dest);
++#ifndef ZAIMONI_FORCE_ISO
++	bool syntax_ok() const;
++	bool entangled_with(const type_spec&amp; x) const;
++#endif
+ };
+ 
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000165.html">[Zcplusplus-commits] r398 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000167.html">[Zcplusplus-commits] r400 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#166">[ date ]</a>
+              <a href="thread.html#166">[ thread ]</a>
+              <a href="subject.html#166">[ subject ]</a>
+              <a href="author.html#166">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

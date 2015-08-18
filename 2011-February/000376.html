@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-February/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r609%20-%20in%20trunk%3A%20.%20Zaimoni.STL/LexParse&In-Reply-To=%3C20110206081957.81542481364%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000375.html">
+   <LINK REL="Next"  HREF="000377.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r609%20-%20in%20trunk%3A%20.%20Zaimoni.STL/LexParse&In-Reply-To=%3C20110206081957.81542481364%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r609 - in trunk: . Zaimoni.STL/LexParse">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Feb  6 09:19:57 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000375.html">[Zcplusplus-commits] r608 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000377.html">[Zcplusplus-commits] r610 - in trunk: . tests/cpp tests/cpp.in	tests/zcc tests/zcc.in
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#376">[ date ]</a>
+              <a href="thread.html#376">[ thread ]</a>
+              <a href="subject.html#376">[ subject ]</a>
+              <a href="author.html#376">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-02-06 09:19:57 +0100 (Sun, 06 Feb 2011)
+New Revision: 609
+
+Modified:
+   trunk/ZParser.cpp
+   trunk/Zaimoni.STL/LexParse/MetaToken.hpp
+Log:
+MetaToken&lt;T&gt;::release() member function
+
+Modified: trunk/ZParser.cpp
+===================================================================
+--- trunk/ZParser.cpp	2011-02-04 09:13:58 UTC (rev 608)
++++ trunk/ZParser.cpp	2011-02-06 08:19:57 UTC (rev 609)
+@@ -134,9 +134,7 @@
+ 				parse_tree&amp; tmp = ParsedList[0]-&gt;c_array&lt;0&gt;()[old_parsed_size];
+ 				if (!init_parse_tree_from_token(tmp,tmp_front,pretokenized[0],lang))
+ 					{
+-					char* tmp2 = NULL; //! \bug adjust API, should be able to add qualifications safely
+-					tmp_front.TransferOutAndNULL(tmp2);
+-					tmp.index_tokens[0].token.first = tmp2;
++					tmp.index_tokens[0].token.first = tmp_front.release();
+ 					tmp.control_index_token&lt;0&gt;(true);
+ 					}
+ 				}
+
+Modified: trunk/Zaimoni.STL/LexParse/MetaToken.hpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/MetaToken.hpp	2011-02-04 09:13:58 UTC (rev 608)
++++ trunk/Zaimoni.STL/LexParse/MetaToken.hpp	2011-02-06 08:19:57 UTC (rev 609)
+@@ -84,6 +84,7 @@
+ 	virtual void prefix_chop(size_t prefix) {ltrim(prefix);};	// override to help out TokenSource
+ 
+ 	void TransferOutAndNULL(T*&amp; dest) {_token.TransferOutAndNULL(dest);};
++	T* release() {return _token.release();};
+ 
+ 	// STL interfaces
+ 	const T* data() const {return _token.data();};
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000375.html">[Zcplusplus-commits] r608 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000377.html">[Zcplusplus-commits] r610 - in trunk: . tests/cpp tests/cpp.in	tests/zcc tests/zcc.in
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#376">[ date ]</a>
+              <a href="thread.html#376">[ thread ]</a>
+              <a href="subject.html#376">[ subject ]</a>
+              <a href="author.html#376">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

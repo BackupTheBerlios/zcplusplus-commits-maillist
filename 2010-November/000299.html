@@ -1,0 +1,807 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r532 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r532%20-%20trunk&In-Reply-To=%3C20101104221917.89819480F6E%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000298.html">
+   <LINK REL="Next"  HREF="000300.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r532 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r532%20-%20trunk&In-Reply-To=%3C20101104221917.89819480F6E%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r532 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Nov  4 23:19:17 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000298.html">[Zcplusplus-commits] r531 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000300.html">[Zcplusplus-commits] r533 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#299">[ date ]</a>
+              <a href="thread.html#299">[ thread ]</a>
+              <a href="subject.html#299">[ subject ]</a>
+              <a href="author.html#299">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-04 23:19:16 +0100 (Thu, 04 Nov 2010)
+New Revision: 532
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+tweak diagnosis of enum/union/struct/class to facilitate later parsing
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-11-02 22:59:58 UTC (rev 531)
++++ trunk/CSupport.cpp	2010-11-04 22:19:16 UTC (rev 532)
+@@ -12805,6 +12805,102 @@
+ 		};
+ }
+ 
++// ahem...morally should be macros; defensive coding
++#ifdef UNION_NAME
++#error internal enumerator UNION_NAME defined
++#undef UNION_NAME
++#endif
++#ifdef UNION_NAMED_DEF
++#error internal enumerator UNION_NAMED_DEF defined
++#undef UNION_NAMED_DEF
++#endif
++#ifdef UNION_ANON_DEF
++#error internal enumerator UNION_ANON_DEF defined
++#undef UNION_ANON_DEF
++#endif
++#ifdef STRUCT_NAME
++#error internal enumerator STRUCT_NAME defined
++#undef STRUCT_NAME
++#endif
++#ifdef STRUCT_NAMED_DEF
++#error internal enumerator STRUCT_NAMED_DEF defined
++#undef STRUCT_NAMED_DEF
++#endif
++#ifdef STRUCT_ANON_DEF
++#error internal enumerator STRUCT_ANON_DEF defined
++#undef STRUCT_ANON_DEF
++#endif
++#ifdef ENUM_NAME
++#error internal enumerator ENUM_NAME defined
++#undef ENUM_NAME
++#endif
++#ifdef ENUM_NAMED_DEF
++#error internal enumerator ENUM_NAMED_DEF defined
++#undef ENUM_NAMED_DEF
++#endif
++#ifdef ENUM_ANON_DEF
++#error internal enumerator ENUM_ANON_DEF defined
++#undef ENUM_ANON_DEF
++#endif
++#ifdef CLASS_NAME
++#error internal enumerator CLASS_NAME defined
++#undef CLASS_NAME
++#endif
++#ifdef CLASS_NAMED_DEF
++#error internal enumerator CLASS_NAMED_DEF defined
++#undef CLASS_NAMED_DEF
++#endif
++#ifdef CLASS_ANON_DEF
++#error internal enumerator CLASS_ANON_DEF defined
++#undef CLASS_ANON_DEF
++#endif
++enum C99_CPP_tag {
++	UNION_NAME = 1,
++	UNION_NAMED_DEF,
++	UNION_ANON_DEF,
++	STRUCT_NAME,
++	STRUCT_NAMED_DEF,
++	STRUCT_ANON_DEF,
++	ENUM_NAME,
++	ENUM_NAMED_DEF,
++	ENUM_ANON_DEF,
++	CLASS_NAME,
++	CLASS_NAMED_DEF,
++	CLASS_ANON_DEF
++};
++
++#ifdef ZCC_CORE_NOTICE_TAG
++#error internal macro ZCC_CORE_NOTICE_TAG defined
++#undef ZCC_CORE_NOTICE_TAG
++#endif
++#define ZCC_CORE_NOTICE_TAG(src)	\
++	if (is_C99_named_specifier(src,&quot;union&quot;)) return UNION_NAME;	\
++	else if (is_C99_named_specifier_definition(src,&quot;union&quot;)) return UNION_NAMED_DEF;	\
++	else if (is_C99_anonymous_specifier(src,&quot;union&quot;)) return UNION_ANON_DEF;	\
++	else if (is_C99_named_specifier(src,&quot;struct&quot;)) return STRUCT_NAME;	\
++	else if (is_C99_named_specifier_definition(src,&quot;struct&quot;)) return STRUCT_NAMED_DEF;	\
++	else if (is_C99_anonymous_specifier(src,&quot;struct&quot;)) return STRUCT_ANON_DEF;	\
++	else if (is_C99_named_specifier(src,&quot;enum&quot;)) return ENUM_NAME;	\
++	else if (is_C99_named_specifier_definition(src,&quot;enum&quot;)) return ENUM_NAMED_DEF;	\
++	else if (is_C99_anonymous_specifier(src,&quot;enum&quot;)) return ENUM_ANON_DEF
++
++static int notice_C99_tag(const parse_tree&amp; src)
++{
++	ZCC_CORE_NOTICE_TAG(src);
++	return 0;
++}
++
++static int notice_CPP_tag(const parse_tree&amp; src)
++{
++	ZCC_CORE_NOTICE_TAG(src);
++	else if (is_C99_named_specifier(src,&quot;class&quot;)) return CLASS_NAME;
++	else if (is_C99_named_specifier_definition(src,&quot;class&quot;)) return CLASS_NAMED_DEF;
++	else if (is_C99_anonymous_specifier(src,&quot;class&quot;)) return CLASS_ANON_DEF;
++	return 0;
++}
++
++#undef ZCC_CORE_NOTICE_TAG
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -12841,8 +12937,16 @@
+ 			};
+ 		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+ 		// check naked declarations first
+-		if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++		const int tag_type = notice_C99_tag(src.data&lt;0&gt;()[i]);
++		if (tag_type)
+ 			{
++			switch(tag_type)
++			{	//! \todo deal with indentation violations later
++#ifndef NDEBUG
++			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
++#endif
++			case UNION_NAME:
++			{
+ C99_union_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -12904,16 +13008,9 @@
+ 				i += 2;
+ 				continue;
+ 				}
+-			else if (!tmp)
+-				{	// used without at least forward-declaring
+-					//! \bug needs test cases
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;used without at least forward-declaring&quot;);
+-				zcc_errors.inc_error();
+-				}
+ 			}
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAME:
+ 			{
+ C99_struct_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+@@ -12984,7 +13081,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13051,7 +13149,8 @@
+ 				continue;
+ 				};
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13118,7 +13217,8 @@
+ 				continue;
+ 				};
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union);
+@@ -13163,7 +13263,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct);
+@@ -13208,8 +13309,8 @@
+ 				continue;
+ 				}
+ 			}
+-		// enum was difficult to interpret in C++, so parked here while waiting on comp.std.c++
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAME:
+ 			{	// C99 6.7.2.3: allowed only after name is defined
+ 			if (!(src.c_array&lt;0&gt;()[i].flags &amp; parse_tree::INVALID))
+ 				{
+@@ -13227,7 +13328,8 @@
+ 					}
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13257,7 +13359,8 @@
+ 				return;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_ANON_DEF:
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+@@ -13267,7 +13370,10 @@
+ 				return;
+ 				}
+ 			}
+-
++			break;
++			}
++			}
++			
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+ 		// intercept declarations as follows
+@@ -13656,8 +13762,16 @@
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+ 		// check naked declarations first; handle namespaces later
+-		if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++		const int tag_type = notice_CPP_tag(src.data&lt;0&gt;()[i]);
++		if (tag_type)
+ 			{
++			switch(tag_type)
++			{	//! \todo deal with indentation violations later
++#ifndef NDEBUG
++			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
++#endif
++			case UNION_NAME:
++			{
+ CPP_union_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -13725,7 +13839,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAME:
+ 			{
+ CPP_struct_specifier:				
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+@@ -13795,7 +13910,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++			break;
++			case CLASS_NAME:
+ 			{
+ CPP_class_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+@@ -13865,7 +13981,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -13931,7 +14048,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -13997,7 +14115,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;class&quot;))
++			break;
++			case CLASS_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -14063,7 +14182,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union);
+@@ -14109,7 +14229,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct);
+@@ -14153,7 +14274,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++			break;
++			case CLASS_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class);
+@@ -14197,9 +14319,8 @@
+ 				continue;
+ 				}
+ 			}
+-		// enum was difficult to interpret in C++, so parked here while waiting on comp.std.c++
+-		//! \todo actually, we can try forward-declare both scoped enums and enum-based enums (C++0X 7.2p3, these have enough size information); but other parts of the standard get in the way
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAME:
+ 			{
+ 			if (!(src.c_array&lt;0&gt;()[i].flags &amp; parse_tree::INVALID))
+ 				{
+@@ -14219,7 +14340,8 @@
+ 				}
+ 			//! \todo we should reject plain enum test; anyway (no-variable definition, not a forward-declare exemption)
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAMED_DEF:
+ 			{	// can only define once
+ 			char* namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,&quot;::&quot;) : NULL;
+ 			const char* fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[1].token.first;
+@@ -14252,7 +14374,8 @@
+ 				return;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_ANON_DEF:
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+@@ -14262,6 +14385,9 @@
+ 				return;
+ 				}
+ 			}
++			break;
++			}
++			};
+ 
+ 		// namespace scanner
+ 		// need some scheme to handle unnamed namespaces (probably alphabetical counter after something illegal so unmatchable)
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-11-02 22:59:58 UTC (rev 531)
++++ trunk/CSupport.cpp.in	2010-11-04 22:19:16 UTC (rev 532)
+@@ -12949,6 +12949,102 @@
+ 		};
+ }
+ 
++// ahem...morally should be macros; defensive coding
++#ifdef UNION_NAME
++#error internal enumerator UNION_NAME defined
++#undef UNION_NAME
++#endif
++#ifdef UNION_NAMED_DEF
++#error internal enumerator UNION_NAMED_DEF defined
++#undef UNION_NAMED_DEF
++#endif
++#ifdef UNION_ANON_DEF
++#error internal enumerator UNION_ANON_DEF defined
++#undef UNION_ANON_DEF
++#endif
++#ifdef STRUCT_NAME
++#error internal enumerator STRUCT_NAME defined
++#undef STRUCT_NAME
++#endif
++#ifdef STRUCT_NAMED_DEF
++#error internal enumerator STRUCT_NAMED_DEF defined
++#undef STRUCT_NAMED_DEF
++#endif
++#ifdef STRUCT_ANON_DEF
++#error internal enumerator STRUCT_ANON_DEF defined
++#undef STRUCT_ANON_DEF
++#endif
++#ifdef ENUM_NAME
++#error internal enumerator ENUM_NAME defined
++#undef ENUM_NAME
++#endif
++#ifdef ENUM_NAMED_DEF
++#error internal enumerator ENUM_NAMED_DEF defined
++#undef ENUM_NAMED_DEF
++#endif
++#ifdef ENUM_ANON_DEF
++#error internal enumerator ENUM_ANON_DEF defined
++#undef ENUM_ANON_DEF
++#endif
++#ifdef CLASS_NAME
++#error internal enumerator CLASS_NAME defined
++#undef CLASS_NAME
++#endif
++#ifdef CLASS_NAMED_DEF
++#error internal enumerator CLASS_NAMED_DEF defined
++#undef CLASS_NAMED_DEF
++#endif
++#ifdef CLASS_ANON_DEF
++#error internal enumerator CLASS_ANON_DEF defined
++#undef CLASS_ANON_DEF
++#endif
++enum C99_CPP_tag {
++	UNION_NAME = 1,
++	UNION_NAMED_DEF,
++	UNION_ANON_DEF,
++	STRUCT_NAME,
++	STRUCT_NAMED_DEF,
++	STRUCT_ANON_DEF,
++	ENUM_NAME,
++	ENUM_NAMED_DEF,
++	ENUM_ANON_DEF,
++	CLASS_NAME,
++	CLASS_NAMED_DEF,
++	CLASS_ANON_DEF
++};
++
++#ifdef ZCC_CORE_NOTICE_TAG
++#error internal macro ZCC_CORE_NOTICE_TAG defined
++#undef ZCC_CORE_NOTICE_TAG
++#endif
++#define ZCC_CORE_NOTICE_TAG(src)	\
++	if (is_C99_named_specifier(src,&quot;union&quot;)) return UNION_NAME;	\
++	else if (is_C99_named_specifier_definition(src,&quot;union&quot;)) return UNION_NAMED_DEF;	\
++	else if (is_C99_anonymous_specifier(src,&quot;union&quot;)) return UNION_ANON_DEF;	\
++	else if (is_C99_named_specifier(src,&quot;struct&quot;)) return STRUCT_NAME;	\
++	else if (is_C99_named_specifier_definition(src,&quot;struct&quot;)) return STRUCT_NAMED_DEF;	\
++	else if (is_C99_anonymous_specifier(src,&quot;struct&quot;)) return STRUCT_ANON_DEF;	\
++	else if (is_C99_named_specifier(src,&quot;enum&quot;)) return ENUM_NAME;	\
++	else if (is_C99_named_specifier_definition(src,&quot;enum&quot;)) return ENUM_NAMED_DEF;	\
++	else if (is_C99_anonymous_specifier(src,&quot;enum&quot;)) return ENUM_ANON_DEF
++
++static int notice_C99_tag(const parse_tree&amp; src)
++{
++	ZCC_CORE_NOTICE_TAG(src);
++	return 0;
++}
++
++static int notice_CPP_tag(const parse_tree&amp; src)
++{
++	ZCC_CORE_NOTICE_TAG(src);
++	else if (is_C99_named_specifier(src,&quot;class&quot;)) return CLASS_NAME;
++	else if (is_C99_named_specifier_definition(src,&quot;class&quot;)) return CLASS_NAMED_DEF;
++	else if (is_C99_anonymous_specifier(src,&quot;class&quot;)) return CLASS_ANON_DEF;
++	return 0;
++}
++
++#undef ZCC_CORE_NOTICE_TAG
++
+ // will need: &quot;function-type vector&quot;
+ // return: 1 typespec record (for now, other languages may have more demanding requirements)
+ // incoming: n typespec records, flag for trailing ...
+@@ -12985,8 +13081,16 @@
+ 			};
+ 		// XXX C allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+ 		// check naked declarations first
+-		if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++		const int tag_type = notice_C99_tag(src.data&lt;0&gt;()[i]);
++		if (tag_type)
+ 			{
++			switch(tag_type)
++			{	//! \todo deal with indentation violations later
++#ifndef NDEBUG
++			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
++#endif
++			case UNION_NAME:
++			{
+ C99_union_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13048,16 +13152,9 @@
+ 				i += 2;
+ 				continue;
+ 				}
+-			else if (!tmp)
+-				{	// used without at least forward-declaring
+-					//! \bug needs test cases
+-				message_header(src.data&lt;0&gt;()[i].index_tokens[0]);
+-				INC_INFORM(ERR_STR);
+-				INFORM(&quot;used without at least forward-declaring&quot;);
+-				zcc_errors.inc_error();
+-				}
+ 			}
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAME:
+ 			{
+ C99_struct_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+@@ -13128,7 +13225,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13195,7 +13293,8 @@
+ 				continue;
+ 				};
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13262,7 +13361,8 @@
+ 				continue;
+ 				};
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_union);
+@@ -13307,7 +13407,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl(&quot;&lt;unknown&gt;&quot;,union_struct_decl::decl_struct);
+@@ -13352,8 +13453,8 @@
+ 				continue;
+ 				}
+ 			}
+-		// enum was difficult to interpret in C++, so parked here while waiting on comp.std.c++
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAME:
+ 			{	// C99 6.7.2.3: allowed only after name is defined
+ 			if (!(src.c_array&lt;0&gt;()[i].flags &amp; parse_tree::INVALID))
+ 				{
+@@ -13371,7 +13472,8 @@
+ 					}
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_enum(src.data&lt;0&gt;()[i].index_tokens[1].token.first);
+ 			if (tmp)
+@@ -13401,7 +13503,8 @@
+ 				return;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_ANON_DEF:
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def(&quot;&lt;unknown&gt;&quot;,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+@@ -13411,7 +13514,10 @@
+ 				return;
+ 				}
+ 			}
+-
++			break;
++			}
++			}
++			
+ 		// general declaration scanner 
+ 		// we intercept typedefs as part of general variable declaration detection (weird storage qualifier)
+ 		// intercept declarations as follows
+@@ -13800,8 +13906,16 @@
+ 			};
+ 		// XXX C++ allows mixing definitions and declaring variables at the same time, but this is a bit unusual
+ 		// check naked declarations first; handle namespaces later
+-		if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++		const int tag_type = notice_CPP_tag(src.data&lt;0&gt;()[i]);
++		if (tag_type)
+ 			{
++			switch(tag_type)
++			{	//! \todo deal with indentation violations later
++#ifndef NDEBUG
++			default: _fatal_code(&quot;return value of notice_C99_tag out of range&quot;,3);
++#endif
++			case UNION_NAME:
++			{
+ CPP_union_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -13869,7 +13983,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAME:
+ 			{
+ CPP_struct_specifier:				
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+@@ -13939,7 +14054,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++			break;
++			case CLASS_NAME:
+ 			{
+ CPP_class_specifier:
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+@@ -14009,7 +14125,8 @@
+ 				zcc_errors.inc_error();
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -14075,7 +14192,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -14141,7 +14259,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;class&quot;))
++			break;
++			case CLASS_NAMED_DEF:
+ 			{	// can only define once
+ 			const type_system::type_index tmp = parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace);
+ 			if (tmp)
+@@ -14207,7 +14326,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;union&quot;))
++			break;
++			case UNION_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_union);
+@@ -14253,7 +14373,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;struct&quot;))
++			break;
++			case STRUCT_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_struct);
+@@ -14297,7 +14418,8 @@
+ 				continue;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;class&quot;))
++			break;
++			case CLASS_ANON_DEF:
+ 			{	// anonymous types cannot be matched
+ 			// tentatively forward-declare immediately
+ 			const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,union_struct_decl::decl_class);
+@@ -14341,9 +14463,8 @@
+ 				continue;
+ 				}
+ 			}
+-		// enum was difficult to interpret in C++, so parked here while waiting on comp.std.c++
+-		//! \todo actually, we can try forward-declare both scoped enums and enum-based enums (C++0X 7.2p3, these have enough size information); but other parts of the standard get in the way
+-		else if (is_C99_named_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAME:
+ 			{
+ 			if (!(src.c_array&lt;0&gt;()[i].flags &amp; parse_tree::INVALID))
+ 				{
+@@ -14363,7 +14484,8 @@
+ 				}
+ 			//! \todo we should reject plain enum test; anyway (no-variable definition, not a forward-declare exemption)
+ 			}
+-		else if (is_C99_named_specifier_definition(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_NAMED_DEF:
+ 			{	// can only define once
+ 			char* namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,&quot;::&quot;) : NULL;
+ 			const char* fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[1].token.first;
+@@ -14396,7 +14518,8 @@
+ 				return;
+ 				}
+ 			}
+-		else if (is_C99_anonymous_specifier(src.data&lt;0&gt;()[i],&quot;enum&quot;))
++			break;
++			case ENUM_ANON_DEF:
+ 			{	// enum-specifier doesn't have a specific declaration mode
+ 				//! \test zcc/decl.C99/Pass_anonymous_enum_def.h
+ 			const type_system::type_index tmp = parse_tree::types-&gt;register_enum_def_CPP(&quot;&lt;unknown&gt;&quot;,active_namespace,src.data&lt;0&gt;()[i].index_tokens[0].logical_line,src.data&lt;0&gt;()[i].index_tokens[0].src_filename);
+@@ -14406,6 +14529,9 @@
+ 				return;
+ 				}
+ 			}
++			break;
++			}
++			};
+ 
+ 		// namespace scanner
+ 		// need some scheme to handle unnamed namespaces (probably alphabetical counter after something illegal so unmatchable)
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000298.html">[Zcplusplus-commits] r531 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000300.html">[Zcplusplus-commits] r533 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#299">[ date ]</a>
+              <a href="thread.html#299">[ thread ]</a>
+              <a href="subject.html#299">[ subject ]</a>
+              <a href="author.html#299">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

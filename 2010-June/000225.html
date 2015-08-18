@@ -1,0 +1,354 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r458 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-June/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r458%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C201006100651.o5A6pGvH032638%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000224.html">
+   <LINK REL="Next"  HREF="000226.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r458 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r458%20-%20in%20trunk%3A%20.%20tests/zcc/decl.C99%0A%09tests/zcc.in/decl.C99&In-Reply-To=%3C201006100651.o5A6pGvH032638%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r458 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jun 10 08:51:16 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000224.html">[Zcplusplus-commits] r457 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000226.html">[Zcplusplus-commits] r459 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-06-10 08:51:00 +0200 (Thu, 10 Jun 2010)
+New Revision: 458
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_dup_extern.in
+   trunk/tests/zcc.in/decl.C99/Error_dup_static.in
+   trunk/tests/zcc/decl.C99/Error_dup_extern.h
+   trunk/tests/zcc/decl.C99/Error_dup_extern.hpp
+   trunk/tests/zcc/decl.C99/Error_dup_static.h
+   trunk/tests/zcc/decl.C99/Error_dup_static.hpp
+Modified:
+   trunk/CSupport.cpp
+Log:
+duplicate storage classes should be an error; some test case coverage
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/CSupport.cpp	2010-06-10 06:51:00 UTC (rev 458)
+@@ -3427,40 +3427,37 @@
+ 				if (1&lt;invariant_decl_scanner.count(C99_CPP_REGISTER_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_register)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated register storage class and continuing (C99 6.7.1p2)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_register = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1&lt;invariant_decl_scanner.count(C99_CPP_STATIC_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_static.h
+ 					if (!have_warned_about_static)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated static storage class and continuing (C99 6.7.1p2)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_static = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1&lt;invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_extern.h
+ 					if (!have_warned_about_extern)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated extern storage class and continuing (C99 6.7.1p2)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_extern = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+@@ -3469,12 +3466,11 @@
+ 				else if (1&lt;invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_thread_local)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated _Thread_Local storage class and continuing (C1X 6.7.1p2)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_thread_local = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+@@ -3483,12 +3479,11 @@
+ 				else if (1&lt;invariant_decl_scanner.count(C99_CPP_AUTO_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_auto)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated auto storage class and continuing (C99 6.7.1p2)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_auto = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+@@ -3497,12 +3492,11 @@
+ 				else if (1&lt;invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_typedef)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated typedef storage class and continuing (C99 6.7.1p2)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_typedef = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset);
+@@ -3770,40 +3764,37 @@
+ 				if (1&lt;invariant_decl_scanner.count(C99_CPP_REGISTER_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_register)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated register storage class and continuing (C++0X 7.1.1p1)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_register = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				if (1&lt;invariant_decl_scanner.count(C99_CPP_STATIC_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_static.hpp
+ 					if (!have_warned_about_static)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated static storage class and continuing (C++0X 7.1.1p1)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_static = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+ 					invariant_decl_scanner.DeleteIdx(offset--);					
+ 					}
+ 				else if (1&lt;invariant_decl_scanner.count(C99_CPP_EXTERN_IDX))
+-					{	//! \bug need test case
++					{	//! \test decl.C99/Error_dup_extern.hpp
+ 					if (!have_warned_about_extern)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated extern storage class and continuing (C++0X 7.1.1p1)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_extern = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+@@ -3812,12 +3803,11 @@
+ 				else if (1&lt;invariant_decl_scanner.count(C1X_CPP0X_THREAD_LOCAL_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_thread_local)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated thread_local storage class and continuing (C++0X 7.1.1p1)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_thread_local = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+@@ -3826,12 +3816,11 @@
+ 				else if (1&lt;invariant_decl_scanner.count(CPP_MUTABLE_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_mutable)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated mutable storage class and continuing (C++0X 7.1.1p1)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_mutable = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+@@ -3840,12 +3829,11 @@
+ 				else if (1&lt;invariant_decl_scanner.count(C99_CPP_TYPEDEF_IDX))
+ 					{	//! \bug need test case
+ 					if (!have_warned_about_typedef)
+-						{
++						{	//! \todo --do-what-i-mean should warn
+ 						message_header(src.data&lt;0&gt;()[i+offset+using_linkage].index_tokens[0]);
+-						INC_INFORM(WARN_STR);
++						INC_INFORM(ERR_STR);
+ 						INFORM(&quot;removing prohibited duplicated typedef specifier and continuing (C++0X 7.1.3p1)&quot;);
+-						if (bool_options[boolopt::warnings_are_errors])
+-							zcc_errors.inc_error();
++						zcc_errors.inc_error();
+ 						have_warned_about_typedef = true;
+ 						}
+ 					src.DeleteIdx&lt;0&gt;(i+offset+using_linkage);
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_extern.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_extern.h	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_extern.h	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_extern.h
++// check error for duplicate extern
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++extern extern const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_extern.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_extern.hpp	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_extern.hpp	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_extern.hpp
++// check error for duplicate extern
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++extern extern const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_static.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_static.h	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_static.h	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_static.h
++// check error for duplicate static
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static static const volatile int i;
++
+
+Added: trunk/tests/zcc/decl.C99/Error_dup_static.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_dup_static.hpp	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc/decl.C99/Error_dup_static.hpp	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_dup_static.hpp
++// check error for duplicate static
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static static const volatile int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_dup_extern.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_dup_extern.in	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc.in/decl.C99/Error_dup_extern.in	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check error for duplicate extern
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++extern extern const volatile int i;
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_dup_static.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_dup_static.in	2010-06-09 05:56:28 UTC (rev 457)
++++ trunk/tests/zcc.in/decl.C99/Error_dup_static.in	2010-06-10 06:51:00 UTC (rev 458)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// check error for duplicate static
++// (C)2010 Kenneth Boyd, license: MIT.txt
++
++static static const volatile int i;
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000224.html">[Zcplusplus-commits] r457 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000226.html">[Zcplusplus-commits] r459 - trunk/Zaimoni.STL/core.RAM
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#225">[ date ]</a>
+              <a href="thread.html#225">[ thread ]</a>
+              <a href="subject.html#225">[ subject ]</a>
+              <a href="author.html#225">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

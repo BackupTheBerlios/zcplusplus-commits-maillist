@@ -1,0 +1,861 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r513 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-October/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r513%20-%20trunk&In-Reply-To=%3C20101029023437.3A280480C84%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000279.html">
+   <LINK REL="Next"  HREF="000281.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r513 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r513%20-%20trunk&In-Reply-To=%3C20101029023437.3A280480C84%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r513 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Fri Oct 29 04:34:36 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000279.html">[Zcplusplus-commits] r512 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000281.html">[Zcplusplus-commits] r514 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#280">[ date ]</a>
+              <a href="thread.html#280">[ thread ]</a>
+              <a href="subject.html#280">[ subject ]</a>
+              <a href="author.html#280">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-10-29 04:34:36 +0200 (Fri, 29 Oct 2010)
+New Revision: 513
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+   trunk/CSupport_pp.cpp
+Log:
+stage 3: line count reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-10-29 00:37:11 UTC (rev 512)
++++ trunk/CSupport.cpp	2010-10-29 02:34:36 UTC (rev 513)
+@@ -3969,11 +3969,10 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -3982,11 +3981,10 @@
+ {
+ 	return		(robust_token_is_char&lt;'!'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;not&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -3995,11 +3993,10 @@
+ {
+ 	return		(robust_token_is_char&lt;'~'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;compl&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -4008,11 +4005,10 @@
+ {
+ 	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;typeid&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	C_TYPE::TYPEINFO==src.type_code.base_type_index
+ 			&amp;&amp;	0==src.type_code.pointer_power
+@@ -4024,11 +4020,10 @@
+ {
+ 	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;sizeof&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -4044,8 +4039,8 @@
+ static bool is_C99_mult_operator_expression(const parse_tree&amp; src)
+ {
+ 	return		(robust_token_is_char&lt;'/'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'%'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'*'&gt;(src.index_tokens[0].token))
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	src.index_tokens[0].src_filename
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4058,9 +4053,9 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4079,9 +4074,9 @@
+ {
+ 	return		(robust_token_is_char&lt;'+'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'-'&gt;(src.index_tokens[0].token))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4094,9 +4089,9 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4110,9 +4105,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&lt;&lt;&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&gt;&gt;&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4129,9 +4124,9 @@
+ {
+ 	return		(robust_token_is_char&lt;'&lt;'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'&gt;'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&lt;=&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&gt;=&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4145,9 +4140,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;==&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;!=&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4159,9 +4154,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;==&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;!=&quot;) || robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;not_eq&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4173,9 +4168,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'&amp;'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4187,9 +4182,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'&amp;'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;bitand&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4201,9 +4196,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'^'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4215,9 +4210,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'^'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;xor&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4229,9 +4224,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'|'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4243,9 +4238,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'|'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;bitor&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4257,9 +4252,9 @@
+ {
+ 	return (	robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&amp;&amp;&quot;)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4271,9 +4266,9 @@
+ {
+ 	return (	(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&amp;&amp;&quot;) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;and&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-10-29 00:37:11 UTC (rev 512)
++++ trunk/CSupport.cpp.in	2010-10-29 02:34:36 UTC (rev 513)
+@@ -4023,11 +4023,10 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -4036,11 +4035,10 @@
+ {
+ 	return		(robust_token_is_char&lt;'!'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;not&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -4049,11 +4047,10 @@
+ {
+ 	return		(robust_token_is_char&lt;'~'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;compl&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -4063,11 +4060,10 @@
+ {
+ 	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;typeid&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags)
+ 			&amp;&amp;	C_TYPE::TYPEINFO==src.type_code.base_type_index
+ 			&amp;&amp;	0==src.type_code.pointer_power
+@@ -4079,11 +4075,10 @@
+ {
+ 	return		(robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;sizeof&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; ((PARSE_UNARY_EXPRESSION | PARSE_TYPE) &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -4100,8 +4095,8 @@
+ static bool is_C99_mult_operator_expression(const parse_tree&amp; src)
+ {
+ 	return		(robust_token_is_char&lt;'/'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'%'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'*'&gt;(src.index_tokens[0].token))
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	src.index_tokens[0].src_filename
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4114,9 +4109,9 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4135,9 +4130,9 @@
+ {
+ 	return		(robust_token_is_char&lt;'+'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'-'&gt;(src.index_tokens[0].token))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4150,9 +4145,9 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4166,9 +4161,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&lt;&lt;&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&gt;&gt;&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4185,9 +4180,9 @@
+ {
+ 	return		(robust_token_is_char&lt;'&lt;'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'&gt;'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&lt;=&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&gt;=&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4201,9 +4196,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;==&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;!=&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4215,9 +4210,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;==&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;!=&quot;) || robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;not_eq&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -4229,9 +4224,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'&amp;'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4243,9 +4238,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'&amp;'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;bitand&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4257,9 +4252,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'^'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4271,9 +4266,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'^'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;xor&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4285,9 +4280,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'|'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4299,9 +4294,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'|'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;bitor&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4313,9 +4308,9 @@
+ {
+ 	return (	robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&amp;&amp;&quot;)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -4327,9 +4322,9 @@
+ {
+ 	return (	(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&amp;&amp;&quot;) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;and&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-10-29 00:37:11 UTC (rev 512)
++++ trunk/CSupport_pp.cpp	2010-10-29 02:34:36 UTC (rev 513)
+@@ -1,4 +1,4 @@
+-// CSupport_pp.cpp
++// CSupport.cpp
+ // support for C/C++ parsing
+ // (C)2009, 2010 Kenneth Boyd, license: MIT.txt
+ 
+@@ -2960,11 +2960,10 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -2973,11 +2972,10 @@
+ {
+ 	return		(robust_token_is_char&lt;'!'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;not&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -2986,11 +2984,10 @@
+ {
+ 	return		(robust_token_is_char&lt;'~'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;compl&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
+-			&amp;&amp;	src.empty&lt;0&gt;()
+-			&amp;&amp;	src.empty&lt;1&gt;()
++			&amp;&amp;	!src.index_tokens[1].token.first
++			&amp;&amp;	src.empty&lt;0&gt;() &amp;&amp; src.empty&lt;1&gt;()
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ //			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_CAST_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+ }
+@@ -3005,8 +3002,8 @@
+ static bool is_C99_mult_operator_expression(const parse_tree&amp; src)
+ {
+ 	return		(robust_token_is_char&lt;'/'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'%'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'*'&gt;(src.index_tokens[0].token))
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	src.index_tokens[0].src_filename
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3019,9 +3016,9 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3040,9 +3037,9 @@
+ {
+ 	return		(robust_token_is_char&lt;'+'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'-'&gt;(src.index_tokens[0].token))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3055,9 +3052,9 @@
+ {
+ 	return		robust_token_is_char&lt;c&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3071,9 +3068,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&lt;&lt;&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&gt;&gt;&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3090,9 +3087,9 @@
+ {
+ 	return		(robust_token_is_char&lt;'&lt;'&gt;(src.index_tokens[0].token) || robust_token_is_char&lt;'&gt;'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&lt;=&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&gt;=&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3106,9 +3103,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;==&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;!=&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3120,9 +3117,9 @@
+ {
+ 	return		(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;==&quot;) || robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;!=&quot;) || robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;not_eq&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags);
+@@ -3134,9 +3131,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'&amp;'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3148,9 +3145,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'&amp;'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;6&gt;(src.index_tokens[0].token,&quot;bitand&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3162,9 +3159,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'^'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3176,9 +3173,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'^'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;xor&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3190,9 +3187,9 @@
+ {
+ 	return (	robust_token_is_char&lt;'|'&gt;(src.index_tokens[0].token)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3204,9 +3201,9 @@
+ {
+ 	return (	(robust_token_is_char&lt;'|'&gt;(src.index_tokens[0].token) || robust_token_is_string&lt;5&gt;(src.index_tokens[0].token,&quot;bitor&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3218,9 +3215,9 @@
+ {
+ 	return (	robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&amp;&amp;&quot;)
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+@@ -3232,9 +3229,9 @@
+ {
+ 	return (	(robust_token_is_string&lt;2&gt;(src.index_tokens[0].token,&quot;&amp;&amp;&quot;) || robust_token_is_string&lt;3&gt;(src.index_tokens[0].token,&quot;and&quot;))
+ #ifndef NDEBUG
+-			&amp;&amp;	NULL!=src.index_tokens[0].src_filename
++			&amp;&amp;	src.index_tokens[0].src_filename
+ #endif
+-			&amp;&amp;	NULL==src.index_tokens[1].token.first
++			&amp;&amp;	!src.index_tokens[1].token.first
+ 			&amp;&amp;	src.empty&lt;0&gt;()
+ 			&amp;&amp;	1==src.size&lt;1&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;1&gt;()-&gt;flags)
+ 			&amp;&amp;	1==src.size&lt;2&gt;() &amp;&amp; (PARSE_EXPRESSION &amp; src.data&lt;2&gt;()-&gt;flags));
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000279.html">[Zcplusplus-commits] r512 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000281.html">[Zcplusplus-commits] r514 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#280">[ date ]</a>
+              <a href="thread.html#280">[ thread ]</a>
+              <a href="subject.html#280">[ subject ]</a>
+              <a href="author.html#280">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

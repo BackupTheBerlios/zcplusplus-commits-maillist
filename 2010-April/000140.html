@@ -1,0 +1,406 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r373 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r373%20-%20trunk&In-Reply-To=%3C201004110239.o3B2dZX7015073%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000139.html">
+   <LINK REL="Next"  HREF="000141.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r373 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r373%20-%20trunk&In-Reply-To=%3C201004110239.o3B2dZX7015073%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r373 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun Apr 11 04:39:35 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000139.html">[Zcplusplus-commits] r372 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000141.html">[Zcplusplus-commits] r374 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#140">[ date ]</a>
+              <a href="thread.html#140">[ thread ]</a>
+              <a href="subject.html#140">[ subject ]</a>
+              <a href="author.html#140">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-11 04:39:30 +0200 (Sun, 11 Apr 2010)
+New Revision: 373
+
+Modified:
+   trunk/Flat_UNI.cpp
+   trunk/unsigned_fixed_int.hpp
+   trunk/unsigned_var_int.cpp
+   trunk/unsigned_var_int.hpp
+Log:
+minor code cleanup; fix theoretical out-of-bounds access in FlattenUNICODE
+
+Modified: trunk/Flat_UNI.cpp
+===================================================================
+--- trunk/Flat_UNI.cpp	2010-04-10 22:57:48 UTC (rev 372)
++++ trunk/Flat_UNI.cpp	2010-04-11 02:39:30 UTC (rev 373)
+@@ -27,8 +27,7 @@
+ [also see Appendix E for a validation list...probably should update against latest UNICODE references]
+ */
+ 
+-bool
+-FlattenUNICODE(char*&amp; Text)
++bool FlattenUNICODE(char*&amp; Text)
+ {
+ 	if (NULL==Text) return true;
+ 
+@@ -39,50 +38,50 @@
+ 	size_t TextLength = Text_len++;
+ #endif
+ 	bool want_realloc = false;
+-	if (10&lt;=TextLength)
++	// full encoding
++	char* bloat_unicode = strstr(Text,&quot;\\U0000&quot;);
++	if (bloat_unicode &amp;&amp; 10&gt;TextLength-(bloat_unicode-Text)) bloat_unicode = NULL;
++	while(NULL!=bloat_unicode)
+ 		{
+-		char* bloat_unicode = strstr(Text,&quot;\\U0000&quot;);
+-		while(NULL!=bloat_unicode)
++		if (4&lt;=strspn(bloat_unicode+6,C_HEXADECIMAL_DIGITS))
+ 			{
+-			if (4&lt;=strspn(bloat_unicode+6,C_HEXADECIMAL_DIGITS))
+-				{
+-				const size_t block_length = bloat_unicode-Text+2;
+-				bloat_unicode[1] = 'u';
+-				TextLength -= 4;
+-				if (block_length&lt;TextLength)
+-					memmove(bloat_unicode+2,bloat_unicode+6,(TextLength-block_length));
+-				memset(Text+TextLength,0,4);
+-				want_realloc = true;
+-				}
+-			bloat_unicode += 6;
+-			bloat_unicode = ((bloat_unicode-Text)+10U&gt;TextLength) ? NULL : strstr(bloat_unicode,&quot;\\U0000&quot;);
++			const size_t block_length = bloat_unicode-Text+2;
++			bloat_unicode[1] = 'u';
++			TextLength -= 4;
++			if (block_length&lt;TextLength)
++				memmove(bloat_unicode+2,bloat_unicode+6,(TextLength-block_length));
++			memset(Text+TextLength,0,4);
++			want_realloc = true;
+ 			}
++		bloat_unicode += 6;
++		bloat_unicode = strstr(bloat_unicode,&quot;\\U0000&quot;);
++		if (bloat_unicode &amp;&amp; 10&gt;TextLength-(bloat_unicode-Text)) bloat_unicode = NULL;
+ 		}
+-	if (6&lt;=TextLength)
+-		{
+-		char* bloat_unicode = strstr(Text,&quot;\\u00&quot;);
+-		while(NULL!=bloat_unicode)
+-			{	// we down-convert a subset of allowed characters, excluding anything lower than ASCII space to avoid real weirdness
+-				//! \todo portability target: want to adapt to preprocessor CHAR_BIT/UCHAR_MAX, this assumes 8/255; also assumes ASCII
+-				// we restrict our attention here to the utterly safe \u00A0 - \u00FF conversion
+-			if (strchr(C_HEXADECIMAL_DIGITS+10,bloat_unicode[4]) &amp;&amp; strchr(C_HEXADECIMAL_DIGITS,bloat_unicode[5]))
+-				{
+-				const size_t block_length = bloat_unicode-Text+1;
+-				const unsigned char tmp = (unsigned char)(16*InterpretHexadecimalDigit(bloat_unicode[4]+InterpretHexadecimalDigit(bloat_unicode[5])));
+-				assert(160&lt;=tmp);
+-				bloat_unicode[0] = tmp;
+-				TextLength -= 5;
+-				if (block_length&lt;TextLength)
+-					memmove(bloat_unicode+1,bloat_unicode+6,(TextLength-block_length));
+-				memset(Text+TextLength,0,5);
+-				want_realloc = true;
+-				++bloat_unicode;
+-				}
+-			else
+-				bloat_unicode += 4;
+-
+-			bloat_unicode = ((bloat_unicode-Text)+6U&gt;TextLength) ? NULL : strstr(bloat_unicode,&quot;\\u00&quot;);
++	
++	bloat_unicode = strstr(Text,&quot;\\u00&quot;);
++	if (bloat_unicode &amp;&amp; 6&gt;TextLength-(bloat_unicode-Text)) bloat_unicode = NULL;
++	while(NULL!=bloat_unicode)
++		{	// we down-convert a subset of allowed characters, excluding anything lower than ASCII space to avoid real weirdness
++			//! \todo portability target: want to adapt to preprocessor CHAR_BIT/UCHAR_MAX, this assumes 8/255; also assumes ASCII
++			// we restrict our attention here to the utterly safe \u00A0 - \u00FF conversion
++		if (strchr(C_HEXADECIMAL_DIGITS+10,bloat_unicode[4]) &amp;&amp; strchr(C_HEXADECIMAL_DIGITS,bloat_unicode[5]))
++			{
++			const size_t block_length = bloat_unicode-Text+1;
++			const unsigned char tmp = (unsigned char)(16*InterpretHexadecimalDigit(bloat_unicode[4]+InterpretHexadecimalDigit(bloat_unicode[5])));
++			assert(160&lt;=tmp);
++			bloat_unicode[0] = tmp;
++			TextLength -= 5;
++			if (block_length&lt;TextLength)
++				memmove(bloat_unicode+1,bloat_unicode+6,(TextLength-block_length));
++			memset(Text+TextLength,0,5);
++			want_realloc = true;
++			++bloat_unicode;
+ 			}
++		else
++			bloat_unicode += 4;
++
++		bloat_unicode = strstr(bloat_unicode,&quot;\\u00&quot;);
++		if (bloat_unicode &amp;&amp; 6&gt;TextLength-(bloat_unicode-Text)) bloat_unicode = NULL;
+ 		}
+ #ifndef ZAIMONI_FORCE_ISO
+ 	if (want_realloc) _shrink(Text,TextLength);
+
+Modified: trunk/unsigned_fixed_int.hpp
+===================================================================
+--- trunk/unsigned_fixed_int.hpp	2010-04-10 22:57:48 UTC (rev 372)
++++ trunk/unsigned_fixed_int.hpp	2010-04-11 02:39:30 UTC (rev 373)
+@@ -23,21 +23,21 @@
+ 	_unsigned_fixed_charint&amp; operator=(uintmax_t src);
+ 	_unsigned_fixed_charint&amp; operator~() {bitwise_compl(_x,N); return *this;};
+ 	void auto_bitwise_complement() {bitwise_compl(_x,N);};
+-	_unsigned_fixed_charint&amp; operator+=(const _unsigned_fixed_charint&amp; RHS) {unsigned_sum(_x,N,RHS._x); return *this;};
+-	_unsigned_fixed_charint&amp; operator+=(uintmax_t RHS) {unsigned_sum(_x,N,RHS); return *this;};
+-	_unsigned_fixed_charint&amp; operator-=(const _unsigned_fixed_charint&amp; RHS) {unsigned_diff(_x,N,RHS._x); return *this;};
+-	_unsigned_fixed_charint&amp; operator-=(uintmax_t RHS) {unsigned_diff(_x,N,RHS); return *this;};
+-	_unsigned_fixed_charint&amp; operator*=(const _unsigned_fixed_charint&amp; RHS);
+-	_unsigned_fixed_charint&amp; operator&amp;=(const _unsigned_fixed_charint&amp; RHS) {bitwise_and(_x,N,RHS._x); return *this;};
+-	_unsigned_fixed_charint&amp; operator^=(const _unsigned_fixed_charint&amp; RHS) {bitwise_xor(_x,N,RHS._x); return *this;};
+-	_unsigned_fixed_charint&amp; operator|=(const _unsigned_fixed_charint&amp; RHS) {bitwise_or(_x,N,RHS._x); return *this;};
+-	_unsigned_fixed_charint&amp; operator&gt;&gt;=(uintmax_t RHS) {unsigned_right_shift(_x,N,RHS); return *this;};
+-	_unsigned_fixed_charint&amp; operator&lt;&lt;=(uintmax_t RHS) {unsigned_left_shift(_x,N,RHS); return *this;};
++	_unsigned_fixed_charint&amp; operator+=(const _unsigned_fixed_charint&amp; rhs) {unsigned_sum(_x,N,rhs._x); return *this;};
++	_unsigned_fixed_charint&amp; operator+=(uintmax_t rhs) {unsigned_sum(_x,N,rhs); return *this;};
++	_unsigned_fixed_charint&amp; operator-=(const _unsigned_fixed_charint&amp; rhs) {unsigned_diff(_x,N,rhs._x); return *this;};
++	_unsigned_fixed_charint&amp; operator-=(uintmax_t rhs) {unsigned_diff(_x,N,rhs); return *this;};
++	_unsigned_fixed_charint&amp; operator*=(const _unsigned_fixed_charint&amp; rhs);
++	_unsigned_fixed_charint&amp; operator&amp;=(const _unsigned_fixed_charint&amp; rhs) {bitwise_and(_x,N,rhs._x); return *this;};
++	_unsigned_fixed_charint&amp; operator^=(const _unsigned_fixed_charint&amp; rhs) {bitwise_xor(_x,N,rhs._x); return *this;};
++	_unsigned_fixed_charint&amp; operator|=(const _unsigned_fixed_charint&amp; rhs) {bitwise_or(_x,N,rhs._x); return *this;};
++	_unsigned_fixed_charint&amp; operator&gt;&gt;=(uintmax_t rhs) {unsigned_right_shift(_x,N,rhs); return *this;};
++	_unsigned_fixed_charint&amp; operator&lt;&lt;=(uintmax_t rhs) {unsigned_left_shift(_x,N,rhs); return *this;};
+ 
+ 	void div_op(const _unsigned_fixed_charint&amp; divisor, _unsigned_fixed_charint&amp; quotient) {remainder_quotient&lt;N&gt;(c_array(),divisor.data(),quotient.c_array());};
+ 
+-	_unsigned_fixed_charint&amp; operator/=(const _unsigned_fixed_charint&amp; RHS);
+-	_unsigned_fixed_charint&amp; operator%=(const _unsigned_fixed_charint&amp; RHS);
++	_unsigned_fixed_charint&amp; operator/=(const _unsigned_fixed_charint&amp; rhs);
++	_unsigned_fixed_charint&amp; operator%=(const _unsigned_fixed_charint&amp; rhs);
+ 
+ 	unsigned int int_log2() const {return ::int_log2(_x,N);};
+ 
+@@ -171,112 +171,112 @@
+ }
+ 
+ template&lt;size_t N&gt;
+-_unsigned_fixed_charint&lt;N&gt; operator+(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS,const _unsigned_fixed_charint&lt;N&gt;&amp; RHS)
++_unsigned_fixed_charint&lt;N&gt; operator+(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs,const _unsigned_fixed_charint&lt;N&gt;&amp; rhs)
+ {
+-	_unsigned_fixed_charint&lt;N&gt; tmp(LHS);
+-	tmp += RHS;
++	_unsigned_fixed_charint&lt;N&gt; tmp(lhs);
++	tmp += rhs;
+ 	return tmp;
+ }
+ 
+ template&lt;size_t N&gt;
+-_unsigned_fixed_charint&lt;N&gt; operator-(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS,const _unsigned_fixed_charint&lt;N&gt;&amp; RHS)
++_unsigned_fixed_charint&lt;N&gt; operator-(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs,const _unsigned_fixed_charint&lt;N&gt;&amp; rhs)
+ {
+-	_unsigned_fixed_charint&lt;N&gt; tmp(LHS);
+-	tmp -= RHS;
++	_unsigned_fixed_charint&lt;N&gt; tmp(lhs);
++	tmp -= rhs;
+ 	return tmp;
+ }
+ 
+ template&lt;size_t N&gt;
+ _unsigned_fixed_charint&lt;N&gt;&amp;
+-_unsigned_fixed_charint&lt;N&gt;::operator*=(const _unsigned_fixed_charint&lt;N&gt;&amp; RHS)
++_unsigned_fixed_charint&lt;N&gt;::operator*=(const _unsigned_fixed_charint&lt;N&gt;&amp; rhs)
+ {
+ 	_unsigned_fixed_charint&lt;N&gt; tmp;
+-	unsigned_mult(tmp._x,N,_x,N,RHS._x,N);
++	unsigned_mult(tmp._x,N,_x,N,rhs._x,N);
+ 	return *this = tmp;
+ }
+ 
+ template&lt;size_t N&gt;
+ _unsigned_fixed_charint&lt;N&gt;
+-operator/(_unsigned_fixed_charint&lt;N&gt; LHS,const _unsigned_fixed_charint&lt;N&gt;&amp; RHS)
++operator/(_unsigned_fixed_charint&lt;N&gt; lhs,const _unsigned_fixed_charint&lt;N&gt;&amp; rhs)
+ {
+ 	_unsigned_fixed_charint&lt;N&gt; quotient;
+-	LHS.div_op(RHS,quotient);
++	lhs.div_op(rhs,quotient);
+ 	return quotient;
+ }
+ 
+ 
+ template&lt;size_t N&gt;
+ _unsigned_fixed_charint&lt;N&gt;&amp;
+-_unsigned_fixed_charint&lt;N&gt;::operator/=(const _unsigned_fixed_charint&lt;N&gt;&amp; RHS)
++_unsigned_fixed_charint&lt;N&gt;::operator/=(const _unsigned_fixed_charint&lt;N&gt;&amp; rhs)
+ {
+ 	_unsigned_fixed_charint&lt;N&gt; quotient;
+-	div_op(RHS,quotient);
++	div_op(rhs,quotient);
+ 	return *this = quotient;
+ }
+ 
+ template&lt;size_t N&gt;
+ _unsigned_fixed_charint&lt;N&gt;&amp;
+-_unsigned_fixed_charint&lt;N&gt;::operator%=(const _unsigned_fixed_charint&lt;N&gt;&amp; RHS)
++_unsigned_fixed_charint&lt;N&gt;::operator%=(const _unsigned_fixed_charint&lt;N&gt;&amp; rhs)
+ {
+ 	_unsigned_fixed_charint&lt;N&gt; quotient;
+-	div_op(RHS,quotient);
++	div_op(rhs,quotient);
+ 	return *this;
+ }
+ 
+ // comparison operators
+ template&lt;size_t N&gt; inline
+-bool operator==(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0==unsigned_cmp(LHS._x,N,RHS._x);}
++bool operator==(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0==unsigned_cmp(lhs._x,N,rhs._x);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator==(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, uintmax_t RHS) {return 0==unsigned_cmp(LHS._x,N,RHS);}
++bool operator==(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, uintmax_t rhs) {return 0==unsigned_cmp(lhs._x,N,rhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator==(const uintmax_t LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0==unsigned_cmp(RHS._x,N,LHS);}
++bool operator==(const uintmax_t lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0==unsigned_cmp(rhs._x,N,lhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator!=(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0!=unsigned_cmp(LHS._x,N,RHS._x);}
++bool operator!=(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0!=unsigned_cmp(lhs._x,N,rhs._x);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator!=(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, uintmax_t RHS) {return 0==unsigned_cmp(LHS._x,N,RHS);}
++bool operator!=(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, uintmax_t rhs) {return 0==unsigned_cmp(lhs._x,N,rhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator!=(const uintmax_t LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0==unsigned_cmp(RHS._x,N,LHS);}
++bool operator!=(const uintmax_t lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0==unsigned_cmp(rhs._x,N,lhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&lt;(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return -1==unsigned_cmp(LHS._x,N,RHS._x);}
++bool operator&lt;(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return -1==unsigned_cmp(lhs._x,N,rhs._x);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&lt;(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, uintmax_t RHS) {return -1==unsigned_cmp(LHS._x,N,RHS);}
++bool operator&lt;(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, uintmax_t rhs) {return -1==unsigned_cmp(lhs._x,N,rhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&lt;(const uintmax_t LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 1==unsigned_cmp(RHS._x,N,LHS);}
++bool operator&lt;(const uintmax_t lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 1==unsigned_cmp(rhs._x,N,lhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&gt;(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 1==unsigned_cmp(LHS._x,N,RHS._x);}
++bool operator&gt;(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 1==unsigned_cmp(lhs._x,N,rhs._x);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&gt;(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, uintmax_t RHS) {return 1==unsigned_cmp(LHS._x,N,RHS);}
++bool operator&gt;(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, uintmax_t rhs) {return 1==unsigned_cmp(lhs._x,N,rhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&gt;(const uintmax_t LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return -1==unsigned_cmp(RHS._x,N,LHS);}
++bool operator&gt;(const uintmax_t lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return -1==unsigned_cmp(rhs._x,N,lhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&lt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0&gt;=unsigned_cmp(LHS._x,N,RHS._x);}
++bool operator&lt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0&gt;=unsigned_cmp(lhs._x,N,rhs._x);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&lt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, uintmax_t RHS) {return 0&gt;=unsigned_cmp(LHS._x,N,RHS);}
++bool operator&lt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, uintmax_t rhs) {return 0&gt;=unsigned_cmp(lhs._x,N,rhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&lt;=(const uintmax_t LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0&lt;=unsigned_cmp(RHS._x,N,LHS);}
++bool operator&lt;=(const uintmax_t lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0&lt;=unsigned_cmp(rhs._x,N,lhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&gt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0&lt;=unsigned_cmp(LHS._x,N,RHS._x);}
++bool operator&gt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0&lt;=unsigned_cmp(lhs._x,N,rhs._x);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&gt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; LHS, uintmax_t RHS) {return 0&lt;=unsigned_cmp(LHS._x,N,RHS);}
++bool operator&gt;=(const _unsigned_fixed_charint&lt;N&gt;&amp; lhs, uintmax_t rhs) {return 0&lt;=unsigned_cmp(lhs._x,N,rhs);}
+ 
+ template&lt;size_t N&gt; inline
+-bool operator&gt;=(const uintmax_t LHS, const _unsigned_fixed_charint&lt;N&gt;&amp; RHS) {return 0&gt;=unsigned_cmp(RHS._x,N,LHS);}
++bool operator&gt;=(const uintmax_t lhs, const _unsigned_fixed_charint&lt;N&gt;&amp; rhs) {return 0&gt;=unsigned_cmp(rhs._x,N,lhs);}
+ 
+ template&lt;size_t N&gt;
+ char* z_ucharint_toa(_unsigned_fixed_charint&lt;N&gt; target,char* const buf,unsigned int radix)
+
+Modified: trunk/unsigned_var_int.cpp
+===================================================================
+--- trunk/unsigned_var_int.cpp	2010-04-10 22:57:48 UTC (rev 372)
++++ trunk/unsigned_var_int.cpp	2010-04-11 02:39:30 UTC (rev 373)
+@@ -126,19 +126,13 @@
+ 
+ unsigned_var_int&amp; unsigned_var_int::operator^=(const unsigned_var_int&amp; rhs)
+ {
+-	if (size()&lt;=rhs.size())
+-		bitwise_xor(c_array(),size(),rhs.data());
+-	else
+-		bitwise_xor(c_array(),rhs.size(),rhs.data());
++	bitwise_xor(c_array(),size()&lt;=rhs.size() ? size() : rhs.size(),rhs.data());
+ 	return *this;
+ }
+ 
+ unsigned_var_int&amp; unsigned_var_int::operator|=(const unsigned_var_int&amp; rhs)
+ {
+-	if (size()&lt;=rhs.size())
+-		bitwise_or(c_array(),size(),rhs.data());
+-	else
+-		bitwise_or(c_array(),rhs.size(),rhs.data());
++	bitwise_or(c_array(),size()&lt;=rhs.size() ? size() : rhs.size(),rhs.data());
+ 	return *this;
+ }
+ 
+
+Modified: trunk/unsigned_var_int.hpp
+===================================================================
+--- trunk/unsigned_var_int.hpp	2010-04-10 22:57:48 UTC (rev 372)
++++ trunk/unsigned_var_int.hpp	2010-04-11 02:39:30 UTC (rev 373)
+@@ -81,9 +81,8 @@
+ 	bool representable_as_uint() const
+ 		{	//! \todo remove assumption host has no padding bits in uintmax_t
+ 		size_t i = _data.size();
+-		if (sizeof(uintmax_t)&gt;=i) return true;
+-		do	if ((unsigned char)('\0')!=_data.data()[--i]) return false;
+-		while(sizeof(uintmax_t)&lt;i);
++		while(sizeof(uintmax_t)&lt;i)
++			if (_data.data()[--i]) return false;
+ 		return true;
+ 		};
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000139.html">[Zcplusplus-commits] r372 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000141.html">[Zcplusplus-commits] r374 - in trunk: . Zaimoni.STL
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#140">[ date ]</a>
+              <a href="thread.html#140">[ thread ]</a>
+              <a href="subject.html#140">[ subject ]</a>
+              <a href="author.html#140">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r601 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-January/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r601%20-%20trunk&In-Reply-To=%3C20110127002943.6252248113B%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000367.html">
+   <LINK REL="Next"  HREF="000369.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r601 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r601%20-%20trunk&In-Reply-To=%3C20110127002943.6252248113B%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r601 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Thu Jan 27 01:29:43 CET 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000367.html">[Zcplusplus-commits] r600 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000369.html">[Zcplusplus-commits] r602 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#368">[ date ]</a>
+              <a href="thread.html#368">[ thread ]</a>
+              <a href="subject.html#368">[ subject ]</a>
+              <a href="author.html#368">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-01-27 01:29:43 +0100 (Thu, 27 Jan 2011)
+New Revision: 601
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+reduce object file size
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2011-01-26 23:38:29 UTC (rev 600)
++++ trunk/CSupport.cpp	2011-01-27 00:29:43 UTC (rev 601)
+@@ -12571,9 +12571,11 @@
+ 		assert(!(PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags));
+ 		assert(!echo_reserved_keyword(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].token.second));
+ 		{
+-		char* namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
+-		const char* fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[0].token.first;
+-		if (const type_system::enumerator_info* fatal_def = parse_tree::types-&gt;get_enumerator(fullname))
++		char* const namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
++		const char* const fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[0].token.first;
++		const type_system::enumerator_info* const fatal_def = parse_tree::types-&gt;get_enumerator(fullname);
++		free(namespace_name);
++		if (fatal_def)
+ 			{	// --do-what-i-mean could recover if the prior definition were identical
+ 				// C: note on C99/C1X 6.7.2.2p3 indicates autofail no matter where it was defined (but scope matters)
+ 				// C++: One Definition Rule wipes out
+@@ -12584,10 +12586,8 @@
+ 			message_header(fatal_def-&gt;second.second);
+ 			INFORM(&quot;prior definition here&quot;);
+ 			zcc_errors.inc_error();
+-			free(namespace_name);
+ 			return false;
+ 			};
+-		free(namespace_name);
+ 		}
+ #if 0
+ 		// next proposed function call is a bit handwavish right now...
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2011-01-26 23:38:29 UTC (rev 600)
++++ trunk/CSupport.cpp.in	2011-01-27 00:29:43 UTC (rev 601)
+@@ -12715,9 +12715,11 @@
+ 		assert(!(PARSE_TYPE &amp; src.data&lt;0&gt;()[i].flags));
+ 		assert(!echo_reserved_keyword(src.data&lt;0&gt;()[i].index_tokens[0].token.first,src.data&lt;0&gt;()[i].index_tokens[0].token.second));
+ 		{
+-		char* namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
+-		const char* fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[0].token.first;
+-		if (const type_system::enumerator_info* fatal_def = parse_tree::types-&gt;get_enumerator(fullname))
++		char* const namespace_name = active_namespace ? type_system::namespace_concatenate(src.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,&quot;::&quot;) : NULL;
++		const char* const fullname = namespace_name ? namespace_name : src.data&lt;0&gt;()[i].index_tokens[0].token.first;
++		const type_system::enumerator_info* const fatal_def = parse_tree::types-&gt;get_enumerator(fullname);
++		free(namespace_name);
++		if (fatal_def)
+ 			{	// --do-what-i-mean could recover if the prior definition were identical
+ 				// C: note on C99/C1X 6.7.2.2p3 indicates autofail no matter where it was defined (but scope matters)
+ 				// C++: One Definition Rule wipes out
+@@ -12728,10 +12730,8 @@
+ 			message_header(fatal_def-&gt;second.second);
+ 			INFORM(&quot;prior definition here&quot;);
+ 			zcc_errors.inc_error();
+-			free(namespace_name);
+ 			return false;
+ 			};
+-		free(namespace_name);
+ 		}
+ #if 0
+ 		// next proposed function call is a bit handwavish right now...
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000367.html">[Zcplusplus-commits] r600 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000369.html">[Zcplusplus-commits] r602 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#368">[ date ]</a>
+              <a href="thread.html#368">[ thread ]</a>
+              <a href="subject.html#368">[ subject ]</a>
+              <a href="author.html#368">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

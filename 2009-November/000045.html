@@ -1,0 +1,381 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r278 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r278%20-%20in%20trunk/tests%3A%20zcc/decl.C99%0A%09zcc.in/decl.C99&In-Reply-To=%3C200911240716.nAO7GWso021872%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000044.html">
+   <LINK REL="Next"  HREF="000046.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r278 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r278%20-%20in%20trunk/tests%3A%20zcc/decl.C99%0A%09zcc.in/decl.C99&In-Reply-To=%3C200911240716.nAO7GWso021872%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r278 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Nov 24 08:16:32 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000044.html">[Zcplusplus-commits] r277 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000046.html">[Zcplusplus-commits] r279 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#45">[ date ]</a>
+              <a href="thread.html#45">[ thread ]</a>
+              <a href="subject.html#45">[ subject ]</a>
+              <a href="author.html#45">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-24 08:16:13 +0100 (Tue, 24 Nov 2009)
+New Revision: 278
+
+Added:
+   trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in
+   trunk/tests/zcc.in/decl.C99/Error_enum_undef.in
+   trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_struct_forward_def.in
+   trunk/tests/zcc.in/decl.C99/Pass_union_forward_def.in
+   trunk/tests/zcc/decl.C99/Error_enum_multidef.h
+   trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp
+   trunk/tests/zcc/decl.C99/Error_enum_undef.h
+   trunk/tests/zcc/decl.C99/Error_enum_undef.hpp
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_class_forward_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_enum_def.h
+   trunk/tests/zcc/decl.C99/Pass_enum_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_struct_forward_def.h
+   trunk/tests/zcc/decl.C99/Pass_struct_forward_def.hpp
+   trunk/tests/zcc/decl.C99/Pass_union_forward_def.h
+   trunk/tests/zcc/decl.C99/Pass_union_forward_def.hpp
+Log:
+more test cases for code coverage
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_multidef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_multidef.h	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Error_enum_multidef.h	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_enum_multidef.h
++// using multiply defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Error_enum_multidef.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,12 @@
++// decl.C99\Error_enum_multidef.hpp
++// using multiply defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_undef.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_undef.h	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Error_enum_undef.h	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_undef.h
++// using undefined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test
++
+
+Added: trunk/tests/zcc/decl.C99/Error_enum_undef.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Error_enum_undef.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Error_enum_undef.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,6 @@
++// decl.C99\Error_enum_undef.hpp
++// using undefined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.h	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_anonymous_enum_def.h
++// using singly defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_anonymous_enum_def.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_anonymous_enum_def.hpp
++// using singly defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_class_forward_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_class_forward_def.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_class_forward_def.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++// decl.C99\Pass_class_forward_def.hpp
++// using singly defined class
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++class good_test;
++class good_test;
++
++class good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_enum_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def.h	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def.h	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_enum_def.h
++// using singly defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum good_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_enum_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_enum_def.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_enum_def.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,8 @@
++// decl.C99\Pass_enum_def.hpp
++// using singly defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum good_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_struct_forward_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_forward_def.h	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_struct_forward_def.h	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++// decl.C99\Pass_struct_forward_def.h
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct good_test;
++struct good_test;
++
++struct good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_struct_forward_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_struct_forward_def.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_struct_forward_def.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++// decl.C99\Pass_struct_forward_def.hpp
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct good_test;
++struct good_test;
++
++struct good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_union_forward_def.h
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_forward_def.h	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_union_forward_def.h	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++// decl.C99\Pass_union_forward_def.h
++// using singly defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc/decl.C99/Pass_union_forward_def.hpp
+===================================================================
+--- trunk/tests/zcc/decl.C99/Pass_union_forward_def.hpp	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc/decl.C99/Pass_union_forward_def.hpp	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++// decl.C99\Pass_union_forward_def.hpp
++// using singly defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_multidef.in	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,12 @@
++SUFFIXES h hpp
++// using multiply defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test {
++	x_factor = 1
++}
++
++enum bad_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Error_enum_undef.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Error_enum_undef.in	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc.in/decl.C99/Error_enum_undef.in	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,6 @@
++SUFFIXES h hpp
++// using undefined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum bad_test
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc.in/decl.C99/Pass_anonymous_enum_def.in	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// using singly defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_enum_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc.in/decl.C99/Pass_enum_def.in	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,8 @@
++SUFFIXES h hpp
++// using singly defined enum
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++enum good_test {
++	x_factor = 1
++}
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_struct_forward_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_struct_forward_def.in	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc.in/decl.C99/Pass_struct_forward_def.in	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++SUFFIXES h hpp
++// using singly defined struct
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++struct good_test;
++struct good_test;
++
++struct good_test {
++	int x_factor;
++};
++
+
+Added: trunk/tests/zcc.in/decl.C99/Pass_union_forward_def.in
+===================================================================
+--- trunk/tests/zcc.in/decl.C99/Pass_union_forward_def.in	2009-11-24 07:14:57 UTC (rev 277)
++++ trunk/tests/zcc.in/decl.C99/Pass_union_forward_def.in	2009-11-24 07:16:13 UTC (rev 278)
+@@ -0,0 +1,11 @@
++SUFFIXES h hpp
++// using singly defined union
++// (C)2009 Kenneth Boyd, license: MIT.txt
++
++union good_test;
++union good_test;
++
++union good_test {
++	int x_factor;
++};
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000044.html">[Zcplusplus-commits] r277 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000046.html">[Zcplusplus-commits] r279 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#45">[ date ]</a>
+              <a href="thread.html#45">[ thread ]</a>
+              <a href="subject.html#45">[ subject ]</a>
+              <a href="author.html#45">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

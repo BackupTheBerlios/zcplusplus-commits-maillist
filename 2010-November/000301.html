@@ -1,0 +1,483 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r534 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r534%20-%20trunk&In-Reply-To=%3C20101106051427.924D2480A41%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000300.html">
+   <LINK REL="Next"  HREF="000302.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r534 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r534%20-%20trunk&In-Reply-To=%3C20101106051427.924D2480A41%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r534 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sat Nov  6 06:14:27 CET 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000300.html">[Zcplusplus-commits] r533 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000302.html">[Zcplusplus-commits] r535 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#301">[ date ]</a>
+              <a href="thread.html#301">[ thread ]</a>
+              <a href="subject.html#301">[ subject ]</a>
+              <a href="author.html#301">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-11-06 06:14:27 +0100 (Sat, 06 Nov 2010)
+New Revision: 534
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport.cpp.in
+Log:
+line count reduction
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-11-05 18:01:37 UTC (rev 533)
++++ trunk/CSupport.cpp	2010-11-06 05:14:27 UTC (rev 534)
+@@ -13707,6 +13707,45 @@
+ 		}
+ }
+ 
++static type_system::type_index _forward_declare_CPP_union(parse_tree&amp; src, const char* const active_namespace, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
++{
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
++	assert(tmp2);
++	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
++	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
++	assert(parse_tree::types-&gt;get_structdecl(tmp2));
++	src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
++	src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
++	_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++	return tmp2;
++}
++
++static type_system::type_index _forward_declare_CPP_struct(parse_tree&amp; src, const char* const active_namespace, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
++{
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
++	assert(tmp2);
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
++	assert(parse_tree::types-&gt;get_structdecl(tmp2));
++	src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
++	src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
++	_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++	return tmp2;
++}
++
++static type_system::type_index _forward_declare_CPP_class(parse_tree&amp; src, const char* const active_namespace, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
++{
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
++	assert(tmp2);
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
++	assert(parse_tree::types-&gt;get_structdecl(tmp2));
++	src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
++	src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
++	_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++	return tmp2;
++}
++
+ // handle namespaces or else
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc
+@@ -13767,20 +13806,10 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
+ 				src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
+ 				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
++				}
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			else _forward_declare_CPP_union(src,active_namespace,i,invariant_decl_scanner);
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+@@ -13814,7 +13843,6 @@
+ 					continue;					
+ 					};
+ 				//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(tmp2);
+ 				i += 2;
+ 				continue;
+ 				}
+@@ -13837,20 +13865,11 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
+ 				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+ 				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
++				}
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
++			else _forward_declare_CPP_struct(src,active_namespace,i,invariant_decl_scanner);
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+@@ -13885,7 +13904,6 @@
+ 					}
+ 				// forward-declare
+ 				//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+-				assert(tmp2);
+ 				i += 2;
+ 				continue;
+ 				}
+@@ -13908,20 +13926,11 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
+ 				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+ 				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
++				}
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
++			else _forward_declare_CPP_class(src,active_namespace,i,invariant_decl_scanner);
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+@@ -13956,7 +13965,6 @@
+ 					}
+ 				// forward-declare
+ 				//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+-				assert(tmp2);
+ 				i += 2;
+ 				continue;
+ 				}
+@@ -13996,17 +14004,8 @@
+ 				};
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
++			const type_system::type_index tmp2 = tmp ? 0 : _forward_declare_CPP_union(src,active_namespace,i,invariant_decl_scanner);
+ 			// parse the union and upgrade it to a full definition
+ 			const type_system::type_index vr_tmp = tmp ? tmp : tmp2;
+ 			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(vr_tmp);
+@@ -14063,17 +14062,8 @@
+ 				};
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
++			const type_system::type_index tmp2 = tmp ? 0 : _forward_declare_CPP_struct(src,active_namespace,i,invariant_decl_scanner);
+ 			// parse the union and upgrade it to a full definition
+ 			const type_system::type_index vr_tmp = tmp ? tmp : tmp2;
+ 			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(vr_tmp);
+@@ -14130,17 +14120,8 @@
+ 				};
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_class_forward_def.hpp
++			const type_system::type_index tmp2 = tmp ? 0 : _forward_declare_CPP_class(src,active_namespace,i,invariant_decl_scanner);
+ 			// parse the union and upgrade it to a full definition
+ 			const type_system::type_index vr_tmp = tmp ? tmp : tmp2;
+ 			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(vr_tmp);
+
+Modified: trunk/CSupport.cpp.in
+===================================================================
+--- trunk/CSupport.cpp.in	2010-11-05 18:01:37 UTC (rev 533)
++++ trunk/CSupport.cpp.in	2010-11-06 05:14:27 UTC (rev 534)
+@@ -13851,6 +13851,45 @@
+ 		}
+ }
+ 
++static type_system::type_index _forward_declare_CPP_union(parse_tree&amp; src, const char* const active_namespace, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
++{
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
++	assert(tmp2);
++	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
++	assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
++	assert(parse_tree::types-&gt;get_structdecl(tmp2));
++	src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
++	src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
++	_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++	return tmp2;
++}
++
++static type_system::type_index _forward_declare_CPP_struct(parse_tree&amp; src, const char* const active_namespace, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
++{
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
++	assert(tmp2);
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
++	assert(parse_tree::types-&gt;get_structdecl(tmp2));
++	src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
++	src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
++	_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++	return tmp2;
++}
++
++static type_system::type_index _forward_declare_CPP_class(parse_tree&amp; src, const char* const active_namespace, size_t&amp; i, kleene_star_core&lt;size_t (*)(const parse_tree&amp;)&gt;&amp; invariant_decl_scanner)
++{
++	const type_system::type_index tmp2 = parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
++	assert(tmp2);
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
++	assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
++	assert(parse_tree::types-&gt;get_structdecl(tmp2));
++	src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
++	src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
++	_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
++	return tmp2;
++}
++
+ // handle namespaces or else
+ //! \todo check that the fact all literals are already legal-form is used
+ //! \throw std::bad_alloc
+@@ -13911,20 +13950,10 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
+ 				src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
+ 				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
++				}
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			else _forward_declare_CPP_union(src,active_namespace,i,invariant_decl_scanner);
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+@@ -13958,7 +13987,6 @@
+ 					continue;					
+ 					};
+ 				//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(tmp2);
+ 				i += 2;
+ 				continue;
+ 				}
+@@ -13981,20 +14009,11 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
+ 				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+ 				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
++				}
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
++			else _forward_declare_CPP_struct(src,active_namespace,i,invariant_decl_scanner);
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+@@ -14029,7 +14048,6 @@
+ 					}
+ 				// forward-declare
+ 				//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+-				assert(tmp2);
+ 				i += 2;
+ 				continue;
+ 				}
+@@ -14052,20 +14070,11 @@
+ 				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp);
+ 				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+ 				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
++				}
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
++			else _forward_declare_CPP_class(src,active_namespace,i,invariant_decl_scanner);
+ 			if (   1&lt;src.size&lt;0&gt;()-i
+ 				&amp;&amp; robust_token_is_char&lt;';'&gt;(src.data&lt;0&gt;()[i+1]))
+ 				{	// check for forward-declaration here
+@@ -14100,7 +14109,6 @@
+ 					}
+ 				// forward-declare
+ 				//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+-				assert(tmp2);
+ 				i += 2;
+ 				continue;
+ 				}
+@@ -14140,17 +14148,8 @@
+ 				};
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_union);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_union_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_union_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_UNION_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_union_forward_def.hpp
++			const type_system::type_index tmp2 = tmp ? 0 : _forward_declare_CPP_union(src,active_namespace,i,invariant_decl_scanner);
+ 			// parse the union and upgrade it to a full definition
+ 			const type_system::type_index vr_tmp = tmp ? tmp : tmp2;
+ 			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(vr_tmp);
+@@ -14207,17 +14206,8 @@
+ 				};
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_struct);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_struct_forward_def.hpp
++			const type_system::type_index tmp2 = tmp ? 0 : _forward_declare_CPP_struct(src,active_namespace,i,invariant_decl_scanner);
+ 			// parse the union and upgrade it to a full definition
+ 			const type_system::type_index vr_tmp = tmp ? tmp : tmp2;
+ 			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(vr_tmp);
+@@ -14274,17 +14264,8 @@
+ 				};
+ 			//! \bug [find citation] states that conflicting enum, struct, or class must error
+ 			// tentatively forward-declare immediately
+-			const type_system::type_index tmp2 = tmp ? 0 : parse_tree::types-&gt;register_structdecl_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace,union_struct_decl::decl_class);
+-			if (tmp2)
+-				{	//! \test zcc/decl.C99/Pass_class_forward_def.hpp
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace));
+-				assert(parse_tree::types-&gt;get_id_struct_class_CPP(src.data&lt;0&gt;()[i].index_tokens[1].token.first,active_namespace)==tmp2);
+-				assert(parse_tree::types-&gt;get_structdecl(tmp2));
+-				src.c_array&lt;0&gt;()[i].type_code.set_type(tmp2);
+-				src.c_array&lt;0&gt;()[i].flags |= PARSE_CLASS_STRUCT_TYPE;
+-				_condense_const_volatile_onto_type(src,i,invariant_decl_scanner,&quot;removing redundant const cv-qualifier (C++0X 7.1.6.1p1)&quot;,&quot;removing redundant volatile cv-qualifier (C++0X 7.1.6.1p1)&quot;);
+-				};
+-			assert(tmp || tmp2);
++			//! \test zcc/decl.C99/Pass_class_forward_def.hpp
++			const type_system::type_index tmp2 = tmp ? 0 : _forward_declare_CPP_class(src,active_namespace,i,invariant_decl_scanner);
+ 			// parse the union and upgrade it to a full definition
+ 			const type_system::type_index vr_tmp = tmp ? tmp : tmp2;
+ 			const union_struct_decl* tmp3 = parse_tree::types-&gt;get_structdecl(vr_tmp);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000300.html">[Zcplusplus-commits] r533 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000302.html">[Zcplusplus-commits] r535 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#301">[ date ]</a>
+              <a href="thread.html#301">[ thread ]</a>
+              <a href="subject.html#301">[ subject ]</a>
+              <a href="author.html#301">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

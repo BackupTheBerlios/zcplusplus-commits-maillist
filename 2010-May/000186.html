@@ -1,0 +1,1215 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r419 - in trunk: . Zaimoni.STL
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r419%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201005090700.o4970wms025481%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000185.html">
+   <LINK REL="Next"  HREF="000187.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r419 - in trunk: . Zaimoni.STL</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r419%20-%20in%20trunk%3A%20.%20Zaimoni.STL&In-Reply-To=%3C201005090700.o4970wms025481%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r419 - in trunk: . Zaimoni.STL">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun May  9 09:00:58 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000185.html">[Zcplusplus-commits] r418 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000187.html">[Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#186">[ date ]</a>
+              <a href="thread.html#186">[ thread ]</a>
+              <a href="subject.html#186">[ subject ]</a>
+              <a href="author.html#186">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-09 09:00:49 +0200 (Sun, 09 May 2010)
+New Revision: 419
+
+Added:
+   trunk/Zaimoni.STL/simple_lock.hpp
+Modified:
+   trunk/CSupport.cpp
+   trunk/CSupport_pp.cpp
+   trunk/POSIX.dep
+   trunk/errors.cpp
+   trunk/errors.hpp
+Log:
+compiling isn't a naturally parallel process anyway at the file level; mock up a lock for suppressing errors that don't make sense for unevaluated expressions
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2010-05-08 06:04:36 UTC (rev 418)
++++ trunk/CSupport.cpp	2010-05-09 07:00:49 UTC (rev 419)
+@@ -13,6 +13,7 @@
+ #include &quot;Zaimoni.STL/lite_alg.hpp&quot;
+ #include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
++#include &quot;Zaimoni.STL/simple_lock.hpp&quot;
+ #include &quot;AtomicString.h&quot;
+ #include &quot;str_aux.h&quot;
+ #include &quot;Trigraph.hpp&quot;
+@@ -5863,14 +5864,14 @@
+ 	return false;
+ }
+ 
+-static bool int_has_trapped(parse_tree&amp; src,const umaxint&amp; src_int,bool hard_error)
++static bool int_has_trapped(parse_tree&amp; src,const umaxint&amp; src_int)
+ {
+ 	assert(C_TYPE::INT&lt;=src.type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;src.type_code.base_type_index);
+ 	// check for trap representation for signed types
+ 	const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 	if (bool_options[boolopt::int_traps] &amp;&amp; 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; target_machine-&gt;trap_int(src_int,machine_type))
+ 		{
+-		if (hard_error)
++		if (!no_runtime_errors)
+ 			simple_error(src,&quot; generated a trap representation: undefined behavior (C99 6.2.6.1p5)&quot;);
+ 		return true;
+ 		}
+@@ -5985,7 +5986,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -6003,7 +6004,7 @@
+ 		res_int.auto_bitwise_complement();
+ 		res_int.mask_to(target_machine-&gt;C_bit(machine_type));
+ 
+-		if (int_has_trapped(src,res_int,hard_error)) return false;
++		if (int_has_trapped(src,res_int)) return false;
+ 
+ 		const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,machine_type);
+@@ -6051,7 +6052,8 @@
+ 		return;
+ 		}
+ 	src.type_code.set_type(tmp.first);
+-	if (eval_bitwise_compl(src,types,false,is_C99_unary_operator_expression&lt;'~'&gt;,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_compl(src,types,is_C99_unary_operator_expression&lt;'~'&gt;,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -6066,7 +6068,8 @@
+ 		return;
+ 		}
+ 	src.type_code.set_type(tmp.first);
+-	if (eval_bitwise_compl(src,types,false,is_CPP_bitwise_complement_expression,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_compl(src,types,is_CPP_bitwise_complement_expression,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -6663,7 +6666,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+@@ -6727,7 +6730,7 @@
+ 			if (tweak_ub) ub += 1;
+ 			if (ub&lt;lhs_test || ub&lt;rhs_test)
+ 				{
+-				if (hard_error)
++				if (!no_runtime_errors)
+ 					//! \todo catch this in two's-complement specific testing
+ 					simple_error(src,&quot; signed * overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 				return false;
+@@ -6736,7 +6739,7 @@
+ 			ub /= (lhs_lt_rhs) ? rhs_test : lhs_test;
+ 			if (ub&lt;(lhs_lt_rhs ? lhs_test : rhs_test))
+ 				{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-				if (hard_error)
++				if (!no_runtime_errors)
+ 					//! \test default/Error_if_control29.hpp, default/Error_if_control29.h
+ 					simple_error(src,&quot; signed * overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 				return false;
+@@ -6772,7 +6775,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+@@ -6781,7 +6784,7 @@
+ 		{
+ 		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-			if (hard_error)
++			if (!no_runtime_errors)
+ 				//! \test default/Error_if_control30.hpp, default/Error_if_control30.h
+ 				simple_error(src,&quot; division by zero, undefined behavior (C99 6.5.5p5, C++98 5.6p4)&quot;);
+ 			return false;
+@@ -6876,7 +6879,7 @@
+ 			if (ub&lt;lhs_test)
+ 				{	//! \todo test this in two's complement code
+ 				assert(virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation());
+-				if (hard_error)
++				if (!no_runtime_errors)
+ 					simple_error(src,&quot; signed / overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 				return false;
+ 				}
+@@ -6899,7 +6902,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+@@ -6908,7 +6911,7 @@
+ 		{
+ 		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-			if (hard_error)
++			if (!no_runtime_errors)
+ 				//! \test default/Error_if_control31.hpp, Error_if_control31.h
+ 				simple_error(src,&quot; modulo by zero, undefined behavior (C99 6.5.5p5, C++98 5.6p4)&quot;);
+ 			return false;
+@@ -7097,14 +7100,16 @@
+ 	if (C99_MULT_SUBTYPE_MOD==src.subtype)
+ 		{	// require integral type
+ 		if (!_mod_expression_typecheck(src ARG_TYPES)) return;
+-		eval_mod_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++		eval_mod_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 		}
+ 	else{	// require arithmetic type
+ 		if (!_mult_div_expression_typecheck(src ARG_TYPES)) return;
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 		if (C99_MULT_SUBTYPE_MULT==src.subtype)
+-			eval_mult_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			eval_mult_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 		else
+-			eval_div_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);			
++			eval_div_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);			
+ 		}
+ }
+ 
+@@ -7117,14 +7122,16 @@
+ 	if (C99_MULT_SUBTYPE_MOD==src.subtype)
+ 		{	// require integral type
+ 		if (!_mod_expression_typecheck(src ARG_TYPES)) return;
+-		eval_mod_expression(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++		eval_mod_expression(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
+ 		}
+ 	else{	// require arithmetic type
+ 		if (!_mult_div_expression_typecheck(src ARG_TYPES)) return;
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 		if (C99_MULT_SUBTYPE_MULT==src.subtype)
+-			eval_mult_expression(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
++			eval_mult_expression(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
+ 		else
+-			eval_div_expression(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
++			eval_div_expression(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
+ 		}
+ }
+ 
+@@ -7300,7 +7307,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+ 
+@@ -7379,7 +7386,7 @@
+ 						if (tweak_ub) ub += 1;
+ 						if (ub&lt;lhs_test || ub&lt;rhs_test || (ub -= lhs_test)&lt;rhs_test)
+ 							{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-							if (hard_error)
++							if (!no_runtime_errors)
+ 								//! \test default/Error_if_control41.hpp, default/Error_if_control41.h
+ 								simple_error(src,&quot; signed + overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 							return false;
+@@ -7444,7 +7451,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+ 	const size_t lhs_pointer = src.data&lt;1&gt;()-&gt;type_code.pointer_power;
+@@ -7527,7 +7534,7 @@
+ 						if (tweak_ub) ub += 1;
+ 						if (ub&lt;lhs_test || ub&lt;rhs_test || (ub -= lhs_test)&lt;rhs_test)
+ 							{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-							if (hard_error)
++							if (!no_runtime_errors)
+ 								//! \test default/Error_if_control42.hpp, default/Error_if_control42.h
+ 								simple_error(src,&quot; signed - overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 							return false;
+@@ -7650,7 +7657,8 @@
+ 				}
+ #/*cut-cpp*/
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+-			eval_add_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 1:	{	// ptr + integer, hopefully
+@@ -7661,7 +7669,8 @@
+ 				simple_error(src,&quot; adds pointer to non-integer (C99 6.5.6p2; C++98 5.7p1)&quot;);
+ 				return;
+ 				}
+-			eval_add_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 2:	{	// integer + ptr, hopefully
+@@ -7672,7 +7681,8 @@
+ 				simple_error(src,&quot; adds pointer to non-integer (C99 6.5.6p2; C++98 5.7p1)&quot;);
+ 				return;
+ 				}
+-			eval_add_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 3:	{	//	ptr + ptr dies
+@@ -7710,7 +7720,8 @@
+ 				}
+ #/*cut-cpp*/
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+-			eval_sub_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 5:	{	// ptr - integer, hopefully; requires floating-point literal to test from preprocessor
+@@ -7720,7 +7731,8 @@
+ 				simple_error(src,&quot; subtracts non-integer from pointer (C99 6.5.6p3; C++98 5.7p2)&quot;);
+ 				return;
+ 				}
+-			eval_sub_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 6:	{	// non-ptr - ptr dies
+@@ -7738,7 +7750,8 @@
+ 							:	virtual_machine::std_int_long==tmp ? C_TYPE::LONG
+ 							:	virtual_machine::std_int_long_long==tmp ? C_TYPE::LLONG : 0));
+ 			assert(0!=src.type_code.base_type_index);
+-			eval_sub_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	}
+@@ -7875,7 +7888,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -7939,7 +7952,7 @@
+ 					simple_error(src,&quot; : result does not fit in LHS type; undefined behavior (C99 6.5.7p3)&quot;);
+ #endif
+ 				res_int &lt;&lt;= rhs_int.to_uint();
+-				if (int_has_trapped(src,res_int,hard_error)) return false;
++				if (int_has_trapped(src,res_int)) return false;
+ 				}
+ 			else	// if (C99_SHIFT_SUBTYPE_RIGHT==src.subtype)
+ 				res_int &gt;&gt;= rhs_int.to_uint();
+@@ -7973,7 +7986,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.7p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_shift(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_shift(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -7984,7 +7998,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.8p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_shift(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_shift(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -8534,7 +8549,7 @@
+ }
+ 
+ //! \throw std::bad_alloc
+-static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -8574,7 +8589,7 @@
+ 		res_int &amp;= rhs_int;
+ 
+ 		// check for trap representation for signed types
+-		if (int_has_trapped(src,res_int,hard_error)) return false;
++		if (int_has_trapped(src,res_int)) return false;
+ 
+ 		if 		(res_int==lhs_int)
+ 			// lhs &amp; rhs = lhs; conserve type
+@@ -8628,7 +8643,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.10p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_AND(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_AND(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc
+@@ -8639,7 +8655,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.11p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_AND(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_AND(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -8731,7 +8748,7 @@
+ }
+ 
+ // throws std::bad_alloc
+-static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -8779,7 +8796,7 @@
+ 		res_int ^= rhs_int;
+ //		res_int.mask_to(target_machine-&gt;C_bit(machine_type));	// shouldn't need this
+ 
+-		if (int_has_trapped(src,res_int,hard_error)) return false;
++		if (int_has_trapped(src,res_int)) return false;
+ 
+ 		const bool negative_signed_int = old.is_signed &amp;&amp; res_int.test(old.bitcount-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,old.machine_type);
+@@ -8809,7 +8826,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.11p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_XOR(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_XOR(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ // throws std::bad_alloc
+@@ -8820,7 +8838,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.12p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_XOR(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_XOR(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -8911,7 +8930,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -8981,7 +9000,7 @@
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			}
+ 		else{
+-			if (int_has_trapped(src,res_int,hard_error)) return false;
++			if (int_has_trapped(src,res_int)) return false;
+ 
+ 			const virtual_machine::std_int_enum machine_type = (virtual_machine::std_int_enum)((src.type_code.base_type_index-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ 			const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+@@ -9012,7 +9031,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.12p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_OR(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_OR(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -9023,7 +9043,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.13p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_OR(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_OR(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -10301,7 +10322,7 @@
+ 	if (is_bitwise_complement_expression(src))
+ 		{
+ 		EvalParseTree(*src.c_array&lt;2&gt;(),types);
+-		if (eval_bitwise_compl(src,types,true,is_bitwise_complement_expression,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_compl(src,types,is_bitwise_complement_expression,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10341,7 +10362,7 @@
+ 	if (is_C99_mult_operator_expression&lt;'*'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_mult_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_mult_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10355,7 +10376,7 @@
+ 	if (is_C99_mult_operator_expression&lt;'/'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_div_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_div_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10369,7 +10390,7 @@
+ 	if (is_C99_mult_operator_expression&lt;'%'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_mod_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_mod_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10383,7 +10404,7 @@
+ 	if (is_C99_add_operator_expression&lt;'+'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_add_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_add_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10397,7 +10418,7 @@
+ 	if (is_C99_add_operator_expression&lt;'-'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_sub_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_sub_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10411,7 +10432,7 @@
+ 	if (is_C99_shift_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_shift(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_shift(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10454,7 +10475,7 @@
+ 	if (is_bitwise_AND_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_bitwise_AND(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_AND(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10469,7 +10490,7 @@
+ 	if (is_bitwise_XOR_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_bitwise_XOR(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_XOR(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -10484,7 +10505,7 @@
+ 	if (is_bitwise_OR_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_bitwise_OR(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_OR(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+
+Modified: trunk/CSupport_pp.cpp
+===================================================================
+--- trunk/CSupport_pp.cpp	2010-05-08 06:04:36 UTC (rev 418)
++++ trunk/CSupport_pp.cpp	2010-05-09 07:00:49 UTC (rev 419)
+@@ -10,6 +10,7 @@
+ #include &quot;Zaimoni.STL/lite_alg.hpp&quot;
+ #include &quot;Zaimoni.STL/LexParse/LangConf.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
++#include &quot;Zaimoni.STL/simple_lock.hpp&quot;
+ #include &quot;AtomicString.h&quot;
+ #include &quot;str_aux.h&quot;
+ #include &quot;Trigraph.hpp&quot;
+@@ -5318,14 +5319,14 @@
+ 	return false;
+ }
+ 
+-static bool int_has_trapped(parse_tree&amp; src,const umaxint&amp; src_int,bool hard_error)
++static bool int_has_trapped(parse_tree&amp; src,const umaxint&amp; src_int)
+ {
+ 	assert(C_TYPE::INT&lt;=src.type_code.base_type_index &amp;&amp; C_TYPE::INTEGERLIKE&gt;src.type_code.base_type_index);
+ 	// check for trap representation for signed types
+ 	const virtual_machine::std_int_enum machine_type = machine_type_from_type_index(src.type_code.base_type_index);
+ 	if (bool_options[boolopt::int_traps] &amp;&amp; 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; target_machine-&gt;trap_int(src_int,machine_type))
+ 		{
+-		if (hard_error)
++		if (!no_runtime_errors)
+ 			simple_error(src,&quot; generated a trap representation: undefined behavior (C99 6.2.6.1p5)&quot;);
+ 		return true;
+ 		}
+@@ -5440,7 +5441,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,bool hard_error,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_compl(parse_tree&amp; src, const type_system&amp; types,func_traits&lt;bool (*)(const parse_tree&amp;)&gt;::function_ref_type is_bitwise_complement_expression,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_bitwise_complement_expression(src));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -5451,7 +5452,7 @@
+ 		res_int.auto_bitwise_complement();
+ 		res_int.mask_to(target_machine-&gt;C_bit(machine_type));
+ 
+-		if (int_has_trapped(src,res_int,hard_error)) return false;
++		if (int_has_trapped(src,res_int)) return false;
+ 
+ 		const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,machine_type);
+@@ -5499,7 +5500,8 @@
+ 		return;
+ 		}
+ 	src.type_code.set_type(tmp.first);
+-	if (eval_bitwise_compl(src,types,false,is_C99_unary_operator_expression&lt;'~'&gt;,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_compl(src,types,is_C99_unary_operator_expression&lt;'~'&gt;,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -5514,7 +5516,8 @@
+ 		return;
+ 		}
+ 	src.type_code.set_type(tmp.first);
+-	if (eval_bitwise_compl(src,types,false,is_CPP_bitwise_complement_expression,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_compl(src,types,is_CPP_bitwise_complement_expression,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -5878,7 +5881,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_mult_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'*'&gt;(src));
+ 
+@@ -5942,7 +5945,7 @@
+ 			if (tweak_ub) ub += 1;
+ 			if (ub&lt;lhs_test || ub&lt;rhs_test)
+ 				{
+-				if (hard_error)
++				if (!no_runtime_errors)
+ 					//! \todo catch this in two's-complement specific testing
+ 					simple_error(src,&quot; signed * overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 				return false;
+@@ -5951,7 +5954,7 @@
+ 			ub /= (lhs_lt_rhs) ? rhs_test : lhs_test;
+ 			if (ub&lt;(lhs_lt_rhs ? lhs_test : rhs_test))
+ 				{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-				if (hard_error)
++				if (!no_runtime_errors)
+ 					//! \test default/Error_if_control29.hpp, default/Error_if_control29.h
+ 					simple_error(src,&quot; signed * overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 				return false;
+@@ -5987,7 +5990,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_div_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'/'&gt;(src));
+ 
+@@ -5996,7 +5999,7 @@
+ 		{
+ 		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-			if (hard_error)
++			if (!no_runtime_errors)
+ 				//! \test default/Error_if_control30.hpp, default/Error_if_control30.h
+ 				simple_error(src,&quot; division by zero, undefined behavior (C99 6.5.5p5, C++98 5.6p4)&quot;);
+ 			return false;
+@@ -6091,7 +6094,7 @@
+ 			if (ub&lt;lhs_test)
+ 				{	//! \todo test this in two's complement code
+ 				assert(virtual_machine::twos_complement==target_machine-&gt;C_signed_int_representation());
+-				if (hard_error)
++				if (!no_runtime_errors)
+ 					simple_error(src,&quot; signed / overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 				return false;
+ 				}
+@@ -6114,7 +6117,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_mod_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_mult_operator_expression&lt;'%'&gt;(src));
+ 
+@@ -6123,7 +6126,7 @@
+ 		{
+ 		if 		(literal_converts_to_bool(*src.data&lt;2&gt;(),is_true ARG_TYPES) &amp;&amp; !is_true)
+ 			{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-			if (hard_error)
++			if (!no_runtime_errors)
+ 				//! \test default/Error_if_control31.hpp, Error_if_control31.h
+ 				simple_error(src,&quot; modulo by zero, undefined behavior (C99 6.5.5p5, C++98 5.6p4)&quot;);
+ 			return false;
+@@ -6277,14 +6280,16 @@
+ 	if (C99_MULT_SUBTYPE_MOD==src.subtype)
+ 		{	// require integral type
+ 		if (!_mod_expression_typecheck(src ARG_TYPES)) return;
+-		eval_mod_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++		eval_mod_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 		}
+ 	else{	// require arithmetic type
+ 		if (!_mult_div_expression_typecheck(src ARG_TYPES)) return;
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 		if (C99_MULT_SUBTYPE_MULT==src.subtype)
+-			eval_mult_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			eval_mult_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 		else
+-			eval_div_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);			
++			eval_div_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);			
+ 		}
+ }
+ 
+@@ -6297,14 +6302,16 @@
+ 	if (C99_MULT_SUBTYPE_MOD==src.subtype)
+ 		{	// require integral type
+ 		if (!_mod_expression_typecheck(src ARG_TYPES)) return;
+-		eval_mod_expression(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++		eval_mod_expression(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
+ 		}
+ 	else{	// require arithmetic type
+ 		if (!_mult_div_expression_typecheck(src ARG_TYPES)) return;
++		zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
+ 		if (C99_MULT_SUBTYPE_MULT==src.subtype)
+-			eval_mult_expression(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
++			eval_mult_expression(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
+ 		else
+-			eval_div_expression(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
++			eval_div_expression(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM);
+ 		}
+ }
+ 
+@@ -6480,7 +6487,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_add_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'+'&gt;(src));
+ 
+@@ -6559,7 +6566,7 @@
+ 						if (tweak_ub) ub += 1;
+ 						if (ub&lt;lhs_test || ub&lt;rhs_test || (ub -= lhs_test)&lt;rhs_test)
+ 							{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-							if (hard_error)
++							if (!no_runtime_errors)
+ 								//! \test default/Error_if_control41.hpp, default/Error_if_control41.h
+ 								simple_error(src,&quot; signed + overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 							return false;
+@@ -6624,7 +6631,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_sub_expression(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(is_C99_add_operator_expression&lt;'-'&gt;(src));
+ 	const size_t lhs_pointer = src.data&lt;1&gt;()-&gt;type_code.pointer_power;
+@@ -6707,7 +6714,7 @@
+ 						if (tweak_ub) ub += 1;
+ 						if (ub&lt;lhs_test || ub&lt;rhs_test || (ub -= lhs_test)&lt;rhs_test)
+ 							{	//! \test if.C99/Pass_conditional_op_noeval.hpp, if.C99/Pass_conditional_op_noeval.h
+-							if (hard_error)
++							if (!no_runtime_errors)
+ 								//! \test default/Error_if_control42.hpp, default/Error_if_control42.h
+ 								simple_error(src,&quot; signed - overflow, undefined behavior (C99 6.5p5, C++98 5p5)&quot;);
+ 							return false;
+@@ -6815,7 +6822,8 @@
+ 				}
+ 
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+-			eval_add_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 1:	{	// ptr + integer, hopefully
+@@ -6826,7 +6834,8 @@
+ 				simple_error(src,&quot; adds pointer to non-integer (C99 6.5.6p2; C++98 5.7p1)&quot;);
+ 				return;
+ 				}
+-			eval_add_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 2:	{	// integer + ptr, hopefully
+@@ -6837,7 +6846,8 @@
+ 				simple_error(src,&quot; adds pointer to non-integer (C99 6.5.6p2; C++98 5.7p1)&quot;);
+ 				return;
+ 				}
+-			eval_add_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_add_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 3:	{	//	ptr + ptr dies
+@@ -6860,7 +6870,8 @@
+ 				}
+ 
+ 			src.type_code.set_type(arithmetic_reconcile(lhs.first,rhs.first ARG_TYPES));
+-			eval_sub_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 5:	{	// ptr - integer, hopefully; requires floating-point literal to test from preprocessor
+@@ -6870,7 +6881,8 @@
+ 				simple_error(src,&quot; subtracts non-integer from pointer (C99 6.5.6p3; C++98 5.7p2)&quot;);
+ 				return;
+ 				}
+-			eval_sub_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	case 6:	{	// non-ptr - ptr dies
+@@ -6888,7 +6900,8 @@
+ 							:	virtual_machine::std_int_long==tmp ? C_TYPE::LONG
+ 							:	virtual_machine::std_int_long_long==tmp ? C_TYPE::LLONG : 0));
+ 			assert(0!=src.type_code.base_type_index);
+-			eval_sub_expression(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
++			zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++			eval_sub_expression(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM);
+ 			break;
+ 			}
+ 	}
+@@ -7025,7 +7038,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_shift(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -7084,7 +7097,7 @@
+ 					simple_error(src,&quot; : result does not fit in LHS type; undefined behavior (C99 6.5.7p3)&quot;);
+ #endif
+ 				res_int &lt;&lt;= rhs_int.to_uint();
+-				if (int_has_trapped(src,res_int,hard_error)) return false;
++				if (int_has_trapped(src,res_int)) return false;
+ 				}
+ 			else	// if (C99_SHIFT_SUBTYPE_RIGHT==src.subtype)
+ 				res_int &gt;&gt;= rhs_int.to_uint();
+@@ -7118,7 +7131,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.7p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_shift(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_shift(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -7129,7 +7143,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.8p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(src.data&lt;1&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_shift(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_shift(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -7679,7 +7694,7 @@
+ }
+ 
+ //! \throw std::bad_alloc
+-static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types,bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_AND(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -7719,7 +7734,7 @@
+ 		res_int &amp;= rhs_int;
+ 
+ 		// check for trap representation for signed types
+-		if (int_has_trapped(src,res_int,hard_error)) return false;
++		if (int_has_trapped(src,res_int)) return false;
+ 
+ 		if 		(res_int==lhs_int)
+ 			// lhs &amp; rhs = lhs; conserve type
+@@ -7763,7 +7778,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.10p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_AND(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_AND(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc
+@@ -7774,7 +7790,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.11p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_AND(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_AND(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -7866,7 +7883,7 @@
+ }
+ 
+ // throws std::bad_alloc
+-static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_XOR(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -7904,7 +7921,7 @@
+ 		res_int ^= rhs_int;
+ //		res_int.mask_to(target_machine-&gt;C_bit(machine_type));	// shouldn't need this
+ 
+-		if (int_has_trapped(src,res_int,hard_error)) return false;
++		if (int_has_trapped(src,res_int)) return false;
+ 
+ 		const bool negative_signed_int = old.is_signed &amp;&amp; res_int.test(old.bitcount-1);
+ 		if (negative_signed_int) target_machine-&gt;signed_additive_inverse(res_int,old.machine_type);
+@@ -7934,7 +7951,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.11p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_XOR(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_XOR(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ // throws std::bad_alloc
+@@ -7945,7 +7963,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.12p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = default_promote_type(arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES) ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_XOR(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_XOR(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -8036,7 +8055,7 @@
+ }
+ 
+ //! \throw std::bad_alloc()
+-static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, bool hard_error, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
++static bool eval_bitwise_OR(parse_tree&amp; src, const type_system&amp; types, literal_converts_to_bool_func&amp; literal_converts_to_bool,intlike_literal_to_VM_func&amp; intlike_literal_to_VM)
+ {
+ 	assert(converts_to_integerlike(src.data&lt;1&gt;()-&gt;type_code ARG_TYPES));
+ 	assert(converts_to_integerlike(src.data&lt;2&gt;()-&gt;type_code ARG_TYPES));
+@@ -8086,7 +8105,7 @@
+ 			src.eval_to_arg&lt;2&gt;(0);
+ 			}
+ 		else{
+-			if (int_has_trapped(src,res_int,hard_error)) return false;
++			if (int_has_trapped(src,res_int)) return false;
+ 
+ 			const virtual_machine::std_int_enum machine_type = (virtual_machine::std_int_enum)((src.type_code.base_type_index-C_TYPE::INT)/2+virtual_machine::std_int_int);
+ 			const bool negative_signed_int = 0==(src.type_code.base_type_index-C_TYPE::INT)%2 &amp;&amp; res_int.test(target_machine-&gt;C_bit(machine_type)-1);
+@@ -8117,7 +8136,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C99 6.5.12p2)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_OR(src,types,false,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_OR(src,types,C99_literal_converts_to_bool,C99_intlike_literal_to_VM)) return;
+ }
+ 
+ //! \throw std::bad_alloc()
+@@ -8128,7 +8148,8 @@
+ 	if (binary_infix_failed_integer_arguments(src,&quot;(C++98 5.13p1)&quot; ARG_TYPES)) return;
+ 	src.type_code.base_type_index = arithmetic_reconcile(src.data&lt;1&gt;()-&gt;type_code.base_type_index,src.data&lt;2&gt;()-&gt;type_code.base_type_index ARG_TYPES);
+ 	assert(converts_to_integerlike(src.type_code.base_type_index ARG_TYPES));
+-	if (eval_bitwise_OR(src,types,false,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
++	zaimoni::simple_lock&lt;unsigned int&gt; lock(no_runtime_errors);
++	if (eval_bitwise_OR(src,types,CPP_literal_converts_to_bool,CPP_intlike_literal_to_VM)) return;
+ }
+ 
+ /*
+@@ -9259,7 +9280,7 @@
+ 	if (is_bitwise_complement_expression(src))
+ 		{
+ 		EvalParseTree(*src.c_array&lt;2&gt;(),types);
+-		if (eval_bitwise_compl(src,types,true,is_bitwise_complement_expression,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_compl(src,types,is_bitwise_complement_expression,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9299,7 +9320,7 @@
+ 	if (is_C99_mult_operator_expression&lt;'*'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_mult_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_mult_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9313,7 +9334,7 @@
+ 	if (is_C99_mult_operator_expression&lt;'/'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_div_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_div_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9327,7 +9348,7 @@
+ 	if (is_C99_mult_operator_expression&lt;'%'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_mod_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_mod_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9341,7 +9362,7 @@
+ 	if (is_C99_add_operator_expression&lt;'+'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_add_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_add_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9355,7 +9376,7 @@
+ 	if (is_C99_add_operator_expression&lt;'-'&gt;(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_sub_expression(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_sub_expression(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9369,7 +9390,7 @@
+ 	if (is_C99_shift_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_shift(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_shift(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9412,7 +9433,7 @@
+ 	if (is_bitwise_AND_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_bitwise_AND(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_AND(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9427,7 +9448,7 @@
+ 	if (is_bitwise_XOR_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_bitwise_XOR(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_XOR(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+@@ -9442,7 +9463,7 @@
+ 	if (is_bitwise_OR_expression(src))
+ 		{
+ 		ZCC_EVALPARSETREE_PAIR_EVAL(1,2);
+-		if (eval_bitwise_OR(src,types,true,literal_converts_to_bool,intlike_literal_to_VM)) return true;
++		if (eval_bitwise_OR(src,types,literal_converts_to_bool,intlike_literal_to_VM)) return true;
+ 		}
+ 	return false;
+ }
+
+Modified: trunk/POSIX.dep
+===================================================================
+--- trunk/POSIX.dep	2010-05-08 06:04:36 UTC (rev 418)
++++ trunk/POSIX.dep	2010-05-09 07:00:49 UTC (rev 419)
+@@ -1,8 +1,8 @@
+ OBJECTS_Z_CPP = z_cpp.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport_pp.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc_pp.o CPreproc_autogen_pp.o
+-OBJECTS_Z_CPP_LINK_PRIORITY = CPreproc_pp.o z_cpp.o unsigned_aux.o ParseTree.o Flat_UNI.o unsigned_var_int.o CSupport_pp.o type_system.o CPUInfo.o CPreproc_autogen_pp.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o errors.o uchar_blob.o struct_type.o type_spec.o load_src.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o
++OBJECTS_Z_CPP_LINK_PRIORITY = CSupport_pp.o errors.o ParseTree.o type_spec.o uchar_blob.o CPreproc_autogen_pp.o CPUInfo.o load_src.o type_system.o unsigned_var_int.o CPreproc_pp.o z_cpp.o unsigned_aux.o Flat_UNI.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o
+ 
+ OBJECTS_ZCC = zcc.o errors.o langroute.o AtomicString.o str_aux.o lex_core.o filesystem.o uchar_blob.o unsigned_var_int.o CPUInfo.o struct_type.o type_system.o ParseTree.o type_spec.o CSupport.o C_PPNumCore.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPHexInteger.o C_PPDecimalFloat.o C_PPHexFloat.o unsigned_aux.o Trigraph.o Flat_UNI.o load_src.o CPreproc.o CPreproc_autogen.o ZParser.o
+-OBJECTS_ZCC_LINK_PRIORITY = zcc.o CPreproc.o unsigned_aux.o ParseTree.o Flat_UNI.o unsigned_var_int.o CSupport.o type_system.o CPUInfo.o CPreproc_autogen.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o errors.o uchar_blob.o struct_type.o type_spec.o load_src.o str_aux.o ZParser.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o
++OBJECTS_ZCC_LINK_PRIORITY = CSupport.o errors.o ZParser.o ParseTree.o type_spec.o uchar_blob.o CPUInfo.o CPreproc_autogen.o load_src.o type_system.o unsigned_var_int.o zcc.o CPreproc.o unsigned_aux.o Flat_UNI.o langroute.o lex_core.o C_PPHexInteger.o AtomicString.o struct_type.o str_aux.o C_PPDecimalInteger.o C_PPOctalInteger.o C_PPDecimalFloat.o C_PPHexFloat.o C_PPNumCore.o filesystem.o Trigraph.o
+ 
+ # dependencies
+ z_cpp.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc_pp.hpp load_src.hpp AtomicString.h filesystem.h langroute.hpp errors.hpp CPUInfo.hpp errcount.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp
+@@ -19,7 +19,7 @@
+ type_system.o: type_system.hpp type_system_pp.hpp enum_type.hpp struct_type.hpp Zaimoni.STL/search.hpp Zaimoni.STL/Pure.C/auto_int.h AtomicString.h str_aux.h Zaimoni.STL/POD.hpp Zaimoni.STL/AutoPtr.hpp type_spec.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp uchar_blob.hpp
+ ParseTree.o: ParseTree.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+ type_spec.o: type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/Compiler.h
+-CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.!
+ h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport_pp.o: CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.h!
+ pp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ C_PPNumCore.o: C_PPNumCore.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPDecimalInteger.o: C_PPDecimalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+ C_PPOctalInteger.o: C_PPOctalInteger.hpp unsigned_aux.hpp Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h
+@@ -33,7 +33,7 @@
+ CPreproc_pp.o: CPreproc_pp.hpp AtomicString.h CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/opera!
+ tor.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen_pp.o: CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ zcc.o: Zaimoni.STL/LexParse/Token.hpp _CSupport2.hpp CPreproc.hpp load_src.hpp AtomicString.h filesystem.h errors.hpp langroute.hpp CPUInfo.hpp errcount.hpp ParseTree.hpp ZParser.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/LexParse/std.h Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp type_spec.hpp weak_token.hpp Zaimoni.STL/Lexparse/std.h
+-CSupport.o: CSupport.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp!
+  type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
++CSupport.o: CSupport.hpp CSupport_pp.hpp _CSupport1.hpp _CSupport2.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/lite_alg.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/simple_lock.hpp AtomicString.h str_aux.h Trigraph.hpp Flat_UNI.hpp errors.hpp errcount.hpp CPUInfo.hpp ParseTree.hpp type_system.hpp type_algebra.hpp weak_token.hpp C_PPDecimalInteger.hpp C_PPHexInteger.hpp C_PPOctalInteger.hpp C_PPDecimalFloat.hpp C_PPHexFloat.hpp enum_type.hpp struct_type.hpp CheckReturn.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/Logging.h Zaimoni.STL/flat_alg.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/algorithm Zaimoni.STL/bits/lite_alg.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp unsigned_var_int.hpp uns!
+ igned_aux.hpp uchar_blob.hpp type_spec.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp
+ CPreproc.o: CPreproc.hpp CPreproc_pp.hpp AtomicString.h CSupport.hpp CSupport_pp.hpp C_PPDecimalInteger.hpp CPUInfo.hpp errors.hpp errcount.hpp filesystem.h langroute.hpp load_src.hpp ParseTree.hpp type_system.hpp weak_token.hpp _version.h Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/search.hpp Zaimoni.STL/OS/mutex.hpp Zaimoni.STL/Pure.C/format_util.h DebugCSupport.h Zaimoni.STL/LexParse/std.h type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/Logging.h Zaimoni.STL/pure.C/format_util.h C_PPNumCore.hpp Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp type_spec.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zai!
+ moni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+ CPreproc_autogen.o: CPreproc.hpp CPreproc_pp.hpp CPUInfo.hpp errors.hpp Zaimoni.STL/POD.hpp Zaimoni.STL/LexParse/Token.hpp Zaimoni.STL/pure.C/format_util.h Zaimoni.STL/LexParse/std.h unsigned_var_int.hpp unsigned_aux.hpp uchar_blob.hpp Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h Zaimoni.STL/boost_core.hpp Zaimoni.STL/LexParse/MetaToken.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp
+ ZParser.o: ZParser.hpp CSupport.hpp errors.hpp errcount.hpp langroute.hpp ParseTree.hpp type_system.hpp Zaimoni.STL/AutoPtr.hpp Zaimoni.STL/LexParse/LangConf.hpp Zaimoni.STL/LexParse/Token.hpp type_algebra.hpp lex_core.h Zaimoni.STL/pure.C/auto_int.h Zaimoni.STL/LexParse/std.h Zaimoni.STL/Logging.h Zaimoni.STL/Compiler.h Zaimoni.STL/flat_alg.h type_spec.hpp weak_token.hpp Zaimoni.STL/MetaRAM2.hpp Zaimoni.STL/POD.hpp uchar_blob.hpp Zaimoni.STL/boost_core.hpp Zaimoni.STL/Lexparse/std.h Zaimoni.STL/MetaRAM.hpp Zaimoni.STL/z_memory.h Zaimoni.STL/polymorphic.hpp Zaimoni.STL/metatype/c_array.hpp Zaimoni.STL/bits/cstdio_autoptr.hpp Zaimoni.STL/algorithm Zaimoni.STL/logic_lt.hpp Zaimoni.STL/metatype/operator.hpp Zaimoni.STL/LexParse/MetaToken.hpp
+
+Added: trunk/Zaimoni.STL/simple_lock.hpp
+===================================================================
+--- trunk/Zaimoni.STL/simple_lock.hpp	2010-05-08 06:04:36 UTC (rev 418)
++++ trunk/Zaimoni.STL/simple_lock.hpp	2010-05-09 07:00:49 UTC (rev 419)
+@@ -0,0 +1,25 @@
++// simple_lock.hpp
++// (C)2007 Kenneth Boyd, license: MIT.txt
++
++#ifndef ZAIMONI_STL_SIMPLE_LOCK_HPP
++#define ZAIMONI_STL_SIMPLE_LOCK_HPP 1
++
++namespace zaimoni {
++
++template&lt;class T&gt;
++class simple_lock
++{
++private:
++	T&amp; _lock_counter;
++
++	// copy is not meaningful
++	simple_lock(const simple_lock&amp; src);
++	void operator=(const simple_lock&amp; src);
++public:
++	simple_lock(T&amp; _lock_this) : _lock_counter(_lock_this) {++_lock_counter;};
++	~simple_lock() {--_lock_counter;};
++};
++
++}
++
++#endif
+
+Modified: trunk/errors.cpp
+===================================================================
+--- trunk/errors.cpp	2010-05-08 06:04:36 UTC (rev 418)
++++ trunk/errors.cpp	2010-05-09 07:00:49 UTC (rev 419)
+@@ -149,6 +149,7 @@
+ // unsigned short _char_bit, unsigned short _sizeof_short, unsigned short _sizeof_int, unsigned short _sizeof_long, unsigned short _sizeof_long_long
+ 
+ zaimoni::OS::mutex errno_mutex;
++unsigned int no_runtime_errors = 0;
+ 
+ #ifndef NDEBUG
+ bool debug_tracer = false;
+
+Modified: trunk/errors.hpp
+===================================================================
+--- trunk/errors.hpp	2010-05-08 06:04:36 UTC (rev 418)
++++ trunk/errors.hpp	2010-05-09 07:00:49 UTC (rev 419)
+@@ -148,6 +148,13 @@
+ 
+ extern zaimoni::OS::mutex errno_mutex;
+ 
++// following are for use by zaimoni::simple_lock
++/*
++ * some errors are only problems at runtime, and shouldn't be noticed if
++ * the expression is unevaluated
++ */ 
++extern unsigned int no_runtime_errors;
++
+ #ifndef NDEBUG
+ extern bool debug_tracer;
+ #endif
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000185.html">[Zcplusplus-commits] r418 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000187.html">[Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#186">[ date ]</a>
+              <a href="thread.html#186">[ thread ]</a>
+              <a href="subject.html#186">[ subject ]</a>
+              <a href="author.html#186">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

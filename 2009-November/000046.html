@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r279 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r279%20-%20trunk&In-Reply-To=%3C200911250440.nAP4erPU023043%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000045.html">
+   <LINK REL="Next"  HREF="000047.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r279 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r279%20-%20trunk&In-Reply-To=%3C200911250440.nAP4erPU023043%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r279 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Nov 25 05:40:53 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000045.html">[Zcplusplus-commits] r278 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+        <LI>Next message: <A HREF="000047.html">[Zcplusplus-commits] r280 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#46">[ date ]</a>
+              <a href="thread.html#46">[ thread ]</a>
+              <a href="subject.html#46">[ subject ]</a>
+              <a href="author.html#46">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-25 05:40:45 +0100 (Wed, 25 Nov 2009)
+New Revision: 279
+
+Modified:
+   trunk/errors.hpp
+   trunk/z_cpp.cpp
+   trunk/zcc.cpp
+Log:
+new options for zcc: -Wc-c++-compat, -Wbackport
+
+Modified: trunk/errors.hpp
+===================================================================
+--- trunk/errors.hpp	2009-11-24 07:16:13 UTC (rev 278)
++++ trunk/errors.hpp	2009-11-25 04:40:45 UTC (rev 279)
+@@ -50,14 +50,22 @@
+ #define boolean_option_8 char_is_unsigned
+ #define boolean_option_char_is_unsigned 8
+ #define DEFAULT_char_is_unsigned false
+-	int_neg_div_rounds_away_from_zero
++	int_neg_div_rounds_away_from_zero,
+ #define boolean_option_9 int_neg_div_rounds_away_from_zero
+ #define boolean_option_int_neg_div_rounds_away_from_zero 9
+ #define DEFAULT_int_neg_div_rounds_away_from_zero false
++	warn_crosslang_compatibility,
++#define boolean_option_10 warn_crosslang_compatibility
++#define boolean_option_warn_crosslang_compatibility 10
++#define DEFAULT_warn_crosslang_compatibility false
++	warn_backport
++#define boolean_option_11 warn_backport
++#define boolean_option_warn_backport 11
++#define DEFAULT_warn_backport false
+ };
+ 
+ #define boolean_option(A) boolean_option_##A
+-#define MAX_OPT_BOOL (boolopt::int_neg_div_rounds_away_from_zero+1)
++#define MAX_OPT_BOOL (boolopt::warn_backport+1)
+ 
+ }
+ 
+
+Modified: trunk/z_cpp.cpp
+===================================================================
+--- trunk/z_cpp.cpp	2009-11-24 07:16:13 UTC (rev 278)
++++ trunk/z_cpp.cpp	2009-11-25 04:40:45 UTC (rev 279)
+@@ -50,7 +50,9 @@
+ 			default_option(boolean_option(6)),
+ 			default_option(boolean_option(7)),
+ 			default_option(boolean_option(8)),
+-			default_option(boolean_option(9))
++			default_option(boolean_option(9)),
++			default_option(boolean_option(10)),
++			default_option(boolean_option(11))
+ 		};
+ 
+ // exposed in errors.hpp
+@@ -63,7 +65,10 @@
+ 			default_option(boolean_option(5)),
+ 			default_option(boolean_option(6)),
+ 			default_option(boolean_option(7)),
+-			default_option(boolean_option(8))
++			default_option(boolean_option(8)),
++			default_option(boolean_option(9)),
++			default_option(boolean_option(10)),
++			default_option(boolean_option(11))
+ 		};
+ 
+ typedef bool string_opt_handler(const char* const);
+
+Modified: trunk/zcc.cpp
+===================================================================
+--- trunk/zcc.cpp	2009-11-24 07:16:13 UTC (rev 278)
++++ trunk/zcc.cpp	2009-11-25 04:40:45 UTC (rev 279)
+@@ -39,7 +39,9 @@
+ 		{ &quot;--int-traps&quot;,	boolopt::int_traps, 	&quot;signed int has a trap representation (-0 for sign-magnitude and one's complement, -(2^CHAR_BIT) for two's complement\n&quot;},
+ 		{ &quot;-fsigned-char&quot;,	boolopt::char_is_signed, 	&quot;char acts like signed char\n&quot;},		// GCC compatibility
+ 		{ &quot;-funsigned-char&quot;,	boolopt::char_is_unsigned, 	&quot;char acts like unsigned char (default)\n&quot;},	// GCC compatibility
+-		{ &quot;--int-neg-div-rounds-away-from-zero&quot;,	boolopt::int_neg_div_rounds_away_from_zero, 	&quot;make -3/-2==-2 contrary to C99 recommendation\n&quot;}
++		{ &quot;--int-neg-div-rounds-away-from-zero&quot;,	boolopt::int_neg_div_rounds_away_from_zero, 	&quot;make -3/-2==-2 contrary to C99 recommendation\n&quot;},
++		{ &quot;-Wc-c++-compat&quot;,	boolopt::warn_crosslang_compatibility,	&quot;Warn when something legal in C/C++ would be an error in C++/C for C/C++\n&quot;},
++		{ &quot;-Wbackport&quot;,	boolopt::warn_backport,	&quot;Warn when something legal would be an error under an older standard\n&quot;}
+ 	};
+ 
+ const bool bool_options_default[MAX_OPT_BOOL]
+@@ -52,7 +54,9 @@
+ 			default_option(boolean_option(6)),
+ 			default_option(boolean_option(7)),
+ 			default_option(boolean_option(8)),
+-			default_option(boolean_option(9))
++			default_option(boolean_option(9)),
++			default_option(boolean_option(10)),
++			default_option(boolean_option(11))
+ 		};
+ 
+ // exposed in errors.hpp
+@@ -65,7 +69,10 @@
+ 			default_option(boolean_option(5)),
+ 			default_option(boolean_option(6)),
+ 			default_option(boolean_option(7)),
+-			default_option(boolean_option(8))
++			default_option(boolean_option(8)),
++			default_option(boolean_option(9)),
++			default_option(boolean_option(10)),
++			default_option(boolean_option(11))
+ 		};
+ 
+ typedef bool string_opt_handler(const char* const);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000045.html">[Zcplusplus-commits] r278 - in trunk/tests: zcc/decl.C99	zcc.in/decl.C99
+</A></li>
+	<LI>Next message: <A HREF="000047.html">[Zcplusplus-commits] r280 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#46">[ date ]</a>
+              <a href="thread.html#46">[ thread ]</a>
+              <a href="subject.html#46">[ subject ]</a>
+              <a href="author.html#46">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

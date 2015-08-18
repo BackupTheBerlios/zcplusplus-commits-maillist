@@ -1,0 +1,376 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r290 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2009-November/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r290%20-%20trunk&In-Reply-To=%3C200911300354.nAU3sEh2020108%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000056.html">
+   <LINK REL="Next"  HREF="000058.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r290 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r290%20-%20trunk&In-Reply-To=%3C200911300354.nAU3sEh2020108%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r290 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Mon Nov 30 04:54:14 CET 2009</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000056.html">[Zcplusplus-commits] r289 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000058.html">[Zcplusplus-commits] r291 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#57">[ date ]</a>
+              <a href="thread.html#57">[ thread ]</a>
+              <a href="subject.html#57">[ subject ]</a>
+              <a href="author.html#57">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2009-11-30 04:54:09 +0100 (Mon, 30 Nov 2009)
+New Revision: 290
+
+Modified:
+   trunk/CSupport.cpp
+   trunk/type_system.cpp
+   trunk/type_system.hpp
+Log:
+preliminary change for handling typedefs in anonymous/inline namespaces
+
+Modified: trunk/CSupport.cpp
+===================================================================
+--- trunk/CSupport.cpp	2009-11-30 02:39:30 UTC (rev 289)
++++ trunk/CSupport.cpp	2009-11-30 03:54:09 UTC (rev 290)
+@@ -9989,7 +9989,7 @@
+ }
+ 
+ //! \todo should this be a type_system member?
+-bool check_for_typedef(type_spec&amp; dest,const char* const src,const type_system&amp; types)
++static bool check_for_typedef(type_spec&amp; dest,const char* const src,const type_system&amp; types)
+ {
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef(src);
+ 	if (NULL!=tmp)
+@@ -10000,6 +10000,18 @@
+ 	return false;
+ }
+ 
++//! \todo should this be a type_system member?
++static bool check_for_typedef(type_spec&amp; dest,const char* const src,const char* const active_namespace,const type_system&amp; types)
++{
++	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef_CPP(src,active_namespace);
++	if (NULL!=tmp)
++		{	//! \todo C++: check for access control if source ends up being a class or struct
++		value_copy(dest,tmp-&gt;first);
++		return true;
++		}
++	return false;
++}
++
+ //! \todo does this need to be in ParseTree.hpp?
+ static size_t 
+ flush_token(parse_tree&amp; x, const size_t i, const size_t n, const char* const target)
+@@ -10146,24 +10158,11 @@
+ 	const type_system&amp; types;
+ 	// these two might belong in a koenig_lookup object
+ 	const char* const active_namespace;
+-	autovalarray_ptr_throws&lt;char*&gt; koenig_lookup;
+ public:
+-	CPP0X_decl_specifier_scanner(const type_system&amp; _types,const char* const _active_namespace) : flags(0),types(_types),active_namespace(_active_namespace),koenig_lookup((_active_namespace &amp;&amp; *_active_namespace) ? count_disjoint_substring_instances(_active_namespace,&quot;::&quot;) : 0)
++	CPP0X_decl_specifier_scanner(const type_system&amp; _types,const char* const _active_namespace) : flags(0),types(_types),active_namespace(_active_namespace)
+ 		{
+ 		clear(decl_count);
+ 		base_type.clear();
+-		if (!koenig_lookup.empty())
+-			{
+-			size_t namespace_break_stack_size = koenig_lookup.size();
+-			weakautovalarray_ptr_throws&lt;const char*&gt; namespace_break_stack(namespace_break_stack_size);
+-			report_disjoint_substring_instances(active_namespace,&quot;::&quot;,namespace_break_stack.c_array(),namespace_break_stack_size);
+-			do	{
+-				size_t offset = namespace_break_stack[--namespace_break_stack_size]-active_namespace;
+-				koenig_lookup[namespace_break_stack_size] = _new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(offset));
+-				strncpy(koenig_lookup[namespace_break_stack_size],active_namespace,offset);
+-				}
+-			while(0&lt;namespace_break_stack_size);
+-			}
+ 		}
+ 	// trivial destructor, copy constructor, assignment fine
+ 	bool operator()(parse_tree&amp; x,const size_t i)
+@@ -10191,47 +10190,8 @@
+ 			&amp;&amp; !(PARSE_TYPE &amp; x.data&lt;0&gt;()[i].flags)
+ 			&amp;&amp; !CPP_echo_reserved_keyword(x.data&lt;0&gt;()[i].index_tokens[0].token.first,x.data&lt;0&gt;()[i].index_tokens[0].token.second)
+ 			&amp;&amp; (C_TESTFLAG_IDENTIFIER &amp; x.data&lt;0&gt;()[i].index_tokens[0].flags))
+-			{
+-			if (!strncmp(x.data&lt;0&gt;()[i].index_tokens[0].token.first,&quot;::&quot;,2))
+-				{	// fully-qualified
+-				assert(2&lt;x.data&lt;0&gt;()[i].index_tokens[0].token.second);
+-				return check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first+2,types);
+-				};
+-			// ahem...Koenig lookup
+-			// work backwards until we find something
+-			// if the result ends up being from a struct/class, access control will cut in
+-			// in any case, the types object is responsible for handling aliases and using directives
+-			// Don't use the check_for_typedef function in this block (conflicts with dynamic RAM loading minimization)
+-			if (NULL!=active_namespace)
+-				{
+-				char* tmp2 = type_system::namespace_concatenate(x.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,&quot;::&quot;);
+-				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef(tmp2);
+-				if (NULL!=tmp)
+-					{	//! \todo check for access-control if source is a class or struct
+-					free(tmp2);
+-					value_copy(base_type,tmp-&gt;first);
+-					return true;
+-					};
+-				if (!koenig_lookup.empty())
+-					{
+-					size_t i = koenig_lookup.size();
+-					do	{
+-						--i;
+-						type_system::namespace_concatenate(tmp2,x.data&lt;0&gt;()[i].index_tokens[0].token.first,koenig_lookup[i],&quot;::&quot;);
+-						const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp = types.get_typedef(tmp2);
+-						if (NULL!=tmp)
+-							{	//! \todo check for access-control if source is a class or struct
+-							free(tmp2);
+-							value_copy(base_type,tmp-&gt;first);
+-							return true;
+-							};
+-						}
+-					while(0&lt;i);
+-					};
+-				free(tmp2);
+-				}
+-			// last case: just try it as-is
+-			return check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first,types);
++			{	// shove Koenig lookup into type_system
++			return check_for_typedef(base_type,x.data&lt;0&gt;()[i].index_tokens[0].token.first,active_namespace,types);
+ 			}
+ 		}
+ 		//! \todo handle other known types
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2009-11-30 02:39:30 UTC (rev 289)
++++ trunk/type_system.cpp	2009-11-30 03:54:09 UTC (rev 290)
+@@ -4,6 +4,8 @@
+ #include &quot;type_system.hpp&quot;
+ #include &quot;struct_type.hpp&quot;
+ #include &quot;Zaimoni.STL/search.hpp&quot;
++#include &quot;AtomicString.h&quot;
++#include &quot;str_aux.h&quot;
+ 
+ // macros to help out dynamic registration
+ #define DYNAMIC_FUNCTYPE 1
+@@ -97,8 +99,6 @@
+ {
+ 	assert(alias &amp;&amp; *alias);
+ 	assert(filename &amp;&amp; *filename);
+-	//! \todo: strip off trailing inline namespaces
+-	// &lt;unknown&gt; is the hack for anonymous namespaces taken from GCC, it's always inline
+ 	errr tmp = binary_find(alias,strlen(alias),typedef_registry.data(),typedef_registry.size());
+ 	assert(0&gt;tmp);		// error to call with conflicting prior definition
+ 	if (0&lt;=tmp) return;	// conflicting prior definition
+@@ -120,6 +120,64 @@
+ 	return NULL;
+ }
+ 
++const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::_get_typedef_CPP(const char* const alias) const
++{
++	errr tmp = binary_find(alias,strlen(alias),typedef_registry.data(),typedef_registry.size());
++	if (0&lt;=tmp) return &amp;typedef_registry[tmp].second;
++	// hmm...not an exact match
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; tmp2 = dealias_inline_namespace_index(alias);
++	if (0&lt;=tmp2.first)
++		{	// it was remapped
++		while(tmp2.first&lt;tmp2.second)
++			{
++			tmp = binary_find(inline_namespace_alias_map.data()[tmp2.first].second,strlen(inline_namespace_alias_map.data()[tmp2.first].second),typedef_registry.data(),typedef_registry.size());
++			if (0&lt;=tmp) return &amp;typedef_registry[tmp].second;
++			}
++		tmp = binary_find(inline_namespace_alias_map.data()[tmp2.first].second,strlen(inline_namespace_alias_map.data()[tmp2.first].second),typedef_registry.data(),typedef_registry.size());
++		if (0&lt;=tmp) return &amp;typedef_registry[tmp].second;
++		}
++	return NULL;
++}
++
++const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* type_system::get_typedef_CPP(const char* alias,const char* active_namespace) const
++{
++	assert(alias &amp;&amp; *alias);
++
++	if (!strncmp(alias,&quot;::&quot;,2))
++		{	// fully-qualified typedef name
++			// cheat: pretend not fully qualified but no surrounding namespace
++		alias += 2;
++		active_namespace = NULL;
++		};
++	if (active_namespace &amp;&amp; *active_namespace)
++		{
++		// ok..march up to global
++		char* tmp_alias = namespace_concatenate(alias,active_namespace,&quot;::&quot;);
++		if (is_string_registered(tmp_alias))
++			{	// registered, so could be indexed
++			const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp2 = _get_typedef_CPP(tmp_alias);
++			if (tmp2) return (free(tmp_alias),tmp2);
++			}
++
++		const size_t extra_namespaces = count_disjoint_substring_instances(active_namespace,&quot;::&quot;);
++		if (extra_namespaces)
++			{
++			zaimoni::weakautovalarray_ptr_throws&lt;const char*&gt; intra_namespace(extra_namespaces);
++			report_disjoint_substring_instances(active_namespace,&quot;::&quot;,intra_namespace.c_array(),extra_namespaces);
++			size_t i = extra_namespaces;
++			do	{
++				--i;
++				namespace_concatenate(tmp_alias,alias,active_namespace,intra_namespace[i]-active_namespace,&quot;::&quot;);
++				const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* tmp2 = _get_typedef_CPP(tmp_alias);
++				if (tmp2) return (free(tmp_alias),tmp2);
++				}
++			while(0&lt;i);
++			}
++		free(tmp_alias);
++		}
++	return _get_typedef_CPP(alias);
++}
++
+ char* type_system::_namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len)
+ {
+ 	char* const actual_name = zaimoni::_new_buffer_nonNULL_throws&lt;char&gt;(ZAIMONI_LEN_WITH_NULL(active_namespace_len+2+name_len));
+@@ -137,6 +195,41 @@
+ 	ZAIMONI_NULL_TERMINATE(buf[active_namespace_len+namespace_separator_len+name_len]);
+ }
+ 
++zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; type_system::dealias_inline_namespace_index(const char* const alias) const
++{
++	assert(alias &amp;&amp; *alias);
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; tmp = {-1,-1};
++	size_t strict_ub = inline_namespace_alias_map.size();
++	size_t lb = 0;
++	// binary search
++	// is inline_namespace_alias_map.data() a code size optimization target?
++	while(strict_ub&gt;lb)
++		{
++		const size_t midpoint = lb+(strict_ub-lb)/2;
++		switch(strcmp(inline_namespace_alias_map.data()[midpoint].first,alias))
++		{
++#ifndef NDEBUG
++		default: FATAL(&quot;strcmp out of range -1,0,1&quot;);
++#endif
++		case 0: {
++			tmp.first = midpoint;
++			tmp.second = midpoint;
++			while(lb&lt;(size_t)tmp.first &amp;&amp; !strcmp(inline_namespace_alias_map.data()[tmp.first-1].first,alias)) --tmp.first;
++			while(strict_ub-1&gt;(size_t)tmp.second &amp;&amp; !strcmp(inline_namespace_alias_map.data()[tmp.second+1].first,alias)) ++tmp.second;
++			return tmp;
++			}
++		case 1: {
++			strict_ub = midpoint;
++			break;
++			}
++		case -1:{
++			lb = midpoint+1;
++			}
++		}
++		}
++	return tmp;
++}
++
+ type_system::type_index type_system::register_functype(const char* const alias, function_type*&amp; src)
+ {
+ 	assert(alias &amp;&amp; *alias);
+
+Modified: trunk/type_system.hpp
+===================================================================
+--- trunk/type_system.hpp	2009-11-30 02:39:30 UTC (rev 289)
++++ trunk/type_system.hpp	2009-11-30 03:54:09 UTC (rev 290)
+@@ -26,6 +26,7 @@
+ 	typedef zaimoni::POD_triple&lt;const char*,size_t,zaimoni::POD_pair&lt;zaimoni::union_quartet&lt;function_type*,union_struct_decl*,C_union_struct_def*,enum_def*&gt;, unsigned char&gt; &gt; dynamic_type_format;
+ 	zaimoni::autovalarray_ptr&lt;dynamic_type_format&gt; dynamic_types;
+ 	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt; &gt; &gt; typedef_registry;
++	zaimoni::autovalarray_ptr&lt;zaimoni::POD_pair&lt;const char*,const char*&gt; &gt; inline_namespace_alias_map;
+ 	// uncopyable
+ 	type_system(const type_system&amp; src);
+ 	void operator=(const type_system&amp; src);
+@@ -79,16 +80,16 @@
+ 		}
+ 
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+-	// defer seven other variants for now (YAGNI) but catch them all at once if one is pragmatic
++	// defer seven other variants for now (YAGNI)
+ 	static char* namespace_concatenate(const char* const name, const char* const active_namespace,const char* namespace_separator)
+ 		{
+ 		assert(name &amp;&amp; *name);
+ 		assert(active_namespace &amp;&amp; *active_namespace);
+ 		assert(namespace_separator &amp;&amp; *namespace_separator);
+ 		return _namespace_concatenate(name,strlen(name),active_namespace,strlen(active_namespace),namespace_separator,strlen(namespace_separator));
+-		}
++		};
+ 
+-	// defer seven other variants for now (YAGNI) but catch them all at once if one is pragmatic
++	// defer six other variants for now (YAGNI)
+ 	static void namespace_concatenate(char* buf, const char* const name, const char* const active_namespace,const char* namespace_separator)
+ 		{
+ 		assert(buf);
+@@ -96,11 +97,21 @@
+ 		assert(active_namespace &amp;&amp; *active_namespace);
+ 		assert(namespace_separator &amp;&amp; *namespace_separator);
+ 		_namespace_concatenate(buf,name,strlen(name),active_namespace,strlen(active_namespace),namespace_separator,strlen(namespace_separator));
+-		}
++		};
++	static void namespace_concatenate(char* buf, const char* const name, const char* const active_namespace,size_t active_namespace_len,const char* namespace_separator)
++		{
++		assert(buf);
++		assert(name &amp;&amp; *name);
++		assert(active_namespace &amp;&amp; *active_namespace);
++		assert(0&lt;active_namespace_len &amp;&amp; active_namespace_len&lt;=strlen(active_namespace));
++		assert(namespace_separator &amp;&amp; *namespace_separator);
++		_namespace_concatenate(buf,name,strlen(name),active_namespace,active_namespace_len,namespace_separator,strlen(namespace_separator));
++		};
+ 
+ 
+ 	void set_typedef(const char* const alias, const char* filename, const size_t lineno, type_spec&amp; src);	// invalidates src
+ 	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef(const char* const alias) const;
++	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* get_typedef_CPP(const char* alias,const char* active_namespace) const;
+ 
+ 	type_index register_functype(const char* const alias, function_type*&amp; src);
+ 	type_index register_structdecl(const char* const alias, union_struct_decl*&amp; src);
+@@ -116,6 +127,8 @@
+ 	type_index _get_id_enum(const char* const x,size_t x_len) const;
+ 	type_index _get_id_struct_class(const char* const x,size_t x_len) const;
+ 	const char* _name(type_index id) const;
++	zaimoni::POD_pair&lt;ptrdiff_t,ptrdiff_t&gt; dealias_inline_namespace_index(const char* alias) const;
++	const zaimoni::POD_triple&lt;type_spec,const char*,size_t&gt;* _get_typedef_CPP(const char* alias) const;
+ 	// can throw std::bad_alloc; returned string is owned by the caller (use free to deallocate)
+ 	static char* _namespace_concatenate(const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+ 	static void _namespace_concatenate(char* buf, const char* const name, size_t name_len, const char* const active_namespace, size_t active_namespace_len,const char* namespace_separator, size_t namespace_separator_len);
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000056.html">[Zcplusplus-commits] r289 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000058.html">[Zcplusplus-commits] r291 - trunk
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#57">[ date ]</a>
+              <a href="thread.html#57">[ thread ]</a>
+              <a href="subject.html#57">[ subject ]</a>
+              <a href="author.html#57">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

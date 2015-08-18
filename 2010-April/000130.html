@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r363 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-April/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r363%20-%20in%20trunk/tests%3A%0A%09zcc/default/staticassert%20zcc/staticassert.C1X%0A%09zcc.in/default/staticassert&In-Reply-To=%3C201004070607.o3767uJt018871%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   
+   <LINK REL="Next"  HREF="000131.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r363 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r363%20-%20in%20trunk/tests%3A%0A%09zcc/default/staticassert%20zcc/staticassert.C1X%0A%09zcc.in/default/staticassert&In-Reply-To=%3C201004070607.o3767uJt018871%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r363 - in trunk/tests:	zcc/default/staticassert zcc/staticassert.C1X	zcc.in/default/staticassert">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Wed Apr  7 08:07:56 CEST 2010</I>
+    <P><UL>
+        
+        <LI>Next message: <A HREF="000131.html">[Zcplusplus-commits] r364 - trunk/tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#130">[ date ]</a>
+              <a href="thread.html#130">[ thread ]</a>
+              <a href="subject.html#130">[ subject ]</a>
+              <a href="author.html#130">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-04-07 08:07:22 +0200 (Wed, 07 Apr 2010)
+New Revision: 363
+
+Modified:
+   trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+   trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+   trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+Log:
+operator - test cases
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.h	2010-04-07 06:07:22 UTC (rev 363)
+@@ -15,3 +15,5 @@
+ _Static_Assert(&quot;A&quot;+1,&quot;automatic success has failed&quot;);
+ _Static_Assert(1+&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
++_Static_Assert(&quot;A&quot;-0,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc/default/staticassert/Pass_autosuccess.hpp	2010-04-07 06:07:22 UTC (rev 363)
+@@ -15,3 +15,5 @@
+ static_assert(&quot;A&quot;+1,&quot;automatic success has failed&quot;);
+ static_assert(1+&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
++static_assert(&quot;A&quot;-0,&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.h	2010-04-07 06:07:22 UTC (rev 363)
+@@ -66,3 +66,14 @@
+ _Static_Assert(1+0,&quot;automatic success has failed&quot;);
+ _Static_Assert(1+1,&quot;automatic success has failed&quot;);
+ 
++// check -
++_Static_Assert(!(-1- -1),&quot;automatic success has failed&quot;);
++_Static_Assert(-1-0,&quot;automatic success has failed&quot;);
++_Static_Assert(-1-1,&quot;automatic success has failed&quot;);
++_Static_Assert(0- -1,&quot;automatic success has failed&quot;);
++_Static_Assert(!(0-0),&quot;automatic success has failed&quot;);
++_Static_Assert(0-1,&quot;automatic success has failed&quot;);
++_Static_Assert(1- -1,&quot;automatic success has failed&quot;);
++_Static_Assert(1-0,&quot;automatic success has failed&quot;);
++_Static_Assert(!(1-1),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc/staticassert.C1X/Pass_autosuccess.hpp	2010-04-07 06:07:22 UTC (rev 363)
+@@ -66,3 +66,14 @@
+ static_assert(1+0,&quot;automatic success has failed&quot;);
+ static_assert(1+1,&quot;automatic success has failed&quot;);
+ 
++// check -
++static_assert(!(-1- -1),&quot;automatic success has failed&quot;);
++static_assert(-1-0,&quot;automatic success has failed&quot;);
++static_assert(-1-1,&quot;automatic success has failed&quot;);
++static_assert(0- -1,&quot;automatic success has failed&quot;);
++static_assert(!(0-0),&quot;automatic success has failed&quot;);
++static_assert(0-1,&quot;automatic success has failed&quot;);
++static_assert(1- -1,&quot;automatic success has failed&quot;);
++static_assert(1-0,&quot;automatic success has failed&quot;);
++static_assert(!(1-1),&quot;automatic success has failed&quot;);
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.h	2010-04-07 06:07:22 UTC (rev 363)
+@@ -61,3 +61,15 @@
+ _Static_Assert(one+zero,&quot;automatic success has failed&quot;);
+ _Static_Assert(one+one,&quot;automatic success has failed&quot;);
+ 
++// check -
++_Static_Assert(!(neg_one-neg_one),&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one-zero,&quot;automatic success has failed&quot;);
++_Static_Assert(neg_one-one,&quot;automatic success has failed&quot;);
++_Static_Assert(zero-neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(!(zero-zero),&quot;automatic success has failed&quot;);
++_Static_Assert(zero-one,&quot;automatic success has failed&quot;);
++_Static_Assert(one-neg_one,&quot;automatic success has failed&quot;);
++_Static_Assert(one-zero,&quot;automatic success has failed&quot;);
++_Static_Assert(!(one-one),&quot;automatic success has failed&quot;);
++
++
+
+Modified: trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp
+===================================================================
+--- trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc/staticassert.C1X/Pass_enum_autosuccess.hpp	2010-04-07 06:07:22 UTC (rev 363)
+@@ -61,3 +61,15 @@
+ static_assert(one+zero,&quot;automatic success has failed&quot;);
+ static_assert(one+one,&quot;automatic success has failed&quot;);
+ 
++// check -
++static_assert(!(neg_one-neg_one),&quot;automatic success has failed&quot;);
++static_assert(neg_one-zero,&quot;automatic success has failed&quot;);
++static_assert(neg_one-one,&quot;automatic success has failed&quot;);
++static_assert(zero-neg_one,&quot;automatic success has failed&quot;);
++static_assert(!(zero-zero),&quot;automatic success has failed&quot;);
++static_assert(zero-one,&quot;automatic success has failed&quot;);
++static_assert(one-neg_one,&quot;automatic success has failed&quot;);
++static_assert(one-zero,&quot;automatic success has failed&quot;);
++static_assert(!(one-one),&quot;automatic success has failed&quot;);
++
++
+
+Modified: trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in
+===================================================================
+--- trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-03-27 01:52:05 UTC (rev 362)
++++ trunk/tests/zcc.in/default/staticassert/Pass_autosuccess.in	2010-04-07 06:07:22 UTC (rev 363)
+@@ -16,3 +16,5 @@
+ STATIC_ASSERT(&quot;A&quot;+1,&quot;automatic success has failed&quot;);
+ STATIC_ASSERT(1+&quot;A&quot;,&quot;automatic success has failed&quot;);
+ 
++STATIC_ASSERT(&quot;A&quot;-0,&quot;automatic success has failed&quot;);
++
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	
+	<LI>Next message: <A HREF="000131.html">[Zcplusplus-commits] r364 - trunk/tests/zcc.in/staticassert.C1X
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#130">[ date ]</a>
+              <a href="thread.html#130">[ thread ]</a>
+              <a href="subject.html#130">[ subject ]</a>
+              <a href="author.html#130">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

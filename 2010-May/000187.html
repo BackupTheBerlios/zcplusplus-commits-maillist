@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2010-May/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r420%20-%20in%20trunk%3A%20.%20Zaimoni.STL%0A%09Zaimoni.STL/LexParse&In-Reply-To=%3C201005091804.o49I47tw022781%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000186.html">
+   <LINK REL="Next"  HREF="000188.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r420%20-%20in%20trunk%3A%20.%20Zaimoni.STL%0A%09Zaimoni.STL/LexParse&In-Reply-To=%3C201005091804.o49I47tw022781%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r420 - in trunk: . Zaimoni.STL	Zaimoni.STL/LexParse">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Sun May  9 20:04:07 CEST 2010</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000186.html">[Zcplusplus-commits] r419 - in trunk: . Zaimoni.STL
+</A></li>
+        <LI>Next message: <A HREF="000188.html">[Zcplusplus-commits] r421 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#187">[ date ]</a>
+              <a href="thread.html#187">[ thread ]</a>
+              <a href="subject.html#187">[ subject ]</a>
+              <a href="author.html#187">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2010-05-09 20:04:03 +0200 (Sun, 09 May 2010)
+New Revision: 420
+
+Modified:
+   trunk/Zaimoni.STL/Compiler.h
+   trunk/Zaimoni.STL/LexParse/LangConf.cpp
+   trunk/Zaimoni.STL/LexParse/LangConf.hpp
+   trunk/load_src.cpp
+Log:
+fix theoretical out-of-bounds array access in ISO build mode
+
+Modified: trunk/Zaimoni.STL/Compiler.h
+===================================================================
+--- trunk/Zaimoni.STL/Compiler.h	2010-05-09 07:00:49 UTC (rev 419)
++++ trunk/Zaimoni.STL/Compiler.h	2010-05-09 18:04:03 UTC (rev 420)
+@@ -1,6 +1,6 @@
+ /* Compiler.h */
+ /* cross-compiler compatiblity header */
+-/* (C)2009 Kenneth Boyd, license: MIT.txt */
++/* (C)2009,2010 Kenneth Boyd, license: MIT.txt */
+ 
+ #ifndef ZAIMONI_COMPILER_H
+ #define ZAIMONI_COMPILER_H 1
+@@ -13,7 +13,7 @@
+ 
+ /* This macro turns on trying to compile as ISO, rather than with the memory manager extensions */
+ #ifdef ZAIMONI_FORCE_ISO
+-#define ZAIMONI_LEN_WITH_NULL(A) (A+1)
++#define ZAIMONI_LEN_WITH_NULL(A) ((A)+1)
+ #define ZAIMONI_NULL_TERMINATE(A) A = '\0'
+ #endif
+ 
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.cpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.cpp	2010-05-09 07:00:49 UTC (rev 419)
++++ trunk/Zaimoni.STL/LexParse/LangConf.cpp	2010-05-09 18:04:03 UTC (rev 420)
+@@ -1,6 +1,6 @@
+ // LangConf.cpp
+ // configuration class for lexing programming languages
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ using namespace std;
+ #include &lt;memory.h&gt;
+@@ -326,13 +326,15 @@
+ 	return false;
+ }
+ 
++#ifndef ZAIMONI_FORCE_ISO
+ void LangConf::_flattenComments(char*&amp; Text)
+-{	// note: have to be able to lex
+-#ifdef ZAIMONI_FORCE_ISO
+-	const size_t TextLength = strlen(Text);
+ #else
+-	const size_t TextLength = ArraySize(Text);
++void LangConf::_flattenComments(char*&amp; Text, size_t&amp; TextLength)
+ #endif
++{	// note: have to be able to lex
++#ifndef ZAIMONI_FORCE_ISO
++	size_t TextLength = ArraySize(Text);
++#endif
+ 	if (2&gt;=TextLength) return;
+ 
+ 	// forward pass
+@@ -383,8 +385,8 @@
+ 	while(TextLength-deduct&gt;++Idx);
+ 	if (0&lt;deduct)
+ 		{
+-		Text = REALLOC(Text,ZAIMONI_LEN_WITH_NULL(TextLength-deduct));
+-		ZAIMONI_NULL_TERMINATE(Text[TextLength-deduct]);
++		Text = REALLOC(Text,ZAIMONI_LEN_WITH_NULL(TextLength-=deduct));
++		ZAIMONI_NULL_TERMINATE(Text[TextLength]);
+ 		}
+ 	return;
+ }
+
+Modified: trunk/Zaimoni.STL/LexParse/LangConf.hpp
+===================================================================
+--- trunk/Zaimoni.STL/LexParse/LangConf.hpp	2010-05-09 07:00:49 UTC (rev 419)
++++ trunk/Zaimoni.STL/LexParse/LangConf.hpp	2010-05-09 18:04:03 UTC (rev 420)
+@@ -1,6 +1,6 @@
+-// LangConf.hxx
++// LangConf.hpp
+ // configuration class for lexing programming languages
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #ifndef ZAIMONI_STL_LEXPARSE_LANGCONF_HPP
+ #define ZAIMONI_STL_LEXPARSE_LANGCONF_HPP 1
+@@ -204,12 +204,21 @@
+ 		assert(0!=len_MultiLineCommentEnd);	
+ 		return _len_MultiLineComment(Test);
+ 		};
+-	void FlattenComments(char*&amp; Text)
++#ifndef ZAIMONI_FORCE_ISO
++	void FlattenComments(char*&amp; x)
++#else
++	void FlattenComments(char*&amp; x, size_t&amp; x_len)
++#endif
+ 		{
+-		assert(NULL!=Text);
+-		assert('\x00'!=Text[0]);
+-		assert('\n'!=Text[strlen(Text)-1]);	// end-of-file check should have intercepted trailing \n
+-		_flattenComments(Text);
++		assert(x &amp;&amp; *x);
++		// end-of-file check should have intercepted trailing \n
++#ifndef ZAIMONI_FORCE_ISO
++		assert('\n'!=x[ArraySize(x)-1]);	
++		_flattenComments(x);
++#else
++		assert('\n'!=x[x_len-1]);
++		_flattenComments(x,x_len);
++#endif
+ 		};
+ 
+ 	bool ApplyGlobalFilters(char*&amp; Target) const;
+@@ -227,36 +236,28 @@
+ 
+ 	size_t lex_find(const char* const x, const char* const target) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		return _lex_find(x,strlen(x),target,strlen(target));
+ 		};
+ 	size_t lex_find(const char* const x, const char* const target, size_t target_len) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		assert(target_len&lt;=strlen(target));
+ 		return _lex_find(x,strlen(x),target,target_len);
+ 		};
+ 	size_t lex_find(const char* const x, size_t x_len, const char* const target) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		assert(x_len==strlen(x));
+ 		return _lex_find(x,x_len,target,strlen(target));
+ 		};
+ 	size_t lex_find(const char* const x, size_t x_len, const char* const target, size_t target_len) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		assert(x_len==strlen(x));
+ 		assert(target_len&lt;=strlen(target));
+ 		return _lex_find(x,x_len,target,target_len);
+@@ -264,44 +265,35 @@
+ 	// usage of POD_triple: offset, token_len, flags
+ 	void line_lex(const char* const x, const size_t x_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
++		assert(x &amp;&amp; *x);
+ 		assert(x_len==strlen(x));
+ 		_line_lex(x,x_len,pretokenized);
+ 		};
+ 
+ 	bool line_lex_find(const char* const x, const char* const target, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		return _line_lex_find(x,strlen(x),target,strlen(target),pretokenized);
+ 		};
+ 	bool line_lex_find(const char* const x, const char* const target, size_t target_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		assert(target_len&lt;=strlen(target));
+ 		return _line_lex_find(x,strlen(x),target,target_len,pretokenized);
+ 		};
+ 	bool line_lex_find(const char* const x, const size_t x_len, const char* const target, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		assert(x_len==strlen(x));
+ 		return _line_lex_find(x,x_len,target,strlen(target),pretokenized);
+ 		};
+ 	bool line_lex_find(const char* const x, const size_t x_len, const char* const target, size_t target_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const
+ 		{
+-		assert(NULL!=x);
+-		assert('\x00'!=x[0]);
+-		assert(NULL!=target);
+-		assert('\x00'!=target[0]);
++		assert(x &amp;&amp; *x);
++		assert(target &amp;&amp; *target);
+ 		assert(x_len==strlen(x));
+ 		assert(target_len&lt;=strlen(target));
+ 		return _line_lex_find(x,x_len,target,target_len,pretokenized);
+@@ -338,7 +330,11 @@
+ 	// returns SIZE_MAX on failure, as 0 is a valid offset
+ 	size_t _lex_find(const char* const x, size_t x_len, const char* const target, size_t target_len) const;
+ 	void _compactWSAtIdx(char*&amp; Text,size_t Idx) const;
++#ifndef ZAIMONI_FORCE_ISO
+ 	void _flattenComments(char*&amp; Text);
++#else
++	void _flattenComments(char*&amp; Text, size_t&amp; TextLength);
++#endif
+ 	void _line_lex(const char* const x, const size_t x_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const;
+ 	bool _line_lex_find(const char* const x, const size_t x_len, const char* const target, size_t target_len, autovalarray_ptr&lt;POD_triple&lt;size_t,size_t,lex_flags&gt; &gt;&amp; pretokenized) const;
+ };
+
+Modified: trunk/load_src.cpp
+===================================================================
+--- trunk/load_src.cpp	2010-05-09 07:00:49 UTC (rev 419)
++++ trunk/load_src.cpp	2010-05-09 18:04:03 UTC (rev 420)
+@@ -1,5 +1,5 @@
+ // load_src.cpp
+-// (C)2009 Kenneth Boyd, license: MIT.txt
++// (C)2009,2010 Kenneth Boyd, license: MIT.txt
+ 
+ #include &quot;Zaimoni.STL/cstdio&quot;
+ #include &quot;Zaimoni.STL/LexParse/Token.hpp&quot;
+@@ -100,7 +100,11 @@
+ #endif
+ 		}
+ 	if (!lang.ApplyGlobalFilters(Buffer)) exit(EXIT_FAILURE);
++#ifndef ZAIMONI_FORCE_ISO
+ 	lang.FlattenComments(Buffer);
++#else
++	lang.FlattenComments(Buffer,Buffer_size);
++#endif
+ 
+ 	SUCCEED_OR_DIE(TokenList.InsertNSlotsAt(1,0));
+ #ifndef ZAIMONI_FORCE_ISO
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000186.html">[Zcplusplus-commits] r419 - in trunk: . Zaimoni.STL
+</A></li>
+	<LI>Next message: <A HREF="000188.html">[Zcplusplus-commits] r421 - in trunk: . Zaimoni.STL/LexParse
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#187">[ date ]</a>
+              <a href="thread.html#187">[ thread ]</a>
+              <a href="subject.html#187">[ subject ]</a>
+              <a href="author.html#187">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>

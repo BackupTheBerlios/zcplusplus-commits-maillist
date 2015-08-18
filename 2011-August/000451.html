@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+ <HEAD>
+   <TITLE> [Zcplusplus-commits] r684 - trunk
+   </TITLE>
+   <LINK REL="Index" HREF="http://lists.berlios.de/pipermail/zcplusplus-commits/2011-August/index.html" >
+   <LINK REL="made" HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r684%20-%20trunk&In-Reply-To=%3C20110830192239.112014811B9%40sheep.berlios.de%3E">
+   <META NAME="robots" CONTENT="index,nofollow">
+   <style type="text/css">
+       pre {
+           white-space: pre-wrap;       /* css-2.1, curent FF, Opera, Safari */
+           }
+   </style>
+   <META http-equiv="Content-Type" content="text/html; charset=us-ascii">
+   <LINK REL="Previous"  HREF="000450.html">
+   <LINK REL="Next"  HREF="000452.html">
+ </HEAD>
+ <BODY BGCOLOR="#ffffff">
+   <H1>[Zcplusplus-commits] r684 - trunk</H1>
+    <B>zaimoni at mail.berlios.de</B> 
+    <A HREF="mailto:zcplusplus-commits%40lists.berlios.de?Subject=Re%3A%20%5BZcplusplus-commits%5D%20r684%20-%20trunk&In-Reply-To=%3C20110830192239.112014811B9%40sheep.berlios.de%3E"
+       TITLE="[Zcplusplus-commits] r684 - trunk">zaimoni at mail.berlios.de
+       </A><BR>
+    <I>Tue Aug 30 21:22:38 CEST 2011</I>
+    <P><UL>
+        <LI>Previous message: <A HREF="000450.html">[Zcplusplus-commits] r683 - trunk
+</A></li>
+        <LI>Next message: <A HREF="000452.html">[Zcplusplus-commits] r685 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#451">[ date ]</a>
+              <a href="thread.html#451">[ thread ]</a>
+              <a href="subject.html#451">[ subject ]</a>
+              <a href="author.html#451">[ author ]</a>
+         </LI>
+       </UL>
+    <HR>  
+<!--beginarticle-->
+<PRE>Author: zaimoni
+Date: 2011-08-30 21:22:38 +0200 (Tue, 30 Aug 2011)
+New Revision: 684
+
+Modified:
+   trunk/type_system.cpp
+   trunk/type_system.cpp.in
+Log:
+adjust in __zcc_linkage backend for objects/functions
+
+Modified: trunk/type_system.cpp
+===================================================================
+--- trunk/type_system.cpp	2011-08-30 18:49:54 UTC (rev 683)
++++ trunk/type_system.cpp	2011-08-30 19:22:38 UTC (rev 684)
+@@ -1071,13 +1071,26 @@
+ ** block-scope identifier for an object not declared extern
+ */
+ 	if (  get_typedef(alias)
+-	   || get_enumerator(alias)
+-	   || get_id_enum(alias)
+-	   || get_id_union(alias)
+-	   || get_id_struct_class(alias))
+-	   return 0;	// no linkage
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++	    || get_enumerator(alias)
++	    || get_id_enum(alias)
++	    || get_id_union(alias)
++	    || get_id_struct_class(alias))
++	    return 0;	// no linkage
++
++	if (const object_type_loc_linkage* const tmp = get_object(alias))
++		{
++		// this is draconian; we should try to allow C to call non-overloadable
++		// functions in other supported languages.  C++ is not an option.
++		switch(tmp-&gt;fourth)
++		{
++		default: _fatal_code(&quot;internal data format error: C linkage not one of none, static, extern-C&quot;,3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 2; // native/C linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ 
+ /*
+@@ -1152,7 +1165,19 @@
+ 		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
+ 		return _CPP_namespace_linkage(alias);
+ 		}
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++
++	if (const object_type_loc_linkage* const tmp = get_object_CPP(alias,active_namespace))
++		{
++		switch(tmp-&gt;fourth)
++		{
++		default: _fatal_code(&quot;internal data format error: object does not have supported linkage in C++&quot;,3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 3; // C linkage
++		case linkage_extern_CPP: return 2; // native/C++ linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ 
+
+Modified: trunk/type_system.cpp.in
+===================================================================
+--- trunk/type_system.cpp.in	2011-08-30 18:49:54 UTC (rev 683)
++++ trunk/type_system.cpp.in	2011-08-30 19:22:38 UTC (rev 684)
+@@ -1086,13 +1086,26 @@
+ ** block-scope identifier for an object not declared extern
+ */
+ 	if (  get_typedef(alias)
+-	   || get_enumerator(alias)
+-	   || get_id_enum(alias)
+-	   || get_id_union(alias)
+-	   || get_id_struct_class(alias))
+-	   return 0;	// no linkage
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++	    || get_enumerator(alias)
++	    || get_id_enum(alias)
++	    || get_id_union(alias)
++	    || get_id_struct_class(alias))
++	    return 0;	// no linkage
++
++	if (const object_type_loc_linkage* const tmp = get_object(alias))
++		{
++		// this is draconian; we should try to allow C to call non-overloadable
++		// functions in other supported languages.  C++ is not an option.
++		switch(tmp-&gt;fourth)
++		{
++		default: _fatal_code(&quot;internal data format error: C linkage not one of none, static, extern-C&quot;,3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 2; // native/C linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ 
+ /*
+@@ -1167,8 +1180,20 @@
+ 		if (1==_CPP_namespace_linkage(active_namespace)) return 1;	// internal
+ 		return _CPP_namespace_linkage(alias);
+ 		}
+-	// we have to handle objects and functions correctly before replacing the -2 with -1	
+-	return -2;	// not implemented yet
++
++	if (const object_type_loc_linkage* const tmp = get_object_CPP(alias,active_namespace))
++		{
++		switch(tmp-&gt;fourth)
++		{
++		default: _fatal_code(&quot;internal data format error: object does not have supported linkage in C++&quot;,3);
++		case linkage_none: return 0;	// no linkage
++		case linkage_static: return 1;	// internal linkage
++		case linkage_extern_C: return 3; // C linkage
++		case linkage_extern_CPP: return 2; // native/C++ linkage
++		}
++		return -2;	// not implemented yet
++		};
++	return -1; // not defined
+ }
+ #/*cut-cpp*/
+ 
+
+
+</PRE>
+
+<!--endarticle-->
+    <HR>
+    <P><UL>
+        <!--threads-->
+	<LI>Previous message: <A HREF="000450.html">[Zcplusplus-commits] r683 - trunk
+</A></li>
+	<LI>Next message: <A HREF="000452.html">[Zcplusplus-commits] r685 - in trunk: . tests/zcc/decl.C99	tests/zcc.in/decl.C99
+</A></li>
+         <LI> <B>Messages sorted by:</B> 
+              <a href="date.html#451">[ date ]</a>
+              <a href="thread.html#451">[ thread ]</a>
+              <a href="subject.html#451">[ subject ]</a>
+              <a href="author.html#451">[ author ]</a>
+         </LI>
+       </UL>
+
+<hr>
+<a href="https://lists.berlios.de/mailman/listinfo/zcplusplus-commits">More information about the Zcplusplus-commits
+mailing list</a><br>
+</body></html>
